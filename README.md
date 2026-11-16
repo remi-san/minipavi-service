@@ -60,6 +60,10 @@ $router->setDefaultRoute(HomeController::NAME);
     is ignored.
 - **`Service`** reads the gateway's request, restores the `Context`, and runs the controller of
   the current route until a response is sent to the gateway.
+- **Logging:** `Service` and `ServiceRunner` take an optional PSR-3 logger (e.g. Monolog) and
+  log connections, disconnections and browsers sent to the emulator, at info level:
+  `new Service($client, $router, $logger)`, `new ServiceRunner($service, logger: $logger)`.
+  Without one, nothing is logged.
 - **A `Controller`** runs on a `Request` and returns a `Response`. The request gives:
   - `state()` (`STATE_INIT`, `STATE_DISPLAY`, `STATE_INIT_INPUT`, `STATE_READ_INPUT`) and
     `parameters()` / `parameter($name)`: what the controller's previous response asked to
