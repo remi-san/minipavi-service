@@ -1,0 +1,427 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+XML Schema of the page XML format, read by MiniPaviService\Page\Parser\PageXmlParser and
+documented in the framework's README.md ("Page XML format").
+
+A page can point to it, for editors to complete and check it:
+
+  <page type="template"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="../../vendor/remi-san/minipavi-service/schema/page.xsd">
+
+XML Schema 1.0 (as libxml, DOMDocument::schemaValidate() and xmllint read it) can't express
+every rule of the parser, which remains the reference. The schema accepts, and the parser
+rejects:
+  - <foreach>, <if> and {{placeholders}} in a page of type="static";
+  - more than one <input>;
+  - <foreach as="loop">;
+  - positions past the screen once added up (col + length past column 40, a row
+    relative to a <foreach> item, an input's lines past row 24);
+  - values a placeholder is replaced with, only known when the page is displayed.
+
+Unknown elements and attributes are rejected, which the parser does for elements only.
+-->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="unqualified">
+
+	<xs:element name="page">
+		<xs:annotation>
+			<xs:documentation>A screen of 40 columns × 24 rows (row 0 is the status line). Elements are drawn in order.</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:choice minOccurs="0" maxOccurs="unbounded">
+				<xs:group ref="displayElement"/>
+				<xs:element name="endkey" type="endKey"/>
+				<xs:element name="input" type="input"/>
+				<xs:element name="foreach" type="foreach"/>
+				<xs:element name="if" type="if"/>
+			</xs:choice>
+			<xs:attribute name="type" use="required">
+				<xs:annotation>
+					<xs:documentation>static: drawn as is. template: with {{placeholders}}, foreach and if, filled in with the data given to Page::display().</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:enumeration value="static"/>
+						<xs:enumeration value="template"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:attribute>
+		</xs:complexType>
+	</xs:element>
+
+	<!-- Display elements, allowed everywhere -->
+	<xs:group name="displayElement">
+		<xs:choice>
+			<xs:element name="background" type="file">
+				<xs:annotation>
+					<xs:documentation>Videotex page (.vdt) from the page's folder or one of its subfolders, sent as is. Put it first to draw over it.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="image" type="image"/>
+			<xs:element name="text" type="text"/>
+			<xs:element name="line" type="line"/>
+			<xs:element name="key" type="key"/>
+		</xs:choice>
+	</xs:group>
+
+	<!-- Instructions of templates -->
+
+	<xs:complexType name="foreach">
+		<xs:annotation>
+			<xs:documentation>Repeats its content for each item of items, step rows apart. Inside, rows are relative to the item (0 = its first row), and loop.index (from 1), loop.count, loop.first and loop.last are available. No endkey nor input inside.</xs:documentation>
+		</xs:annotation>
+		<xs:choice minOccurs="0" maxOccurs="unbounded">
+			<xs:group ref="displayElement"/>
+			<xs:element name="foreach" type="foreach"/>
+			<xs:element name="if" type="ifInLoop"/>
+		</xs:choice>
+		<xs:attribute name="items" type="variable" use="required"/>
+		<xs:attribute name="as" type="name" use="required">
+			<xs:annotation>
+				<xs:documentation>Name of the current item: a variable name, other than loop</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="row" type="row">
+			<xs:annotation>
+				<xs:documentation>Row of the first item (default: 1, or 0 inside another foreach, whose item it is relative to)</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="step" type="number">
+			<xs:annotation>
+				<xs:documentation>Rows between two items (default 1)</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+	</xs:complexType>
+
+	<xs:complexType name="if">
+		<xs:annotation>
+			<xs:documentation>Content shown only if the variable test is set and not empty (test="!name": only if it is not). No input inside.</xs:documentation>
+		</xs:annotation>
+		<xs:choice minOccurs="0" maxOccurs="unbounded">
+			<xs:group ref="displayElement"/>
+			<xs:element name="endkey" type="endKey"/>
+			<xs:element name="foreach" type="foreach"/>
+			<xs:element name="if" type="if"/>
+		</xs:choice>
+		<xs:attribute name="test" type="test" use="required"/>
+	</xs:complexType>
+
+	<xs:complexType name="ifInLoop">
+		<xs:annotation>
+			<xs:documentation>An if inside a foreach: no endkey nor input inside.</xs:documentation>
+		</xs:annotation>
+		<xs:choice minOccurs="0" maxOccurs="unbounded">
+			<xs:group ref="displayElement"/>
+			<xs:element name="foreach" type="foreach"/>
+			<xs:element name="if" type="ifInLoop"/>
+		</xs:choice>
+		<xs:attribute name="test" type="test" use="required"/>
+	</xs:complexType>
+
+	<!-- Elements -->
+
+	<xs:complexType name="image">
+		<xs:annotation>
+			<xs:documentation>Videotex picture (.vdt) from the page's folder or one of its subfolders, drawn with its top-left cell at row, col. What goes past the screen is cut; it doesn't clear the screen.</xs:documentation>
+		</xs:annotation>
+		<xs:simpleContent>
+			<xs:extension base="file">
+				<xs:attribute name="row" type="row"/>
+				<xs:attribute name="col" type="col"/>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+
+	<xs:complexType name="text">
+		<xs:annotation>
+			<xs:documentation>Text, from row, col</xs:documentation>
+		</xs:annotation>
+		<xs:simpleContent>
+			<xs:extension base="xs:string">
+				<xs:attribute name="row" type="row"/>
+				<xs:attribute name="col" type="col"/>
+				<xs:attribute name="align">
+					<xs:annotation>
+						<xs:documentation>center: centered on the row (default left)</xs:documentation>
+					</xs:annotation>
+					<xs:simpleType>
+						<xs:union memberTypes="placeholder">
+							<xs:simpleType>
+								<xs:restriction base="xs:string">
+									<xs:enumeration value="left"/>
+									<xs:enumeration value="center"/>
+								</xs:restriction>
+							</xs:simpleType>
+						</xs:union>
+					</xs:simpleType>
+				</xs:attribute>
+				<xs:attribute name="color" type="color">
+					<xs:annotation>
+						<xs:documentation>default white</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+				<xs:attribute name="bg" type="color"/>
+				<xs:attribute name="size" type="size"/>
+				<xs:attribute name="fill" type="yesNo">
+					<xs:annotation>
+						<xs:documentation>yes: paints the rest of the row with bg (default no)</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+
+	<xs:complexType name="line">
+		<xs:annotation>
+			<xs:documentation>Horizontal line, from row, col, of length characters (default: to the end of the row)</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="row" type="row"/>
+		<xs:attribute name="col" type="col"/>
+		<xs:attribute name="length" type="length"/>
+		<xs:attribute name="char" type="lineChar"/>
+		<xs:attribute name="color" type="color">
+			<xs:annotation>
+				<xs:documentation>default white</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+	</xs:complexType>
+
+	<xs:complexType name="key">
+		<xs:annotation>
+			<xs:documentation>Function key badge (e.g. Envoi), in reverse video</xs:documentation>
+		</xs:annotation>
+		<xs:simpleContent>
+			<xs:extension base="xs:string">
+				<xs:attribute name="row" type="row"/>
+				<xs:attribute name="col" type="col"/>
+				<xs:attribute name="color" type="color">
+					<xs:annotation>
+						<xs:documentation>default green</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+				<xs:attribute name="bg" type="color">
+					<xs:annotation>
+						<xs:documentation>around the badge</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+
+	<xs:complexType name="endKey">
+		<xs:annotation>
+			<xs:documentation>"Connexion/fin" hint, with "[Maj] +" for ESP32/Minimit adapters. Not inside a foreach.</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="row" type="row"/>
+		<xs:attribute name="color" type="color">
+			<xs:annotation>
+				<xs:documentation>default green</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+	</xs:complexType>
+
+	<xs:complexType name="input">
+		<xs:annotation>
+			<xs:documentation>Input field read by Page::inputCommand(), at the top level of the page only, one per page, without placeholders. A one-line field is a text input where every validwith key validates; with several lines, Suite and Retour move between them.</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="row" type="rowNumber">
+			<xs:annotation>
+				<xs:documentation>default 13</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="col" type="colNumber"/>
+		<xs:attribute name="length" type="lengthNumber">
+			<xs:annotation>
+				<xs:documentation>default: to the end of the row</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="lines">
+			<xs:annotation>
+				<xs:documentation>default 2</xs:documentation>
+			</xs:annotation>
+			<xs:simpleType>
+				<xs:restriction base="xs:nonNegativeInteger">
+					<xs:pattern value="[0-9]+"/>
+					<xs:minInclusive value="1"/>
+					<xs:maxInclusive value="24"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+		<xs:attribute name="validwith">
+			<xs:annotation>
+				<xs:documentation>Keys validating the input, separated by spaces (default envoi)</xs:documentation>
+			</xs:annotation>
+			<xs:simpleType>
+				<xs:restriction>
+					<xs:simpleType>
+						<xs:list itemType="functionKey"/>
+					</xs:simpleType>
+					<xs:minLength value="1"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+	</xs:complexType>
+
+	<!-- Values. Attributes of display elements can also be {{placeholders}} in templates -->
+
+	<xs:simpleType name="placeholder">
+		<xs:annotation>
+			<xs:documentation>Text with a {{placeholder}} ({{name}}, {{name.field}}), replaced when a template is displayed</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:pattern value=".*\{\{\s*[A-Za-z_][A-Za-z0-9_]*(\.[A-Za-z0-9_]+)*\s*\}\}.*"/>
+		</xs:restriction>
+	</xs:simpleType>
+
+	<xs:simpleType name="variable">
+		<xs:annotation>
+			<xs:documentation>Variable of a template: name, or dotted path through arrays and objects (service.code)</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:token">
+			<xs:pattern value="[A-Za-z_][A-Za-z0-9_]*(\.[A-Za-z0-9_]+)*"/>
+		</xs:restriction>
+	</xs:simpleType>
+
+	<xs:simpleType name="name">
+		<xs:restriction base="xs:string">
+			<xs:pattern value="[A-Za-z_][A-Za-z0-9_]*"/>
+		</xs:restriction>
+	</xs:simpleType>
+
+	<xs:simpleType name="test">
+		<xs:annotation>
+			<xs:documentation>A variable (true if set and not empty), or !variable</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:token">
+			<xs:pattern value="!?[A-Za-z_][A-Za-z0-9_]*(\.[A-Za-z0-9_]+)*"/>
+		</xs:restriction>
+	</xs:simpleType>
+
+	<xs:simpleType name="file">
+		<xs:annotation>
+			<xs:documentation>Path relative to the page's folder, without leading / nor .. (e.g. images/logo.vdt)</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:token">
+			<xs:pattern value="([^/.][^/]*|\.([^/.][^/]*)?|\.\.[^/]+)(/([^/.][^/]*|\.([^/.][^/]*)?|\.\.[^/]+))*"/>
+		</xs:restriction>
+	</xs:simpleType>
+
+	<xs:simpleType name="number">
+		<xs:restriction base="xs:nonNegativeInteger">
+			<xs:pattern value="[0-9]+"/>
+		</xs:restriction>
+	</xs:simpleType>
+
+	<xs:simpleType name="rowNumber">
+		<xs:restriction base="number">
+			<xs:maxInclusive value="24"/>
+		</xs:restriction>
+	</xs:simpleType>
+
+	<xs:simpleType name="colNumber">
+		<xs:restriction base="number">
+			<xs:minInclusive value="1"/>
+			<xs:maxInclusive value="40"/>
+		</xs:restriction>
+	</xs:simpleType>
+
+	<xs:simpleType name="lengthNumber">
+		<xs:restriction base="number">
+			<xs:minInclusive value="1"/>
+			<xs:maxInclusive value="40"/>
+		</xs:restriction>
+	</xs:simpleType>
+
+	<xs:simpleType name="row">
+		<xs:annotation>
+			<xs:documentation>Row, from 0 (status line) to 24 (default 1); inside a foreach, relative to the item (0 = its first row)</xs:documentation>
+		</xs:annotation>
+		<xs:union memberTypes="rowNumber placeholder"/>
+	</xs:simpleType>
+
+	<xs:simpleType name="col">
+		<xs:annotation>
+			<xs:documentation>Column, from 1 to 40 (default 1)</xs:documentation>
+		</xs:annotation>
+		<xs:union memberTypes="colNumber placeholder"/>
+	</xs:simpleType>
+
+	<xs:simpleType name="length">
+		<xs:union memberTypes="lengthNumber placeholder"/>
+	</xs:simpleType>
+
+	<xs:simpleType name="color">
+		<xs:union memberTypes="placeholder">
+			<xs:simpleType>
+				<xs:restriction base="xs:string">
+					<xs:enumeration value="black"/>
+					<xs:enumeration value="red"/>
+					<xs:enumeration value="green"/>
+					<xs:enumeration value="yellow"/>
+					<xs:enumeration value="blue"/>
+					<xs:enumeration value="magenta"/>
+					<xs:enumeration value="cyan"/>
+					<xs:enumeration value="white"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:union>
+	</xs:simpleType>
+
+	<xs:simpleType name="size">
+		<xs:union memberTypes="placeholder">
+			<xs:simpleType>
+				<xs:restriction base="xs:string">
+					<xs:enumeration value="normal"/>
+					<xs:enumeration value="double-height"/>
+					<xs:enumeration value="double-width"/>
+					<xs:enumeration value="double"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:union>
+	</xs:simpleType>
+
+	<xs:simpleType name="yesNo">
+		<xs:union memberTypes="placeholder">
+			<xs:simpleType>
+				<xs:restriction base="xs:string">
+					<xs:enumeration value="yes"/>
+					<xs:enumeration value="no"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:union>
+	</xs:simpleType>
+
+	<xs:simpleType name="lineChar">
+		<xs:annotation>
+			<xs:documentation>top (_), middle (`, default), bottom (~), or any single ASCII character</xs:documentation>
+		</xs:annotation>
+		<xs:union memberTypes="placeholder">
+			<xs:simpleType>
+				<xs:restriction base="xs:string">
+					<xs:enumeration value="top"/>
+					<xs:enumeration value="middle"/>
+					<xs:enumeration value="bottom"/>
+				</xs:restriction>
+			</xs:simpleType>
+			<xs:simpleType>
+				<xs:restriction base="xs:string">
+					<xs:pattern value="[ -~]"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:union>
+	</xs:simpleType>
+
+	<xs:simpleType name="functionKey">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="envoi"/>
+			<xs:enumeration value="sommaire"/>
+			<xs:enumeration value="annulation"/>
+			<xs:enumeration value="retour"/>
+			<xs:enumeration value="repetition"/>
+			<xs:enumeration value="guide"/>
+			<xs:enumeration value="correction"/>
+			<xs:enumeration value="suite"/>
+		</xs:restriction>
+	</xs:simpleType>
+
+</xs:schema>
