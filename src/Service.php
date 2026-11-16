@@ -44,11 +44,17 @@ final class Service
             return;
         }
 
-        // What the user did, given to each controller run for this request
-        $key = $this->client->fctn();
-        $content = $this->client->content();
-        $terminal = $this->client->terminal();
+        $this->serve($context, $this->client->fctn(), $this->client->content(), $this->client->terminal());
+    }
 
+    /**
+     * Runs the controller of the context's route on what the user did (key, content), then
+     * the controllers it changes to, until a response answers the gateway
+     *
+     * @param list<string> $content
+     */
+    public function serve(Context $context, string $key, array $content, Terminal $terminal): void
+    {
         while (true) {
             $controller = $this->router->route($context->route());
             $response = $controller->run($context->getRequest($key, $content, $terminal));
