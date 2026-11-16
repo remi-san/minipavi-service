@@ -59,7 +59,7 @@ class MiniPaviCli
      * @param string $preFill
      * @return array<string, mixed>
      */
-    public static function createInputTxtCmd($posX = 1, $posY = 1, $length = 1, $validWith = MSK_ENVOI, $cursor = true, $spaceChar = ' ', $char = '', $preFill = '') {}
+    public static function createInputTxtCmd($posX = 1, $posY = 1, $length = 1, $validWith = 128, $cursor = true, $spaceChar = ' ', $char = '', $preFill = '') {}
 
     /**
      * @param int $posX
@@ -72,5 +72,5 @@ class MiniPaviCli
      * @param string[] $preFill
      * @return array<string, mixed>
      */
-    public static function createInputMsgCmd($posX = 1, $posY = 1, $width = 1, $height = 1, $validWith = MSK_ENVOI, $cursor = true, $spaceChar = ' ', $preFill = []) {}
+    public static function createInputMsgCmd($posX = 1, $posY = 1, $width = 1, $height = 1, $validWith = 128, $cursor = true, $spaceChar = ' ', $preFill = []) {}
 }

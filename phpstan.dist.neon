@@ -3,9 +3,6 @@ parameters:
     paths:
         - src
         - tests
-    # MiniPaviCli defines its VDT_*, PRO_* and MSK_* constants in its class file
-    bootstrapFiles:
-        - bootstrap.php
     # Return types of the MiniPaviCli methods, which the library doesn't declare
     stubFiles:
         - stubs/MiniPaviCli.stub

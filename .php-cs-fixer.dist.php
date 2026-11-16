@@ -7,7 +7,7 @@ declare(strict_types=1);
 
 $finder = (new PhpCsFixer\Finder())
     ->in([__DIR__ . '/src', __DIR__ . '/tests'])
-    ->append([__DIR__ . '/bootstrap.php', __FILE__]);
+    ->append([__FILE__]);
 
 return (new PhpCsFixer\Config())
     ->setRiskyAllowed(true)
