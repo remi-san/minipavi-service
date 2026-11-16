@@ -26,7 +26,7 @@ final class ServiceRunner
 
     private function check(): void
     {
-        if (strpos(@$_SERVER['HTTP_USER_AGENT'], 'MiniPAVI') === false) {
+        if (!str_contains($_SERVER['HTTP_USER_AGENT'] ?? '', 'MiniPAVI')) {
             $this->redirectBrowser();
             exit;
         }
