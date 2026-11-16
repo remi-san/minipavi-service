@@ -9,6 +9,9 @@ namespace MiniPaviService\Vdt;
  */
 final readonly class Cell
 {
+    /**
+     * @param array<string, string> $attributes see Attributes
+     */
     public function __construct(
         public string $bytes,
         public array $attributes,

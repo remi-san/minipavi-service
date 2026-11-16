@@ -46,6 +46,7 @@ final readonly class Input
      * between the lines instead
      *
      * @param string[] $prefill text of the field, one string per line
+     * @return array<string, mixed>
      */
     public function toCommand(MiniPaviClient $client, array $prefill = []): array
     {

@@ -7,27 +7,41 @@ namespace MiniPaviService\Page;
 use MiniPaviService\MiniPaviClient;
 use MiniPaviService\Page;
 use MiniPaviService\Page\Display\Display;
-use MiniPaviService\Page\Template\{Scope};
+use MiniPaviService\Page\Template\Node;
+use MiniPaviService\Page\Template\Scope;
 use MiniPaviService\Vdt\VdtHelper;
 
 final readonly class TemplatePage implements Page
 {
+    /**
+     * @param Node[] $nodes
+     */
     public function __construct(
         private MiniPaviClient $client,
         private array $nodes,
         private ?Input $input = null,
     ) {}
 
+    /**
+     * @param array<string, mixed> $data
+     */
     public function display(array $data = []): string
     {
         return VdtHelper::clearScreen() . VDT_CUROFF . $this->toDisplay($data)->toVdt($this->client);
     }
 
+    /**
+     * @param string[] $prefill
+     * @return ?array<string, mixed>
+     */
     public function readInput(array $prefill = []): ?array
     {
         return $this->input?->toCommand($this->client, $prefill);
     }
 
+    /**
+     * @param array<string, mixed> $data
+     */
     public function toDisplay(array $data = []): Display
     {
         $scope = new Scope($data);

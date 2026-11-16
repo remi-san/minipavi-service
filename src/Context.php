@@ -13,6 +13,10 @@ use MiniPaviService\Controller\Response;
  */
 final class Context
 {
+    /**
+     * @param array<string, string> $states state of each route
+     * @param array<string, array<string, mixed>> $parameters parameters of each route
+     */
     public function __construct(
         private string $route,
         private array $states = [],
@@ -66,7 +70,7 @@ final class Context
         $this->updateParameters($response->parameters());
     }
 
-    public function state(): ?string
+    public function state(): string
     {
         return $this->states[$this->route] ?? Controller::STATE_INIT;
     }
@@ -81,11 +85,17 @@ final class Context
         $this->updateState(Controller::STATE_INIT);
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function parameters(): array
     {
         return $this->parameters[$this->route] ?? [];
     }
 
+    /**
+     * @param array<string, mixed> $data
+     */
     public function updateParameters(array $data): void
     {
         $this->parameters[$this->route] = $data;

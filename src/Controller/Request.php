@@ -8,6 +8,9 @@ use MiniPaviService\Controller;
 
 readonly class Request
 {
+    /**
+     * @param array<string, mixed> $parameters
+     */
     public function __construct(
         private string $state = Controller::STATE_INIT,
         private array $parameters = [],
@@ -18,6 +21,9 @@ readonly class Request
         return $this->state;
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function parameters(): array
     {
         return $this->parameters;

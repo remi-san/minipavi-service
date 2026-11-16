@@ -1,0 +1,8 @@
+parameters:
+    level: 6
+    paths:
+        - src
+        - tests
+    # MiniPaviCli defines its VDT_*, PRO_* and MSK_* constants in its class file
+    bootstrapFiles:
+        - bootstrap.php

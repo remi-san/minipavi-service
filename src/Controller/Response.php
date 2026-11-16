@@ -15,5 +15,8 @@ interface Response
 
     public function state(): string;
 
+    /**
+     * @return array<string, mixed>
+     */
     public function parameters(): array;
 }

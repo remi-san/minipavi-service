@@ -10,7 +10,14 @@ namespace MiniPaviService;
  */
 interface Page
 {
+    /**
+     * @param array<string, mixed> $data variables of a template
+     */
     public function display(array $data = []): string;
 
+    /**
+     * @param string[] $prefill text of the input, one string per line
+     * @return ?array<string, mixed> MiniPavi command reading the input, null without input
+     */
     public function readInput(array $prefill = []): ?array;
 }

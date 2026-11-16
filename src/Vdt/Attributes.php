@@ -41,6 +41,8 @@ final class Attributes
 
     /**
      * Columns taken by a character: double width only applies to text characters
+     *
+     * @param array<string, string> $attributes
      */
     public static function width(array $attributes): int
     {

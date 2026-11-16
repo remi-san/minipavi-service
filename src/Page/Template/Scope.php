@@ -24,6 +24,8 @@ final readonly class Scope
 
     /**
      * Scope with more variables, drawn from another row
+     *
+     * @param array<string, mixed> $vars
      */
     public function with(array $vars, int $rowOffset): self
     {

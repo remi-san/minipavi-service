@@ -23,12 +23,18 @@ final readonly class StaticPage implements Page
     /**
      * Clears the screen, then draws the display; a static page has no variables,
      * data is not used
+     *
+     * @param array<string, mixed> $data
      */
     public function display(array $data = []): string
     {
         return VdtHelper::clearScreen() . VDT_CUROFF . $this->display->toVdt($this->client);
     }
 
+    /**
+     * @param string[] $prefill
+     * @return ?array<string, mixed>
+     */
     public function readInput(array $prefill = []): ?array
     {
         return $this->input?->toCommand($this->client, $prefill);

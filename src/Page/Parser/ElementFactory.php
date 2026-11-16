@@ -30,6 +30,7 @@ final class ElementFactory
     private const LINE_CHARS = ['top' => Line::TOP, 'middle' => Line::MIDDLE, 'bottom' => Line::BOTTOM];
 
     // Pictures of <image>, by file, read once: templates build their elements on each display
+    /** @var array<string, Vdt> */
     private array $images = [];
 
     /**
@@ -112,6 +113,9 @@ final class ElementFactory
         return $this->baseDir . '/' . $path;
     }
 
+    /**
+     * @param array<string, string> $attributes
+     */
     public function input(array $attributes): Input
     {
         $validWith = 0;
@@ -132,6 +136,8 @@ final class ElementFactory
 
     /**
      * Value of a number attribute, or default if absent
+     *
+     * @param array<string, string> $attributes
      */
     public function int(array $attributes, string $attr, int $default): int
     {
@@ -145,6 +151,10 @@ final class ElementFactory
         return (int) $value;
     }
 
+    /**
+     * @param array<string, string> $attributes
+     * @param array<string, mixed> $values value of the attribute => result
+     */
     private function choice(array $attributes, string $attr, array $values, mixed $default): mixed
     {
         if (!isset($attributes[$attr])) {
@@ -157,6 +167,9 @@ final class ElementFactory
         return $values[$value];
     }
 
+    /**
+     * @param array<string, string> $attributes
+     */
     private function color(array $attributes, string $attr): ?Color
     {
         if (!isset($attributes[$attr])) {
@@ -166,6 +179,9 @@ final class ElementFactory
             ?? throw new PageXmlException("unknown $attr \"" . $attributes[$attr] . '" (' . implode(', ', array_column(Color::cases(), 'value')) . ')');
     }
 
+    /**
+     * @param array<string, string> $attributes
+     */
     private function size(array $attributes): ?Size
     {
         if (!isset($attributes['size'])) {
@@ -175,6 +191,9 @@ final class ElementFactory
             ?? throw new PageXmlException('unknown size "' . $attributes['size'] . '" (' . implode(', ', array_column(Size::cases(), 'value')) . ')');
     }
 
+    /**
+     * @param array<string, string> $attributes
+     */
     private function lineChar(array $attributes): string
     {
         $char = $attributes['char'] ?? 'middle';

@@ -11,6 +11,7 @@ final class Cursor
 {
     public int $row = 1;
     public int $col = 1;
+    /** @var array<string, string> */
     public array $attributes = Attributes::DEFAULTS;
 
     public function reset(int $row, int $col): void

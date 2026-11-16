@@ -11,6 +11,7 @@
     },
     "require-dev": {
         "friendsofphp/php-cs-fixer": "^3.95",
+        "phpstan/phpstan": "^2.1",
         "phpunit/phpunit": "^11.5"
     },
     "autoload": {
@@ -22,11 +23,13 @@
     },
     "scripts": {
         "test": "phpunit",
+        "analyse": "phpstan analyse",
         "cs": "php-cs-fixer check --diff",
         "cs-fix": "php-cs-fixer fix"
     },
     "scripts-descriptions": {
         "test": "Runs the tests",
+        "analyse": "Runs the static analysis (PHPStan)",
         "cs": "Checks the coding style, showing what would change",
         "cs-fix": "Fixes the coding style"
     },

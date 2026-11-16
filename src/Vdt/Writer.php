@@ -14,11 +14,15 @@ final class Writer
     // Where the next character would go, and with which attributes (null: unknown)
     private ?int $row = null;
     private ?int $col = null;
+    /** @var array<string, string> */
     private array $attributes = Attributes::DEFAULTS;
     // Last character sent, and how many more times it is to be repeated
     private ?string $pending = null;
     private int $repeat = 0;
 
+    /**
+     * @param array<string, string> $attributes
+     */
     public function glyph(int $row, int $col, string $bytes, int $width, array $attributes): void
     {
         $moved = $this->moveTo($row, $col);
@@ -37,6 +41,9 @@ final class Writer
         }
     }
 
+    /**
+     * @param array<string, string> $attributes
+     */
     public function clearLine(int $row, int $col, array $attributes): void
     {
         $this->moveTo($row, $col);
@@ -76,6 +83,9 @@ final class Writer
     }
 
     // Sends the attributes that differ from the current ones; true if there were some
+    /**
+     * @param array<string, string> $attributes
+     */
     private function setAttributes(array $attributes): bool
     {
         $codes = '';
