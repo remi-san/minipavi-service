@@ -27,18 +27,18 @@ final class ServiceRunner
         $this->url = $url ?? RequestUrl::fromEnvironment();
     }
 
+    /**
+     * Runs the service if the request comes from a gateway, sends the browser to the
+     * emulator otherwise
+     */
     public function run(): void
-    {
-        $this->check();
-        $this->service->run();
-    }
-
-    private function check(): void
     {
         if (!str_contains(ServerVariable::get('HTTP_USER_AGENT'), 'MiniPAVI')) {
             $this->redirectBrowser();
-            exit;
+
+            return;
         }
+        $this->service->run();
     }
 
     private function redirectBrowser(): void
