@@ -37,7 +37,7 @@ use MiniPaviService\Page\Parser\PageXmlParser;
 require __DIR__.'/../vendor/autoload.php';
 
 $client = new MiniPaviClient();
-$pages = new PageXmlParser($client);
+$pages = new PageXmlParser();
 
 $router = new Router();
 $router->addRoute(HomeController::NAME, new HomeController($pages->parseFile(__DIR__.'/../config/pages/home.xml')));
@@ -60,6 +60,9 @@ $router->setDefaultRoute(HomeController::NAME);
     is ignored.
 - **`Service`** reads the gateway's request, restores the `Context`, and runs the controller of
   the current route until a response is sent to the gateway.
+- **Pages** are displayed for the user's terminal, which `<endkey>` depends on:
+  `$page->display($request->terminal(), $data)`; display elements get it too
+  (`Element::getContent(Terminal $terminal)`).
 - **Logging:** `Service` and `ServiceRunner` take an optional PSR-3 logger (e.g. Monolog) and
   log connections, disconnections and browsers sent to the emulator, at info level:
   `new Service($client, $router, $logger)`, `new ServiceRunner($service, logger: $logger)`.
@@ -105,7 +108,7 @@ $router->setDefaultRoute(HomeController::NAME);
       // Shows the screen (onInit() and onInitInput() do the same, unless overridden)
       protected function onDisplay(Request $request): Response
       {
-          return Response::readInput($this->page->display(), $this->page->inputCommand());
+          return Response::readInput($this->page->display($request->terminal()), $this->page->inputCommand());
       }
 
       // Handles the key pressed and what was typed
@@ -148,7 +151,7 @@ elements are drawn in order:
 - Colors: black, red, green, yellow, blue, magenta, cyan, white. `col` defaults to 1.
 
 `<page type="static">` is drawn as is. `<page type="template">` can also have placeholders and
-instructions, filled in with the data given to `Page::display($data)`:
+instructions, filled in with the data given to `Page::display($terminal, $data)`:
 
 | Syntax | Meaning |
 |---|---|
@@ -164,7 +167,7 @@ Codes to send as they are have names: `Vdt\Videotex` for Videotex (`CLEAR_LINE`,
 configuring the Minitel, typically sent before a page:
 
 ```php
-$vdt = Protocol::KEYBOARD_LOWERCASE . Protocol::LOCAL_ECHO_OFF . Protocol::SCROLL_OFF . $page->display();
+$vdt = Protocol::KEYBOARD_LOWERCASE . Protocol::LOCAL_ECHO_OFF . Protocol::SCROLL_OFF . $page->display($request->terminal());
 ```
 
 They replace MiniPaviCli's global `VDT_*` and `PRO_*` constants, which are only defined once
