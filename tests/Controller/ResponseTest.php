@@ -13,6 +13,7 @@ use MiniPaviService\Controller\Response\DisplayPage;
 use MiniPaviService\Controller\Response\RunCommand;
 use MiniPaviService\Controller\Response\RunExternalService;
 use MiniPaviService\MiniPaviClient;
+use MiniPaviService\Page\InputCommand;
 use PHPUnit\Framework\TestCase;
 
 final class ResponseTest extends TestCase
@@ -50,7 +51,7 @@ final class ResponseTest extends TestCase
 
     public function testReadInputSendsTheCommand(): void
     {
-        $command = ['COMMAND' => ['name' => 'InputTxt', 'param' => ['x' => 1]]];
+        $command = new InputCommand(['COMMAND' => ['name' => 'InputTxt', 'param' => ['x' => 1]]]);
         $response = Response::readInput('Code ?', $command, parameters: ['page' => 2]);
 
         self::assertInstanceOf(RunCommand::class, $response);
@@ -58,12 +59,12 @@ final class ResponseTest extends TestCase
         self::assertSame(['page' => 2], $response->parameters());
         $answer = $this->answer($response);
         self::assertSame('Code ?', self::content($answer));
-        self::assertSame($command['COMMAND'], $answer['COMMAND']);
+        self::assertSame(['name' => 'InputTxt', 'param' => ['x' => 1]], $answer['COMMAND']);
     }
 
     public function testReadInputWithoutCommandOnlySendsTheContent(): void
     {
-        // Page::readInput() gives null for a page without <input>
+        // Page::inputCommand() gives null for a page without <input>
         $answer = $this->answer(Response::readInput('Hello', null));
 
         self::assertSame('Hello', self::content($answer));

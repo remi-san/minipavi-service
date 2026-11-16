@@ -160,20 +160,20 @@ final class PageXmlParserTest extends TestCase
         $page->display(['row' => 30]);
     }
 
-    public function testReadInputBuildsTheInputCommand(): void
+    public function testInputCommandReadsTheInputField(): void
     {
         $oneLine = $this->parse('<page type="static"><input row="20" col="5" length="10" lines="1" validwith="envoi suite"/></page>');
         $twoLines = $this->parse('<page type="static"><input/></page>');
 
         self::assertSame(
             ['name' => 'InputTxt', 'param' => ['x' => 5, 'y' => 20, 'l' => 10, 'char' => '', 'spacechar' => '.', 'prefill' => 'abc', 'cursor' => 'on', 'validwith' => FunctionKey::masks(FunctionKey::Send, FunctionKey::Next)]],
-            $oneLine->readInput(['abc'])['COMMAND'] ?? null,
+            $oneLine->inputCommand(['abc'])?->toArray()['COMMAND'] ?? null,
         );
         self::assertSame(
             ['name' => 'InputMsg', 'param' => ['x' => 1, 'y' => 13, 'w' => 40, 'h' => 2, 'spacechar' => '.', 'prefill' => [], 'cursor' => 'on', 'validwith' => FunctionKey::Send->mask()]],
-            $twoLines->readInput()['COMMAND'] ?? null,
+            $twoLines->inputCommand()?->toArray()['COMMAND'] ?? null,
         );
-        self::assertNull($this->parse('<page type="static"/>')->readInput());
+        self::assertNull($this->parse('<page type="static"/>')->inputCommand());
     }
 
     public function testParseFileReadsFilesFromTheFolderOfThePage(): void

@@ -48,13 +48,12 @@ final readonly class Input
      * between the lines instead
      *
      * @param string[] $prefill text of the field, one string per line
-     * @return array<string, mixed>
      */
-    public function toCommand(MiniPaviClient $client, array $prefill = []): array
+    public function toCommand(MiniPaviClient $client, array $prefill = []): InputCommand
     {
         if ($this->lines == 1) {
-            return $client->createInputTxtCmd($this->col, $this->row, $this->length, FunctionKey::masks(...$this->validWith), $this->cursor, $this->spaceChar, '', (string) ($prefill[0] ?? ''));
+            return new InputCommand($client->createInputTxtCmd($this->col, $this->row, $this->length, FunctionKey::masks(...$this->validWith), $this->cursor, $this->spaceChar, '', (string) ($prefill[0] ?? '')));
         }
-        return $client->createInputMsgCmd($this->col, $this->row, $this->length, $this->lines, FunctionKey::masks(...$this->validWith), $this->cursor, $this->spaceChar, $prefill);
+        return new InputCommand($client->createInputMsgCmd($this->col, $this->row, $this->length, $this->lines, FunctionKey::masks(...$this->validWith), $this->cursor, $this->spaceChar, $prefill));
     }
 }

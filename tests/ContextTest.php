@@ -37,7 +37,7 @@ final class ContextTest extends TestCase
     public function testKeepsStateAndParametersPerRoute(): void
     {
         $context = new Context('home');
-        $context->update(new RunCommand(Controller::STATE_READ_INPUT, ['page' => 2], null, []));
+        $context->update(new RunCommand(Controller::STATE_READ_INPUT, ['page' => 2], null, null));
         $context->changeRoute('directory');
 
         self::assertSame(Controller::STATE_INIT, $context->state());

@@ -11,6 +11,7 @@ use MiniPaviService\Controller\Response\DisplayPage;
 use MiniPaviService\Controller\Response\RunCommand;
 use MiniPaviService\Controller\Response\RunExternalService;
 use MiniPaviService\MiniPaviClient;
+use MiniPaviService\Page\InputCommand;
 
 /**
  * What a controller returns: what to do now (execute()), and the state and parameters it
@@ -41,13 +42,12 @@ abstract readonly class Response
     }
 
     /**
-     * Sends Videotex content and an input command (Page::readInput(); null for a page
+     * Sends Videotex content and an input command (Page::inputCommand(); null for a page
      * without input: only the content is sent); what is typed comes back to this controller
      *
-     * @param ?array<string, mixed> $command
      * @param array<string, mixed> $parameters
      */
-    public static function readInput(string $vdt, ?array $command, string $state = Controller::STATE_READ_INPUT, array $parameters = []): RunCommand
+    public static function readInput(string $vdt, ?InputCommand $command, string $state = Controller::STATE_READ_INPUT, array $parameters = []): RunCommand
     {
         return new RunCommand($state, $parameters, $vdt, $command);
     }
