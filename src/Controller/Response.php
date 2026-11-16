@@ -72,7 +72,7 @@ abstract readonly class Response
      */
     public static function connectTo(string $url, string $vdt = '', string $state = Controller::STATE_INIT, array $parameters = []): RunExternalService
     {
-        return new RunExternalService($state, $parameters, $vdt, $url, RunExternalService::CALL_MODE_CONNECT);
+        return new RunExternalService($state, $parameters, $vdt, $url, CallMode::Connect);
     }
 
     abstract public function execute(MiniPaviClient $client, Context $context): void;

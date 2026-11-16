@@ -6,6 +6,7 @@ namespace MiniPaviService\Tests\Controller;
 
 use MiniPaviService\Context;
 use MiniPaviService\Controller;
+use MiniPaviService\Controller\CallMode;
 use MiniPaviService\Controller\Response;
 use MiniPaviService\Controller\Response\ChangePage;
 use MiniPaviService\Controller\Response\DisplayPage;
@@ -90,7 +91,18 @@ final class ResponseTest extends TestCase
         $answer = $this->answer($response);
         self::assertSame('Cnx en cours', self::content($answer));
         self::assertSame('https://example.org/service', $answer['next']);
-        self::assertSame(RunExternalService::CALL_MODE_CONNECT, $answer['directcall']);
+        self::assertSame(CallMode::Connect->value, $answer['directcall']);
+    }
+
+    public function testRunExternalServiceTakesACallMode(): void
+    {
+        $direct = new RunExternalService(Controller::STATE_INIT, [], '', 'https://example.org/', CallMode::Direct);
+        // The string values of before still work
+        $connect = new RunExternalService(Controller::STATE_INIT, [], '', 'https://example.org/', RunExternalService::CALL_MODE_CONNECT);
+
+        self::assertSame('yes', $this->answer($direct)['directcall']);
+        self::assertSame(CallMode::Connect, $connect->callMode);
+        self::assertSame('yes-cnx', $this->answer($connect)['directcall']);
     }
 
     public function testStateAndParametersCanBeGiven(): void
