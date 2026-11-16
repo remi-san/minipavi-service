@@ -12,13 +12,14 @@ readonly class DisplayPage implements Response
 {
     use ResponseTrait;
 
+    /**
+     * @param array<string, mixed> $parameters
+     */
     public function __construct(
-        string $state,
-        array $parameters,
+        private string $state,
+        private array $parameters,
         public string $vdt,
-    ) {
-        $this->init($state, $parameters);
-    }
+    ) {}
 
     public function execute(MiniPaviClient $client, Context $context): void
     {

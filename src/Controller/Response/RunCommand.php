@@ -12,14 +12,16 @@ readonly class RunCommand implements Response
 {
     use ResponseTrait;
 
+    /**
+     * @param array<string, mixed> $parameters
+     * @param array<string, mixed> $cmd MiniPavi command, e.g. from Page::readInput()
+     */
     public function __construct(
-        string $state,
-        array $parameters,
+        private string $state,
+        private array $parameters,
         private ?string $vdt,
         private array $cmd,
-    ) {
-        $this->init($state, $parameters);
-    }
+    ) {}
 
     public function execute(MiniPaviClient $client, Context $context): void
     {

@@ -14,15 +14,16 @@ readonly class RunExternalService implements Response
 
     public const CALL_MODE_CONNECT = 'yes-cnx';
 
+    /**
+     * @param array<string, mixed> $parameters
+     */
     public function __construct(
-        string $state,
-        array $parameters,
+        private string $state,
+        private array $parameters,
         public string $vdt,
         public string $url,
         public string $callMode,
-    ) {
-        $this->init($state, $parameters);
-    }
+    ) {}
 
     public function execute(MiniPaviClient $client, Context $context): void
     {

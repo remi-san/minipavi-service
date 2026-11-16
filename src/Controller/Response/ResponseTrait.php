@@ -4,24 +4,19 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Controller\Response;
 
+/**
+ * Getters of Response, for the responses that have $state and $parameters properties
+ */
 trait ResponseTrait
 {
-    private readonly string $state;
-    private readonly array $parameters;
-
-    public function init(
-        string $state,
-        array $parameters,
-    ): void {
-        $this->state = $state;
-        $this->parameters = $parameters;
-    }
-
     public function state(): string
     {
         return $this->state;
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function parameters(): array
     {
         return $this->parameters;

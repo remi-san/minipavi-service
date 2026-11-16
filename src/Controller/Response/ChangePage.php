@@ -12,13 +12,14 @@ readonly class ChangePage implements Response
 {
     use ResponseTrait;
 
+    /**
+     * @param array<string, mixed> $parameters
+     */
     public function __construct(
-        string $state,
-        array $parameters,
+        private string $state,
+        private array $parameters,
         private string $route,
-    ) {
-        $this->init($state, $parameters);
-    }
+    ) {}
 
     public function execute(MiniPaviClient $client, Context $context): void
     {
