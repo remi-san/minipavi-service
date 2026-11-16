@@ -139,4 +139,15 @@ PHP-CS-Fixer (configuration in `.php-cs-fixer.dist.php`):
 composer install    # once, in this folder: development tools in vendor/
 composer cs         # checks the style, showing what would change
 composer cs-fix     # fixes it
+composer analyse    # static analysis (PHPStan, phpstan.dist.neon)
+composer test       # tests (PHPUnit, tests/)
 ```
+
+Tests are in `tests/`, with their files in `tests/fixtures/`. Pages are checked through the
+screen they draw (`Screen::preview()`). `Vdt::offset()` is checked in two ways: against the
+property that the moved screen is the original one moved, and byte for byte against golden
+files (`tests/fixtures/vdt/*.offset_*.vdt`). Run `UPDATE_GOLDEN=1 composer test` to rewrite
+the golden files after an intended change.
+
+GitHub Actions runs the three checks on PHP 8.2, 8.3 and 8.4 for every change to the
+framework.
