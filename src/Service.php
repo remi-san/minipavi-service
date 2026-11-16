@@ -4,28 +4,43 @@ declare(strict_types=1);
 
 namespace MiniPaviService;
 
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
+
+/**
+ * Serves a request of the gateway: restores the context, and runs the controller of its route
+ * until a response answers the gateway
+ */
 final class Service
 {
+    private LoggerInterface $logger;
+
+    /**
+     * @param ?LoggerInterface $logger where connections and disconnections are logged; none by
+     *                                 default
+     */
     public function __construct(
         private MiniPaviClient $client,
         private Router $router,
-    ) {}
+        ?LoggerInterface $logger = null,
+    ) {
+        $this->logger = $logger ?? new NullLogger();
+    }
 
     public function run(): void
     {
-
         $this->client->start();
 
         if ($this->client->isConnecting()) {
             $context = new Context($this->router->defaultRoute());
             $this->client->clearContent();
-            trigger_error("[MiniPaviService] CNX");
+            $this->logger->info('Connection', ['fctn' => $this->client->fctn()]);
         } else {
             $context = Context::unserialize($this->client->context(), $this->router->defaultRoute());
         }
 
         if ($this->client->isDisconnecting()) {
-            trigger_error("[MiniPaviService] DECO");
+            $this->logger->info('Disconnection');
             return;
         }
 

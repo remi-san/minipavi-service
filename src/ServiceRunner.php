@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace MiniPaviService;
 
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
+
 /**
  * Runs the service for the requests of a MiniPavi gateway, and sends browsers to an emulator
  * that opens the service through a gateway: by default the one of EmulatorConfig::init(), from
@@ -15,16 +18,22 @@ final class ServiceRunner
 
     private RequestUrl $url;
 
+    private LoggerInterface $logger;
+
     /**
      * @param ?RequestUrl $url URLs of the service, by default from the environment
+     * @param ?LoggerInterface $logger where browsers sent to the emulator are logged; none
+     *                                 by default
      */
     public function __construct(
         private Service $service,
         ?EmulatorConfig $emulator = null,
         ?RequestUrl $url = null,
+        ?LoggerInterface $logger = null,
     ) {
         $this->emulator = $emulator ?? EmulatorConfig::init();
         $this->url = $url ?? RequestUrl::fromEnvironment();
+        $this->logger = $logger ?? new NullLogger();
     }
 
     /**
@@ -43,6 +52,8 @@ final class ServiceRunner
 
     private function redirectBrowser(): void
     {
-        header('Location: ' . $this->emulator->getEmulatorUrl($this->url->current()));
+        $url = $this->emulator->getEmulatorUrl($this->url->current());
+        $this->logger->info('Browser sent to the emulator', ['url' => $url]);
+        header('Location: ' . $url);
     }
 }
