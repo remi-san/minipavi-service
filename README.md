@@ -78,7 +78,7 @@ $router->setDefaultRoute(HomeController::NAME);
   | Response | Effect | State kept by default |
   |---|---|---|
   | `Response::display($vdt)` | sends Videotex content to the gateway; the next key comes back to this controller | `STATE_READ_INPUT` |
-  | `Response::readInput($vdt, $command)` | sends content and an input command (`Page::readInput()`) to the gateway | `STATE_READ_INPUT` |
+  | `Response::readInput($vdt, $command)` | sends content and the command reading the page's input field (`Page::inputCommand()`) to the gateway | `STATE_READ_INPUT` |
   | `Response::goTo($route)` | switches to another controller, and runs it at once | `STATE_INIT` |
   | `Response::connectTo($url, $vdt)` | sends the user to another service, as a new connection (`CallMode::Connect`) | `STATE_INIT` |
 
@@ -101,7 +101,7 @@ $router->setDefaultRoute(HomeController::NAME);
       // Shows the screen (onInit() and onInitInput() do the same, unless overridden)
       protected function onDisplay(Request $request): Response
       {
-          return Response::readInput($this->page->display(), $this->page->readInput());
+          return Response::readInput($this->page->display(), $this->page->inputCommand());
       }
 
       // Handles the key pressed and what was typed
@@ -111,7 +111,7 @@ $router->setDefaultRoute(HomeController::NAME);
               return Response::goTo('help');
           }
 
-          return Response::readInput(VdtHelper::writeLine0('Unknown code'), $this->page->readInput());
+          return Response::readInput(VdtHelper::writeLine0('Unknown code'), $this->page->inputCommand());
       }
   }
   ```
@@ -136,7 +136,7 @@ elements are drawn in order:
 | `<line row col length char color/>` | horizontal line; `char`: top (`_`), middle (`` ` ``), bottom (`~`) or any character |
 | `<key row col color bg>Envoi</key>` | function key badge, in reverse video (`bg`: around it) |
 | `<endkey row color/>` | "Connexion/fin" hint, with "[Maj] +" for ESP32/Minimit adapters |
-| `<input row col length lines validwith/>` | input field read by `Page::readInput()` (default: row 13, 2 lines, to the end of the row) |
+| `<input row col length lines validwith/>` | input field read by `Page::inputCommand()` (default: row 13, 2 lines, to the end of the row) |
 
 - `validwith`: keys validating the input, separated by spaces (default `envoi`): envoi, sommaire,
   annulation, retour, repetition, guide, correction, suite (`FunctionKey::xmlName()`). A one-line field is a text input
@@ -154,6 +154,18 @@ instructions, filled in with the data given to `Page::display($data)`:
 | `<if test="!loop.last">…</if>` | … or only if it is not |
 
 ## Videotex content
+
+Codes to send as they are have names: `Vdt\Videotex` for Videotex (`CLEAR_LINE`,
+`CURSOR_OFF`, `INVERSE_ON`, sizes, `RESET_CHARSETS`...), and `Vdt\Protocol` for the sequences
+configuring the Minitel, typically sent before a page:
+
+```php
+$vdt = Protocol::KEYBOARD_LOWERCASE . Protocol::LOCAL_ECHO_OFF . Protocol::SCROLL_OFF . $page->display();
+```
+
+They replace MiniPaviCli's global `VDT_*` and `PRO_*` constants, which are only defined once
+`MiniPaviCli` is loaded. `VdtHelper` gives MiniPaviCli's Videotex helpers (`setPos()`,
+`writeLine0()`, `toG2()`...).
 
 `MiniPaviService\Vdt\Vdt` reads Videotex content, from a string or a `.vdt` file, and moves
 it on the screen; `<image>` uses it.
