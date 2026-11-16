@@ -31,20 +31,36 @@ In Docker, the framework and the service keep the repository's layout (`/app/fra
 `public/index.php` builds the pages and controllers, and hands them to the service:
 
 ```php
-use MiniPaviService\{MiniPaviClient, Router, Service, ServiceRunner};
+use MiniPaviService\{ErrorLogLogger, MiniPaviClient, Router, Service, ServiceRunner};
 use MiniPaviService\Page\Parser\PageXmlParser;
 
 require __DIR__.'/../vendor/autoload.php';
 
-$client = new MiniPaviClient();
-$pages = new PageXmlParser();
-
 $router = new Router();
-$router->addRoute(HomeController::NAME, new HomeController($pages->parseFile(__DIR__.'/../config/pages/home.xml')));
+$router->addRoute(HomeController::NAME, new HomeController((new PageXmlParser())->parseFile(__DIR__.'/../config/pages/home.xml')));
 $router->setDefaultRoute(HomeController::NAME);
 
-(new ServiceRunner(new Service($client, $router)))->run();
+$logger = new ErrorLogLogger();
+
+(new ServiceRunner(new Service(new MiniPaviClient(), $router, $logger), logger: $logger))->run();
 ```
+
+- **Lazy controllers:** a service with many screens shouldn't build every controller, and parse
+  every page, on each request. With a dependency injection container such as PHP-DI, define
+  the controllers as lazy: the router gets proxies, and a controller is only built when its
+  route runs (PHP 8.4's native lazy objects, which keep controllers `final`). See
+  `services/*/public/index.php`:
+
+  ```php
+  $container = (new ContainerBuilder())->addDefinitions([
+      'page.home' => factory([PageXmlParser::class, 'parseFile'])->parameter('file', "$config/pages/home.xml"),
+      'controller.home' => create(HomeController::class)->constructor(get('page.home'))->lazy(),
+      Router::class => create()
+          ->method('addRoute', HomeController::NAME, get('controller.home'))
+          ->method('setDefaultRoute', HomeController::NAME),
+  ])->build();
+  $router = $container->get(Router::class);
+  ```
 
 - **`ServiceRunner`** runs the service for the gateway, and redirects browsers to an emulator
   that opens the service: with `EMULATOR_URL` set (the local stack), that emulator and the
@@ -69,7 +85,8 @@ $router->setDefaultRoute(HomeController::NAME);
 - **Pages** are displayed for the user's terminal, which `<endkey>` depends on:
   `$page->display($request->terminal(), $data)`; display elements get it too
   (`Element::getContent(Terminal $terminal)`).
-- **Logging:** `Service` and `ServiceRunner` take an optional PSR-3 logger (e.g. Monolog) and
+- **Logging:** `Service` and `ServiceRunner` take an optional PSR-3 logger (e.g. Monolog, or
+  the framework's `ErrorLogLogger`, writing to PHP's error log) and
   log connections, disconnections and browsers sent to the emulator at info level, and errors
   at error level (with the exception):
   `new Service($client, $router, $logger)`, `new ServiceRunner($service, logger: $logger)`.
