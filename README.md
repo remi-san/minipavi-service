@@ -11,6 +11,19 @@ official [`ludosevilla/minipavi-cli`](https://packagist.org/packages/ludosevilla
 
 Requires PHP 8.2.
 
+The code (namespace `MiniPaviService`, in `src/`) is organized by layer:
+
+| Namespace | Holds |
+|---|---|
+| `MiniPaviService` | the `Controller` and `Page` interfaces |
+| `Core\` | the runtime: `Service`, `Context`, `Router`, and the values `Terminal` and `FunctionKey` |
+| `Controller\` | `AbstractController`, `Request`, `Response` and the response types |
+| `Page\` | static and template pages, their display elements, and the page XML parser |
+| `Vdt\` | Videotex codes, reading and moving Videotex content |
+| `Gateway\` | `MiniPaviClient`, the client of the MiniPavi gateway |
+| `Http\` | the entry point for the web server: `ServiceRunner`, `RequestUrl`, `EmulatorConfig`, `ServerVariable` |
+| `Log\` | `ErrorLogLogger` |
+
 ## Installing
 
 From a service in this repository, as a `path` repository (Composer symlinks it into `vendor/`,
@@ -31,7 +44,10 @@ In Docker, the framework and the service keep the repository's layout (`/app/fra
 `public/index.php` builds the pages and controllers, and hands them to the service:
 
 ```php
-use MiniPaviService\{ErrorLogLogger, MiniPaviClient, Router, Service, ServiceRunner};
+use MiniPaviService\Core\{Router, Service};
+use MiniPaviService\Gateway\MiniPaviClient;
+use MiniPaviService\Http\ServiceRunner;
+use MiniPaviService\Log\ErrorLogLogger;
 use MiniPaviService\Page\Parser\PageXmlParser;
 
 require __DIR__.'/../vendor/autoload.php';
