@@ -62,11 +62,16 @@ $router->setDefaultRoute(HomeController::NAME);
   the current route until a response is sent to the gateway. A context without route, or
   whose route the service doesn't have (e.g. removed in a new version), starts again at the
   default route.
+  If serving a request fails (an exception or a PHP error, in a controller, a template, the
+  context...), the error is logged, and the user gets a message on line 0 (`$errorMessage` of
+  the constructor, by default `Service::ERROR_MESSAGE`): their next function key starts again
+  at the default route.
 - **Pages** are displayed for the user's terminal, which `<endkey>` depends on:
   `$page->display($request->terminal(), $data)`; display elements get it too
   (`Element::getContent(Terminal $terminal)`).
 - **Logging:** `Service` and `ServiceRunner` take an optional PSR-3 logger (e.g. Monolog) and
-  log connections, disconnections and browsers sent to the emulator, at info level:
+  log connections, disconnections and browsers sent to the emulator at info level, and errors
+  at error level (with the exception):
   `new Service($client, $router, $logger)`, `new ServiceRunner($service, logger: $logger)`.
   Without one, nothing is logged.
 - **A `Controller`** runs on a `Request` and returns a `Response`. The request gives:
