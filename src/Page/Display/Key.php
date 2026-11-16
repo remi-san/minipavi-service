@@ -12,6 +12,10 @@ use MiniPaviService\Vdt\VdtHelper;
  */
 final readonly class Key implements Element
 {
+    /**
+     * @param ?Color $bg background around the badge, e.g. to draw it on a colored bar; it applies
+     * from the badge's first character, a space
+     */
     public function __construct(
         public string $label,
         public int $row,
@@ -22,10 +26,6 @@ final readonly class Key implements Element
         Position::check($row, $col);
     }
 
-    /**
-     * @param ?Color $bg background around the badge, e.g. to draw it on a colored bar; it applies
-     * from the badge's first character, a space
-     */
     public function getContent(MiniPaviClient $client): string
     {
         return VdtHelper::setPos($this->col, $this->row) . ($this->bg?->background() ?? '') . self::badge($client, $this->label, $this->color);
