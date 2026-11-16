@@ -26,7 +26,7 @@ final class PageXmlParser {
 	}
 
 	/*****************
-	*** Page from a file; <background> files are read from the same folder
+	*** Page from a file; <background> and <image> files are read from the same folder
 	******************/
 
 	public function parseFile(string $file): Page {
@@ -38,7 +38,7 @@ final class PageXmlParser {
 
 	/*****************
 	*** Page from XML content
-	*** baseDir: folder of the <background> files
+	*** baseDir: folder of the <background> and <image> files
 	*** name: shown in error messages
 	******************/
 

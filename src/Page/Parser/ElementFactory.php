@@ -3,7 +3,8 @@
 namespace MiniPaviService\Page\Parser;
 
 use MiniPaviService\Page\Input;
-use MiniPaviService\Page\Display\{Element, Text, Line, Key, EndKey, Background, Color, Size};
+use MiniPaviService\Page\Display\{Element, Text, Line, Key, EndKey, Background, Image, Color, Size};
+use MiniPaviService\Vdt\Vdt;
 
 /**
  * Builds display elements and inputs from the attributes and text of the page XML
@@ -15,7 +16,7 @@ use MiniPaviService\Page\Display\{Element, Text, Line, Key, EndKey, Background, 
 final class ElementFactory {
 
 	// Tags of the display elements
-	public const TAGS = array('background','text','line','key','endkey');
+	public const TAGS = array('background','image','text','line','key','endkey');
 
 	// Keys for the validwith attribute of <input>, separated by spaces
 	private const KEYS = array(
@@ -26,8 +27,11 @@ final class ElementFactory {
 
 	private const LINE_CHARS = array('top'=>Line::TOP, 'middle'=>Line::MIDDLE, 'bottom'=>Line::BOTTOM);
 
+	// Pictures of <image>, by file, read once: templates build their elements on each display
+	private array $images = array();
+
 	/*****************
-	*** baseDir: folder of the <background> files
+	*** baseDir: folder of the <background> and <image> files (and their subfolders)
 	******************/
 
 	public function __construct(
@@ -43,8 +47,12 @@ final class ElementFactory {
 
 	public function element(string $tag, array $attributes, string $text): Element {
 		return match ($tag) {
-			// basename(): only files from the page's folder
-			'background' => Background::fromFile($this->baseDir.'/'.basename(trim($text))),
+			'background' => Background::fromFile($this->file($text)),
+			'image' => new Image(
+				$this->image(trim($text)),
+				row: $this->int($attributes,'row',1),
+				col: $this->int($attributes,'col',1),
+			),
 			'text' => new Text(
 				$text,
 				row: $this->int($attributes,'row',1),
@@ -75,6 +83,30 @@ final class ElementFactory {
 			),
 			default => throw new PageXmlException('unknown element'),
 		};
+	}
+
+	/*****************
+	*** Picture of an <image>
+	******************/
+
+	private function image(string $file): Vdt {
+		$file = $this->file($file);
+		return $this->images[$file] ??= Vdt::fromFile($file);
+	}
+
+	/*****************
+	*** Path of a <background> or <image> file, relative to the page's folder: only files
+	*** from that folder or its subfolders (e.g. images/logo.vdt), since in a template the
+	*** file name may come from the data
+	******************/
+
+	private function file(string $path): string {
+		$path = trim($path);
+		if ($path === '')
+			throw new PageXmlException('the file is missing');
+		if (str_starts_with($path,'/') || in_array('..',explode('/',str_replace('\\','/',$path)),true))
+			throw new PageXmlException("$path: only files from the page's folder or its subfolders");
+		return $this->baseDir.'/'.$path;
 	}
 
 	public function input(array $attributes): Input {

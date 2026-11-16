@@ -5,7 +5,7 @@ namespace MiniPaviService\Page\Template;
 use MiniPaviService\Page\Parser\{ElementFactory, PageXmlException};
 
 /**
- * Display element of a template (<text>, <line>, <key>, <endkey>, <background>),
+ * Display element of a template (<text>, <line>, <key>, <endkey>, <background>, <image>),
  * whose text and attributes may contain {{placeholders}}
  */
 final readonly class ElementNode implements Node {
