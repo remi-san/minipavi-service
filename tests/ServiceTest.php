@@ -41,6 +41,9 @@ final class ServiceTest extends TestCase
             ? Response::display('code ' . $request->contentAsString())
             : Response::display('directory', parameters: ['page' => 2])));
         $this->router->addRoute('broken', $this->controller('broken', fn(Request $request) => throw new \RuntimeException('Template data missing')));
+        // Two controllers changing to each other
+        $this->router->addRoute('ping', $this->controller('ping', fn(Request $request) => Response::goTo('pong')));
+        $this->router->addRoute('pong', $this->controller('pong', fn(Request $request) => Response::goTo('ping')));
         $this->router->setDefaultRoute('menu');
     }
 
@@ -149,6 +152,25 @@ final class ServiceTest extends TestCase
         MiniPaviCli::$context = 'not a context';
 
         self::assertSame(VdtHelper::writeLine0('Oops'), $this->contentOf($this->handle('Oops')));
+    }
+
+    public function testEndlessPageChangesAreStopped(): void
+    {
+        $context = new Context('ping');
+
+        $this->expectException(\LogicException::class);
+        $this->expectExceptionMessage('Too many page changes in one request (more than 10): ping → pong → ping → pong → ping → pong → ping → pong → ping → pong → ping → pong');
+
+        $this->serve($context, 'ENVOI', []);
+    }
+
+    public function testEndlessPageChangesAreAnsweredAsAnError(): void
+    {
+        MiniPaviCli::$fctn = 'ENVOI';
+        MiniPaviCli::$context = '{"route":"ping","states":{},"parameters":{}}';
+
+        self::assertSame(VdtHelper::writeLine0(Service::ERROR_MESSAGE), $this->contentOf($this->handle()));
+        self::assertCount(Service::MAX_PAGE_CHANGES + 1, array_merge($this->requests['ping'], $this->requests['pong']));
     }
 
     public function testChangePageStartsTheTargetAtInitWithoutTheInput(): void

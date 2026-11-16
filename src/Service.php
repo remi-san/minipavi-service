@@ -18,6 +18,10 @@ final class Service
     // Shown on line 0 when a request fails; any function key then leads to the default route
     public const ERROR_MESSAGE = 'Erreur ! Sommaire pour revenir';
 
+    // Page changes (ChangePage) allowed in one request: more is taken as controllers changing
+    // to each other endlessly
+    public const MAX_PAGE_CHANGES = 10;
+
     private LoggerInterface $logger;
 
     /**
@@ -99,6 +103,8 @@ final class Service
      * the controllers it changes to, until a response answers the gateway. A context whose
      * route is unknown starts again at the default route.
      *
+     * @throws \LogicException after more than MAX_PAGE_CHANGES page changes
+     *
      * @param list<string> $content
      */
     public function serve(Context $context, string $key, array $content, Terminal $terminal): void
@@ -112,6 +118,7 @@ final class Service
             $content = [];
         }
 
+        $routes = [$context->route()];
         while (true) {
             $controller = $this->router->route($context->route());
             $response = $controller->run($context->getRequest($key, $content, $terminal));
@@ -126,6 +133,11 @@ final class Service
             // The next controller didn't get the input: it was for this one
             $key = '';
             $content = [];
+
+            $routes[] = $context->route();
+            if (\count($routes) > self::MAX_PAGE_CHANGES + 1) {
+                throw new \LogicException('Too many page changes in one request (more than ' . self::MAX_PAGE_CHANGES . '): ' . implode(' → ', $routes));
+            }
         }
     }
 }
