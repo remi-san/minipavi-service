@@ -17,6 +17,17 @@ final class MiniPaviClient
     public const FCTN_DIRECT_CONNECT = 'DIRECTCNX';
     public const FCTN_DISCONNECT = 'FIN';
 
+    private RequestUrl $url;
+
+    /**
+     * @param ?RequestUrl $url URLs of the service, by default from the environment
+     *                         (RequestUrl::fromEnvironment())
+     */
+    public function __construct(?RequestUrl $url = null)
+    {
+        $this->url = $url ?? RequestUrl::fromEnvironment();
+    }
+
     // Request of the gateway
 
     // Reads the request of the gateway
@@ -95,7 +106,7 @@ final class MiniPaviClient
      */
     public function send(string $vdt, ?string $next, Context $context, bool $echo = true, ?array $cmd = null, bool|string $directCall = false): void
     {
-        MiniPaviCli::send($vdt, $next ?? $this->serviceUri(), $context->serialize(), $echo, $cmd, $directCall);
+        MiniPaviCli::send($vdt, $next ?? $this->url->script(), $context->serialize(), $echo, $cmd, $directCall);
     }
 
     /**
@@ -134,27 +145,5 @@ final class MiniPaviClient
     private static function textOrNull(mixed $value): ?string
     {
         return \is_scalar($value) ? (string) $value : null;
-    }
-
-    private function serviceUri(): string
-    {
-        return $this->protocol() . '://' . ServerVariable::get('HTTP_HOST') . ServerVariable::get('PHP_SELF');
-    }
-
-    private function protocol(): string
-    {
-        if (ServerVariable::isOn('HTTPS')) {
-            return 'https';
-        }
-        if (strtolower(ServerVariable::get('HTTP_X_FORWARDED_PROTO')) === 'https') {
-            return 'https';
-        }
-        if (ServerVariable::isOn('HTTP_FRONT_END_HTTPS')) {
-            return 'https';
-        }
-        if ((int) ServerVariable::get('SERVER_PORT') === 443) {
-            return 'https';
-        }
-        return 'http';
     }
 }

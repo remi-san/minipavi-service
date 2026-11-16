@@ -13,11 +13,18 @@ final class ServiceRunner
 {
     private EmulatorConfig $emulator;
 
+    private RequestUrl $url;
+
+    /**
+     * @param ?RequestUrl $url URLs of the service, by default from the environment
+     */
     public function __construct(
         private Service $service,
         ?EmulatorConfig $emulator = null,
+        ?RequestUrl $url = null,
     ) {
         $this->emulator = $emulator ?? EmulatorConfig::init();
+        $this->url = $url ?? RequestUrl::fromEnvironment();
     }
 
     public function run(): void
@@ -36,19 +43,6 @@ final class ServiceRunner
 
     private function redirectBrowser(): void
     {
-        $serviceUrl = self::scheme() . '://' . ServerVariable::get('HTTP_HOST') . ServerVariable::get('REQUEST_URI');
-        header('Location: ' . $this->emulator->getEmulatorUrl($serviceUrl));
-    }
-
-    // https if the request came over TLS, directly or through a proxy that says so
-    private static function scheme(): string
-    {
-        if (ServerVariable::isOn('HTTPS')) {
-            return 'https';
-        }
-        if (strtolower(ServerVariable::get('HTTP_X_FORWARDED_PROTO')) === 'https') {
-            return 'https';
-        }
-        return 'http';
+        header('Location: ' . $this->emulator->getEmulatorUrl($this->url->current()));
     }
 }
