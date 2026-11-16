@@ -46,8 +46,10 @@ $router->setDefaultRoute(HomeController::NAME);
 (new ServiceRunner(new Service($client, $router)))->run();
 ```
 
-- **`ServiceRunner`** redirects browsers (anything but the gateway) to the local emulator,
-  using `EMULATOR_URL`, `GATEWAY_URL` and `SERVICES_INTERNAL_HOST`, then runs the service.
+- **`ServiceRunner`** runs the service for the gateway, and redirects browsers to an emulator
+  that opens the service: with `EMULATOR_URL` set (the local stack), that emulator and the
+  gateway `GATEWAY_URL`, which reaches the service at `SERVICES_INTERNAL_HOST`; otherwise (a
+  public server), the minipavi.fr emulator and gateway, with the URL the browser asked for.
 - **`Service`** reads the gateway's request, restores the `Context`, and runs the controller of
   the current route until a response is sent to the gateway.
 - **A `Controller`** has a state (`STATE_INIT`, `STATE_DISPLAY`, `STATE_INIT_INPUT`,
