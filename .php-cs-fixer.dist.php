@@ -6,7 +6,7 @@ declare(strict_types=1);
 // composer cs: checks it, composer cs-fix: fixes it.
 
 $finder = (new PhpCsFixer\Finder())
-    ->in(__DIR__ . '/src')
+    ->in([__DIR__ . '/src', __DIR__ . '/tests'])
     ->append([__DIR__ . '/bootstrap.php', __FILE__]);
 
 return (new PhpCsFixer\Config())
