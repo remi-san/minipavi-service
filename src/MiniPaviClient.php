@@ -8,7 +8,8 @@ use MiniPavi\MiniPaviCli;
 
 /**
  * Instance wrapper around the static MiniPaviCli: the request of the gateway (after start()),
- * the answer to it (send()). With VdtHelper, the only classes calling MiniPaviCli.
+ * the answer to it (send()). With VdtHelper (Videotex helpers) and InputCommand (input
+ * commands), the only classes calling MiniPaviCli.
  */
 final class MiniPaviClient
 {
@@ -107,23 +108,6 @@ final class MiniPaviClient
     public function send(string $vdt, ?string $next, Context $context, bool $echo = true, ?array $cmd = null, bool|string $directCall = false): void
     {
         MiniPaviCli::send($vdt, $next ?? $this->url->script(), $context->serialize(), $echo, $cmd, $directCall);
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    public function createInputTxtCmd(int $col, int $row, int $length, int $validWith, bool $cursor, string $spaceChar, string $char = '', string $prefill = ''): array
-    {
-        return MiniPaviCli::createInputTxtCmd($col, $row, $length, $validWith, $cursor, $spaceChar, $char, $prefill);
-    }
-
-    /**
-     * @param string[] $prefill
-     * @return array<string, mixed>
-     */
-    public function createInputMsgCmd(int $col, int $row, int $width, int $height, int $validWith, bool $cursor, string $spaceChar, array $prefill = []): array
-    {
-        return MiniPaviCli::createInputMsgCmd($col, $row, $width, $height, $validWith, $cursor, $spaceChar, $prefill);
     }
 
     /**

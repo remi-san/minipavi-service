@@ -37,6 +37,6 @@ final readonly class StaticPage implements Page
      */
     public function inputCommand(array $prefill = []): ?InputCommand
     {
-        return $this->input?->toCommand($this->client, $prefill);
+        return $this->input?->toCommand($prefill);
     }
 }

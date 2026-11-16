@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace MiniPaviService\Page;
 
 use MiniPaviService\FunctionKey;
-use MiniPaviService\MiniPaviClient;
 use MiniPaviService\Page\Display\Position;
 use MiniPaviService\Vdt\Screen;
 
@@ -49,11 +48,11 @@ final readonly class Input
      *
      * @param string[] $prefill text of the field, one string per line
      */
-    public function toCommand(MiniPaviClient $client, array $prefill = []): InputCommand
+    public function toCommand(array $prefill = []): InputCommand
     {
         if ($this->lines == 1) {
-            return new InputCommand($client->createInputTxtCmd($this->col, $this->row, $this->length, FunctionKey::masks(...$this->validWith), $this->cursor, $this->spaceChar, '', (string) ($prefill[0] ?? '')));
+            return InputCommand::text($this->col, $this->row, $this->length, FunctionKey::masks(...$this->validWith), $this->cursor, $this->spaceChar, (string) ($prefill[0] ?? ''));
         }
-        return new InputCommand($client->createInputMsgCmd($this->col, $this->row, $this->length, $this->lines, FunctionKey::masks(...$this->validWith), $this->cursor, $this->spaceChar, $prefill));
+        return InputCommand::message($this->col, $this->row, $this->length, $this->lines, FunctionKey::masks(...$this->validWith), $this->cursor, $this->spaceChar, $prefill);
     }
 }
