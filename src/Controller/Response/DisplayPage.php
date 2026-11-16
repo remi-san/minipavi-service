@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace MiniPaviService\Controller\Response;
 
 use MiniPaviService\Context;

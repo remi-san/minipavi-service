@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace MiniPaviService;
 
 use MiniPaviService\Controller\Request;

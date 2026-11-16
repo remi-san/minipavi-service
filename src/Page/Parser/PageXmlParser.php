@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace MiniPaviService\Page\Parser;
 
 use MiniPaviService\MiniPaviClient;
@@ -179,7 +181,7 @@ final class PageXmlParser
         try {
             return $check();
         } catch (PageXmlException|\InvalidArgumentException $e) {
-            throw new PageXmlException("$at: <$tag>: " . $e->getMessage(),0,$e);
+            throw new PageXmlException("$at: <$tag>: " . $e->getMessage(), 0, $e);
         }
     }
 }

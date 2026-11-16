@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace MiniPaviService\Page\Parser;
 
 use MiniPaviService\Page\Display\{Background, Color, Element, EndKey, Image, Key, Line, Size, Text};
