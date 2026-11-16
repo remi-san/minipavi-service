@@ -15,6 +15,7 @@ use MiniPaviService\Router;
 use MiniPaviService\Service;
 use MiniPaviService\Terminal;
 use MiniPaviService\Tests\Support\MemoryLogger;
+use MiniPaviService\Vdt\VdtHelper;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LogLevel;
@@ -39,6 +40,7 @@ final class ServiceTest extends TestCase
         $this->router->addRoute('directory', $this->controller('directory', fn(Request $request) => $request->state() === Controller::STATE_READ_INPUT
             ? Response::display('code ' . $request->contentAsString())
             : Response::display('directory', parameters: ['page' => 2])));
+        $this->router->addRoute('broken', $this->controller('broken', fn(Request $request) => throw new \RuntimeException('Template data missing')));
         $this->router->setDefaultRoute('menu');
     }
 
@@ -91,6 +93,62 @@ final class ServiceTest extends TestCase
         MiniPaviCli::$context = '{"route":"directory","states":{"directory":"read-input"},"parameters":{}}';
 
         self::assertSame('code 3615', $this->contentOf($this->handle()));
+    }
+
+    public function testErrorIsLoggedAndAnsweredOnLine0WithANewContext(): void
+    {
+        MiniPaviCli::$fctn = 'ENVOI';
+        MiniPaviCli::$context = '{"route":"broken","states":{"broken":"read-input","menu":"read-input"},"parameters":{}}';
+
+        $output = $this->handle();
+        $answer = $this->answerOf($output);
+
+        self::assertSame(VdtHelper::writeLine0(Service::ERROR_MESSAGE), $this->contentOf($output));
+        self::assertArrayNotHasKey('COMMAND', $answer);
+        self::assertSame('{"route":"menu","states":{},"parameters":{}}', $answer['context']);
+        [[$level, $message, $context]] = $this->logger->records;
+        self::assertSame([LogLevel::ERROR, 'Error serving the request: Template data missing'], [$level, $message]);
+        self::assertInstanceOf(\RuntimeException::class, $context['exception'] ?? null);
+    }
+
+    public function testNextKeyAfterAnErrorShowsTheDefaultRoute(): void
+    {
+        MiniPaviCli::$fctn = 'ENVOI';
+        MiniPaviCli::$context = '{"route":"broken","states":{},"parameters":{}}';
+        $context = $this->answerOf($this->handle())['context'];
+
+        MiniPaviCli::$fctn = 'SOMMAIRE';
+        MiniPaviCli::$context = \is_string($context) ? $context : '';
+
+        self::assertSame('menu', $this->contentOf($this->handle()));
+        self::assertSame(Controller::STATE_INIT, $this->requests['menu'][0]->state());
+    }
+
+    public function testInvalidContextIsAnError(): void
+    {
+        MiniPaviCli::$fctn = 'ENVOI';
+        MiniPaviCli::$context = 'not a context';
+
+        self::assertSame(VdtHelper::writeLine0(Service::ERROR_MESSAGE), $this->contentOf($this->handle()));
+        self::assertSame(LogLevel::ERROR, $this->logger->records[0][0] ?? null);
+    }
+
+    public function testErrorOfTheDefaultRouteIsAnsweredOnce(): void
+    {
+        // On a connection, the default controller fails: no loop, an error answer
+        $this->router->setDefaultRoute('broken');
+        MiniPaviCli::$fctn = 'CNX';
+
+        self::assertSame(VdtHelper::writeLine0(Service::ERROR_MESSAGE), $this->contentOf($this->handle()));
+        self::assertCount(1, $this->requests['broken']);
+    }
+
+    public function testErrorMessageCanBeChanged(): void
+    {
+        MiniPaviCli::$fctn = 'ENVOI';
+        MiniPaviCli::$context = 'not a context';
+
+        self::assertSame(VdtHelper::writeLine0('Oops'), $this->contentOf($this->handle('Oops')));
     }
 
     public function testChangePageStartsTheTargetAtInitWithoutTheInput(): void
@@ -175,14 +233,17 @@ final class ServiceTest extends TestCase
     /**
      * Service::handle() for the request set in MiniPaviCli: the answer sent, '' if none
      */
-    private function handle(): string
+    private function handle(?string $errorMessage = null): string
     {
         $server = $_SERVER;
         $_SERVER['HTTP_HOST'] = 'services';
         $_SERVER['PHP_SELF'] = '/index.php';
         ob_start();
         try {
-            (new Service(new MiniPaviClient(new RequestUrl()), $this->router, $this->logger))->handle();
+            $service = $errorMessage === null
+                ? new Service(new MiniPaviClient(new RequestUrl()), $this->router, $this->logger)
+                : new Service(new MiniPaviClient(new RequestUrl()), $this->router, $this->logger, $errorMessage);
+            $service->handle();
         } finally {
             $output = (string) ob_get_clean();
             $_SERVER = $server;
@@ -196,12 +257,27 @@ final class ServiceTest extends TestCase
      */
     private function contentOf(string $answer): string
     {
-        $answer = json_decode($answer, true);
-        if (!\is_array($answer) || !\is_string($answer['content'] ?? null)) {
-            self::fail('Not an answer');
+        $content = $this->answerOf($answer)['content'] ?? null;
+        if (!\is_string($content)) {
+            self::fail('No content');
         }
 
-        return base64_decode($answer['content']);
+        return base64_decode($content);
+    }
+
+    /**
+     * Answer sent to the gateway, decoded
+     *
+     * @return array<mixed>
+     */
+    private function answerOf(string $answer): array
+    {
+        $answer = json_decode($answer, true);
+        if (!\is_array($answer) || !\is_string($answer['content'] ?? null)) {
+            self::fail('Not an answer: ' . var_export($answer, true));
+        }
+
+        return $answer;
     }
 
     /**

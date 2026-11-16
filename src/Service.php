@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace MiniPaviService;
 
+use MiniPaviService\Controller\Response;
+use MiniPaviService\Vdt\VdtHelper;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 
@@ -13,30 +15,51 @@ use Psr\Log\NullLogger;
  */
 final class Service
 {
+    // Shown on line 0 when a request fails; any function key then leads to the default route
+    public const ERROR_MESSAGE = 'Erreur ! Sommaire pour revenir';
+
     private LoggerInterface $logger;
 
     /**
-     * @param ?LoggerInterface $logger where connections and disconnections are logged; none by
-     *                                 default
+     * @param ?LoggerInterface $logger where connections, disconnections and errors are logged;
+     *                                 none by default
+     * @param string $errorMessage shown on line 0 when a request fails
      */
     public function __construct(
         private MiniPaviClient $client,
         private Router $router,
         ?LoggerInterface $logger = null,
+        private string $errorMessage = self::ERROR_MESSAGE,
     ) {
         $this->logger = $logger ?? new NullLogger();
     }
 
     public function run(): void
     {
-        $this->client->start();
+        try {
+            $this->client->start();
+        } catch (\Throwable $e) {
+            $this->fail($e);
+
+            return;
+        }
         $this->handle();
     }
 
     /**
-     * Serves the request of the gateway read by MiniPaviClient::start()
+     * Serves the request of the gateway read by MiniPaviClient::start(). An error (exception
+     * or PHP error) is logged and answered: see fail()
      */
     public function handle(): void
+    {
+        try {
+            $this->handleRequest();
+        } catch (\Throwable $e) {
+            $this->fail($e);
+        }
+    }
+
+    private function handleRequest(): void
     {
         // Nothing to answer, nor to do with the context, which may be missing
         if ($this->client->isDisconnecting()) {
@@ -53,6 +76,22 @@ final class Service
         }
 
         $this->serve($context, $this->client->fctn(), $this->client->content(), $this->client->terminal());
+    }
+
+    /**
+     * Answers a request that failed: the error message on line 0, with a new context at the
+     * default route, whose controller the user's next function key runs. It is not run now:
+     * if it is the one failing, the user would get the same error again at once.
+     */
+    private function fail(\Throwable $error): void
+    {
+        $this->logger->error('Error serving the request: ' . $error->getMessage(), ['exception' => $error]);
+        try {
+            Response::display(VdtHelper::writeLine0($this->errorMessage))
+                ->execute($this->client, new Context($this->router->defaultRoute()));
+        } catch (\Throwable $e) {
+            $this->logger->critical('Cannot answer the error: ' . $e->getMessage(), ['exception' => $e]);
+        }
     }
 
     /**
