@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace MiniPaviService;
+namespace MiniPaviService\Http;
 
 /**
  * URLs of the service for the current request: the script, given to the gateway as the next

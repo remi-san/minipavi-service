@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace MiniPaviService\Controller;
 
 use MiniPaviService\Controller;
-use MiniPaviService\FunctionKey;
-use MiniPaviService\Terminal;
+use MiniPaviService\Core\FunctionKey;
+use MiniPaviService\Core\Terminal;
 
 /**
  * What a controller runs on: its state and parameters, kept in the context from the previous

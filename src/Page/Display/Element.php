@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Page\Display;
 
-use MiniPaviService\Terminal;
+use MiniPaviService\Core\Terminal;
 
 /**
  * Something drawn on the screen by a Display. The screen is 40 columns x 24 rows,

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MiniPaviService;
 
+use MiniPaviService\Core\Terminal;
 use MiniPaviService\Page\InputCommand;
 
 /**

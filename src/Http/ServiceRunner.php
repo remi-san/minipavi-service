@@ -2,8 +2,9 @@
 
 declare(strict_types=1);
 
-namespace MiniPaviService;
+namespace MiniPaviService\Http;
 
+use MiniPaviService\Core\Service;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 

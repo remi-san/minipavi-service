@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace MiniPaviService\Tests;
+namespace MiniPaviService\Tests\Core;
 
 use MiniPaviService\Controller;
 use MiniPaviService\Controller\Request;
 use MiniPaviService\Controller\Response;
-use MiniPaviService\Router;
+use MiniPaviService\Core\Router;
 use PHPUnit\Framework\TestCase;
 
 final class RouterTest extends TestCase

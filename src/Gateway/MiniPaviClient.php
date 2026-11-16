@@ -2,9 +2,12 @@
 
 declare(strict_types=1);
 
-namespace MiniPaviService;
+namespace MiniPaviService\Gateway;
 
 use MiniPavi\MiniPaviCli;
+use MiniPaviService\Core\Context;
+use MiniPaviService\Core\Terminal;
+use MiniPaviService\Http\RequestUrl;
 
 /**
  * Instance wrapper around the static MiniPaviCli: the request of the gateway (after start()),

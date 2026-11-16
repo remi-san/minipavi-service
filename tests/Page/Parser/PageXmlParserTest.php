@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Tests\Page\Parser;
 
-use MiniPaviService\FunctionKey;
+use MiniPaviService\Core\FunctionKey;
+use MiniPaviService\Core\Terminal;
 use MiniPaviService\Page;
 use MiniPaviService\Page\Parser\PageXmlException;
 use MiniPaviService\Page\Parser\PageXmlParser;
 use MiniPaviService\Page\StaticPage;
 use MiniPaviService\Page\Template\TemplateException;
 use MiniPaviService\Page\TemplatePage;
-use MiniPaviService\Terminal;
 use MiniPaviService\Vdt\Vdt;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;

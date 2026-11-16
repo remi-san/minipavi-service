@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace MiniPaviService\Tests;
+namespace MiniPaviService\Tests\Core;
 
-use MiniPaviService\Context;
 use MiniPaviService\Controller;
 use MiniPaviService\Controller\Response\RunCommand;
-use MiniPaviService\Terminal;
+use MiniPaviService\Core\Context;
+use MiniPaviService\Core\Terminal;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 

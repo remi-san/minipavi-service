@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Controller\Response;
 
-use MiniPaviService\Context;
 use MiniPaviService\Controller\Response;
-use MiniPaviService\MiniPaviClient;
+use MiniPaviService\Core\Context;
+use MiniPaviService\Gateway\MiniPaviClient;
 use MiniPaviService\Page\InputCommand;
 
 final readonly class RunCommand extends Response

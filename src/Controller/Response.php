@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Controller;
 
-use MiniPaviService\Context;
 use MiniPaviService\Controller;
 use MiniPaviService\Controller\Response\ChangePage;
 use MiniPaviService\Controller\Response\DisplayPage;
 use MiniPaviService\Controller\Response\RunCommand;
 use MiniPaviService\Controller\Response\RunExternalService;
-use MiniPaviService\MiniPaviClient;
+use MiniPaviService\Core\Context;
+use MiniPaviService\Gateway\MiniPaviClient;
 use MiniPaviService\Page\InputCommand;
 
 /**

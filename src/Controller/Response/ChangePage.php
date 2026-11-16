@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Controller\Response;
 
-use MiniPaviService\Context;
 use MiniPaviService\Controller;
 use MiniPaviService\Controller\Response;
-use MiniPaviService\MiniPaviClient;
+use MiniPaviService\Core\Context;
+use MiniPaviService\Gateway\MiniPaviClient;
 
 /**
  * Switches to the controller of another route, which runs at once: it starts at STATE_INIT,

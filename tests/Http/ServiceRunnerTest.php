@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace MiniPaviService\Tests;
+namespace MiniPaviService\Tests\Http;
 
-use MiniPaviService\EmulatorConfig;
-use MiniPaviService\MiniPaviClient;
-use MiniPaviService\RequestUrl;
-use MiniPaviService\Router;
-use MiniPaviService\Service;
-use MiniPaviService\ServiceRunner;
+use MiniPaviService\Core\Router;
+use MiniPaviService\Core\Service;
+use MiniPaviService\Gateway\MiniPaviClient;
+use MiniPaviService\Http\EmulatorConfig;
+use MiniPaviService\Http\RequestUrl;
+use MiniPaviService\Http\ServiceRunner;
 use MiniPaviService\Tests\Support\MemoryLogger;
 use PHPUnit\Framework\Attributes\RunInSeparateProcess;
 use PHPUnit\Framework\TestCase;

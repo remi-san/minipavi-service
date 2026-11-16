@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Page\Display;
 
-use MiniPaviService\Terminal;
+use MiniPaviService\Core\Terminal;
 use MiniPaviService\Vdt\VdtHelper;
 use MiniPaviService\Vdt\Videotex;
 

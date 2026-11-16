@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace MiniPaviService\Tests\Vdt;
 
 use MiniPavi\MiniPaviCli;
-use MiniPaviService\EmulatorConfig;
-use MiniPaviService\FunctionKey;
+use MiniPaviService\Core\FunctionKey;
+use MiniPaviService\Http\EmulatorConfig;
 use MiniPaviService\Vdt\Protocol;
 use MiniPaviService\Vdt\Videotex;
 use PHPUnit\Framework\TestCase;

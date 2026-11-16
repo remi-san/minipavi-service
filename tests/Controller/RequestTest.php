@@ -6,9 +6,9 @@ namespace MiniPaviService\Tests\Controller;
 
 use MiniPaviService\Controller;
 use MiniPaviService\Controller\Request;
-use MiniPaviService\FunctionKey;
-use MiniPaviService\MiniPaviClient;
-use MiniPaviService\Terminal;
+use MiniPaviService\Core\FunctionKey;
+use MiniPaviService\Core\Terminal;
+use MiniPaviService\Gateway\MiniPaviClient;
 use PHPUnit\Framework\TestCase;
 
 final class RequestTest extends TestCase

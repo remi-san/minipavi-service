@@ -2,18 +2,18 @@
 
 declare(strict_types=1);
 
-namespace MiniPaviService\Tests;
+namespace MiniPaviService\Tests\Core;
 
 use MiniPavi\MiniPaviCli;
-use MiniPaviService\Context;
 use MiniPaviService\Controller;
 use MiniPaviService\Controller\Request;
 use MiniPaviService\Controller\Response;
-use MiniPaviService\MiniPaviClient;
-use MiniPaviService\RequestUrl;
-use MiniPaviService\Router;
-use MiniPaviService\Service;
-use MiniPaviService\Terminal;
+use MiniPaviService\Core\Context;
+use MiniPaviService\Core\Router;
+use MiniPaviService\Core\Service;
+use MiniPaviService\Core\Terminal;
+use MiniPaviService\Gateway\MiniPaviClient;
+use MiniPaviService\Http\RequestUrl;
 use MiniPaviService\Tests\Support\MemoryLogger;
 use MiniPaviService\Vdt\VdtHelper;
 use PHPUnit\Framework\Attributes\DataProvider;

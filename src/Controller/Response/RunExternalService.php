@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Controller\Response;
 
-use MiniPaviService\Context;
 use MiniPaviService\Controller\CallMode;
 use MiniPaviService\Controller\Response;
-use MiniPaviService\MiniPaviClient;
+use MiniPaviService\Core\Context;
+use MiniPaviService\Gateway\MiniPaviClient;
 
 final readonly class RunExternalService extends Response
 {

@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace MiniPaviService\Tests;
+namespace MiniPaviService\Tests\Http;
 
-use MiniPaviService\RequestUrl;
+use MiniPaviService\Http\RequestUrl;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 

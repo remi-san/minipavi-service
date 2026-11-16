@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace MiniPaviService;
+namespace MiniPaviService\Core;
 
 /**
  * Where the user connects from, as the gateway tells it with each request

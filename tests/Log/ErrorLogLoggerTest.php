@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace MiniPaviService\Tests;
+namespace MiniPaviService\Tests\Log;
 
-use MiniPaviService\ErrorLogLogger;
+use MiniPaviService\Log\ErrorLogLogger;
 use PHPUnit\Framework\TestCase;
 
 final class ErrorLogLoggerTest extends TestCase

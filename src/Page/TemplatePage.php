@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Page;
 
+use MiniPaviService\Core\Terminal;
 use MiniPaviService\Page;
 use MiniPaviService\Page\Display\Display;
 use MiniPaviService\Page\Template\Node;
 use MiniPaviService\Page\Template\Scope;
-use MiniPaviService\Terminal;
 use MiniPaviService\Vdt\VdtHelper;
 use MiniPaviService\Vdt\Videotex;
 

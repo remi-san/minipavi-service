@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace MiniPaviService\Tests;
+namespace MiniPaviService\Tests\Http;
 
-use MiniPaviService\EmulatorConfig;
+use MiniPaviService\Http\EmulatorConfig;
 use PHPUnit\Framework\TestCase;
 
 final class EmulatorConfigTest extends TestCase

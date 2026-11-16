@@ -2,9 +2,10 @@
 
 declare(strict_types=1);
 
-namespace MiniPaviService;
+namespace MiniPaviService\Core;
 
 use MiniPaviService\Controller\Response;
+use MiniPaviService\Gateway\MiniPaviClient;
 use MiniPaviService\Vdt\VdtHelper;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;

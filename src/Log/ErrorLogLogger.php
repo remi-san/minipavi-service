@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace MiniPaviService;
+namespace MiniPaviService\Log;
 
 use Psr\Log\AbstractLogger;
 

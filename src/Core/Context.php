@@ -2,8 +2,9 @@
 
 declare(strict_types=1);
 
-namespace MiniPaviService;
+namespace MiniPaviService\Core;
 
+use MiniPaviService\Controller;
 use MiniPaviService\Controller\Request;
 use MiniPaviService\Controller\Response;
 

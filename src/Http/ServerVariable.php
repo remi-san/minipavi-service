@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace MiniPaviService;
+namespace MiniPaviService\Http;
 
 /**
  * Variables of $_SERVER (headers, host, URI...), as strings

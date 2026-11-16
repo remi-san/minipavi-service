@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace MiniPaviService;
+namespace MiniPaviService\Core;
 
 /**
  * Function keys of the Minitel, by the name the gateway sends (Request::key()), with their

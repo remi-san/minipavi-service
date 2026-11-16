@@ -2,7 +2,9 @@
 
 declare(strict_types=1);
 
-namespace MiniPaviService;
+namespace MiniPaviService\Core;
+
+use MiniPaviService\Controller;
 
 final class Router
 {

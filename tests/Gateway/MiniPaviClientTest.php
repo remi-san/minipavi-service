@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace MiniPaviService\Tests;
+namespace MiniPaviService\Tests\Gateway;
 
 use MiniPavi\MiniPaviCli;
-use MiniPaviService\MiniPaviClient;
-use MiniPaviService\Terminal;
+use MiniPaviService\Core\Terminal;
+use MiniPaviService\Gateway\MiniPaviClient;
 use PHPUnit\Framework\TestCase;
 
 /**
