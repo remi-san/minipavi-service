@@ -28,7 +28,7 @@ final class ServiceRunner
 
     private function check(): void
     {
-        if (!str_contains($_SERVER['HTTP_USER_AGENT'] ?? '', 'MiniPAVI')) {
+        if (!str_contains(ServerVariable::get('HTTP_USER_AGENT'), 'MiniPAVI')) {
             $this->redirectBrowser();
             exit;
         }
@@ -36,17 +36,17 @@ final class ServiceRunner
 
     private function redirectBrowser(): void
     {
-        $serviceUrl = self::scheme() . '://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
+        $serviceUrl = self::scheme() . '://' . ServerVariable::get('HTTP_HOST') . ServerVariable::get('REQUEST_URI');
         header('Location: ' . $this->emulator->getEmulatorUrl($serviceUrl));
     }
 
     // https if the request came over TLS, directly or through a proxy that says so
     private static function scheme(): string
     {
-        if (!empty($_SERVER['HTTPS']) && strtolower($_SERVER['HTTPS']) !== 'off') {
+        if (ServerVariable::isOn('HTTPS')) {
             return 'https';
         }
-        if (strtolower($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https') {
+        if (strtolower(ServerVariable::get('HTTP_X_FORWARDED_PROTO')) === 'https') {
             return 'https';
         }
         return 'http';

@@ -36,9 +36,44 @@ final class Context
 
         return new self(
             \is_string($context['route'] ?? null) ? $context['route'] : $defaultRoute,
-            (array) ($context['states'] ?? []),
-            (array) ($context['parameters'] ?? []),
+            self::validStates($context['states'] ?? []),
+            self::validParameters($context['parameters'] ?? []),
         );
+    }
+
+    /**
+     * States of an unserialized context: route => state, other entries are dropped
+     *
+     * @return array<string, string>
+     */
+    private static function validStates(mixed $states): array
+    {
+        $valid = [];
+        foreach (\is_array($states) ? $states : [] as $route => $state) {
+            if (\is_string($route) && \is_string($state)) {
+                $valid[$route] = $state;
+            }
+        }
+
+        return $valid;
+    }
+
+    /**
+     * Parameters of an unserialized context: route => (name => value), other entries are
+     * dropped
+     *
+     * @return array<string, array<string, mixed>>
+     */
+    private static function validParameters(mixed $parameters): array
+    {
+        $valid = [];
+        foreach (\is_array($parameters) ? $parameters : [] as $route => $values) {
+            if (\is_string($route) && \is_array($values)) {
+                $valid[$route] = array_filter($values, \is_string(...), ARRAY_FILTER_USE_KEY);
+            }
+        }
+
+        return $valid;
     }
 
     public function serialize(): string

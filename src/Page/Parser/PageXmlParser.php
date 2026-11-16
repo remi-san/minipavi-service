@@ -175,6 +175,10 @@ final class PageXmlParser
 
     /**
      * Result of check(), with the location added to its error message
+     *
+     * @template T
+     * @param callable(): T $check
+     * @return T
      */
     private function check(string $at, string $tag, callable $check): mixed
     {

@@ -156,8 +156,11 @@ final class ElementFactory
     }
 
     /**
+     * @template T
      * @param array<string, string> $attributes
-     * @param array<string, mixed> $values value of the attribute => result
+     * @param array<string, T> $values value of the attribute => result
+     * @param T $default
+     * @return T
      */
     private function choice(array $attributes, string $attr, array $values, mixed $default): mixed
     {

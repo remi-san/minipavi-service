@@ -168,9 +168,10 @@ final class PageXmlParserTest extends TestCase
             ['name' => 'InputTxt', 'param' => ['x' => 5, 'y' => 20, 'l' => 10, 'char' => '', 'spacechar' => '.', 'prefill' => 'abc', 'cursor' => 'on', 'validwith' => MSK_ENVOI | MSK_SUITE]],
             $oneLine->readInput(['abc'])['COMMAND'] ?? null,
         );
-        $command = $twoLines->readInput()['COMMAND'] ?? [];
-        self::assertSame('InputMsg', $command['name'] ?? null);
-        self::assertSame([1, 13, 40, 2], [$command['param']['x'], $command['param']['y'], $command['param']['w'], $command['param']['h']]);
+        self::assertSame(
+            ['name' => 'InputMsg', 'param' => ['x' => 1, 'y' => 13, 'w' => 40, 'h' => 2, 'spacechar' => '.', 'prefill' => [], 'cursor' => 'on', 'validwith' => MSK_ENVOI]],
+            $twoLines->readInput()['COMMAND'] ?? null,
+        );
         self::assertNull($this->parse('<page type="static"/>')->readInput());
     }
 

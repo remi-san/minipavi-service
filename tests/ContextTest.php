@@ -71,6 +71,21 @@ final class ContextTest extends TestCase
         self::assertSame(Controller::STATE_INIT, $context->state());
     }
 
+    public function testUnserializeDropsMalformedEntries(): void
+    {
+        $context = Context::unserialize(serialize([
+            'route' => 'home',
+            'states' => ['home' => Controller::STATE_READ_INPUT, 3 => 'display', 'menu' => ['not a state']],
+            'parameters' => ['home' => ['page' => 2, 0 => 'no name'], 'menu' => 'not parameters'],
+        ]), 'home');
+
+        self::assertSame(Controller::STATE_READ_INPUT, $context->state());
+        self::assertSame(['page' => 2], $context->parameters());
+        $context->changeRoute('menu');
+        self::assertSame(Controller::STATE_INIT, $context->state());
+        self::assertSame([], $context->parameters());
+    }
+
     public function testUnserializeRejectsWhatIsNotAContext(): void
     {
         $this->expectException(\RuntimeException::class);

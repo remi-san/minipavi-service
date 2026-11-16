@@ -119,21 +119,21 @@ final class MiniPaviClient
 
     private function serviceUri(): string
     {
-        return $this->protocol() . "://" . $_SERVER['HTTP_HOST'] . "" . $_SERVER['PHP_SELF'];
+        return $this->protocol() . '://' . ServerVariable::get('HTTP_HOST') . ServerVariable::get('PHP_SELF');
     }
 
     private function protocol(): string
     {
-        if (!empty($_SERVER['HTTPS']) && strtolower($_SERVER['HTTPS']) !== 'off') {
+        if (ServerVariable::isOn('HTTPS')) {
             return 'https';
         }
-        if (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower($_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https') {
+        if (strtolower(ServerVariable::get('HTTP_X_FORWARDED_PROTO')) === 'https') {
             return 'https';
         }
-        if (!empty($_SERVER['HTTP_FRONT_END_HTTPS']) && strtolower($_SERVER['HTTP_FRONT_END_HTTPS']) !== 'off') {
+        if (ServerVariable::isOn('HTTP_FRONT_END_HTTPS')) {
             return 'https';
         }
-        if (isset($_SERVER['SERVER_PORT']) && intval($_SERVER['SERVER_PORT']) === 443) {
+        if ((int) ServerVariable::get('SERVER_PORT') === 443) {
             return 'https';
         }
         return 'http';
