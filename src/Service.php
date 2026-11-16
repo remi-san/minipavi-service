@@ -38,17 +38,18 @@ final class Service
      */
     public function handle(): void
     {
+        // Nothing to answer, nor to do with the context, which may be missing
+        if ($this->client->isDisconnecting()) {
+            $this->logger->info('Disconnection');
+            return;
+        }
+
         if ($this->client->isConnecting()) {
             $context = new Context($this->router->defaultRoute());
             $this->client->clearContent();
             $this->logger->info('Connection', ['fctn' => $this->client->fctn()]);
         } else {
             $context = Context::unserialize($this->client->context(), $this->router->defaultRoute());
-        }
-
-        if ($this->client->isDisconnecting()) {
-            $this->logger->info('Disconnection');
-            return;
         }
 
         $this->serve($context, $this->client->fctn(), $this->client->content(), $this->client->terminal());

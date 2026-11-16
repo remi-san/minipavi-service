@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Tests;
 
+use MiniPavi\MiniPaviCli;
 use MiniPaviService\Context;
 use MiniPaviService\Controller;
 use MiniPaviService\Controller\Request;
@@ -14,6 +15,7 @@ use MiniPaviService\Router;
 use MiniPaviService\Service;
 use MiniPaviService\Terminal;
 use MiniPaviService\Tests\Support\MemoryLogger;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LogLevel;
 
@@ -38,6 +40,57 @@ final class ServiceTest extends TestCase
             ? Response::display('code ' . $request->contentAsString())
             : Response::display('directory', parameters: ['page' => 2])));
         $this->router->setDefaultRoute('menu');
+    }
+
+    protected function tearDown(): void
+    {
+        // The request of the gateway, as MiniPaviCli::start() decodes it
+        MiniPaviCli::$fctn = '';
+        MiniPaviCli::$content = [];
+        MiniPaviCli::$context = '';
+    }
+
+    /**
+     * @return iterable<string, array{string}>
+     */
+    public static function contextsOfADisconnection(): iterable
+    {
+        yield 'none' => [''];
+        yield 'invalid' => ['not a context'];
+        yield 'valid' => ['{"route":"directory","states":{},"parameters":{}}'];
+    }
+
+    #[DataProvider('contextsOfADisconnection')]
+    public function testDisconnectionDoesNotReadTheContext(string $context): void
+    {
+        MiniPaviCli::$fctn = 'FIN';
+        MiniPaviCli::$context = $context;
+
+        self::assertSame('', $this->handle());
+        self::assertSame([], $this->requests);
+        self::assertSame([[LogLevel::INFO, 'Disconnection', []]], $this->logger->records);
+    }
+
+    public function testConnectionStartsAtTheDefaultRoute(): void
+    {
+        MiniPaviCli::$fctn = 'CNX';
+        MiniPaviCli::$content = ['typed before'];
+        MiniPaviCli::$context = 'not a context';
+
+        self::assertSame('menu', $this->contentOf($this->handle()));
+        // A new session: at init, and without what was typed before
+        self::assertSame(Controller::STATE_INIT, $this->requests['menu'][0]->state());
+        self::assertSame([], $this->requests['menu'][0]->content());
+        self::assertSame([[LogLevel::INFO, 'Connection', ['fctn' => 'CNX']]], $this->logger->records);
+    }
+
+    public function testKeyRunsTheControllerOfTheContext(): void
+    {
+        MiniPaviCli::$fctn = 'ENVOI';
+        MiniPaviCli::$content = ['36', '15'];
+        MiniPaviCli::$context = '{"route":"directory","states":{"directory":"read-input"},"parameters":{}}';
+
+        self::assertSame('code 3615', $this->contentOf($this->handle()));
     }
 
     public function testChangePageStartsTheTargetAtInitWithoutTheInput(): void
@@ -117,6 +170,38 @@ final class ServiceTest extends TestCase
                 return ($this->run)($request);
             }
         };
+    }
+
+    /**
+     * Service::handle() for the request set in MiniPaviCli: the answer sent, '' if none
+     */
+    private function handle(): string
+    {
+        $server = $_SERVER;
+        $_SERVER['HTTP_HOST'] = 'services';
+        $_SERVER['PHP_SELF'] = '/index.php';
+        ob_start();
+        try {
+            (new Service(new MiniPaviClient(new RequestUrl()), $this->router, $this->logger))->handle();
+        } finally {
+            $output = (string) ob_get_clean();
+            $_SERVER = $server;
+        }
+
+        return $output;
+    }
+
+    /**
+     * Videotex content of an answer
+     */
+    private function contentOf(string $answer): string
+    {
+        $answer = json_decode($answer, true);
+        if (!\is_array($answer) || !\is_string($answer['content'] ?? null)) {
+            self::fail('Not an answer');
+        }
+
+        return base64_decode($answer['content']);
     }
 
     /**
