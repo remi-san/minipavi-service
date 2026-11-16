@@ -32,7 +32,7 @@ so edits to the framework apply without reinstalling):
 ```json
 {
     "repositories": [{ "type": "path", "url": "../../framework" }],
-    "require": { "minipavi-stack/framework": "*@dev" }
+    "require": { "remi-san/minipavi-service": "*@dev" }
 }
 ```
 
