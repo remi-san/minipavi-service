@@ -29,13 +29,33 @@ final class Router
         return isset($this->routes[$name]);
     }
 
+    /**
+     * @throws \LogicException if there is no such route
+     */
     public function route(string $name): Controller
     {
-        return $this->routes[$name] ?? throw new \RuntimeException('route not found');
+        return $this->routes[$name] ?? throw new \LogicException("Unknown route \"$name\" (routes: {$this->names()})");
     }
 
+    /**
+     * Route of new connections
+     *
+     * @throws \LogicException if it was not set, or is not a route
+     */
     public function defaultRoute(): string
     {
-        return $this->defaultRoute ?? throw new \LogicException('No default route: call Router::setDefaultRoute()');
+        if ($this->defaultRoute === null) {
+            throw new \LogicException('No default route: call Router::setDefaultRoute()');
+        }
+        if (!$this->has($this->defaultRoute)) {
+            throw new \LogicException("Default route \"$this->defaultRoute\" is not a route (routes: {$this->names()})");
+        }
+
+        return $this->defaultRoute;
+    }
+
+    private function names(): string
+    {
+        return implode(', ', array_keys($this->routes));
     }
 }

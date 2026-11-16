@@ -33,6 +33,30 @@ final class RouterTest extends TestCase
         (new Router())->defaultRoute();
     }
 
+    public function testDefaultRouteMustBeARoute(): void
+    {
+        $router = new Router();
+        $router->setDefaultRoute('hme');
+        $router->addRoute('home', self::controller());
+        $router->addRoute('menu', self::controller());
+
+        $this->expectException(\LogicException::class);
+        $this->expectExceptionMessage('Default route "hme" is not a route (routes: home, menu)');
+
+        $router->defaultRoute();
+    }
+
+    public function testUnknownRouteIsNamed(): void
+    {
+        $router = new Router();
+        $router->addRoute('home', self::controller());
+
+        $this->expectException(\LogicException::class);
+        $this->expectExceptionMessage('Unknown route "directory" (routes: home)');
+
+        $router->route('directory');
+    }
+
     private static function controller(): Controller
     {
         return new class implements Controller {
