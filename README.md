@@ -50,6 +50,14 @@ $router->setDefaultRoute(HomeController::NAME);
   that opens the service: with `EMULATOR_URL` set (the local stack), that emulator and the
   gateway `GATEWAY_URL`, which reaches the service at `SERVICES_INTERNAL_HOST`; otherwise (a
   public server), the minipavi.fr emulator and gateway, with the URL the browser asked for.
+- **`RequestUrl`** builds the service's URLs for `ServiceRunner` (where browsers come back)
+  and `MiniPaviClient` (the next URL given to the gateway): https when the web server says
+  the request came over TLS (`HTTPS`, port 443). Both read from the environment:
+  - `SERVICE_URL` (e.g. `https://minitel.example.org`): scheme and host to use instead of the
+    request's;
+  - `TRUSTED_PROXIES` (e.g. `10.0.0.1, 172.16.0.0/12`): reverse proxies whose
+    `X-Forwarded-Proto` is believed, when they terminate TLS. From anyone else, the header
+    is ignored.
 - **`Service`** reads the gateway's request, restores the `Context`, and runs the controller of
   the current route until a response is sent to the gateway.
 - **A `Controller`** runs on a `Request` and returns a `Response`. The request gives:
