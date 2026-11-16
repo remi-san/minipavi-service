@@ -113,6 +113,17 @@ final class Context
         return $this->route;
     }
 
+    /**
+     * Starts again at route, as a new connection: without the states and parameters of the
+     * routes
+     */
+    public function restart(string $route): void
+    {
+        $this->route = $route;
+        $this->states = [];
+        $this->parameters = [];
+    }
+
     public function changeRoute(string $route): void
     {
         $this->route = $route;

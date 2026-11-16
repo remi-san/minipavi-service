@@ -49,12 +49,22 @@ final class Service
 
     /**
      * Runs the controller of the context's route on what the user did (key, content), then
-     * the controllers it changes to, until a response answers the gateway
+     * the controllers it changes to, until a response answers the gateway. A context whose
+     * route is unknown starts again at the default route.
      *
      * @param list<string> $content
      */
     public function serve(Context $context, string $key, array $content, Terminal $terminal): void
     {
+        // A route this service doesn't have, e.g. removed in a new version: the input was for
+        // a screen that doesn't exist any more
+        if (!$this->router->has($context->route())) {
+            $this->logger->warning('Unknown route in the context, starting again at the default route', ['route' => $context->route()]);
+            $context->restart($this->router->defaultRoute());
+            $key = '';
+            $content = [];
+        }
+
         while (true) {
             $controller = $this->router->route($context->route());
             $response = $controller->run($context->getRequest($key, $content, $terminal));

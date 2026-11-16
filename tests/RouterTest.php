@@ -20,6 +20,8 @@ final class RouterTest extends TestCase
         $router->setDefaultRoute('home');
 
         self::assertSame($controller, $router->route('home'));
+        self::assertTrue($router->has('home'));
+        self::assertFalse($router->has('menu'));
         self::assertSame('home', $router->defaultRoute());
     }
 

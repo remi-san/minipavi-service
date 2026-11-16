@@ -13,7 +13,9 @@ use MiniPaviService\RequestUrl;
 use MiniPaviService\Router;
 use MiniPaviService\Service;
 use MiniPaviService\Terminal;
+use MiniPaviService\Tests\Support\MemoryLogger;
 use PHPUnit\Framework\TestCase;
+use Psr\Log\LogLevel;
 
 final class ServiceTest extends TestCase
 {
@@ -22,8 +24,11 @@ final class ServiceTest extends TestCase
 
     private Router $router;
 
+    private MemoryLogger $logger;
+
     protected function setUp(): void
     {
+        $this->logger = new MemoryLogger();
         // menu: Envoi goes to the directory; directory: shows its page, reads a code
         $this->router = new Router();
         $this->router->addRoute('menu', $this->controller('menu', fn(Request $request) => $request->key() === 'ENVOI'
@@ -64,6 +69,23 @@ final class ServiceTest extends TestCase
         $context->changeRoute('menu');
         self::assertSame(Controller::STATE_INIT, $context->state());
         self::assertSame([], $context->parameters());
+    }
+
+    public function testUnknownRouteStartsAgainAtTheDefaultRoute(): void
+    {
+        // E.g. a route removed in a new version of the service
+        $context = new Context('removed', ['removed' => Controller::STATE_READ_INPUT, 'directory' => Controller::STATE_READ_INPUT], ['directory' => ['page' => 5]]);
+
+        $answer = $this->serve($context, 'ENVOI', ['1']);
+
+        self::assertSame('menu', base64_decode($answer));
+        $menu = $this->requests['menu'][0];
+        self::assertSame(Controller::STATE_INIT, $menu->state());
+        self::assertSame(['', []], [$menu->key(), $menu->content()]);
+        // As a new connection: nothing kept from the former context
+        $context->changeRoute('directory');
+        self::assertSame([Controller::STATE_INIT, []], [$context->state(), $context->parameters()]);
+        self::assertSame([[LogLevel::WARNING, 'Unknown route in the context, starting again at the default route', ['route' => 'removed']]], $this->logger->records);
     }
 
     public function testInputGoesToTheControllerOfTheCurrentRoute(): void
@@ -109,7 +131,7 @@ final class ServiceTest extends TestCase
         $_SERVER['PHP_SELF'] = '/index.php';
         ob_start();
         try {
-            (new Service(new MiniPaviClient(new RequestUrl()), $this->router))->serve($context, $key, $content, new Terminal('192.0.2.1', 'websocket', 'Cv5'));
+            (new Service(new MiniPaviClient(new RequestUrl()), $this->router, $this->logger))->serve($context, $key, $content, new Terminal('192.0.2.1', 'websocket', 'Cv5'));
         } finally {
             $output = (string) ob_get_clean();
             $_SERVER = $server;

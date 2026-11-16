@@ -59,7 +59,9 @@ $router->setDefaultRoute(HomeController::NAME);
     `X-Forwarded-Proto` is believed, when they terminate TLS. From anyone else, the header
     is ignored.
 - **`Service`** reads the gateway's request, restores the `Context`, and runs the controller of
-  the current route until a response is sent to the gateway.
+  the current route until a response is sent to the gateway. A context without route, or
+  whose route the service doesn't have (e.g. removed in a new version), starts again at the
+  default route.
 - **Pages** are displayed for the user's terminal, which `<endkey>` depends on:
   `$page->display($request->terminal(), $data)`; display elements get it too
   (`Element::getContent(Terminal $terminal)`).

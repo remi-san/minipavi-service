@@ -24,6 +24,11 @@ final class Router
         $this->defaultRoute = $name;
     }
 
+    public function has(string $name): bool
+    {
+        return isset($this->routes[$name]);
+    }
+
     public function route(string $name): Controller
     {
         return $this->routes[$name] ?? throw new \RuntimeException('route not found');
