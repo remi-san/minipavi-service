@@ -8,22 +8,22 @@ use MiniPaviService\Context;
 use MiniPaviService\Controller\Response;
 use MiniPaviService\MiniPaviClient;
 
-readonly class RunExternalService implements Response
+final readonly class RunExternalService extends Response
 {
-    use ResponseTrait;
-
     public const CALL_MODE_CONNECT = 'yes-cnx';
 
     /**
      * @param array<string, mixed> $parameters
      */
     public function __construct(
-        private string $state,
-        private array $parameters,
+        string $state,
+        array $parameters,
         public string $vdt,
         public string $url,
         public string $callMode,
-    ) {}
+    ) {
+        parent::__construct($state, $parameters);
+    }
 
     public function execute(MiniPaviClient $client, Context $context): void
     {

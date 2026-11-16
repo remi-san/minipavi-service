@@ -8,18 +8,18 @@ use MiniPaviService\Context;
 use MiniPaviService\Controller\Response;
 use MiniPaviService\MiniPaviClient;
 
-readonly class ChangePage implements Response
+final readonly class ChangePage extends Response
 {
-    use ResponseTrait;
-
     /**
      * @param array<string, mixed> $parameters
      */
     public function __construct(
-        private string $state,
-        private array $parameters,
+        string $state,
+        array $parameters,
         private string $route,
-    ) {}
+    ) {
+        parent::__construct($state, $parameters);
+    }
 
     public function execute(MiniPaviClient $client, Context $context): void
     {
