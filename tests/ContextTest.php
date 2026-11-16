@@ -100,20 +100,6 @@ final class ContextTest extends TestCase
         $context->serialize();
     }
 
-    public function testUnserializeReadsContextsOfTheFormerFormat(): void
-    {
-        // PHP serialize(), as sent before the JSON format, by sessions open during an update
-        $context = Context::unserialize(serialize([
-            'route' => 'directory',
-            'states' => ['directory' => Controller::STATE_READ_INPUT],
-            'parameters' => ['directory' => ['page' => 2]],
-        ]), 'home');
-
-        self::assertSame('directory', $context->route());
-        self::assertSame(Controller::STATE_READ_INPUT, $context->state());
-        self::assertSame(['page' => 2], $context->parameters());
-    }
-
     public function testUnserializeWithoutRouteStartsAtTheDefaultRoute(): void
     {
         $context = Context::unserialize('{"states":{"menu":"read-input"}}', 'home');
@@ -145,7 +131,8 @@ final class ContextTest extends TestCase
         yield 'text' => ['not a context'];
         yield 'JSON scalar' => ['123'];
         yield 'truncated JSON' => ['{"route":"ho'];
-        yield 'PHP serialized scalar' => ['s:4:"home";'];
+        // PHP's serialize(), the format used before JSON
+        yield 'PHP serialized context' => [serialize(['route' => 'home', 'states' => [], 'parameters' => []])];
     }
 
     #[DataProvider('notContexts')]
@@ -155,14 +142,5 @@ final class ContextTest extends TestCase
         $this->expectExceptionMessage('Cannot unserialize context');
 
         Context::unserialize($serialized, 'home');
-    }
-
-    public function testUnserializeDoesNotCreateObjects(): void
-    {
-        // The context comes back from the gateway: no class may be instantiated from it, even
-        // in the former format
-        $context = Context::unserialize(serialize(['route' => 'home', 'parameters' => ['home' => ['object' => new \ArrayObject()]]]), 'home');
-
-        self::assertInstanceOf(\__PHP_Incomplete_Class::class, $context->parameters()['object']);
     }
 }

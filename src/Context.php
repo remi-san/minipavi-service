@@ -98,33 +98,14 @@ final class Context
     {
         try {
             $context = json_decode($serialized, true, 512, JSON_THROW_ON_ERROR);
-        } catch (\JsonException) {
-            $context = self::decodeFormerFormat($serialized);
+        } catch (\JsonException $e) {
+            throw new \RuntimeException('Cannot unserialize context: ' . $e->getMessage(), 0, $e);
         }
         if (!\is_array($context)) {
-            throw new \RuntimeException('Cannot unserialize context');
+            throw new \RuntimeException('Cannot unserialize context: not a JSON object');
         }
 
         return $context;
-    }
-
-    /**
-     * Context in the format used before JSON, PHP's serialize(), still sent by sessions that
-     * were open during the update; never instantiates a class. To remove once no session can
-     * be that old.
-     */
-    private static function decodeFormerFormat(string $serialized): mixed
-    {
-        if (!str_starts_with($serialized, 'a:')) {
-            return null;
-        }
-        // unserialize() warns about invalid content: it is rejected by the caller instead
-        set_error_handler(fn() => true);
-        try {
-            return unserialize($serialized, ['allowed_classes' => false]);
-        } finally {
-            restore_error_handler();
-        }
     }
 
     public function route(): string
