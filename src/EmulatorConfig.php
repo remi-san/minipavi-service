@@ -10,7 +10,7 @@ namespace MiniPaviService;
 class EmulatorConfig
 {
     public const PUBLIC_EMULATOR_URL = 'http://www.minipavi.fr/emulminitel/';
-    public const PUBLIC_GATEWAY = DEFAULT_MINIPAVI_GW;
+    public const PUBLIC_GATEWAY = 'wss://go.minipavi.fr:8181';
     public const LOCAL_SERVICES_HOST = 'services';
 
     /**

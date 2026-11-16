@@ -48,14 +48,14 @@ enum FunctionKey: string
     public function mask(): int
     {
         return match ($this) {
-            self::Summary => MSK_SOMMAIRE,
-            self::Cancel => MSK_ANNULATION,
-            self::Previous => MSK_RETOUR,
-            self::Refresh => MSK_REPETITION,
-            self::Guide => MSK_GUIDE,
-            self::Correction => MSK_CORRECTION,
-            self::Next => MSK_SUITE,
-            self::Send => MSK_ENVOI,
+            self::Summary => 1,
+            self::Cancel => 2,
+            self::Previous => 4,
+            self::Refresh => 8,
+            self::Guide => 16,
+            self::Correction => 32,
+            self::Next => 64,
+            self::Send => 128,
         };
     }
 

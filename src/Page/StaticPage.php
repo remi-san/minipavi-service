@@ -8,6 +8,7 @@ use MiniPaviService\MiniPaviClient;
 use MiniPaviService\Page;
 use MiniPaviService\Page\Display\Display;
 use MiniPaviService\Vdt\VdtHelper;
+use MiniPaviService\Vdt\Videotex;
 
 /**
  * Page whose content is always the same: a Display, and optionally an input field
@@ -28,7 +29,7 @@ final readonly class StaticPage implements Page
      */
     public function display(array $data = []): string
     {
-        return VdtHelper::clearScreen() . VDT_CUROFF . $this->display->toVdt($this->client);
+        return VdtHelper::clearScreen() . Videotex::CURSOR_OFF . $this->display->toVdt($this->client);
     }
 
     /**

@@ -7,6 +7,7 @@ namespace MiniPaviService\Page\Display;
 use MiniPaviService\MiniPaviClient;
 use MiniPaviService\Vdt\Screen;
 use MiniPaviService\Vdt\VdtHelper;
+use MiniPaviService\Vdt\Videotex;
 
 /**
  * Text at a position, or centered on its row (<text> in the page XML format)
@@ -53,7 +54,7 @@ final readonly class Text implements Element
         }
         // Fills the rest of the row with the background color
         if ($this->fill) {
-            $vdt .= VDT_CLRLN;
+            $vdt .= Videotex::CLEAR_LINE;
         }
         return $vdt;
     }

@@ -19,14 +19,10 @@ final class FunctionKeyTest extends TestCase
         self::assertSame(FunctionKey::Send, FunctionKey::tryFrom('ENVOI'));
     }
 
-    public function testMaskIsTheOneOfMiniPaviCli(): void
+    public function testMasksCombineTheKeys(): void
     {
-        self::assertSame(
-            [MSK_SOMMAIRE, MSK_ANNULATION, MSK_RETOUR, MSK_REPETITION, MSK_GUIDE, MSK_CORRECTION, MSK_SUITE, MSK_ENVOI],
-            [FunctionKey::Summary->mask(), FunctionKey::Cancel->mask(), FunctionKey::Previous->mask(), FunctionKey::Refresh->mask(),
-                FunctionKey::Guide->mask(), FunctionKey::Correction->mask(), FunctionKey::Next->mask(), FunctionKey::Send->mask()],
-        );
-        self::assertSame(MSK_ENVOI | MSK_SUITE, FunctionKey::masks(FunctionKey::Send, FunctionKey::Next));
+        // Each key's mask against MiniPaviCli's: see Vdt\CodesTest
+        self::assertSame(128 | 64, FunctionKey::masks(FunctionKey::Send, FunctionKey::Next));
         self::assertSame(0, FunctionKey::masks());
     }
 

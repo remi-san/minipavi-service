@@ -6,6 +6,7 @@ namespace MiniPaviService\Page\Display;
 
 use MiniPaviService\MiniPaviClient;
 use MiniPaviService\Vdt\VdtHelper;
+use MiniPaviService\Vdt\Videotex;
 
 /**
  * Function key badge, e.g. " Envoi " in reverse video (<key> in the page XML format)
@@ -36,6 +37,6 @@ final readonly class Key implements Element
      */
     public static function badge(MiniPaviClient $client, string $label, Color $color): string
     {
-        return VDT_TXTWHITE . VDT_STARTUNDERLINE . ' ' . $color->text() . VDT_FDINV . VdtHelper::toG2(' ' . $label . ' ') . VDT_TXTWHITE . VDT_FDNORM . VDT_STOPUNDERLINE . ' ';
+        return Color::White->text() . Videotex::UNDERLINE_ON . ' ' . $color->text() . Videotex::INVERSE_ON . VdtHelper::toG2(' ' . $label . ' ') . Color::White->text() . Videotex::INVERSE_OFF . Videotex::UNDERLINE_OFF . ' ';
     }
 }

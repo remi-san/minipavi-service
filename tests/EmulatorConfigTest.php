@@ -32,7 +32,7 @@ final class EmulatorConfigTest extends TestCase
     public function testPublicEmulatorOpensTheServiceAtItsUrl(): void
     {
         self::assertSame(
-            'http://www.minipavi.fr/emulminitel/index.php?gw=' . urlencode(DEFAULT_MINIPAVI_GW . '/?url=' . urlencode('https://example.org/Svc/?a=1')),
+            'http://www.minipavi.fr/emulminitel/index.php?gw=' . urlencode('wss://go.minipavi.fr:8181/?url=' . urlencode('https://example.org/Svc/?a=1')),
             (new EmulatorConfig())->getEmulatorUrl('https://example.org/Svc/?a=1'),
         );
     }

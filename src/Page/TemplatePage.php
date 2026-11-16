@@ -10,6 +10,7 @@ use MiniPaviService\Page\Display\Display;
 use MiniPaviService\Page\Template\Node;
 use MiniPaviService\Page\Template\Scope;
 use MiniPaviService\Vdt\VdtHelper;
+use MiniPaviService\Vdt\Videotex;
 
 final readonly class TemplatePage implements Page
 {
@@ -27,7 +28,7 @@ final readonly class TemplatePage implements Page
      */
     public function display(array $data = []): string
     {
-        return VdtHelper::clearScreen() . VDT_CUROFF . $this->toDisplay($data)->toVdt($this->client);
+        return VdtHelper::clearScreen() . Videotex::CURSOR_OFF . $this->toDisplay($data)->toVdt($this->client);
     }
 
     /**

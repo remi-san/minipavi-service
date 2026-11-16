@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Page\Display;
 
+use MiniPaviService\Vdt\Videotex;
+
 /**
  * Character sizes, named as in the page XML format (size="double-height")
  */
@@ -20,10 +22,10 @@ enum Size: string
     public function vdt(): string
     {
         return match ($this) {
-            self::Normal => VDT_SZNORM,
-            self::DoubleHeight => VDT_SZDBLH,
-            self::DoubleWidth => VDT_SZDBLW,
-            self::Double => VDT_SZDBLHW,
+            self::Normal => Videotex::SIZE_NORMAL,
+            self::DoubleHeight => Videotex::SIZE_DOUBLE_HEIGHT,
+            self::DoubleWidth => Videotex::SIZE_DOUBLE_WIDTH,
+            self::Double => Videotex::SIZE_DOUBLE,
         };
     }
 
