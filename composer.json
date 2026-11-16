@@ -1,5 +1,5 @@
 {
-    "name": "minipavi-stack/framework",
+    "name": "remi-san/minipavi-service",
     "description": "Framework for Minitel services on MiniPavi: XML pages and templates, controllers, routing",
     "license": "GPL-3.0-or-later",
     "type": "library",
