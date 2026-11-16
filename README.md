@@ -149,5 +149,5 @@ property that the moved screen is the original one moved, and byte for byte agai
 files (`tests/fixtures/vdt/*.offset_*.vdt`). Run `UPDATE_GOLDEN=1 composer test` to rewrite
 the golden files after an intended change.
 
-GitHub Actions runs the three checks on PHP 8.2, 8.3 and 8.4 for every change to the
+GitHub Actions runs the three checks on PHP 8.2, 8.3, 8.4 and 8.5 for every change to the
 framework.
