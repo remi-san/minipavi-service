@@ -7,34 +7,36 @@ namespace MiniPaviService\Page\Template;
  * variable is set to something other than false, 0, an empty text or an empty list
  * (or, with "!", only if it is not)
  */
-final readonly class IfNode implements Node {
+final readonly class IfNode implements Node
+{
+    /**
+     * @param string $test variable to check
+     * @param bool $negate true for test="!variable"
+     * @param Node[] $children
+     */
+    public function __construct(
+        private string $test,
+        private bool $negate,
+        private array $children,
+        private string $location,
+    ) {}
 
-	/**
-	 * @param string $test variable to check
-	 * @param bool $negate true for test="!variable"
-	 * @param Node[] $children
-	 */
-	public function __construct(
-		private string $test,
-		private bool $negate,
-		private array $children,
-		private string $location,
-	) {
-	}
+    public function elements(Scope $scope): array
+    {
+        try {
+            $value = $scope->value($this->test);
+        } catch (\InvalidArgumentException $e) {
+            throw new TemplateException("$this->location: <if>: " . $e->getMessage(), 0, $e);
+        }
+        $true = $value instanceof \Countable ? count($value) > 0 : (bool) $value;
+        if ($true === $this->negate) {
+            return [];
+        }
 
-	public function elements(Scope $scope): array {
-		try {
-			$value = $scope->value($this->test);
-		} catch (\InvalidArgumentException $e) {
-			throw new TemplateException("$this->location: <if>: ".$e->getMessage(),0,$e);
-		}
-		$true = $value instanceof \Countable ? count($value) > 0 : (bool)$value;
-		if ($true === $this->negate)
-			return array();
-
-		$elements = array();
-		foreach ($this->children as $child)
-			array_push($elements,...$child->elements($scope));
-		return $elements;
-	}
+        $elements = [];
+        foreach ($this->children as $child) {
+            array_push($elements, ...$child->elements($scope));
+        }
+        return $elements;
+    }
 }

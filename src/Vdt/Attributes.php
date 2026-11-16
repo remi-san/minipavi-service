@@ -6,8 +6,8 @@ namespace MiniPaviService\Vdt;
  * Character attributes, as an array group => value: the byte after ESC, or SO / SI for the
  * charset. A positioning (US), a home (RS) or a clear screen (FF) sets them back to DEFAULTS.
  */
-final class Attributes {
-
+final class Attributes
+{
     public const DEFAULTS = [
         'charset' => "\x0F",
         'fg' => "\x47", 'bg' => "\x50", 'size' => "\x4C", 'blink' => "\x49",
@@ -22,7 +22,8 @@ final class Attributes {
     /**
      * Group of the attribute set by ESC <byte>, or null if it is not one
      */
-    public static function group(string $byte): ?string {
+    public static function group(string $byte): ?string
+    {
         $code = ord($byte);
         return match (true) {
             $code >= 0x40 && $code <= 0x47 => 'fg',
@@ -39,7 +40,8 @@ final class Attributes {
     /**
      * Columns taken by a character: double width only applies to text characters
      */
-    public static function width(array $attributes): int {
+    public static function width(array $attributes): int
+    {
         $doubleWidth = in_array($attributes['size'], ["\x4E", "\x4F"], true);
         return $doubleWidth && $attributes['charset'] === self::TEXT ? 2 : 1;
     }

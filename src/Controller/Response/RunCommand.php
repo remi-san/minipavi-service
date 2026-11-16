@@ -3,26 +3,29 @@
 namespace MiniPaviService\Controller\Response;
 
 use MiniPaviService\Context;
-use MiniPaviService\MiniPaviClient;
 use MiniPaviService\Controller\Response;
+use MiniPaviService\MiniPaviClient;
 
-class RunCommand implements Response {
+class RunCommand implements Response
+{
     use ResponseTrait;
 
     public function __construct(
         string $state,
         array $parameters,
         private ?string $vdt,
-        private array $cmd
+        private array $cmd,
     ) {
         $this->init($state, $parameters);
     }
 
-    public function execute(MiniPaviClient $client, Context $context): void {
+    public function execute(MiniPaviClient $client, Context $context): void
+    {
         $client->send($this->vdt ?? '', null, $context, true, $this->cmd, false);
     }
 
-    public function interrupts(): bool {
+    public function interrupts(): bool
+    {
         return true;
     }
 }

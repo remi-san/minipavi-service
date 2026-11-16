@@ -5,7 +5,8 @@ namespace MiniPaviService\Vdt;
 /**
  * What a Token of Videotex content does
  */
-enum TokenType {
+enum TokenType
+{
     // A character taking one cell (two in double width), G2 ones included: Token::$bytes
     case Glyph;
     // REP: repeats the last character Token::$count times

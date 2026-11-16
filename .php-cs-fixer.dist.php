@@ -4,8 +4,8 @@
 // composer cs: checks it, composer cs-fix: fixes it.
 
 $finder = (new PhpCsFixer\Finder())
-    ->in(__DIR__.'/src')
-    ->append([__DIR__.'/bootstrap.php', __FILE__]);
+    ->in(__DIR__ . '/src')
+    ->append([__DIR__ . '/bootstrap.php', __FILE__]);
 
 return (new PhpCsFixer\Config())
     ->setRules([

@@ -11,23 +11,25 @@ use MiniPaviService\Vdt\Vdt;
  * edges of the screen is cut, and the picture doesn't clear the screen: it is drawn over
  * what is already there.
  */
-final readonly class Image implements Element {
+final readonly class Image implements Element
+{
+    // The picture, moved to its place
+    private string $vdt;
 
-	// The picture, moved to its place
-	private string $vdt;
+    public function __construct(
+        public Vdt $image,
+        public int $row = 1,
+        public int $col = 1,
+    ) {
+        Position::check($row, $col);
+        if ($row < 1) {
+            throw new \InvalidArgumentException('An image starts at row 1 at least');
+        }
+        $this->vdt = $image->withoutClear()->offset($col - 1, $row - 1)->toString();
+    }
 
-	public function __construct(
-		public Vdt $image,
-		public int $row = 1,
-		public int $col = 1,
-	) {
-		Position::check($row,$col);
-		if ($row < 1)
-			throw new \InvalidArgumentException('An image starts at row 1 at least');
-		$this->vdt = $image->withoutClear()->offset($col-1,$row-1)->toString();
-	}
-
-	public function getContent(MiniPaviClient $client): string {
-		return $this->vdt;
-	}
+    public function getContent(MiniPaviClient $client): string
+    {
+        return $this->vdt;
+    }
 }

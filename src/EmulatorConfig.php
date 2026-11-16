@@ -5,7 +5,8 @@ namespace MiniPaviService;
 /**
  * Emulator that browsers are sent to, and gateway through which it opens the service
  */
-class EmulatorConfig {
+class EmulatorConfig
+{
     public const PUBLIC_EMULATOR_URL = 'http://www.minipavi.fr/emulminitel/';
     public const PUBLIC_GATEWAY = DEFAULT_MINIPAVI_GW;
     public const LOCAL_SERVICES_HOST = 'services';
@@ -20,12 +21,13 @@ class EmulatorConfig {
         private ?string $serviceHost = null,
     ) {}
 
-    public function getEmulatorUrl(string $serviceUrl): string {
-        return rtrim($this->url,'/').
-            '/index.php?gw='
-            .urlencode(
-                rtrim($this->gateway,'/').
-                '/?url='.urlencode($this->gatewayServiceUrl($serviceUrl))
+    public function getEmulatorUrl(string $serviceUrl): string
+    {
+        return rtrim($this->url, '/')
+            . '/index.php?gw='
+            . urlencode(
+                rtrim($this->gateway, '/')
+                . '/?url=' . urlencode($this->gatewayServiceUrl($serviceUrl)),
             );
     }
 
@@ -34,7 +36,8 @@ class EmulatorConfig {
      * (default "services" when EMULATOR_URL is set, as in the local stack of this repository).
      * Otherwise, the minipavi.fr emulator and gateway, reaching the service at its public URL.
      */
-    public static function init(): self {
+    public static function init(): self
+    {
         $url = getenv('EMULATOR_URL') ?: null;
 
         return new self(
@@ -45,7 +48,8 @@ class EmulatorConfig {
     }
 
     // The service URL with the host of the gateway's side, if any (over http, as inside Docker)
-    private function gatewayServiceUrl(string $serviceUrl): string {
+    private function gatewayServiceUrl(string $serviceUrl): string
+    {
         if ($this->serviceHost === null) {
             return $serviceUrl;
         }
@@ -53,6 +57,6 @@ class EmulatorConfig {
         $path = parse_url($serviceUrl, PHP_URL_PATH) ?? '/';
         $query = parse_url($serviceUrl, PHP_URL_QUERY);
 
-        return 'http://'.$this->serviceHost.$path.($query !== null ? '?'.$query : '');
+        return 'http://' . $this->serviceHost . $path . ($query !== null ? '?' . $query : '');
     }
 }

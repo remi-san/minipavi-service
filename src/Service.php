@@ -1,43 +1,43 @@
 <?php
+
 namespace MiniPaviService;
 
+final class Service
+{
+    public function __construct(
+        private MiniPaviClient $client,
+        private Router $router,
+    ) {}
 
-final class Service {
+    public function run(): void
+    {
 
-	public function __construct(
-		private MiniPaviClient $client,
-		private Router $router,
-	) {
-	}
+        $this->client->start();
 
-	public function run(): void {
+        if ($this->client->isConnecting()) {
+            $context = new Context($this->router->defaultRoute());
+            $this->client->clearContent();
+            trigger_error("[MiniPaviService] CNX");
+        } else {
+            $context = Context::unserialize($this->client->context());
+        }
 
-		$this->client->start();
+        if ($this->client->isDisconnecting()) {
+            trigger_error("[MiniPaviService] DECO");
+            return;
+        }
 
-		if ($this->client->isConnecting()) {
-			$context = new Context($this->router->defaultRoute());
-			$this->client->clearContent();
-			trigger_error("[MiniPaviService] CNX");
-		} else {
-			$context = Context::unserialize($this->client->context());
-		}
+        while (true) {
+            $controller = $this->router->route($context->route());
+            $response = $controller->run($context->getRequest());
 
-		if ($this->client->isDisconnecting()) {
-			trigger_error("[MiniPaviService] DECO");
-			return;
-		}
+            $context->update($response);
 
-		while(true) {
-			$controller = $this->router->route($context->route());
-			$response = $controller->run($context->getRequest());
-			
-			$context->update($response);
-			
-			$response->execute($this->client, $context);
+            $response->execute($this->client, $context);
 
-			if ($response->interrupts()) {
-				return;
-			}
-		}
-	}
+            if ($response->interrupts()) {
+                return;
+            }
+        }
+    }
 }

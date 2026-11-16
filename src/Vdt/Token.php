@@ -5,8 +5,8 @@ namespace MiniPaviService\Vdt;
 /**
  * Part of Videotex content (see TokenType), with the bytes it was read from
  */
-final readonly class Token {
-
+final readonly class Token
+{
     public function __construct(
         public TokenType $type,
         // Bytes as read, to write the content back unchanged
@@ -16,6 +16,5 @@ final readonly class Token {
         public ?string $group = null,
         public int $row = 0,
         public int $col = 0,
-    ) {
-    }
+    ) {}
 }
