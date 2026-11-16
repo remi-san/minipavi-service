@@ -5,15 +5,26 @@ declare(strict_types=1);
 namespace MiniPaviService\Controller;
 
 use MiniPaviService\Controller;
+use MiniPaviService\Terminal;
 
+/**
+ * What a controller runs on: its state and parameters, kept in the context from the previous
+ * request, and what the user did since: the key pressed and the text typed
+ */
 readonly class Request
 {
     /**
      * @param array<string, mixed> $parameters
+     * @param string $key function key pressed (MiniPaviClient::KEY_*), or connection code
+     *                    (MiniPaviClient::FCTN_*)
+     * @param list<string> $content text typed, one string per line of the input field
      */
     public function __construct(
         private string $state = Controller::STATE_INIT,
         private array $parameters = [],
+        private string $key = '',
+        private array $content = [],
+        private Terminal $terminal = new Terminal(),
     ) {}
 
     public function state(): string
@@ -32,5 +43,36 @@ readonly class Request
     public function parameter(string $name): mixed
     {
         return $this->parameters[$name] ?? null;
+    }
+
+    /**
+     * Function key pressed (MiniPaviClient::KEY_*), or connection code (MiniPaviClient::FCTN_*)
+     */
+    public function key(): string
+    {
+        return $this->key;
+    }
+
+    /**
+     * Text typed, one string per line of the input field
+     *
+     * @return list<string>
+     */
+    public function content(): array
+    {
+        return $this->content;
+    }
+
+    /**
+     * Text typed, its lines put together
+     */
+    public function contentAsString(): string
+    {
+        return implode('', $this->content);
+    }
+
+    public function terminal(): Terminal
+    {
+        return $this->terminal;
     }
 }

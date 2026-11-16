@@ -7,6 +7,7 @@ namespace MiniPaviService\Tests;
 use MiniPaviService\Context;
 use MiniPaviService\Controller;
 use MiniPaviService\Controller\Response\RunCommand;
+use MiniPaviService\Terminal;
 use PHPUnit\Framework\TestCase;
 
 final class ContextTest extends TestCase
@@ -18,6 +19,18 @@ final class ContextTest extends TestCase
         self::assertSame(Controller::STATE_INIT, $context->state());
         self::assertSame([], $context->parameters());
         self::assertEquals(new Controller\Request(Controller::STATE_INIT, []), $context->getRequest());
+    }
+
+    public function testRequestCarriesTheInputOfTheGateway(): void
+    {
+        $context = new Context('home');
+        $context->updateState(Controller::STATE_READ_INPUT);
+        $terminal = new Terminal('192.0.2.1', 'websocket', 'Cv5');
+
+        self::assertEquals(
+            new Controller\Request(Controller::STATE_READ_INPUT, [], 'ENVOI', ['abc'], $terminal),
+            $context->getRequest('ENVOI', ['abc'], $terminal),
+        );
     }
 
     public function testKeepsStateAndParametersPerRoute(): void

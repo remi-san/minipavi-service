@@ -95,11 +95,19 @@ final class Context
         $this->route = $route;
     }
 
-    public function getRequest(): Request
+    /**
+     * Request for the controller of the current route, with the input of the gateway
+     *
+     * @param list<string> $content
+     */
+    public function getRequest(string $key = '', array $content = [], Terminal $terminal = new Terminal()): Request
     {
         return new Request(
             $this->state(),
             $this->parameters(),
+            $key,
+            $content,
+            $terminal,
         );
     }
 

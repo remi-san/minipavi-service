@@ -6,6 +6,7 @@ namespace MiniPaviService\Tests;
 
 use MiniPavi\MiniPaviCli;
 use MiniPaviService\MiniPaviClient;
+use MiniPaviService\Terminal;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -41,6 +42,7 @@ final class MiniPaviClientTest extends TestCase
         self::assertSame('CALLFROM 0102030405', $client->remoteAddr());
         self::assertSame('websocket', $client->typeSocket());
         self::assertSame('Cv5', $client->versionMinitel());
+        self::assertEquals(new Terminal('CALLFROM 0102030405', 'websocket', 'Cv5'), $client->terminal());
     }
 
     public function testRecognizesConnectionsAndDisconnections(): void

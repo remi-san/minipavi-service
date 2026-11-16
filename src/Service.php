@@ -29,9 +29,14 @@ final class Service
             return;
         }
 
+        // What the user did, given to each controller run for this request
+        $key = $this->client->fctn();
+        $content = $this->client->content();
+        $terminal = $this->client->terminal();
+
         while (true) {
             $controller = $this->router->route($context->route());
-            $response = $controller->run($context->getRequest());
+            $response = $controller->run($context->getRequest($key, $content, $terminal));
 
             $context->update($response);
 

@@ -47,9 +47,10 @@ final class MiniPaviClient
         return self::text(MiniPaviCli::$fctn);
     }
 
-    // Typed content, one string per line of the input field
     /**
-     * @return string[]
+     * Typed content, one string per line of the input field
+     *
+     * @return list<string>
      */
     public function content(): array
     {
@@ -118,6 +119,14 @@ final class MiniPaviClient
     public function createInputMsgCmd(int $col, int $row, int $width, int $height, int $validWith, bool $cursor, string $spaceChar, array $prefill = []): array
     {
         return MiniPaviCli::createInputMsgCmd($col, $row, $width, $height, $validWith, $cursor, $spaceChar, $prefill);
+    }
+
+    /**
+     * Where the user connects from
+     */
+    public function terminal(): Terminal
+    {
+        return new Terminal($this->remoteAddr(), $this->typeSocket(), $this->versionMinitel());
     }
 
     /**
