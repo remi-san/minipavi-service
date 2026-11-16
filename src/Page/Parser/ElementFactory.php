@@ -118,8 +118,12 @@ final class ElementFactory
      */
     public function input(array $attributes): Input
     {
+        $keys = preg_split('/\s+/', trim($attributes['validwith'] ?? 'envoi'));
+        if ($keys === false) {
+            throw new PageXmlException('validwith: ' . preg_last_error_msg());
+        }
         $validWith = 0;
-        foreach (preg_split('/\s+/', trim($attributes['validwith'] ?? 'envoi')) as $key) {
+        foreach ($keys as $key) {
             if (!isset(self::KEYS[$key])) {
                 throw new PageXmlException("unknown validwith key \"$key\" (" . implode(', ', array_keys(self::KEYS)) . ')');
             }

@@ -34,8 +34,20 @@ enum Color: string
         return "\x1B" . chr(0x50 + $this->index());
     }
 
+    /**
+     * Number of the color in Videotex, from 0 (black) to 7 (white)
+     */
     private function index(): int
     {
-        return array_search($this, self::cases(), true);
+        return match ($this) {
+            self::Black => 0,
+            self::Red => 1,
+            self::Green => 2,
+            self::Yellow => 3,
+            self::Blue => 4,
+            self::Magenta => 5,
+            self::Cyan => 6,
+            self::White => 7,
+        };
     }
 }
