@@ -200,6 +200,25 @@ instructions, filled in with the data given to `Page::display($terminal, $data)`
 | `<if test="loop.last">…</if>` | content shown only if the variable is set and not empty |
 | `<if test="!loop.last">…</if>` | … or only if it is not |
 
+### XML Schema
+
+`schema/page.xsd` describes the format as an XML Schema (1.0), for editors to complete and
+check pages as they are written. A page points to it with `xsi:noNamespaceSchemaLocation`,
+relative to the page, e.g. from a service's `config/pages/`:
+
+```xml
+<page type="template"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:noNamespaceSchemaLocation="../../vendor/remi-san/minipavi-service/schema/page.xsd">
+```
+
+`xmllint --noout --schema vendor/remi-san/minipavi-service/schema/page.xsd config/pages/*.xml`
+checks pages from the command line. The parser remains the reference: the schema can't
+express some of its rules, listed at the top of `page.xsd` (e.g. `<foreach>` or a
+placeholder in a static page, or a second `<input>`), and refuses unknown attributes, which
+the parser ignores. `tests/Page/Parser/PageXsdTest.php` keeps the two in agreement: when the
+format changes, change `page.xsd` with the parser.
+
 ## Videotex content
 
 Codes to send as they are have names: `Vdt\Videotex` for Videotex (`CLEAR_LINE`,
