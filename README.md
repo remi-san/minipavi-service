@@ -63,16 +63,51 @@ $router->setDefaultRoute(HomeController::NAME);
   - `terminal()`: where the user connects from (`remoteAddr()`, `typeSocket()`,
     `versionMinitel()`).
 
-  Every response takes the state and parameters to keep, then:
+  `Response`'s named constructors build the responses:
 
-  | Response | Effect |
-  |---|---|
-  | `ChangePage($route)` | switches to another controller, and runs it |
-  | `DisplayPage($vdt)` | sends Videotex content to the gateway; the next key comes back to this service |
-  | `RunCommand($vdt, $cmd)` | sends content and an input command (`Page::readInput()`) to the gateway |
-  | `RunExternalService($vdt, $url, $mode)` | sends the user to another service (`CALL_MODE_CONNECT`: right away) |
+  | Response | Effect | State kept by default |
+  |---|---|---|
+  | `Response::display($vdt)` | sends Videotex content to the gateway; the next key comes back to this controller | `STATE_READ_INPUT` |
+  | `Response::readInput($vdt, $command)` | sends content and an input command (`Page::readInput()`) to the gateway | `STATE_READ_INPUT` |
+  | `Response::goTo($route)` | switches to another controller, and runs it at once | `STATE_INIT` |
+  | `Response::connectTo($url, $vdt)` | sends the user to another service | `STATE_INIT` |
 
-  Every response but `ChangePage` answers the gateway and ends the request.
+  Every response but `goTo()` answers the gateway and ends the request. The state and
+  parameters are what this controller keeps for its next run (for `goTo()` and
+  `connectTo()`, when the user comes back to it); give others by name, e.g.
+  `Response::readInput($vdt, $command, parameters: ['page' => 2])`. The classes behind them
+  (`DisplayPage`, `RunCommand`, `ChangePage`, `RunExternalService`) can also be built directly.
+
+- **`AbstractController`** runs the method of the request's state, so a controller only
+  writes what each state does:
+
+  ```php
+  final class HomeController extends AbstractController
+  {
+      public const NAME = 'home';
+
+      public function __construct(private Page $page) {}
+
+      // Shows the screen (onInit() and onInitInput() do the same, unless overridden)
+      protected function onDisplay(Request $request): Response
+      {
+          return Response::readInput($this->page->display(), $this->page->readInput());
+      }
+
+      // Handles the key pressed and what was typed
+      protected function onReadInput(Request $request): Response
+      {
+          if ($request->key() === MiniPaviClient::KEY_GUIDE) {
+              return Response::goTo('help');
+          }
+
+          return Response::readInput(VdtHelper::writeLine0('Unknown code'), $this->page->readInput());
+      }
+  }
+  ```
+
+  A state it doesn't know (e.g. kept by an older version of the service) starts it again.
+  To add states, override `run()` and call `parent::run()` for the others.
 
 - The `KEY_*` and `FCTN_*` constants of `MiniPaviClient` name the function keys and connection
   codes of `Request::key()`.
