@@ -30,7 +30,14 @@ final class Service
     public function run(): void
     {
         $this->client->start();
+        $this->handle();
+    }
 
+    /**
+     * Serves the request of the gateway read by MiniPaviClient::start()
+     */
+    public function handle(): void
+    {
         if ($this->client->isConnecting()) {
             $context = new Context($this->router->defaultRoute());
             $this->client->clearContent();
