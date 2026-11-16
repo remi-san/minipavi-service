@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MiniPaviService\Page\Display;
 
 use MiniPaviService\MiniPaviClient;
+use MiniPaviService\Vdt\Screen;
 use MiniPaviService\Vdt\VdtHelper;
 
 /**
@@ -33,9 +34,9 @@ final readonly class Line implements Element
         if (strlen($char) != 1) {
             throw new \InvalidArgumentException("A line is made of a single character, got '$char'");
         }
-        $this->length = $length ?? 41 - $col;
-        if ($this->length < 1 || $col + $this->length - 1 > 40) {
-            throw new \InvalidArgumentException("Line of length $this->length from column $col goes past column 40");
+        $this->length = $length ?? Screen::COLS + 1 - $col;
+        if ($this->length < 1 || $col + $this->length - 1 > Screen::COLS) {
+            throw new \InvalidArgumentException("Line of length $this->length from column $col goes past column " . Screen::COLS);
         }
     }
 

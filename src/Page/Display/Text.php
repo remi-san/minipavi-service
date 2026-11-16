@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MiniPaviService\Page\Display;
 
 use MiniPaviService\MiniPaviClient;
+use MiniPaviService\Vdt\Screen;
 use MiniPaviService\Vdt\VdtHelper;
 
 /**
@@ -38,7 +39,7 @@ final readonly class Text implements Element
             // more on the right when they can't be equal). MiniPaviCli::writeCentered counts one
             // column per character, and starts one column too far left when the width is even
             $width = mb_strlen($this->text) * $charWidth;
-            $col = $width >= 40 ? 1 : intdiv(40 - $width, 2) + 1;
+            $col = $width >= Screen::COLS ? 1 : intdiv(Screen::COLS - $width, 2) + 1;
         }
         if ($this->centered && $this->fill) {
             // Starts at column 1 and pads with spaces up to the text (the spaces having the

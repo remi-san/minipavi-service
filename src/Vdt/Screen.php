@@ -5,7 +5,8 @@ declare(strict_types=1);
 namespace MiniPaviService\Vdt;
 
 /**
- * Screen drawn by Videotex content: rows 0 (status line) to ROWS, of COLS cells
+ * Screen drawn by Videotex content: rows 0 (status line) to ROWS, of COLS cells. ROWS and
+ * COLS are the size of the Minitel screen for the whole framework.
  */
 final readonly class Screen
 {

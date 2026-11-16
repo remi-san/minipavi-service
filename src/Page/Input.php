@@ -7,6 +7,7 @@ namespace MiniPaviService\Page;
 use MiniPaviService\FunctionKey;
 use MiniPaviService\MiniPaviClient;
 use MiniPaviService\Page\Display\Position;
+use MiniPaviService\Vdt\Screen;
 
 /**
  * Field where the user types, validated with one of the validWith keys
@@ -30,12 +31,12 @@ final readonly class Input
         public string $spaceChar = '.',
     ) {
         Position::check($row, $col);
-        $this->length = $length ?? 41 - $col;
-        if ($this->length < 1 || $col + $this->length - 1 > Position::COLS) {
-            throw new \InvalidArgumentException("Input of length $this->length from column $col goes past column " . Position::COLS);
+        $this->length = $length ?? Screen::COLS + 1 - $col;
+        if ($this->length < 1 || $col + $this->length - 1 > Screen::COLS) {
+            throw new \InvalidArgumentException("Input of length $this->length from column $col goes past column " . Screen::COLS);
         }
-        if ($lines < 1 || $row + $lines - 1 > Position::ROWS) {
-            throw new \InvalidArgumentException("Input of $lines lines from row $row goes past row " . Position::ROWS);
+        if ($lines < 1 || $row + $lines - 1 > Screen::ROWS) {
+            throw new \InvalidArgumentException("Input of $lines lines from row $row goes past row " . Screen::ROWS);
         }
     }
 
