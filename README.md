@@ -128,3 +128,15 @@ echo $moved->screen()->preview();      // the screen, as text
   other `Token`s.
 
 `tool/vdt-offset` (at the root of the repository) does the same from the command line.
+
+## Developing the framework
+
+The code follows [PER Coding Style](https://www.php-fig.org/per/coding-style/), with
+`declare(strict_types=1)` in every file, short arrays and sorted imports, checked by
+PHP-CS-Fixer (configuration in `.php-cs-fixer.dist.php`):
+
+```sh
+composer install    # once, in this folder: development tools in vendor/
+composer cs         # checks the style, showing what would change
+composer cs-fix     # fixes it
+```
