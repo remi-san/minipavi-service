@@ -1,0 +1,76 @@
+<?php
+
+namespace MiniPavi;
+
+/**
+ * Types of the MiniPaviCli methods the framework calls, which the library doesn't declare
+ * (ludosevilla/minipavi-cli 1.1). They build Videotex content and MiniPavi commands from
+ * their arguments, so these types always hold. Its static properties, which hold the
+ * gateway's request, are left untyped: MiniPaviClient checks them.
+ */
+class MiniPaviCli
+{
+    /**
+     * @param int $col
+     * @param int $line
+     * @return string
+     */
+    public static function setPos($col, $line) {}
+
+    /**
+     * @param string $txt
+     * @param bool $blink
+     * @return string
+     */
+    public static function writeLine0($txt, $blink = false) {}
+
+    /** @return string */
+    public static function clearScreen() {}
+
+    /**
+     * @param string $char
+     * @param int $num
+     * @return string
+     */
+    public static function repeatChar($char, $num) {}
+
+    /**
+     * @param int $line
+     * @param string $text
+     * @param string $attr
+     * @return string
+     */
+    public static function writeCentered($line, $text, $attr = '') {}
+
+    /**
+     * @param string $str
+     * @return string
+     */
+    public static function toG2($str) {}
+
+    /**
+     * @param int $posX
+     * @param int $posY
+     * @param int $length
+     * @param int $validWith
+     * @param bool $cursor
+     * @param string $spaceChar
+     * @param string $char
+     * @param string $preFill
+     * @return array<string, mixed>
+     */
+    public static function createInputTxtCmd($posX = 1, $posY = 1, $length = 1, $validWith = MSK_ENVOI, $cursor = true, $spaceChar = ' ', $char = '', $preFill = '') {}
+
+    /**
+     * @param int $posX
+     * @param int $posY
+     * @param int $width
+     * @param int $height
+     * @param int $validWith
+     * @param bool $cursor
+     * @param string $spaceChar
+     * @param string[] $preFill
+     * @return array<string, mixed>
+     */
+    public static function createInputMsgCmd($posX = 1, $posY = 1, $width = 1, $height = 1, $validWith = MSK_ENVOI, $cursor = true, $spaceChar = ' ', $preFill = []) {}
+}

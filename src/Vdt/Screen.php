@@ -23,6 +23,7 @@ final readonly class Screen
     {
         $cells = array_fill(0, self::ROWS + 1, array_fill(1, self::COLS, null));
         $vdt->play(
+            /** @param array<string, string> $attributes see Attributes */
             function (int $row, int $col, string $bytes, int $width, array $attributes) use (&$cells): void {
                 if ($row >= 0 && $row <= self::ROWS) {
                     for ($i = 0; $i < $width && $col + $i <= self::COLS; $i++) {

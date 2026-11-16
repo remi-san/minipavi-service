@@ -56,6 +56,7 @@ final readonly class Vdt
     {
         $out = new Writer();
         $this->play(
+            /** @param array<string, string> $attributes see Attributes */
             function (int $row, int $col, string $bytes, int $width, array $attributes) use ($out, $x, $y): void {
                 // Row 0 stays where it is; the other rows stay within rows 1 to ROWS
                 if ($row != 0) {
@@ -120,6 +121,9 @@ final readonly class Vdt
      * Plays the content on a simulated screen, calling glyph(row, col, bytes, width,
      * attributes) for each character (repetitions included), and other(token, cursor) for
      * the other tokens, once the cursor has followed them
+     *
+     * @param callable(int, int, string, int, array<string, string>): void $glyph
+     * @param ?callable(Token, Cursor): void $other
      */
     public function play(callable $glyph, ?callable $other = null): void
     {

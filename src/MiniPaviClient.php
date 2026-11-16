@@ -44,7 +44,7 @@ final class MiniPaviClient
     // Function key used, or a FCTN_* code (CNX, FIN...)
     public function fctn(): string
     {
-        return (string) MiniPaviCli::$fctn;
+        return self::text(MiniPaviCli::$fctn);
     }
 
     // Typed content, one string per line of the input field
@@ -53,7 +53,10 @@ final class MiniPaviClient
      */
     public function content(): array
     {
-        return (array) MiniPaviCli::$content;
+        // As (array) would: no content is an empty list, a single value a list of one
+        $content = MiniPaviCli::$content ?? [];
+
+        return array_map(self::text(...), array_values(\is_array($content) ? $content : [$content]));
     }
 
     public function contentAsString(): string
@@ -69,25 +72,25 @@ final class MiniPaviClient
     // Context sent with the previous answer
     public function context(): string
     {
-        return (string) MiniPaviCli::$context;
+        return self::text(MiniPaviCli::$context);
     }
 
     // IP of the user, or "CALLFROM xxxx" when calling by phone
     public function remoteAddr(): string
     {
-        return (string) MiniPaviCli::$remoteAddr;
+        return self::text(MiniPaviCli::$remoteAddr);
     }
 
     // 'websocket' or 'other'
     public function typeSocket(): ?string
     {
-        return MiniPaviCli::$typeSocket;
+        return self::textOrNull(MiniPaviCli::$typeSocket);
     }
 
     // Version of the Minitel if known, '???' otherwise
     public function versionMinitel(): ?string
     {
-        return MiniPaviCli::$versionMinitel;
+        return self::textOrNull(MiniPaviCli::$versionMinitel);
     }
 
     // Answer to the gateway
@@ -115,6 +118,19 @@ final class MiniPaviClient
     public function createInputMsgCmd(int $col, int $row, int $width, int $height, int $validWith, bool $cursor, string $spaceChar, array $prefill = []): array
     {
         return MiniPaviCli::createInputMsgCmd($col, $row, $width, $height, $validWith, $cursor, $spaceChar, $prefill);
+    }
+
+    /**
+     * A value of the gateway's request (decoded JSON) as text: '' if it is not a scalar
+     */
+    private static function text(mixed $value): string
+    {
+        return \is_scalar($value) ? (string) $value : '';
+    }
+
+    private static function textOrNull(mixed $value): ?string
+    {
+        return \is_scalar($value) ? (string) $value : null;
     }
 
     private function serviceUri(): string
