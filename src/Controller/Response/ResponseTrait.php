@@ -6,13 +6,13 @@ namespace MiniPaviService\Controller\Response;
 
 trait ResponseTrait
 {
-    private string $state;
-    private array $parameters;
+    private readonly string $state;
+    private readonly array $parameters;
 
     public function init(
         string $state,
         array $parameters,
-    ) {
+    ): void {
         $this->state = $state;
         $this->parameters = $parameters;
     }

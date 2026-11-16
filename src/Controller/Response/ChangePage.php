@@ -8,7 +8,7 @@ use MiniPaviService\Context;
 use MiniPaviService\Controller\Response;
 use MiniPaviService\MiniPaviClient;
 
-class ChangePage implements Response
+readonly class ChangePage implements Response
 {
     use ResponseTrait;
 

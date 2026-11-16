@@ -8,7 +8,7 @@ use MiniPaviService\Context;
 use MiniPaviService\Controller\Response;
 use MiniPaviService\MiniPaviClient;
 
-class RunExternalService implements Response
+readonly class RunExternalService implements Response
 {
     use ResponseTrait;
 

@@ -6,7 +6,7 @@ namespace MiniPaviService\Controller;
 
 use MiniPaviService\Controller;
 
-class Request
+readonly class Request
 {
     public function __construct(
         private string $state = Controller::STATE_INIT,
@@ -23,7 +23,7 @@ class Request
         return $this->parameters;
     }
 
-    public function parameter(string $name)
+    public function parameter(string $name): mixed
     {
         return $this->parameters[$name] ?? null;
     }

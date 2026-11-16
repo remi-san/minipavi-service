@@ -8,7 +8,7 @@ use MiniPaviService\Context;
 use MiniPaviService\Controller\Response;
 use MiniPaviService\MiniPaviClient;
 
-class DisplayPage implements Response
+readonly class DisplayPage implements Response
 {
     use ResponseTrait;
 
