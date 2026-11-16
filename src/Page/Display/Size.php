@@ -11,10 +11,9 @@ enum Size: string {
 	case DoubleWidth = 'double-width';
 	case Double = 'double';
 
-	/*****************
-	*** Videotex attribute for this size
-	******************/
-
+	/**
+	 * Videotex attribute for this size
+	 */
 	public function vdt(): string {
 		return match ($this) {
 			self::Normal => VDT_SZNORM,
@@ -24,10 +23,9 @@ enum Size: string {
 		};
 	}
 
-	/*****************
-	*** Number of columns taken by a character of this size
-	******************/
-
+	/**
+	 * Number of columns taken by a character of this size
+	 */
 	public function width(): int {
 		return match ($this) {
 			self::DoubleWidth, self::Double => 2,

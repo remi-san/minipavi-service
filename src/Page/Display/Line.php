@@ -17,10 +17,9 @@ final readonly class Line implements Element {
 
 	public int $length;
 
-	/*****************
-	*** length: defaults to the end of the row
-	******************/
-
+	/**
+	 * @param ?int $length defaults to the end of the row
+	 */
 	public function __construct(
 		public int $row,
 		public int $col = 1,

@@ -10,10 +10,9 @@ use MiniPaviService\MiniPaviClient;
  */
 interface Element {
 
-	/*****************
-	*** Videotex content drawing the element; client gives the Videotex helpers, and the
-	*** current request for elements depending on the user's terminal
-	******************/
-
+	/**
+	 * Videotex content drawing the element; client gives the Videotex helpers, and the
+	 * current request for elements depending on the user's terminal
+	 */
 	public function getContent(MiniPaviClient $client): string;
 }

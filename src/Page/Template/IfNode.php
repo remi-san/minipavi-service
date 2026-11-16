@@ -9,12 +9,11 @@ namespace MiniPaviService\Page\Template;
  */
 final readonly class IfNode implements Node {
 
-	/*****************
-	*** test: variable to check
-	*** negate: true for test="!variable"
-	*** children: Node[]
-	******************/
-
+	/**
+	 * @param string $test variable to check
+	 * @param bool $negate true for test="!variable"
+	 * @param Node[] $children
+	 */
 	public function __construct(
 		private string $test,
 		private bool $negate,

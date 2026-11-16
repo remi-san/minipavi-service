@@ -15,18 +15,16 @@ enum Color: string {
 	case Cyan = 'cyan';
 	case White = 'white';
 
-	/*****************
-	*** Videotex attribute for this text (foreground) color
-	******************/
-
+	/**
+	 * Videotex attribute for this text (foreground) color
+	 */
 	public function text(): string {
 		return "\x1B".chr(0x40+$this->index());
 	}
 
-	/*****************
-	*** Videotex attribute for this background color
-	******************/
-
+	/**
+	 * Videotex attribute for this background color
+	 */
 	public function background(): string {
 		return "\x1B".chr(0x50+$this->index());
 	}

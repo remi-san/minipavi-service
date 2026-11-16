@@ -11,29 +11,26 @@ final readonly class Scope {
 	// {{name}} or {{name.field.subfield}}, spaces allowed inside the braces
 	public const PLACEHOLDER = '/\{\{\s*([A-Za-z_]\w*(?:\.\w+)*)\s*\}\}/';
 
-	/*****************
-	*** vars: name => value (scalar, array, object with public properties, iterable)
-	*** rowOffset: row where relative rows start, or null outside of any <foreach>
-	******************/
-
+	/**
+	 * @param array<string, mixed> $vars name => value (scalar, array, object with public properties, iterable)
+	 * @param ?int $rowOffset row where relative rows start, or null outside of any <foreach>
+	 */
 	public function __construct(
 		public array $vars = array(),
 		public ?int $rowOffset = null,
 	) {
 	}
 
-	/*****************
-	*** Scope with more variables, drawn from another row
-	******************/
-
+	/**
+	 * Scope with more variables, drawn from another row
+	 */
 	public function with(array $vars, int $rowOffset): self {
 		return new self(array_merge($this->vars,$vars),$rowOffset);
 	}
 
-	/*****************
-	*** Text with its {{placeholders}} replaced by the values of the variables
-	******************/
-
+	/**
+	 * Text with its {{placeholders}} replaced by the values of the variables
+	 */
 	public function substitute(string $text): string {
 		return preg_replace_callback(self::PLACEHOLDER,function ($m) {
 			$value = $this->value($m[1]);
@@ -45,10 +42,9 @@ final readonly class Scope {
 		},$text);
 	}
 
-	/*****************
-	*** Value of a variable, following dots through arrays and object properties
-	******************/
-
+	/**
+	 * Value of a variable, following dots through arrays and object properties
+	 */
 	public function value(string $path): mixed {
 		$names = explode('.',$path);
 		$first = array_shift($names);

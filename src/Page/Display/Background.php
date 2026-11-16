@@ -19,10 +19,9 @@ final readonly class Background implements Element {
 		return $this->vdt;
 	}
 
-	/*****************
-	*** Background read from a .vdt file
-	******************/
-
+	/**
+	 * Background read from a .vdt file
+	 */
 	public static function fromFile(string $file): self {
 		$vdt = @file_get_contents($file);
 		if ($vdt === false)

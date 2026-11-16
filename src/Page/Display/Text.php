@@ -10,10 +10,9 @@ use MiniPaviService\Vdt\VdtHelper;
  */
 final readonly class Text implements Element {
 
-	/*****************
-	*** fill: paints the rest of the row (and, when centered, the start of the row) with bg
-	******************/
-
+	/**
+	 * @param bool $fill paints the rest of the row (and, when centered, the start of the row) with bg
+	 */
 	public function __construct(
 		public string $text,
 		public int $row,

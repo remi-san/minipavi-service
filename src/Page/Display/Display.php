@@ -17,10 +17,9 @@ final readonly class Display {
 		$this->elements = $elements;
 	}
 
-	/*****************
-	*** Videotex content drawing the elements, without clearing the screen first
-	******************/
-
+	/**
+	 * Videotex content drawing the elements, without clearing the screen first
+	 */
 	public function toVdt(MiniPaviClient $client): string {
 		return implode('',array_map(fn(Element $element) => $element->getContent($client),$this->elements));
 	}

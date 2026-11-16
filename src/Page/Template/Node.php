@@ -7,11 +7,11 @@ namespace MiniPaviService\Page\Template;
  */
 interface Node {
 
-	/*****************
-	*** Display elements of this part for the variables of the scope
-	*** Throws TemplateException if it cannot be displayed
-	******************/
-
-	/** @return \MiniPaviService\Page\Display\Element[] */
+	/**
+	 * Display elements of this part for the variables of the scope.
+	 *
+	 * @return \MiniPaviService\Page\Display\Element[]
+	 * @throws TemplateException if it cannot be displayed
+	 */
 	public function elements(Scope $scope): array;
 }

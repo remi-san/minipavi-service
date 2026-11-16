@@ -10,11 +10,10 @@ use MiniPaviService\Page\Parser\{ElementFactory, PageXmlException};
  */
 final readonly class ElementNode implements Node {
 
-	/*****************
-	*** attributes: name => value, as in the XML file
-	*** location: file and line, for error messages
-	******************/
-
+	/**
+	 * @param array<string, string> $attributes name => value, as in the XML file
+	 * @param string $location file and line, for error messages
+	 */
 	public function __construct(
 		private ElementFactory $factory,
 		private string $tag,

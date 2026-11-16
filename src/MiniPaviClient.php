@@ -21,9 +21,7 @@ final class MiniPaviClient {
     public const FCTN_DIRECT_CONNECT = 'DIRECTCNX';
     public const FCTN_DISCONNECT = 'FIN';
 
-    /*****************
-     * Request
-     *****************/
+    // Request of the gateway
 
     // Reads the request of the gateway
     public function start(): void {
@@ -76,9 +74,7 @@ final class MiniPaviClient {
         return MiniPaviCli::$versionMinitel;
     }
 
-    /*****************
-     * Answer
-     *****************/
+    // Answer to the gateway
 
     public function send(string $vdt, ?string $next, Context $context, bool $echo = true, ?array $cmd = null, bool|string $directCall = false): void {
         MiniPaviCli::send($vdt, $next ?? $this->serviceUri(), $context->serialize(), $echo, $cmd, $directCall);

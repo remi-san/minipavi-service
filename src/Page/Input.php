@@ -13,11 +13,10 @@ final readonly class Input {
 
 	public int $length;
 
-	/*****************
-	*** length: defaults to the end of the row
-	*** validWith: MSK_* constants of MiniPaviCli, combined with |
-	******************/
-
+	/**
+	 * @param ?int $length defaults to the end of the row
+	 * @param int $validWith MSK_* constants of MiniPaviCli, combined with |
+	 */
 	public function __construct(
 		public int $row,
 		public int $col = 1,
@@ -35,13 +34,15 @@ final readonly class Input {
 			throw new \InvalidArgumentException("Input of $lines lines from row $row goes past row ".Position::ROWS);
 	}
 
-	/*****************
-	*** MiniPavi command reading the field, prefilled with prefill (one string per line)
-	*** A one-line field is a text input (InputTxt), where every validWith key validates;
-	*** a multi-line one is a message input (InputMsg), where Suite and Retour move
-	*** between the lines instead
-	******************/
-
+	/**
+	 * MiniPavi command reading the field.
+	 *
+	 * A one-line field is a text input (InputTxt), where every validWith key validates;
+	 * a multi-line one is a message input (InputMsg), where Suite and Retour move
+	 * between the lines instead
+	 *
+	 * @param string[] $prefill text of the field, one string per line
+	 */
 	public function toCommand(MiniPaviClient $client, array $prefill = array()): array {
 		if ($this->lines == 1)
 			return $client->createInputTxtCmd($this->col,$this->row,$this->length,$this->validWith,$this->cursor,$this->spaceChar,'',(string)($prefill[0] ?? ''));

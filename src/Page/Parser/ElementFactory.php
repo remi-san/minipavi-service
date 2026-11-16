@@ -30,21 +30,20 @@ final class ElementFactory {
 	// Pictures of <image>, by file, read once: templates build their elements on each display
 	private array $images = array();
 
-	/*****************
-	*** baseDir: folder of the <background> and <image> files (and their subfolders)
-	******************/
-
+	/**
+	 * @param string $baseDir folder of the <background> and <image> files (and their subfolders)
+	 */
 	public function __construct(
 		private string $baseDir,
 	) {
 	}
 
-	/*****************
-	*** Element for a tag of TAGS
-	*** attributes: name => value
-	*** text: content of the XML element
-	******************/
-
+	/**
+	 * Element for a tag of TAGS.
+	 *
+	 * @param array<string, string> $attributes name => value
+	 * @param string $text content of the XML element
+	 */
 	public function element(string $tag, array $attributes, string $text): Element {
 		return match ($tag) {
 			'background' => Background::fromFile($this->file($text)),
@@ -85,21 +84,19 @@ final class ElementFactory {
 		};
 	}
 
-	/*****************
-	*** Picture of an <image>
-	******************/
-
+	/**
+	 * Picture of an <image>
+	 */
 	private function image(string $file): Vdt {
 		$file = $this->file($file);
 		return $this->images[$file] ??= Vdt::fromFile($file);
 	}
 
-	/*****************
-	*** Path of a <background> or <image> file, relative to the page's folder: only files
-	*** from that folder or its subfolders (e.g. images/logo.vdt), since in a template the
-	*** file name may come from the data
-	******************/
-
+	/**
+	 * Path of a <background> or <image> file, relative to the page's folder: only files
+	 * from that folder or its subfolders (e.g. images/logo.vdt), since in a template the
+	 * file name may come from the data
+	 */
 	private function file(string $path): string {
 		$path = trim($path);
 		if ($path === '')
@@ -125,10 +122,9 @@ final class ElementFactory {
 		);
 	}
 
-	/*****************
-	*** Value of a number attribute, or default if absent
-	******************/
-
+	/**
+	 * Value of a number attribute, or default if absent
+	 */
 	public function int(array $attributes, string $attr, int $default): int {
 		if (!isset($attributes[$attr]))
 			return $default;

@@ -10,12 +10,11 @@ namespace MiniPaviService\Page\Template;
  */
 final readonly class ForeachNode implements Node {
 
-	/*****************
-	*** items: variable holding the items (array or iterable)
-	*** row: first row of the first item; relative to the enclosing item if nested
-	*** children: Node[]
-	******************/
-
+	/**
+	 * @param string $items variable holding the items (array or iterable)
+	 * @param int $row first row of the first item; relative to the enclosing item if nested
+	 * @param Node[] $children
+	 */
 	public function __construct(
 		private string $items,
 		private string $as,

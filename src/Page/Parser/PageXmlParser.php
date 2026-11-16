@@ -25,10 +25,9 @@ final class PageXmlParser {
 	) {
 	}
 
-	/*****************
-	*** Page from a file; <background> and <image> files are read from the same folder
-	******************/
-
+	/**
+	 * Page from a file; <background> and <image> files are read from the same folder
+	 */
 	public function parseFile(string $file): Page {
 		$xml = @file_get_contents($file);
 		if ($xml === false)
@@ -36,12 +35,12 @@ final class PageXmlParser {
 		return $this->parse($xml,dirname($file),basename($file));
 	}
 
-	/*****************
-	*** Page from XML content
-	*** baseDir: folder of the <background> and <image> files
-	*** name: shown in error messages
-	******************/
-
+	/**
+	 * Page from XML content.
+	 *
+	 * @param string $baseDir folder of the <background> and <image> files
+	 * @param string $name shown in error messages
+	 */
 	public function parse(string $xml, string $baseDir, string $name = 'page'): Page {
 		$previous = libxml_use_internal_errors(true);
 		libxml_clear_errors();
@@ -78,14 +77,15 @@ final class PageXmlParser {
 		return new StaticPage($this->client,new Display(...$elements),$input);
 	}
 
-	/*****************
-	*** Nodes for the children of an XML element
-	*** template: page of type="template", the only one with placeholders and instructions
-	*** inLoop: inside a <foreach>
-	*** input: set to the <input> of the page, found at its top level only
-	******************/
-
-	/** @return Node[] */
+	/**
+	 * Nodes for the children of an XML element.
+	 *
+	 * @param bool $template page of type="template", the only one with placeholders and instructions
+	 * @param bool $inLoop inside a <foreach>
+	 * @param ?Input $input set to the <input> of the page, found at its top level only
+	 *
+	 * @return Node[]
+	 */
 	private function nodes(\SimpleXMLElement $parent, ElementFactory $factory, string $name, bool $template, bool $inLoop, ?Input &$input): array {
 		$nodes = array();
 		foreach ($parent->children() as $tag=>$elem) {
@@ -151,10 +151,9 @@ final class PageXmlParser {
 		return $nodes;
 	}
 
-	/*****************
-	*** Result of check(), with the location added to its error message
-	******************/
-
+	/**
+	 * Result of check(), with the location added to its error message
+	 */
 	private function check(string $at, string $tag, callable $check): mixed {
 		try {
 			return $check();
