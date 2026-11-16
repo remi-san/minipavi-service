@@ -65,7 +65,7 @@ $router->setDefaultRoute(HomeController::NAME);
 
   Every response but `ChangePage` answers the gateway and ends the request.
 
-- The `KEY_*` and `FCTN_*` constants of `Controller` name the function keys and connection
+- The `KEY_*` and `FCTN_*` constants of `MiniPaviClient` name the function keys and connection
   codes in `MiniPaviClient::fctn()`.
 
 ## Page XML format

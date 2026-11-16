@@ -6,6 +6,7 @@ use MiniPaviService\MiniPaviClient;
 use MiniPaviService\Page;
 use MiniPaviService\Page\Display\Display;
 use MiniPaviService\Page\Template\{Node, Scope, TemplateException};
+use MiniPaviService\Vdt\VdtHelper;
 
 final readonly class TemplatePage implements Page {
 
@@ -18,7 +19,7 @@ final readonly class TemplatePage implements Page {
 	}
 
 	public function display(array $data = array()): string {
-		return $this->client->clearScreen().VDT_CUROFF.$this->toDisplay($data)->toVdt($this->client);
+		return VdtHelper::clearScreen().VDT_CUROFF.$this->toDisplay($data)->toVdt($this->client);
 	}
 
 	public function readInput(array $prefill = array()): ?array {

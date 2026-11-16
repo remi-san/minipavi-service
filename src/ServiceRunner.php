@@ -4,23 +4,22 @@ namespace MiniPaviService;
 
 /**
  * Runs the service for the requests of a MiniPavi gateway, and sends browsers to an emulator
- * that opens the service through a gateway:
- *  - with EMULATOR_URL set (the local stack of this repository): that emulator, and the gateway
- *    GATEWAY_URL, which reaches the service at SERVICES_INTERNAL_HOST (default "services");
- *  - otherwise (a service on a public server): the minipavi.fr emulator and gateway, reaching
- *    the service at the URL the browser asked for.
+ * that opens the service through a gateway: by default the one of EmulatorConfig::init(), from
+ * the environment (the local stack of this repository) or else minipavi.fr's.
  */
 final class ServiceRunner {
 
-    public const PUBLIC_EMULATOR_URL = 'http://www.minipavi.fr/emulminitel/';
+    private EmulatorConfig $emulator;
 
-    public function __construct(private Service $service) {
+    public function __construct(
+        private Service $service,
+        ?EmulatorConfig $emulator = null,
+    ) {
+        $this->emulator = $emulator ?? EmulatorConfig::init();
     }
 
     public function run(): void {
-
         $this->check();
-
         $this->service->run();
     }
 
@@ -32,21 +31,12 @@ final class ServiceRunner {
     }
 
     private function redirectBrowser(): void {
-        $emulator = getenv('EMULATOR_URL');
-        if ($emulator) {
-            $serviceUrl = 'http://'.(getenv('SERVICES_INTERNAL_HOST') ?: 'services').$_SERVER['REQUEST_URI'];
-            $gateway = getenv('GATEWAY_URL') ?: 'ws://localhost:8182/';
-        } else {
-            $serviceUrl = $this->scheme().'://'.$_SERVER['HTTP_HOST'].$_SERVER['REQUEST_URI'];
-            $emulator = self::PUBLIC_EMULATOR_URL;
-            $gateway = DEFAULT_MINIPAVI_GW;
-        }
-        $gw = rtrim($gateway,'/').'/?url='.urlencode($serviceUrl);
-        header('Location: '.rtrim($emulator,'/').'/index.php?gw='.urlencode($gw));
+        $serviceUrl = self::scheme().'://'.$_SERVER['HTTP_HOST'].$_SERVER['REQUEST_URI'];
+        header('Location: '.$this->emulator->getEmulatorUrl($serviceUrl));
     }
 
     // https if the request came over TLS, directly or through a proxy that says so
-    private function scheme(): string {
+    private static function scheme(): string {
         if (!empty($_SERVER['HTTPS']) && strtolower($_SERVER['HTTPS']) !== 'off')
             return 'https';
         if (strtolower($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https')

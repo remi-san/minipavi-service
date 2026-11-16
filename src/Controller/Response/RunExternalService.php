@@ -7,14 +7,19 @@ use MiniPaviService\MiniPaviClient;
 use MiniPaviService\Controller\Response;
 
 class RunExternalService implements Response {
+    use ResponseTrait;
 
     public const CALL_MODE_CONNECT = 'yes-cnx';
 
     public function __construct(
+        string $state,
+        array $parameters,
         public string $vdt,
         public string $url,
         public string $callMode
-    ) {}
+    ) {
+        $this->init($state, $parameters);
+    }
 
     public function execute(MiniPaviClient $client, Context $context): void {
         $client->send($this->vdt, $this->url, $context, true, null, $this->callMode);

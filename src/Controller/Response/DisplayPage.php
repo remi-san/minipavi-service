@@ -7,7 +7,14 @@ use MiniPaviService\MiniPaviClient;
 use MiniPaviService\Controller\Response;
 
 class DisplayPage implements Response {
-    public function __construct(public string $vdt) {
+    use ResponseTrait;
+
+    public function __construct(
+        string $state,
+        array $parameters,
+        public string $vdt
+    ) {
+        $this->init($state, $parameters);
     }
 
     public function execute(MiniPaviClient $client, Context $context): void {

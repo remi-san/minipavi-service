@@ -6,9 +6,20 @@ use MiniPavi\MiniPaviCli;
 
 /**
  * Instance wrapper around the static MiniPaviCli: the request of the gateway (after start()),
- * the answer to it (send()), and the Videotex helpers. The only class calling MiniPaviCli.
+ * the answer to it (send()). With VdtHelper, the only classes calling MiniPaviCli.
  */
 final class MiniPaviClient {
+
+    // Function keys, and the codes of fctn() for connections
+    public const KEY_REFRESH = 'REPETITION';
+    public const KEY_GUIDE = 'GUIDE';
+    public const KEY_SEND = 'ENVOI';
+    public const KEY_NEXT = 'SUITE';
+    public const KEY_PREVIOUS = 'RETOUR';
+    public const KEY_SUMMARY = 'SOMMAIRE';
+    public const FCTN_CONNECT = 'CNX';
+    public const FCTN_DIRECT_CONNECT = 'DIRECTCNX';
+    public const FCTN_DISCONNECT = 'FIN';
 
     /*****************
      * Request
@@ -19,7 +30,15 @@ final class MiniPaviClient {
         MiniPaviCli::start();
     }
 
-    // Function key used, or a FCTN_* code of Controller (CNX, FIN...)
+    public function isConnecting(): bool {
+        return $this->fctn() == self::FCTN_CONNECT || $this->fctn() == self::FCTN_DIRECT_CONNECT;
+    }
+
+    public function isDisconnecting(): bool {
+        return $this->fctn() == self::FCTN_DISCONNECT;
+    }
+
+    // Function key used, or a FCTN_* code (CNX, FIN...)
     public function fctn(): string {
         return (string)MiniPaviCli::$fctn;
     }
@@ -71,34 +90,6 @@ final class MiniPaviClient {
 
     public function createInputMsgCmd(int $col, int $row, int $width, int $height, int $validWith, bool $cursor, string $spaceChar, array $prefill = array()): array {
         return MiniPaviCli::createInputMsgCmd($col, $row, $width, $height, $validWith, $cursor, $spaceChar, $prefill);
-    }
-
-    /*****************
-     * Videotex
-     *****************/
-
-    public function setPos(int $col, int $row): string {
-        return MiniPaviCli::setPos($col, $row);
-    }
-
-    public function writeLine0(string $text, bool $blink = false): string {
-        return MiniPaviCli::writeLine0($text, $blink);
-    }
-
-    public function clearScreen(): string {
-        return MiniPaviCli::clearScreen();
-    }
-
-    public function repeatChar(string $char, int $count): string {
-        return MiniPaviCli::repeatChar($char, $count);
-    }
-
-    public function writeCentered(int $row, string $text, string $attr = ''): string {
-        return MiniPaviCli::writeCentered($row, $text, $attr);
-    }
-
-    public function toG2(string $text): string {
-        return MiniPaviCli::toG2($text);
     }
 
     private function serviceUri(): string {

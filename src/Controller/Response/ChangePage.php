@@ -7,11 +7,18 @@ use MiniPaviService\MiniPaviClient;
 use MiniPaviService\Controller\Response;
 
 class ChangePage implements Response {
-    public function __construct(public string $page) {
+    use ResponseTrait;
+
+    public function __construct(
+        string $state,
+        array $parameters,
+        private string $route
+    ) {
+        $this->init($state, $parameters);
     }
 
     public function execute(MiniPaviClient $client, Context $context): void {
-        $context->route = $this->page;
+        $context->changeRoute($this->route);
     }
 
     public function interrupts(): bool {

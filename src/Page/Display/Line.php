@@ -3,6 +3,7 @@
 namespace MiniPaviService\Page\Display;
 
 use MiniPaviService\MiniPaviClient;
+use MiniPaviService\Vdt\VdtHelper;
 
 /**
  * Horizontal line made of a repeated character (<line> in the page XML format)
@@ -36,6 +37,6 @@ final readonly class Line implements Element {
 	}
 
 	public function getContent(MiniPaviClient $client): string {
-		return $client->setPos($this->col,$this->row).$this->color->text().$client->repeatChar($this->char,$this->length);
+		return VdtHelper::setPos($this->col,$this->row).$this->color->text().VdtHelper::repeatChar($this->char,$this->length);
 	}
 }

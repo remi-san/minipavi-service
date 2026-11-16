@@ -14,32 +14,24 @@ final class Service {
 
 		$this->client->start();
 
-		if ($this->client->fctn() == Controller::FCTN_CONNECT || $this->client->fctn() == Controller::FCTN_DIRECT_CONNECT) {
-			$context = new Context();
+		if ($this->client->isConnecting()) {
+			$context = new Context($this->router->defaultRoute());
 			$this->client->clearContent();
 			trigger_error("[MiniPaviService] CNX");
 		} else {
-			$context = Context::unserialize($this->client->context());		// Récupération du contexte utilisateur
+			$context = Context::unserialize($this->client->context());
 		}
 
-		$context->route ??= $this->router->defaultRoute();
-
-		if ($this->client->fctn() == Controller::FCTN_DISCONNECT) {
-				trigger_error("[MiniPaviService] DECO");
-				return;
+		if ($this->client->isDisconnecting()) {
+			trigger_error("[MiniPaviService] DECO");
+			return;
 		}
 
 		while(true) {
-			$route = $context->route;
-
-			$controller = $this->router->route($route);
-			$controller->setState($context->controllerState($route) ?? Controller::STATE_INIT);
-			$controller->setData($context->controllerData($route));
-
-			$response = $controller->run();
-
-			$context->setControllerState($route, $controller->state());
-			$context->setControllerData($route, $controller->data());
+			$controller = $this->router->route($context->route());
+			$response = $controller->run($context->getRequest());
+			
+			$context->update($response);
 			
 			$response->execute($this->client, $context);
 

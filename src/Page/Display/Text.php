@@ -3,6 +3,7 @@
 namespace MiniPaviService\Page\Display;
 
 use MiniPaviService\MiniPaviClient;
+use MiniPaviService\Vdt\VdtHelper;
 
 /**
  * Text at a position, or centered on its row (<text> in the page XML format)
@@ -41,11 +42,11 @@ final readonly class Text implements Element {
 			// Starts at column 1 and pads with spaces up to the text (the spaces having the
 			// text's width): the background color only applies from a space onwards
 			$pad = intdiv($col-1,$charWidth);
-			$vdt = $client->setPos(1,$this->row).$attr.str_repeat(' ',$pad).$client->toG2($this->text);
+			$vdt = VdtHelper::setPos(1,$this->row).$attr.str_repeat(' ',$pad).VdtHelper::toG2($this->text);
 		} elseif ($this->centered) {
-			$vdt = $client->setPos($col,$this->row).$attr.$client->toG2($this->text);
+			$vdt = VdtHelper::setPos($col,$this->row).$attr.VdtHelper::toG2($this->text);
 		} else {
-			$vdt = $client->setPos($this->col,$this->row).$attr.$client->toG2($this->text);
+			$vdt = VdtHelper::setPos($this->col,$this->row).$attr.VdtHelper::toG2($this->text);
 		}
 		// Fills the rest of the row with the background color
 		if ($this->fill)
