@@ -16,11 +16,11 @@ final class RequestTest extends TestCase
     public function testCarriesTheUserInput(): void
     {
         $terminal = new Terminal('CALLFROM 0102030405', 'other', '???');
-        $request = new Request(Controller::STATE_READ_INPUT, ['page' => 2], MiniPaviClient::KEY_SEND, ['Hello ', 'world'], $terminal);
+        $request = new Request(Controller::STATE_READ_INPUT, ['page' => 2], FunctionKey::Send->value, ['Hello ', 'world'], $terminal);
 
         self::assertSame(Controller::STATE_READ_INPUT, $request->state());
         self::assertSame(2, $request->parameter('page'));
-        self::assertSame(MiniPaviClient::KEY_SEND, $request->key());
+        self::assertSame('ENVOI', $request->key());
         self::assertSame(['Hello ', 'world'], $request->content());
         self::assertSame('Hello world', $request->contentAsString());
         self::assertSame($terminal, $request->terminal());

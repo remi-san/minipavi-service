@@ -111,7 +111,7 @@ $router->setDefaultRoute(HomeController::NAME);
   To add states, override `run()` and call `parent::run()` for the others.
 
 - The `FCTN_*` constants of `MiniPaviClient` name the connection codes of `Request::key()`
-  (`CNX`, `DIRECTCNX`, `FIN`). Its `KEY_*` constants are deprecated: use `FunctionKey`.
+  (`CNX`, `DIRECTCNX`, `FIN`).
 
 ## Page XML format
 

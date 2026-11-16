@@ -97,8 +97,8 @@ final class ResponseTest extends TestCase
     public function testRunExternalServiceTakesACallMode(): void
     {
         $direct = new RunExternalService(Controller::STATE_INIT, [], '', 'https://example.org/', CallMode::Direct);
-        // The string values of before still work
-        $connect = new RunExternalService(Controller::STATE_INIT, [], '', 'https://example.org/', RunExternalService::CALL_MODE_CONNECT);
+        // The call mode can also be given by its value
+        $connect = new RunExternalService(Controller::STATE_INIT, [], '', 'https://example.org/', 'yes-cnx');
 
         self::assertSame('yes', $this->answer($direct)['directcall']);
         self::assertSame(CallMode::Connect, $connect->callMode);

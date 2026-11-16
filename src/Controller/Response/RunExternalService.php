@@ -11,9 +11,6 @@ use MiniPaviService\MiniPaviClient;
 
 final readonly class RunExternalService extends Response
 {
-    /** @deprecated use CallMode::Connect */
-    public const CALL_MODE_CONNECT = CallMode::Connect->value;
-
     public CallMode $callMode;
 
     /**

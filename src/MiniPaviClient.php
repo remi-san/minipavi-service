@@ -12,19 +12,7 @@ use MiniPavi\MiniPaviCli;
  */
 final class MiniPaviClient
 {
-    // Function keys, and the codes of fctn() for connections
-    /** @deprecated use FunctionKey::Refresh */
-    public const KEY_REFRESH = FunctionKey::Refresh->value;
-    /** @deprecated use FunctionKey::Guide */
-    public const KEY_GUIDE = FunctionKey::Guide->value;
-    /** @deprecated use FunctionKey::Send */
-    public const KEY_SEND = FunctionKey::Send->value;
-    /** @deprecated use FunctionKey::Next */
-    public const KEY_NEXT = FunctionKey::Next->value;
-    /** @deprecated use FunctionKey::Previous */
-    public const KEY_PREVIOUS = FunctionKey::Previous->value;
-    /** @deprecated use FunctionKey::Summary */
-    public const KEY_SUMMARY = FunctionKey::Summary->value;
+    // Codes of fctn() for connections (function keys: see FunctionKey)
     public const FCTN_CONNECT = 'CNX';
     public const FCTN_DIRECT_CONNECT = 'DIRECTCNX';
     public const FCTN_DISCONNECT = 'FIN';
