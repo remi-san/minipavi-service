@@ -86,12 +86,12 @@ $router->setDefaultRoute(HomeController::NAME);
   |---|---|---|
   | `Response::display($vdt)` | sends Videotex content to the gateway; the next key comes back to this controller | `STATE_READ_INPUT` |
   | `Response::readInput($vdt, $command)` | sends content and the command reading the page's input field (`Page::inputCommand()`) to the gateway | `STATE_READ_INPUT` |
-  | `Response::goTo($route)` | switches to another controller, and runs it at once | `STATE_INIT` |
+  | `Response::goTo($route, $parameters)` | switches to another controller, which runs at once: at `STATE_INIT`, with `$parameters`, without the user's input; this controller is reset | `STATE_INIT` |
   | `Response::connectTo($url, $vdt)` | sends the user to another service, as a new connection (`CallMode::Connect`) | `STATE_INIT` |
 
   Every response but `goTo()` answers the gateway and ends the request. The state and
-  parameters are what this controller keeps for its next run (for `goTo()` and
-  `connectTo()`, when the user comes back to it); give others by name, e.g.
+  parameters are what this controller keeps for its next run (for `connectTo()`, when the
+  user comes back to it); give others by name, e.g.
   `Response::readInput($vdt, $command, parameters: ['page' => 2])`. The classes behind them
   (`DisplayPage`, `RunCommand`, `ChangePage`, `RunExternalService`) can also be built directly.
 
