@@ -40,7 +40,7 @@ $client = new MiniPaviClient();
 $pages = new PageXmlParser($client);
 
 $router = new Router();
-$router->addRoute(HomeController::NAME, new HomeController($client, $pages->parseFile(__DIR__.'/../config/pages/home.xml')));
+$router->addRoute(HomeController::NAME, new HomeController($pages->parseFile(__DIR__.'/../config/pages/home.xml')));
 $router->setDefaultRoute(HomeController::NAME);
 
 (new ServiceRunner(new Service($client, $router)))->run();
@@ -52,9 +52,18 @@ $router->setDefaultRoute(HomeController::NAME);
   public server), the minipavi.fr emulator and gateway, with the URL the browser asked for.
 - **`Service`** reads the gateway's request, restores the `Context`, and runs the controller of
   the current route until a response is sent to the gateway.
-- **A `Controller`** has a state (`STATE_INIT`, `STATE_DISPLAY`, `STATE_INIT_INPUT`,
-  `STATE_READ_INPUT`) and data, both kept in the context from one request to the next
-  (`state()`/`setState()`, `data()`/`setData()`). `run()` returns a `Response`:
+- **A `Controller`** runs on a `Request` and returns a `Response`. The request gives:
+  - `state()` (`STATE_INIT`, `STATE_DISPLAY`, `STATE_INIT_INPUT`, `STATE_READ_INPUT`) and
+    `parameters()` / `parameter($name)`: what the controller's previous response asked to
+    keep, from one request of the gateway to the next (the context keeps them per route);
+  - `key()`: the function key the user pressed (`MiniPaviClient::KEY_*`), or a connection code
+    (`FCTN_*`);
+  - `content()`: the text typed, one string per line of the input field, and
+    `contentAsString()`;
+  - `terminal()`: where the user connects from (`remoteAddr()`, `typeSocket()`,
+    `versionMinitel()`).
+
+  Every response takes the state and parameters to keep, then:
 
   | Response | Effect |
   |---|---|
@@ -66,7 +75,7 @@ $router->setDefaultRoute(HomeController::NAME);
   Every response but `ChangePage` answers the gateway and ends the request.
 
 - The `KEY_*` and `FCTN_*` constants of `MiniPaviClient` name the function keys and connection
-  codes in `MiniPaviClient::fctn()`.
+  codes of `Request::key()`.
 
 ## Page XML format
 
