@@ -28,7 +28,7 @@ final readonly class TemplatePage implements Page
      */
     public function display(array $data = []): string
     {
-        return VdtHelper::clearScreen() . Videotex::CURSOR_OFF . $this->toDisplay($data)->toVdt($this->client);
+        return VdtHelper::clearScreen() . Videotex::CURSOR_OFF . $this->toDisplay($data)->toVdt($this->client->terminal());
     }
 
     /**

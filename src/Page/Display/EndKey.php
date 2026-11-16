@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Page\Display;
 
-use MiniPaviService\MiniPaviClient;
+use MiniPaviService\Terminal;
 use MiniPaviService\Vdt\Screen;
 use MiniPaviService\Vdt\VdtHelper;
 
@@ -24,12 +24,12 @@ final readonly class EndKey implements Element
         }
     }
 
-    // The kind of client is known from the current request to the service
-    public function getContent(MiniPaviClient $client): string
+    // Adapters are websockets with a known Minitel; emulators don't know it
+    public function getContent(Terminal $terminal): string
     {
-        if ($client->versionMinitel() != '???' && $client->typeSocket() == 'websocket') {
-            return VdtHelper::setPos(9, $this->row ?? Screen::ROWS - 1) . Color::White->text() . '[Maj] +' . Key::badge($client, 'Connexion/fin', $this->color);
+        if ($terminal->versionMinitel() != '???' && $terminal->typeSocket() == 'websocket') {
+            return VdtHelper::setPos(9, $this->row ?? Screen::ROWS - 1) . Color::White->text() . '[Maj] +' . Key::badge('Connexion/fin', $this->color);
         }
-        return VdtHelper::setPos(12, $this->row ?? Screen::ROWS) . Key::badge($client, 'Connexion/fin', $this->color);
+        return VdtHelper::setPos(12, $this->row ?? Screen::ROWS) . Key::badge('Connexion/fin', $this->color);
     }
 }

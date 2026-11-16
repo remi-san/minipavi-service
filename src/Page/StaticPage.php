@@ -29,7 +29,7 @@ final readonly class StaticPage implements Page
      */
     public function display(array $data = []): string
     {
-        return VdtHelper::clearScreen() . Videotex::CURSOR_OFF . $this->display->toVdt($this->client);
+        return VdtHelper::clearScreen() . Videotex::CURSOR_OFF . $this->display->toVdt($this->client->terminal());
     }
 
     /**

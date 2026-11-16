@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Page\Display;
 
-use MiniPaviService\MiniPaviClient;
+use MiniPaviService\Terminal;
 
 /**
  * Something drawn on the screen by a Display. The screen is 40 columns x 24 rows,
@@ -13,8 +13,8 @@ use MiniPaviService\MiniPaviClient;
 interface Element
 {
     /**
-     * Videotex content drawing the element; client gives the Videotex helpers, and the
-     * current request for elements depending on the user's terminal
+     * Videotex content drawing the element, for the user's terminal (which only some
+     * elements depend on, e.g. EndKey)
      */
-    public function getContent(MiniPaviClient $client): string;
+    public function getContent(Terminal $terminal): string;
 }

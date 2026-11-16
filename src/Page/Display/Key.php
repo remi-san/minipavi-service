@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Page\Display;
 
-use MiniPaviService\MiniPaviClient;
+use MiniPaviService\Terminal;
 use MiniPaviService\Vdt\VdtHelper;
 use MiniPaviService\Vdt\Videotex;
 
@@ -27,15 +27,15 @@ final readonly class Key implements Element
         Position::check($row, $col);
     }
 
-    public function getContent(MiniPaviClient $client): string
+    public function getContent(Terminal $terminal): string
     {
-        return VdtHelper::setPos($this->col, $this->row) . ($this->bg?->background() ?? '') . self::badge($client, $this->label, $this->color);
+        return VdtHelper::setPos($this->col, $this->row) . ($this->bg?->background() ?? '') . self::badge($this->label, $this->color);
     }
 
     /**
      * Badge of a key, at the cursor position (also used by EndKey)
      */
-    public static function badge(MiniPaviClient $client, string $label, Color $color): string
+    public static function badge(string $label, Color $color): string
     {
         return Color::White->text() . Videotex::UNDERLINE_ON . ' ' . $color->text() . Videotex::INVERSE_ON . VdtHelper::toG2(' ' . $label . ' ') . Color::White->text() . Videotex::INVERSE_OFF . Videotex::UNDERLINE_OFF . ' ';
     }

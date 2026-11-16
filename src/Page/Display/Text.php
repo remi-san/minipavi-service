@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Page\Display;
 
-use MiniPaviService\MiniPaviClient;
+use MiniPaviService\Terminal;
 use MiniPaviService\Vdt\Screen;
 use MiniPaviService\Vdt\VdtHelper;
 use MiniPaviService\Vdt\Videotex;
@@ -30,7 +30,7 @@ final readonly class Text implements Element
         Position::check($row, $col);
     }
 
-    public function getContent(MiniPaviClient $client): string
+    public function getContent(Terminal $terminal): string
     {
         $attr = ($this->size?->vdt() ?? '') . ($this->bg?->background() ?? '') . $this->color->text();
         // Characters of double width take two columns each

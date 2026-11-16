@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Page\Display;
 
-use MiniPaviService\MiniPaviClient;
+use MiniPaviService\Terminal;
 use MiniPaviService\Vdt\Screen;
 use MiniPaviService\Vdt\VdtHelper;
 
@@ -40,7 +40,7 @@ final readonly class Line implements Element
         }
     }
 
-    public function getContent(MiniPaviClient $client): string
+    public function getContent(Terminal $terminal): string
     {
         return VdtHelper::setPos($this->col, $this->row) . $this->color->text() . VdtHelper::repeatChar($this->char, $this->length);
     }

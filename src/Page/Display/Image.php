@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Page\Display;
 
-use MiniPaviService\MiniPaviClient;
+use MiniPaviService\Terminal;
 use MiniPaviService\Vdt\Vdt;
 
 /**
@@ -30,7 +30,7 @@ final readonly class Image implements Element
         $this->vdt = $image->withoutClear()->offset($col - 1, $row - 1)->toString();
     }
 
-    public function getContent(MiniPaviClient $client): string
+    public function getContent(Terminal $terminal): string
     {
         return $this->vdt;
     }
