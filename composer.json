@@ -1,0 +1,16 @@
+{
+    "name": "minipavi-stack/framework",
+    "description": "Framework for Minitel services on MiniPavi: XML pages and templates, controllers, routing",
+    "license": "GPL-3.0-or-later",
+    "type": "library",
+    "require": {
+        "php": ">=8.2",
+        "ext-mbstring": "*",
+        "ext-simplexml": "*",
+        "ludosevilla/minipavi-cli": "^1.1.1"
+    },
+    "autoload": {
+        "psr-4": { "MiniPaviService\\": "src/" },
+        "files": ["bootstrap.php"]
+    }
+}
