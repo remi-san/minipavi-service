@@ -63,7 +63,8 @@ $router->setDefaultRoute(HomeController::NAME);
 - **A `Controller`** runs on a `Request` and returns a `Response`. The request gives:
   - `state()` (`STATE_INIT`, `STATE_DISPLAY`, `STATE_INIT_INPUT`, `STATE_READ_INPUT`) and
     `parameters()` / `parameter($name)`: what the controller's previous response asked to
-    keep, from one request of the gateway to the next (the context keeps them per route);
+    keep, from one request of the gateway to the next (the context keeps them per route, and
+    goes to the gateway as JSON: parameters are text, numbers, booleans, null or arrays);
   - `functionKey()`: the function key the user pressed, a `FunctionKey` (`Send`, `Next`,
     `Previous`, `Refresh`, `Summary`, `Guide`, `Cancel`, `Correction`), or null for a
     connection code; `key()` gives the name the gateway sent (`ENVOI`…, or `CNX`, `FIN`…);
