@@ -24,15 +24,12 @@ final class Context
     ) {}
 
     /**
-     * Context sent with the previous answer; a context without route (e.g. sent by another
-     * version of the service) starts at defaultRoute
+     * Context sent with the previous answer (JSON, see serialize()); a context without route
+     * (e.g. sent by another version of the service) starts at defaultRoute
      */
     public static function unserialize(string $serialized, string $defaultRoute): self
     {
-        $context = @unserialize($serialized, ['allowed_classes' => false]);
-        if (!\is_array($context)) {
-            throw new \RuntimeException('Cannot unserialize context');
-        }
+        $context = self::decode($serialized);
 
         return new self(
             \is_string($context['route'] ?? null) ? $context['route'] : $defaultRoute,
@@ -76,13 +73,58 @@ final class Context
         return $valid;
     }
 
+    /**
+     * The context as JSON: {"route": ..., "states": {route: state}, "parameters": {route:
+     * {name: value}}}. Parameters must be JSON values (UTF-8 text, numbers, booleans, null,
+     * arrays).
+     */
     public function serialize(): string
     {
-        return serialize([
-            'route' => $this->route,
-            'states' => $this->states,
-            'parameters' => $this->parameters,
-        ]);
+        try {
+            return json_encode([
+                'route' => $this->route,
+                'states' => (object) $this->states,
+                'parameters' => (object) array_map(fn(array $parameters) => (object) $parameters, $this->parameters),
+            ], JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        } catch (\JsonException $e) {
+            throw new \RuntimeException('Cannot serialize context: ' . $e->getMessage(), 0, $e);
+        }
+    }
+
+    /**
+     * @return array<mixed>
+     */
+    private static function decode(string $serialized): array
+    {
+        try {
+            $context = json_decode($serialized, true, 512, JSON_THROW_ON_ERROR);
+        } catch (\JsonException) {
+            $context = self::decodeFormerFormat($serialized);
+        }
+        if (!\is_array($context)) {
+            throw new \RuntimeException('Cannot unserialize context');
+        }
+
+        return $context;
+    }
+
+    /**
+     * Context in the format used before JSON, PHP's serialize(), still sent by sessions that
+     * were open during the update; never instantiates a class. To remove once no session can
+     * be that old.
+     */
+    private static function decodeFormerFormat(string $serialized): mixed
+    {
+        if (!str_starts_with($serialized, 'a:')) {
+            return null;
+        }
+        // unserialize() warns about invalid content: it is rejected by the caller instead
+        set_error_handler(fn() => true);
+        try {
+            return unserialize($serialized, ['allowed_classes' => false]);
+        } finally {
+            restore_error_handler();
+        }
     }
 
     public function route(): string

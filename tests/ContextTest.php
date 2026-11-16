@@ -8,6 +8,7 @@ use MiniPaviService\Context;
 use MiniPaviService\Controller;
 use MiniPaviService\Controller\Response\RunCommand;
 use MiniPaviService\Terminal;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class ContextTest extends TestCase
@@ -76,9 +77,46 @@ final class ContextTest extends TestCase
         self::assertSame(['page' => 2, 'query' => 'abc'], $restored->parameters());
     }
 
+    public function testSerializesAsJson(): void
+    {
+        $context = new Context('home');
+        $context->updateState(Controller::STATE_READ_INPUT);
+        $context->updateParameters(['query' => 'café/thé', 'page' => 2]);
+
+        self::assertSame(
+            '{"route":"home","states":{"home":"read-input"},"parameters":{"home":{"query":"café/thé","page":2}}}',
+            $context->serialize(),
+        );
+    }
+
+    public function testParametersThatAreNotJsonCannotBeSerialized(): void
+    {
+        $context = new Context('home');
+        $context->updateParameters(['query' => "\xE9t\xE9"]);
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('Cannot serialize context');
+
+        $context->serialize();
+    }
+
+    public function testUnserializeReadsContextsOfTheFormerFormat(): void
+    {
+        // PHP serialize(), as sent before the JSON format, by sessions open during an update
+        $context = Context::unserialize(serialize([
+            'route' => 'directory',
+            'states' => ['directory' => Controller::STATE_READ_INPUT],
+            'parameters' => ['directory' => ['page' => 2]],
+        ]), 'home');
+
+        self::assertSame('directory', $context->route());
+        self::assertSame(Controller::STATE_READ_INPUT, $context->state());
+        self::assertSame(['page' => 2], $context->parameters());
+    }
+
     public function testUnserializeWithoutRouteStartsAtTheDefaultRoute(): void
     {
-        $context = Context::unserialize(serialize(['states' => ['menu' => Controller::STATE_READ_INPUT]]), 'home');
+        $context = Context::unserialize('{"states":{"menu":"read-input"}}', 'home');
 
         self::assertSame('home', $context->route());
         self::assertSame(Controller::STATE_INIT, $context->state());
@@ -86,7 +124,7 @@ final class ContextTest extends TestCase
 
     public function testUnserializeDropsMalformedEntries(): void
     {
-        $context = Context::unserialize(serialize([
+        $context = Context::unserialize((string) json_encode([
             'route' => 'home',
             'states' => ['home' => Controller::STATE_READ_INPUT, 3 => 'display', 'menu' => ['not a state']],
             'parameters' => ['home' => ['page' => 2, 0 => 'no name'], 'menu' => 'not parameters'],
@@ -99,17 +137,30 @@ final class ContextTest extends TestCase
         self::assertSame([], $context->parameters());
     }
 
-    public function testUnserializeRejectsWhatIsNotAContext(): void
+    /**
+     * @return iterable<string, array{string}>
+     */
+    public static function notContexts(): iterable
+    {
+        yield 'text' => ['not a context'];
+        yield 'JSON scalar' => ['123'];
+        yield 'truncated JSON' => ['{"route":"ho'];
+        yield 'PHP serialized scalar' => ['s:4:"home";'];
+    }
+
+    #[DataProvider('notContexts')]
+    public function testUnserializeRejectsWhatIsNotAContext(string $serialized): void
     {
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('Cannot unserialize context');
 
-        Context::unserialize('not a context', 'home');
+        Context::unserialize($serialized, 'home');
     }
 
     public function testUnserializeDoesNotCreateObjects(): void
     {
-        // The context comes back from the gateway: no class may be instantiated from it
+        // The context comes back from the gateway: no class may be instantiated from it, even
+        // in the former format
         $context = Context::unserialize(serialize(['route' => 'home', 'parameters' => ['home' => ['object' => new \ArrayObject()]]]), 'home');
 
         self::assertInstanceOf(\__PHP_Incomplete_Class::class, $context->parameters()['object']);
