@@ -9,8 +9,19 @@
         "ext-simplexml": "*",
         "ludosevilla/minipavi-cli": "^1.1.1"
     },
+    "require-dev": {
+        "friendsofphp/php-cs-fixer": "^3.95"
+    },
     "autoload": {
         "psr-4": { "MiniPaviService\\": "src/" },
         "files": ["bootstrap.php"]
+    },
+    "scripts": {
+        "cs": "php-cs-fixer check --diff",
+        "cs-fix": "php-cs-fixer fix"
+    },
+    "scripts-descriptions": {
+        "cs": "Checks the coding style, showing what would change",
+        "cs-fix": "Fixes the coding style"
     }
 }
