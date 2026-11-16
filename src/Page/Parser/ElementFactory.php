@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Page\Parser;
 
+use MiniPaviService\FunctionKey;
 use MiniPaviService\Page\Display\{Background, Color, Element, EndKey, Image, Key, Line, Size, Text};
 use MiniPaviService\Page\Input;
 use MiniPaviService\Vdt\Vdt;
@@ -20,12 +21,6 @@ final class ElementFactory
     // Tags of the display elements
     public const TAGS = ['background','image','text','line','key','endkey'];
 
-    // Keys for the validwith attribute of <input>, separated by spaces
-    private const KEYS = [
-        'sommaire' => MSK_SOMMAIRE, 'annulation' => MSK_ANNULATION, 'retour' => MSK_RETOUR,
-        'repetition' => MSK_REPETITION, 'guide' => MSK_GUIDE, 'correction' => MSK_CORRECTION,
-        'suite' => MSK_SUITE, 'envoi' => MSK_ENVOI,
-    ];
 
     private const LINE_CHARS = ['top' => Line::TOP, 'middle' => Line::MIDDLE, 'bottom' => Line::BOTTOM];
 
@@ -122,12 +117,11 @@ final class ElementFactory
         if ($keys === false) {
             throw new PageXmlException('validwith: ' . preg_last_error_msg());
         }
-        $validWith = 0;
-        foreach ($keys as $key) {
-            if (!isset(self::KEYS[$key])) {
-                throw new PageXmlException("unknown validwith key \"$key\" (" . implode(', ', array_keys(self::KEYS)) . ')');
-            }
-            $validWith |= self::KEYS[$key];
+        // Keys for the validwith attribute of <input>, separated by spaces
+        $validWith = [];
+        foreach ($keys as $name) {
+            $validWith[] = FunctionKey::fromXmlName($name)
+                ?? throw new PageXmlException("unknown validwith key \"$name\" (" . implode(', ', array_map(fn(FunctionKey $key) => $key->xmlName(), FunctionKey::cases())) . ')');
         }
         return new Input(
             row: $this->int($attributes, 'row', 13),

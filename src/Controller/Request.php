@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MiniPaviService\Controller;
 
 use MiniPaviService\Controller;
+use MiniPaviService\FunctionKey;
 use MiniPaviService\Terminal;
 
 /**
@@ -15,7 +16,7 @@ readonly class Request
 {
     /**
      * @param array<string, mixed> $parameters
-     * @param string $key function key pressed (MiniPaviClient::KEY_*), or connection code
+     * @param string $key function key pressed (FunctionKey), or connection code
      *                    (MiniPaviClient::FCTN_*)
      * @param list<string> $content text typed, one string per line of the input field
      */
@@ -46,11 +47,20 @@ readonly class Request
     }
 
     /**
-     * Function key pressed (MiniPaviClient::KEY_*), or connection code (MiniPaviClient::FCTN_*)
+     * Name of the function key pressed (FunctionKey), or connection code
+     * (MiniPaviClient::FCTN_*); see functionKey()
      */
     public function key(): string
     {
         return $this->key;
+    }
+
+    /**
+     * Function key pressed, null for a connection code (MiniPaviClient::FCTN_*)
+     */
+    public function functionKey(): ?FunctionKey
+    {
+        return FunctionKey::tryFrom($this->key);
     }
 
     /**

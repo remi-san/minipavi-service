@@ -6,6 +6,7 @@ namespace MiniPaviService\Tests\Controller;
 
 use MiniPaviService\Controller;
 use MiniPaviService\Controller\Request;
+use MiniPaviService\FunctionKey;
 use MiniPaviService\MiniPaviClient;
 use MiniPaviService\Terminal;
 use PHPUnit\Framework\TestCase;
@@ -23,6 +24,13 @@ final class RequestTest extends TestCase
         self::assertSame(['Hello ', 'world'], $request->content());
         self::assertSame('Hello world', $request->contentAsString());
         self::assertSame($terminal, $request->terminal());
+    }
+
+    public function testFunctionKeyIsNullForConnectionCodes(): void
+    {
+        self::assertSame(FunctionKey::Guide, (new Request(key: 'GUIDE'))->functionKey());
+        self::assertNull((new Request(key: MiniPaviClient::FCTN_CONNECT))->functionKey());
+        self::assertNull((new Request())->functionKey());
     }
 
     public function testWithoutInputNothingWasTyped(): void

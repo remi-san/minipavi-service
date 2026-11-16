@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Page;
 
+use MiniPaviService\FunctionKey;
 use MiniPaviService\MiniPaviClient;
 use MiniPaviService\Page\Display\Position;
 
@@ -17,14 +18,14 @@ final readonly class Input
 
     /**
      * @param ?int $length defaults to the end of the row
-     * @param int $validWith MSK_* constants of MiniPaviCli, combined with |
+     * @param list<FunctionKey> $validWith keys validating the input
      */
     public function __construct(
         public int $row,
         public int $col = 1,
         ?int $length = null,
         public int $lines = 1,
-        public int $validWith = MSK_ENVOI,
+        public array $validWith = [FunctionKey::Send],
         public bool $cursor = true,
         public string $spaceChar = '.',
     ) {
@@ -51,8 +52,8 @@ final readonly class Input
     public function toCommand(MiniPaviClient $client, array $prefill = []): array
     {
         if ($this->lines == 1) {
-            return $client->createInputTxtCmd($this->col, $this->row, $this->length, $this->validWith, $this->cursor, $this->spaceChar, '', (string) ($prefill[0] ?? ''));
+            return $client->createInputTxtCmd($this->col, $this->row, $this->length, FunctionKey::masks(...$this->validWith), $this->cursor, $this->spaceChar, '', (string) ($prefill[0] ?? ''));
         }
-        return $client->createInputMsgCmd($this->col, $this->row, $this->length, $this->lines, $this->validWith, $this->cursor, $this->spaceChar, $prefill);
+        return $client->createInputMsgCmd($this->col, $this->row, $this->length, $this->lines, FunctionKey::masks(...$this->validWith), $this->cursor, $this->spaceChar, $prefill);
     }
 }
