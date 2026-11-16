@@ -4,15 +4,14 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Tests\Page\Parser;
 
-use MiniPavi\MiniPaviCli;
 use MiniPaviService\FunctionKey;
-use MiniPaviService\MiniPaviClient;
 use MiniPaviService\Page;
 use MiniPaviService\Page\Parser\PageXmlException;
 use MiniPaviService\Page\Parser\PageXmlParser;
 use MiniPaviService\Page\StaticPage;
 use MiniPaviService\Page\Template\TemplateException;
 use MiniPaviService\Page\TemplatePage;
+use MiniPaviService\Terminal;
 use MiniPaviService\Vdt\Vdt;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
@@ -25,14 +24,7 @@ final class PageXmlParserTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->parser = new PageXmlParser(new MiniPaviClient());
-    }
-
-    protected function tearDown(): void
-    {
-        // The terminal of the current request, read by <endkey>
-        MiniPaviCli::$typeSocket = null;
-        MiniPaviCli::$versionMinitel = null;
+        $this->parser = new PageXmlParser();
     }
 
     public function testStaticPageDrawsItsElements(): void
@@ -57,14 +49,14 @@ final class PageXmlParserTest extends TestCase
                 ' 9|    ##                                  |',
                 '10|    ok                                  |',
             ],
-            $this->drawnRows($page->display()),
+            $this->drawnRows($page->display(new Terminal())),
         );
     }
 
     public function testDisplayClearsTheScreenFirst(): void
     {
         $before = "\x1F\x45\x41previous screen";
-        $vdt = $this->parse('<page type="static"><text row="1">x</text></page>')->display();
+        $vdt = $this->parse('<page type="static"><text row="1">x</text></page>')->display(new Terminal());
 
         self::assertSame([' 1|x' . str_repeat(' ', 39) . '|'], $this->drawnRows($before . $vdt));
     }
@@ -74,19 +66,18 @@ final class PageXmlParserTest extends TestCase
         // 4 columns: 18 on the left, 18 on the right
         $page = $this->parse('<page type="static"><text row="1" align="center">Jeux</text></page>');
 
-        self::assertSame([' 1|' . str_repeat(' ', 18) . 'Jeux' . str_repeat(' ', 18) . '|'], $this->drawnRows($page->display()));
+        self::assertSame([' 1|' . str_repeat(' ', 18) . 'Jeux' . str_repeat(' ', 18) . '|'], $this->drawnRows($page->display(new Terminal())));
     }
 
     public function testEndKeyDependsOnTheTerminal(): void
     {
         $page = $this->parse('<page type="static"><endkey/></page>');
 
-        self::assertSame(['24|             Connexion/fin              |'], $this->drawnRows($page->display()));
+        self::assertSame(['24|             Connexion/fin              |'], $this->drawnRows($page->display(new Terminal())));
 
         // ESP32 / Minimit adapters: a websocket with a known Minitel, "[Maj] +" on row 23
-        MiniPaviCli::$typeSocket = 'websocket';
-        MiniPaviCli::$versionMinitel = 'Cv5';
-        self::assertSame(['23|        [Maj] +  Connexion/fin          |'], $this->drawnRows($page->display()));
+        $adapter = new Terminal('192.0.2.1', 'websocket', 'Cv5');
+        self::assertSame(['23|        [Maj] +  Connexion/fin          |'], $this->drawnRows($page->display($adapter)));
     }
 
     public function testTemplateRepeatsAndTestsItsContent(): void
@@ -110,7 +101,7 @@ final class PageXmlParserTest extends TestCase
                 ' 4|  ````                                  |',
                 ' 5|  2/2 Alien Wipeout  new                |',
             ],
-            $this->drawnRows($page->display([
+            $this->drawnRows($page->display(new Terminal(), [
                 'title' => 'Games',
                 'games' => 2,
                 'items' => [['name' => 'Twin Pine Falls', 'new' => false], (object) ['name' => 'Alien Wipeout', 'new' => true]],
@@ -139,7 +130,7 @@ final class PageXmlParserTest extends TestCase
                 ' 5|B                                       |',
                 ' 6|  b1                                    |',
             ],
-            $this->drawnRows($page->display(['rows' => [['name' => 'A', 'cells' => ['a1', 'a2']], ['name' => 'B', 'cells' => ['b1']]]])),
+            $this->drawnRows($page->display(new Terminal(), ['rows' => [['name' => 'A', 'cells' => ['a1', 'a2']], ['name' => 'B', 'cells' => ['b1']]]])),
         );
     }
 
@@ -147,7 +138,7 @@ final class PageXmlParserTest extends TestCase
     {
         $page = $this->parse('<page type="template"><image row="3">{{logo}}</image></page>');
 
-        self::assertSame([' 3|##                                      |', ' 4|ok                                      |'], $this->drawnRows($page->display(['logo' => 'images/logo.vdt'])));
+        self::assertSame([' 3|##                                      |', ' 4|ok                                      |'], $this->drawnRows($page->display(new Terminal(), ['logo' => 'images/logo.vdt'])));
     }
 
     public function testTemplateErrorsGiveTheLine(): void
@@ -157,7 +148,7 @@ final class PageXmlParserTest extends TestCase
         $this->expectException(TemplateException::class);
         $this->expectExceptionMessage('list.xml line 2: <text>: Row 30 is off the screen (0 to 24)');
 
-        $page->display(['row' => 30]);
+        $page->display(new Terminal(), ['row' => 30]);
     }
 
     public function testInputCommandReadsTheInputField(): void
@@ -180,7 +171,7 @@ final class PageXmlParserTest extends TestCase
     {
         $page = $this->parser->parseFile(self::FIXTURES . '/logo.xml');
 
-        self::assertSame([' 1|##                                      |', ' 2|ok                                      |'], $this->drawnRows($page->display()));
+        self::assertSame([' 1|##                                      |', ' 2|ok                                      |'], $this->drawnRows($page->display(new Terminal())));
     }
 
     public function testMissingImageGivesThePageAndLine(): void
@@ -242,7 +233,7 @@ final class PageXmlParserTest extends TestCase
         $this->expectException(TemplateException::class);
         $this->expectExceptionMessage("only files from the page's folder or its subfolders");
 
-        $page->display(['file' => 'images/../../secret.vdt']);
+        $page->display(new Terminal(), ['file' => 'images/../../secret.vdt']);
     }
 
     private function parse(string $xml, string $name = 'page'): Page

@@ -13,9 +13,12 @@ use MiniPaviService\Page\InputCommand;
 interface Page
 {
     /**
+     * Videotex content of the page, for the user's terminal (Request::terminal()), which some
+     * elements depend on (e.g. <endkey>)
+     *
      * @param array<string, mixed> $data variables of a template
      */
-    public function display(array $data = []): string;
+    public function display(Terminal $terminal, array $data = []): string;
 
     /**
      * Command reading the page's input field, null if the page has none

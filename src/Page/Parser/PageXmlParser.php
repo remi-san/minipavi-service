@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Page\Parser;
 
-use MiniPaviService\MiniPaviClient;
 use MiniPaviService\Page;
 use MiniPaviService\Page\Display\Display;
 use MiniPaviService\Page\{Input, StaticPage, TemplatePage};
@@ -20,11 +19,6 @@ use MiniPaviService\Page\Template\{ElementNode, ForeachNode, IfNode, Node, Scope
 final class PageXmlParser
 {
     private const TYPES = ['static','template'];
-
-    // client: given to the pages, to convert them to Videotex
-    public function __construct(
-        private MiniPaviClient $client,
-    ) {}
 
     /**
      * Page from a file; <background> and <image> files are read from the same folder
@@ -70,7 +64,7 @@ final class PageXmlParser
         $nodes = $this->nodes($root, $factory, $name, $type == 'template', false, $input);
 
         if ($type == 'template') {
-            return new TemplatePage($this->client, $nodes, $input);
+            return new TemplatePage($nodes, $input);
         }
 
         // Static page: elements are built now, so that their errors are found now
@@ -82,7 +76,7 @@ final class PageXmlParser
         } catch (TemplateException $e) {
             throw new PageXmlException($e->getMessage(), 0, $e);
         }
-        return new StaticPage($this->client, new Display(...$elements), $input);
+        return new StaticPage(new Display(...$elements), $input);
     }
 
     /**

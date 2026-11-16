@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Page;
 
-use MiniPaviService\MiniPaviClient;
 use MiniPaviService\Page;
 use MiniPaviService\Page\Display\Display;
 use MiniPaviService\Page\Template\Node;
 use MiniPaviService\Page\Template\Scope;
+use MiniPaviService\Terminal;
 use MiniPaviService\Vdt\VdtHelper;
 use MiniPaviService\Vdt\Videotex;
 
@@ -18,7 +18,6 @@ final readonly class TemplatePage implements Page
      * @param Node[] $nodes
      */
     public function __construct(
-        private MiniPaviClient $client,
         private array $nodes,
         private ?Input $input = null,
     ) {}
@@ -26,9 +25,9 @@ final readonly class TemplatePage implements Page
     /**
      * @param array<string, mixed> $data
      */
-    public function display(array $data = []): string
+    public function display(Terminal $terminal, array $data = []): string
     {
-        return VdtHelper::clearScreen() . Videotex::CURSOR_OFF . $this->toDisplay($data)->toVdt($this->client->terminal());
+        return VdtHelper::clearScreen() . Videotex::CURSOR_OFF . $this->toDisplay($data)->toVdt($terminal);
     }
 
     /**
