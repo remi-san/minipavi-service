@@ -5,11 +5,20 @@ declare(strict_types=1);
 namespace MiniPaviService\Controller;
 
 use MiniPaviService\Context;
+use MiniPaviService\Controller;
+use MiniPaviService\Controller\Response\ChangePage;
+use MiniPaviService\Controller\Response\DisplayPage;
+use MiniPaviService\Controller\Response\RunCommand;
+use MiniPaviService\Controller\Response\RunExternalService;
 use MiniPaviService\MiniPaviClient;
 
 /**
  * What a controller returns: what to do now (execute()), and the state and parameters it
- * keeps for its next run, in the context
+ * keeps for its next run, in the context.
+ *
+ * The named constructors give each response the state it usually keeps: read the next
+ * input after showing something, start again after leaving. Pass $state or $parameters
+ * (by name) to keep others.
  */
 abstract readonly class Response
 {
@@ -20,6 +29,51 @@ abstract readonly class Response
         private string $state,
         private array $parameters,
     ) {}
+
+    /**
+     * Sends Videotex content to the gateway; the next key comes back to this controller
+     *
+     * @param array<string, mixed> $parameters
+     */
+    public static function display(string $vdt, string $state = Controller::STATE_READ_INPUT, array $parameters = []): DisplayPage
+    {
+        return new DisplayPage($state, $parameters, $vdt);
+    }
+
+    /**
+     * Sends Videotex content and an input command (Page::readInput(); null for a page
+     * without input: only the content is sent); what is typed comes back to this controller
+     *
+     * @param ?array<string, mixed> $command
+     * @param array<string, mixed> $parameters
+     */
+    public static function readInput(string $vdt, ?array $command, string $state = Controller::STATE_READ_INPUT, array $parameters = []): RunCommand
+    {
+        return new RunCommand($state, $parameters, $vdt, $command);
+    }
+
+    /**
+     * Switches to the controller of another route, and runs it at once. state and
+     * parameters are kept for this controller, for when the user comes back to it.
+     *
+     * @param array<string, mixed> $parameters
+     */
+    public static function goTo(string $route, string $state = Controller::STATE_INIT, array $parameters = []): ChangePage
+    {
+        return new ChangePage($state, $parameters, $route);
+    }
+
+    /**
+     * Connects the user to another service, at url, after showing vdt (e.g. a message on
+     * line 0). state and parameters are kept for this controller, for when the user
+     * comes back.
+     *
+     * @param array<string, mixed> $parameters
+     */
+    public static function connectTo(string $url, string $vdt = '', string $state = Controller::STATE_INIT, array $parameters = []): RunExternalService
+    {
+        return new RunExternalService($state, $parameters, $vdt, $url, RunExternalService::CALL_MODE_CONNECT);
+    }
 
     abstract public function execute(MiniPaviClient $client, Context $context): void;
 

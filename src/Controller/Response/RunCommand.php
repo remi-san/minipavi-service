@@ -12,13 +12,14 @@ final readonly class RunCommand extends Response
 {
     /**
      * @param array<string, mixed> $parameters
-     * @param array<string, mixed> $cmd MiniPavi command, e.g. from Page::readInput()
+     * @param ?array<string, mixed> $cmd MiniPavi command, e.g. from Page::readInput(); null:
+     *                                   only the content is sent
      */
     public function __construct(
         string $state,
         array $parameters,
         private ?string $vdt,
-        private array $cmd,
+        private ?array $cmd,
     ) {
         parent::__construct($state, $parameters);
     }
