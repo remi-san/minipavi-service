@@ -56,8 +56,9 @@ $router->setDefaultRoute(HomeController::NAME);
   - `state()` (`STATE_INIT`, `STATE_DISPLAY`, `STATE_INIT_INPUT`, `STATE_READ_INPUT`) and
     `parameters()` / `parameter($name)`: what the controller's previous response asked to
     keep, from one request of the gateway to the next (the context keeps them per route);
-  - `key()`: the function key the user pressed (`MiniPaviClient::KEY_*`), or a connection code
-    (`FCTN_*`);
+  - `functionKey()`: the function key the user pressed, a `FunctionKey` (`Send`, `Next`,
+    `Previous`, `Refresh`, `Summary`, `Guide`, `Cancel`, `Correction`), or null for a
+    connection code; `key()` gives the name the gateway sent (`ENVOI`…, or `CNX`, `FIN`…);
   - `content()`: the text typed, one string per line of the input field, and
     `contentAsString()`;
   - `terminal()`: where the user connects from (`remoteAddr()`, `typeSocket()`,
@@ -70,7 +71,7 @@ $router->setDefaultRoute(HomeController::NAME);
   | `Response::display($vdt)` | sends Videotex content to the gateway; the next key comes back to this controller | `STATE_READ_INPUT` |
   | `Response::readInput($vdt, $command)` | sends content and an input command (`Page::readInput()`) to the gateway | `STATE_READ_INPUT` |
   | `Response::goTo($route)` | switches to another controller, and runs it at once | `STATE_INIT` |
-  | `Response::connectTo($url, $vdt)` | sends the user to another service | `STATE_INIT` |
+  | `Response::connectTo($url, $vdt)` | sends the user to another service, as a new connection (`CallMode::Connect`) | `STATE_INIT` |
 
   Every response but `goTo()` answers the gateway and ends the request. The state and
   parameters are what this controller keeps for its next run (for `goTo()` and
@@ -97,7 +98,7 @@ $router->setDefaultRoute(HomeController::NAME);
       // Handles the key pressed and what was typed
       protected function onReadInput(Request $request): Response
       {
-          if ($request->key() === MiniPaviClient::KEY_GUIDE) {
+          if ($request->functionKey() === FunctionKey::Guide) {
               return Response::goTo('help');
           }
 
@@ -109,8 +110,8 @@ $router->setDefaultRoute(HomeController::NAME);
   A state it doesn't know (e.g. kept by an older version of the service) starts it again.
   To add states, override `run()` and call `parent::run()` for the others.
 
-- The `KEY_*` and `FCTN_*` constants of `MiniPaviClient` name the function keys and connection
-  codes of `Request::key()`.
+- The `FCTN_*` constants of `MiniPaviClient` name the connection codes of `Request::key()`
+  (`CNX`, `DIRECTCNX`, `FIN`). Its `KEY_*` constants are deprecated: use `FunctionKey`.
 
 ## Page XML format
 
@@ -129,7 +130,7 @@ elements are drawn in order:
 | `<input row col length lines validwith/>` | input field read by `Page::readInput()` (default: row 13, 2 lines, to the end of the row) |
 
 - `validwith`: keys validating the input, separated by spaces (default `envoi`): envoi, sommaire,
-  annulation, retour, repetition, guide, correction, suite. A one-line field is a text input
+  annulation, retour, repetition, guide, correction, suite (`FunctionKey::xmlName()`). A one-line field is a text input
   where every key validates; with several lines, Suite and Retour move between them.
 - Colors: black, red, green, yellow, blue, magenta, cyan, white. `col` defaults to 1.
 
