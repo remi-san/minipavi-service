@@ -37,7 +37,7 @@ final readonly class Scope
      */
     public function substitute(string $text): string
     {
-        return preg_replace_callback(self::PLACEHOLDER, function ($m) {
+        $result = preg_replace_callback(self::PLACEHOLDER, function ($m) {
             $value = $this->value($m[1]);
             if (is_bool($value)) {
                 return $value ? '1' : '';
@@ -47,6 +47,11 @@ final readonly class Scope
             }
             throw new \InvalidArgumentException("{{{$m[1]}}} is not text (" . get_debug_type($value) . ')');
         }, $text);
+        if ($result === null) {
+            throw new \InvalidArgumentException('cannot replace the placeholders: ' . preg_last_error_msg());
+        }
+
+        return $result;
     }
 
     /**

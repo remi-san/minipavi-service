@@ -114,7 +114,8 @@ final class Writer
     // Sends the repetitions of the last character: REP, or the character again when shorter
     private function flush(): void
     {
-        if ($this->repeat > 0) {
+        // Repetitions are only counted after a character was sent
+        if ($this->repeat > 0 && $this->pending !== null) {
             $this->vdt .= $this->repeat * strlen($this->pending) <= 2
                 ? str_repeat($this->pending, $this->repeat)
                 : "\x12" . chr(0x40 + $this->repeat);

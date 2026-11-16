@@ -31,6 +31,6 @@ final class Router
 
     public function defaultRoute(): string
     {
-        return $this->defaultRoute;
+        return $this->defaultRoute ?? throw new \LogicException('No default route: call Router::setDefaultRoute()');
     }
 }

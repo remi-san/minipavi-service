@@ -23,7 +23,11 @@ final class Context
         private array $parameters = [],
     ) {}
 
-    public static function unserialize(string $serialized): self
+    /**
+     * Context sent with the previous answer; a context without route (e.g. sent by another
+     * version of the service) starts at defaultRoute
+     */
+    public static function unserialize(string $serialized, string $defaultRoute): self
     {
         $context = @unserialize($serialized, ['allowed_classes' => false]);
         if (!\is_array($context)) {
@@ -31,7 +35,7 @@ final class Context
         }
 
         return new self(
-            isset($context['route']) ? (string) $context['route'] : null,
+            \is_string($context['route'] ?? null) ? $context['route'] : $defaultRoute,
             (array) ($context['states'] ?? []),
             (array) ($context['parameters'] ?? []),
         );

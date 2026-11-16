@@ -21,7 +21,7 @@ final class Service
             $this->client->clearContent();
             trigger_error("[MiniPaviService] CNX");
         } else {
-            $context = Context::unserialize($this->client->context());
+            $context = Context::unserialize($this->client->context(), $this->router->defaultRoute());
         }
 
         if ($this->client->isDisconnecting()) {

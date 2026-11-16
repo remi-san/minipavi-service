@@ -54,7 +54,7 @@ final class ContextTest extends TestCase
         $context->changeRoute('directory');
         $context->updateState(Controller::STATE_DISPLAY);
 
-        $restored = Context::unserialize($context->serialize());
+        $restored = Context::unserialize($context->serialize(), 'home');
 
         self::assertSame('directory', $restored->route());
         self::assertSame(Controller::STATE_DISPLAY, $restored->state());
@@ -63,18 +63,26 @@ final class ContextTest extends TestCase
         self::assertSame(['page' => 2, 'query' => 'abc'], $restored->parameters());
     }
 
+    public function testUnserializeWithoutRouteStartsAtTheDefaultRoute(): void
+    {
+        $context = Context::unserialize(serialize(['states' => ['menu' => Controller::STATE_READ_INPUT]]), 'home');
+
+        self::assertSame('home', $context->route());
+        self::assertSame(Controller::STATE_INIT, $context->state());
+    }
+
     public function testUnserializeRejectsWhatIsNotAContext(): void
     {
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('Cannot unserialize context');
 
-        Context::unserialize('not a context');
+        Context::unserialize('not a context', 'home');
     }
 
     public function testUnserializeDoesNotCreateObjects(): void
     {
         // The context comes back from the gateway: no class may be instantiated from it
-        $context = Context::unserialize(serialize(['route' => 'home', 'parameters' => ['home' => ['object' => new \ArrayObject()]]]));
+        $context = Context::unserialize(serialize(['route' => 'home', 'parameters' => ['home' => ['object' => new \ArrayObject()]]]), 'home');
 
         self::assertInstanceOf(\__PHP_Incomplete_Class::class, $context->parameters()['object']);
     }
