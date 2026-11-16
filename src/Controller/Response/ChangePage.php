@@ -5,25 +5,32 @@ declare(strict_types=1);
 namespace MiniPaviService\Controller\Response;
 
 use MiniPaviService\Context;
+use MiniPaviService\Controller;
 use MiniPaviService\Controller\Response;
 use MiniPaviService\MiniPaviClient;
 
+/**
+ * Switches to the controller of another route, which runs at once: it starts at STATE_INIT,
+ * with the given parameters, and without the user's input (that was for the controller left).
+ * The controller left is reset to STATE_INIT, without parameters.
+ */
 final readonly class ChangePage extends Response
 {
     /**
-     * @param array<string, mixed> $parameters
+     * @param array<string, mixed> $targetParameters parameters of the target controller
      */
     public function __construct(
-        string $state,
-        array $parameters,
         private string $route,
+        private array $targetParameters = [],
     ) {
-        parent::__construct($state, $parameters);
+        parent::__construct(Controller::STATE_INIT, []);
     }
 
     public function execute(MiniPaviClient $client, Context $context): void
     {
         $context->changeRoute($this->route);
+        $context->resetState();
+        $context->updateParameters($this->targetParameters);
     }
 
     public function interrupts(): bool

@@ -108,10 +108,26 @@ final class ResponseTest extends TestCase
 
     public function testStateAndParametersCanBeGiven(): void
     {
-        $response = Response::goTo('menu', Controller::STATE_DISPLAY, ['from' => 'home']);
+        $response = Response::display('Hello', Controller::STATE_DISPLAY, ['from' => 'home']);
 
         self::assertSame(Controller::STATE_DISPLAY, $response->state());
         self::assertSame(['from' => 'home'], $response->parameters());
+    }
+
+    public function testGoToStartsTheTargetWithItsParametersAndResetsThisController(): void
+    {
+        $context = new Context('home', ['home' => Controller::STATE_READ_INPUT, 'menu' => Controller::STATE_READ_INPUT], ['home' => ['page' => 2], 'menu' => ['page' => 5]]);
+        $response = Response::goTo('menu', ['from' => 'home']);
+
+        $context->update($response);
+        $response->execute(new MiniPaviClient(), $context);
+
+        self::assertSame('menu', $context->route());
+        self::assertSame(Controller::STATE_INIT, $context->state());
+        self::assertSame(['from' => 'home'], $context->parameters());
+        $context->changeRoute('home');
+        self::assertSame(Controller::STATE_INIT, $context->state());
+        self::assertSame([], $context->parameters());
     }
 
     /**

@@ -53,14 +53,14 @@ abstract readonly class Response
     }
 
     /**
-     * Switches to the controller of another route, and runs it at once. state and
-     * parameters are kept for this controller, for when the user comes back to it.
+     * Switches to the controller of another route, and runs it at once: it starts at
+     * STATE_INIT with parameters, without the user's input. This controller is reset.
      *
-     * @param array<string, mixed> $parameters
+     * @param array<string, mixed> $parameters parameters of the target controller
      */
-    public static function goTo(string $route, string $state = Controller::STATE_INIT, array $parameters = []): ChangePage
+    public static function goTo(string $route, array $parameters = []): ChangePage
     {
-        return new ChangePage($state, $parameters, $route);
+        return new ChangePage($route, $parameters);
     }
 
     /**

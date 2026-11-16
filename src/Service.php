@@ -66,6 +66,9 @@ final class Service
             if ($response->interrupts()) {
                 return;
             }
+            // The next controller didn't get the input: it was for this one
+            $key = '';
+            $content = [];
         }
     }
 }
