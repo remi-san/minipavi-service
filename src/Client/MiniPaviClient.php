@@ -9,16 +9,16 @@ use MiniPaviService\Gateway\Client;
 use MiniPaviService\Gateway\GatewayRequest;
 use MiniPaviService\Gateway\GatewayResponse;
 use MiniPaviService\Gateway\NoClientState;
-use MiniPaviService\Http\EmptyHttpResponse;
 use MiniPaviService\Minitel\Terminal;
+use Nyholm\Psr7\Response;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 
 /**
  * Client of the MiniPavi gateway, through the static MiniPaviCli, used unchanged: it reads the
  * gateway's request itself (MiniPaviCli::start(), from the body of the HTTP request), and
- * writes the answer itself (MiniPaviCli::send()), so the HTTP response is an
- * EmptyHttpResponse, which the Kernel doesn't send. With VdtHelper (Videotex helpers) and
+ * writes the answer itself (MiniPaviCli::send()): what it writes is captured as the body of
+ * the HTTP response, which the Kernel sends. With VdtHelper (Videotex helpers) and
  * InputCommand (input commands), the only classes calling MiniPaviCli.
  *
  * @implements Client<NoClientState>
@@ -61,27 +61,33 @@ final class MiniPaviClient implements Client
         );
     }
 
-    /**
-     * Writes the answer to the gateway (the body of the HTTP response): an answer without next
-     * URL calls the service again, at the URL of the request
-     */
     public function initialState(): NoClientState
     {
         return new NoClientState();
     }
 
+    /**
+     * The answer to the gateway, as MiniPaviCli::send() writes it, captured as the body of the
+     * HTTP response: an answer without next URL calls the service again, at the URL of the
+     * request
+     */
     public function response(GatewayRequest $request, GatewayResponse $answer): ResponseInterface
     {
-        MiniPaviCli::send(
-            $answer->vdt->toString(),
-            $answer->next ?? $request->serviceUrl,
-            $answer->context,
-            $answer->echo,
-            $answer->command,
-            $answer->directCall->value ?? false,
-        );
+        ob_start();
+        try {
+            MiniPaviCli::send(
+                $answer->vdt->toString(),
+                $answer->next ?? $request->serviceUrl,
+                $answer->context,
+                $answer->echo,
+                $answer->command,
+                $answer->directCall->value ?? false,
+            );
+        } finally {
+            $body = (string) ob_get_clean();
+        }
 
-        return new EmptyHttpResponse();
+        return new Response(200, [], $body);
     }
 
     /**

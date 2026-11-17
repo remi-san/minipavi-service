@@ -33,12 +33,6 @@ final readonly class Kernel
             ),
         );
 
-        // Already written (MiniPaviCli::send()), or nothing to answer. To revisit (#75): the
-        // one type check of this design
-        if ($response instanceof EmptyHttpResponse) {
-            return;
-        }
-
         $this->emitter->emit($response);
     }
 }

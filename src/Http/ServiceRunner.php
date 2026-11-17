@@ -9,6 +9,7 @@ use MiniPaviService\Gateway\Client;
 use MiniPaviService\Gateway\ClientState;
 use MiniPaviService\Gateway\GatewayRequest;
 use MiniPaviService\Http\Url\UrlAttribute;
+use Nyholm\Psr7\Response;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
@@ -20,6 +21,7 @@ use Psr\Log\NullLogger;
  * service's values (MiniPaviClient for the gateway, HtmlClient for a browser): the client
  * reads the request, the service answers it, and the client gives the response. The URL of
  * the service (UrlAttribute::Service, from WithUrls) goes to the client, in the GatewayRequest.
+ * Nothing to answer (e.g. a disconnection) is a 204, an answer that can't be given a 500.
  *
  * @template TState of ClientState
  */
@@ -52,7 +54,8 @@ final readonly class ServiceRunner implements RequestHandlerInterface
             $answer = $this->service->error($e);
         }
         if ($answer === null) {
-            return new EmptyHttpResponse();
+            // E.g. a disconnection
+            return new Response(204);
         }
 
         try {
@@ -60,7 +63,7 @@ final readonly class ServiceRunner implements RequestHandlerInterface
         } catch (\Throwable $e) {
             $this->logger->critical('Cannot send the answer: ' . $e->getMessage(), ['exception' => $e]);
 
-            return new EmptyHttpResponse();
+            return new Response(500);
         }
     }
 }

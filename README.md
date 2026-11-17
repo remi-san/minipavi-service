@@ -31,7 +31,7 @@ which depend on nothing above them):
 | `Vdt\` | Videotex: codes, reading, writing and moving Videotex content (`Vdt`, `VdtHelper`, `Videotex`); in `Screen\`, the Minitel screen it draws (`Screen`, `Cell`) and its HTML rendering (`HtmlRenderer`) |
 | `Gateway\` | the requests and answers the service handles (`GatewayRequest`, `GatewayResponse`, `CallMode`), and the `Client` interface reading and sending them |
 | `Client\` | the clients: `MiniPaviClient` for the MiniPavi gateway, `HtmlClient` for a browser (`?web=true`) |
-| `Http\` | the entry point for the web server, on PSR-7 / PSR-15: `Kernel`, `ResponseEmitter`, `EmptyHttpResponse`, `ServiceRunner`; in `Dispatch\`, who handles the request (`Dispatcher`, `ConditionalRequestHandler`, `RequestMatcher`s); in `Url\`, the request's URLs (`RequestUrl`, `UrlAttribute`, `WithUrls`); in `Emulator\`, the emulator browsers are sent to (`EmulatorConfig`, `EmulatorRedirect`) |
+| `Http\` | the entry point for the web server, on PSR-7 / PSR-15: `Kernel`, `ResponseEmitter`, `ServiceRunner`; in `Dispatch\`, who handles the request (`Dispatcher`, `ConditionalRequestHandler`, `RequestMatcher`s); in `Url\`, the request's URLs (`RequestUrl`, `UrlAttribute`, `WithUrls`); in `Emulator\`, the emulator browsers are sent to (`EmulatorConfig`, `EmulatorRedirect`) |
 | `Log\` | `ErrorLogLogger` |
 | `Testing\` | `ServiceTester`, functional tests of a service (needs PHPUnit) |
 
@@ -124,9 +124,9 @@ $psr17 = new Psr17Factory();
   creates the HTTP request with `symfony/http-foundation`, converts it to PSR-7 with the
   factory it is given (e.g. `symfony/psr-http-message-bridge`'s `PsrHttpFactory`), has its
   handler (PSR-15) handle it, and sends the response with **`ResponseEmitter`** (its status,
-  headers and body), unless it is an `EmptyHttpResponse` (already written, or nothing to
-  answer). No other class reads `$_SERVER`, the environment or the request's body, nor writes
-  headers or output, except `MiniPaviCli` for the gateway (below).
+  headers and body): every response, the gateway's included. No other class reads
+  `$_SERVER`, the environment or the request's body, nor writes headers or output (what
+  `MiniPaviCli` writes for the gateway is captured, below).
 - **`WithUrls`** computes the service's URLs for the request once, with **`RequestUrl`**, and
   passes it on with them in its attributes (**`UrlAttribute`**): `Service`, the script, given
   to the gateway as the next URL to call (it travels in `GatewayRequest::$serviceUrl`), and
@@ -155,12 +155,13 @@ $psr17 = new Psr17Factory();
   gets, is its state (`Gateway\ClientState`): read with the HTTP request, kept in the
   `GatewayRequest` (`$clientState`), and given back to the client with it. A client without
   any uses the null object `NoClientState`, as requests built in memory do. A request that can't be read is answered
-  as an error (see `Service`). Two clients:
+  as an error (see `Service`); nothing to answer (e.g. a disconnection) is a `204`, and an
+  answer the client can't give a `500` (logged as critical). Two clients:
   - **`MiniPaviClient`**, for the MiniPavi gateway, through `MiniPaviCli` used unchanged: it
-    reads the gateway's request itself, and writes the answer itself, so the HTTP response is an
-    `EmptyHttpResponse`;
+    reads the gateway's request itself, and writes the answer itself: `MiniPaviClient` captures
+    it as the body of the HTTP response;
   - **`HtmlClient`**, for a browser: it shows the service's screen as an HTML page
-    (`Vdt\HtmlRenderer`), and lets the user navigate it as on a Minitel. The first request is a
+    (`Vdt\Screen\HtmlRenderer`), and lets the user navigate it as on a Minitel. The first request is a
     connection, or with `?route=games` a request on that route (its controller at its initial
     state; a route the service doesn't have starts again at the default route, as for any
     context). The page is a form posting back to its URL:

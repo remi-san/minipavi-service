@@ -9,7 +9,6 @@ use MiniPaviService\Client\MiniPaviClient;
 use MiniPaviService\Gateway\CallMode;
 use MiniPaviService\Gateway\GatewayRequest;
 use MiniPaviService\Gateway\GatewayResponse;
-use MiniPaviService\Http\EmptyHttpResponse;
 use MiniPaviService\Minitel\Terminal;
 use MiniPaviService\Vdt\Vdt;
 use PHPUnit\Framework\TestCase;
@@ -114,10 +113,12 @@ final class MiniPaviClientTest extends TestCase
         } finally {
             $output = (string) ob_get_clean();
         }
-        // Written by MiniPaviCli: the HTTP response isn't sent
-        self::assertInstanceOf(EmptyHttpResponse::class, $response);
-        $sent = json_decode($output, true);
+        // What MiniPaviCli writes is the body of the response, not output
+        self::assertSame('', $output);
+        self::assertSame(200, $response->getStatusCode());
+        $body = (string) $response->getBody();
+        $sent = json_decode($body, true);
 
-        return \is_array($sent) ? $sent : self::fail("Not an answer: $output");
+        return \is_array($sent) ? $sent : self::fail("Not an answer: $body");
     }
 }

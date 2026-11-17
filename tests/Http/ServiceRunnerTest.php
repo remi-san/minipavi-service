@@ -11,7 +11,6 @@ use MiniPaviService\Controller\Response;
 use MiniPaviService\Core\Router;
 use MiniPaviService\Core\Service;
 use MiniPaviService\Gateway\GatewayRequest;
-use MiniPaviService\Http\EmptyHttpResponse;
 use MiniPaviService\Http\ServiceRunner;
 use MiniPaviService\Message\FrameworkMessage;
 use MiniPaviService\Message\Messages;
@@ -71,7 +70,8 @@ final class ServiceRunnerTest extends TestCase
 
         $response = (new ServiceRunner($this->service, $client))->handle(HttpRequests::to('MiniPAVI'));
 
-        self::assertInstanceOf(EmptyHttpResponse::class, $response);
+        self::assertSame(204, $response->getStatusCode());
+        self::assertSame('', (string) $response->getBody());
         self::assertSame([], $client->responded);
     }
 
@@ -82,13 +82,14 @@ final class ServiceRunnerTest extends TestCase
 
         $response = (new ServiceRunner($this->service, $client, $logger))->handle(HttpRequests::to('MiniPAVI'));
 
-        self::assertInstanceOf(EmptyHttpResponse::class, $response);
+        self::assertSame(500, $response->getStatusCode());
         self::assertSame([LogLevel::CRITICAL, 'Cannot send the answer: Connection reset'], [$logger->records[0][0], $logger->records[0][1]]);
     }
 
     /**
      * With the gateway's client. In a separate process: MiniPaviCli::start() reads the body of
-     * the request (empty here, so not JSON), and MiniPaviCli::send() writes the answer
+     * the request (empty here, so not JSON), and MiniPaviCli::send() writes the answer, captured
+     * as the body of the response
      */
     #[RunInSeparateProcess]
     public function testAnswersAnUnreadableRequestOfTheGatewayAsAnError(): void
@@ -102,8 +103,8 @@ final class ServiceRunnerTest extends TestCase
             $output = (string) ob_get_clean();
         }
 
-        self::assertInstanceOf(EmptyHttpResponse::class, $response);
-        $answer = json_decode($output, true);
+        self::assertSame('', $output);
+        $answer = json_decode((string) $response->getBody(), true);
         self::assertIsArray($answer);
         self::assertSame(base64_encode(VdtHelper::writeLine0(Messages::defaults()->get(FrameworkMessage::Error))->toString()), $answer['content'] ?? null);
         self::assertSame('{"route":"home","states":{},"parameters":{}}', $answer['context'] ?? null);
