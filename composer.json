@@ -32,7 +32,7 @@
     "scripts": {
         "test": "phpunit",
         "analyse": [
-            "mago lint",
+            "mago lint --fail-on-out-of-sync-baseline",
             "mago analyze"
         ],
         "cs": "mago format --check",

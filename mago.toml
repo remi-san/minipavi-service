@@ -32,6 +32,9 @@ ignore = [
 [linter]
 # Fails on any issue, notes included
 minimum-fail-level = "Note"
+# Issues known when a rule was turned on, not reported (mago lint --generate-baseline). New ones
+# fail: fix them rather than adding them here
+baseline = "lint-baseline.toml"
 
 [linter.rules]
 # Named arguments where they help reading (e.g. a display element's row: and col:), not for
@@ -46,9 +49,6 @@ no-else-clause = { enabled = false }
 no-error-control-operator = { enabled = false }
 # Boolean options of display elements (centered, fill, blink) are their XML attributes
 no-boolean-flag-parameter = { enabled = false }
-# Flags every $token (Videotex tokens); the framework's secrets are marked by hand
-# (HmacContextSigner, KernelBuilder::withContextKey())
-sensitive-parameter = { enabled = false }
 # ErrorLogLogger's test points PHP's error log to a file
 no-ini-set = { enabled = false }
 # Size and complexity metrics are not enforced: display elements take their XML attributes as

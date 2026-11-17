@@ -1,0 +1,19 @@
+variant = "loose"
+
+[[issues]]
+file = "src/Vdt/Screen/Screen.php"
+code = "sensitive-parameter"
+message = "Parameters that may contain sensitive information should be marked with the `#[SensitiveParameter]` attribute."
+count = 1
+
+[[issues]]
+file = "src/Vdt/Vdt.php"
+code = "sensitive-parameter"
+message = "Parameters that may contain sensitive information should be marked with the `#[SensitiveParameter]` attribute."
+count = 3
+
+[[issues]]
+file = "tests/Vdt/ParserTest.php"
+code = "sensitive-parameter"
+message = "Parameters that may contain sensitive information should be marked with the `#[SensitiveParameter]` attribute."
+count = 2
