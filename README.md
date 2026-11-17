@@ -46,6 +46,7 @@ In Docker, the framework and the service keep the repository's layout (`/app/fra
 
 ```php
 use MiniPaviService\Core\{Router, Service};
+use MiniPaviService\Gateway\MiniPaviClient;
 use MiniPaviService\Http\ServiceRunner;
 use MiniPaviService\Log\ErrorLogLogger;
 use MiniPaviService\Page\Parser\PageXmlParser;
@@ -58,7 +59,7 @@ $router->setDefaultRoute(HomeController::NAME);
 
 $logger = new ErrorLogLogger();
 
-(new ServiceRunner(new Service($router, $logger), logger: $logger))->run();
+(new ServiceRunner(new Service($router, $logger), new MiniPaviClient(), logger: $logger))->run();
 ```
 
 - **Lazy controllers:** a service with many screens shouldn't build every controller, and parse
@@ -78,8 +79,8 @@ $logger = new ErrorLogLogger();
   $router = $container->get(Router::class);
   ```
 
-- **`ServiceRunner`** runs the service for the gateway: `MiniPaviClient` reads the request,
-  the service answers it, and `MiniPaviClient` sends the answer. A request that can't be read
+- **`ServiceRunner`** runs the service for the gateway, through the `MiniPaviClient` it is given:
+  the client reads the request, the service answers it, and the client sends the answer. A request that can't be read
   is answered as an error (see `Service`). It redirects browsers to an emulator that opens the
   service: with `EMULATOR_URL` set (the local stack), that emulator and the
   gateway `GATEWAY_URL`, which reaches the service at `SERVICES_INTERNAL_HOST`; otherwise (a
@@ -115,7 +116,7 @@ $logger = new ErrorLogLogger();
   the framework's `ErrorLogLogger`, writing to PHP's error log) and
   log connections, disconnections and browsers sent to the emulator at info level, and errors
   at error level (with the exception):
-  `new Service($router, $logger)`, `new ServiceRunner($service, logger: $logger)`.
+  `new Service($router, $logger)`, `new ServiceRunner($service, $client, logger: $logger)`.
   Without one, nothing is logged.
 - **A `Controller`** runs on a `Request` and returns a `Response`. The request gives:
   - `state()` (`STATE_INIT`, `STATE_DISPLAY`, `STATE_INIT_INPUT`, `STATE_READ_INPUT`) and
