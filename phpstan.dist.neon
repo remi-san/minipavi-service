@@ -1,9 +1,0 @@
-parameters:
-    level: 10
-    paths:
-        - src
-        - tests
-        - bin/minipavi
-    # Return types of the MiniPaviCli methods, which the library doesn't declare
-    stubFiles:
-        - stubs/MiniPaviCli.php

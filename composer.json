@@ -18,7 +18,6 @@
     },
     "require-dev": {
         "carthage-software/mago": "^1.60",
-        "phpstan/phpstan": "^2.1",
         "phpunit/phpunit": "^11.5"
     },
     "suggest": {
@@ -32,13 +31,16 @@
     },
     "scripts": {
         "test": "phpunit",
-        "analyse": "phpstan analyse",
+        "analyse": [
+            "mago lint",
+            "mago analyze"
+        ],
         "cs": "mago format --check",
         "cs-fix": "mago format"
     },
     "scripts-descriptions": {
         "test": "Runs the tests",
-        "analyse": "Runs the static analysis (PHPStan)",
+        "analyse": "Runs the linter and the static analysis (Mago)",
         "cs": "Checks the formatting (Mago)",
         "cs-fix": "Formats the code (Mago)"
     },

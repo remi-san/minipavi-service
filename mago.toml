@@ -6,3 +6,55 @@ php-version = "8.2.0"
 paths = ["src", "tests", "bin/minipavi"]
 # Read for their types, not checked
 includes = ["vendor"]
+# Types of the libraries that don't declare them
+patches = ["stubs/MiniPaviCli.php"]
+
+[analyzer]
+# Fails on any issue, notes included
+minimum-fail-level = "Note"
+ignore = [
+    # Values of unknown type (JSON, form data, request attributes, template data) are read into
+    # a variable, then narrowed (is_string()...) before use, which the other checks verify
+    "mixed-assignment",
+    # A class-string of an interface (Parameters, Message, BackedEnum) is always a concrete
+    # class's here: the type a controller declares, an enum of messages or of settings
+    "possibly-static-access-on-interface",
+    # Interfaces of enums (a controller's states, messages): PHP allows them to extend BackedEnum
+    { code = "invalid-extend", in = ["src/Controller/State.php", "src/Message/Message.php"] },
+    # The state is narrowed to the controller's type with instanceof on its initial state, or
+    # found among its cases(), which Mago doesn't follow
+    { code = "invalid-return-statement", in = ["src/Core/Route.php"] },
+    { code = "invalid-property-assignment-value", in = ["src/Core/RouteContext.php"] },
+    # Template variables read the property of an object named in the template
+    { code = "string-member-selector", in = ["src/Page/Template/Scope.php"] },
+]
+
+[linter]
+# Fails on any issue, notes included
+minimum-fail-level = "Note"
+
+[linter.rules]
+# Named arguments where they help reading (e.g. a display element's row: and col:), not for
+# every literal (assertions, Videotex bytes, MiniPaviCli's arguments)
+literal-named-argument = { enabled = false }
+# isset() on arrays and offsets is the idiom here, a missing value and null being the same
+no-isset = { enabled = false }
+# else is kept where both branches are alternatives of the same weight
+no-else-clause = { enabled = false }
+# @ silences the warning of a file function whose false result is then handled (reading a
+# page, a messages file, a Videotex file)
+no-error-control-operator = { enabled = false }
+# Boolean options of display elements (centered, fill, blink) are their XML attributes
+no-boolean-flag-parameter = { enabled = false }
+# Flags every $token (Videotex tokens); the framework's secrets are marked by hand
+# (HmacContextSigner, KernelBuilder::withContextKey())
+sensitive-parameter = { enabled = false }
+# ErrorLogLogger's test points PHP's error log to a file
+no-ini-set = { enabled = false }
+# Size and complexity metrics are not enforced: display elements take their XML attributes as
+# parameters, parsers have a branch per element, test classes a method per case
+too-many-methods = { enabled = false }
+excessive-parameter-list = { enabled = false }
+cyclomatic-complexity = { enabled = false }
+halstead = { enabled = false }
+kan-defect = { enabled = false }
