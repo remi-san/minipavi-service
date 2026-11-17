@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MiniPaviService\Tests\Support;
 
 use MiniPaviService\Controller;
+use MiniPaviService\Controller\PageParameters;
 use MiniPaviService\Controller\Request;
 use MiniPaviService\Controller\Response;
 

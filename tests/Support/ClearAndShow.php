@@ -6,6 +6,7 @@ namespace MiniPaviService\Tests\Support;
 
 use MiniPaviService\Controller\ControllerState;
 use MiniPaviService\Controller\Flow;
+use MiniPaviService\Controller\PageParameters;
 use MiniPaviService\Controller\Response;
 use MiniPaviService\Gateway\GatewayAnswer;
 use MiniPaviService\Vdt\VdtHelper;

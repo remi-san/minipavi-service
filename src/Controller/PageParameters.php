@@ -2,13 +2,10 @@
 
 declare(strict_types=1);
 
-namespace MiniPaviService\Tests\Support;
-
-use MiniPaviService\Controller\Parameters;
-use MiniPaviService\Controller\Values;
+namespace MiniPaviService\Controller;
 
 /**
- * Parameters of a paged screen: the page shown, from 0
+ * Parameters of a PaginatedController: the page shown, from 0
  */
 final readonly class PageParameters implements Parameters
 {
@@ -16,6 +13,7 @@ final readonly class PageParameters implements Parameters
         public int $page = 0,
     ) {}
 
+    // A page missing or invalid (e.g. negative) is the first one
     public static function fromValues(Values $values): static
     {
         return new self(max(0, $values->int('page')));

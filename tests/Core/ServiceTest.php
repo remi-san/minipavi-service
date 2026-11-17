@@ -8,6 +8,7 @@ use MiniPaviService\Controller;
 use MiniPaviService\Controller\CallMode;
 use MiniPaviService\Controller\ControllerState;
 use MiniPaviService\Controller\NoParameters;
+use MiniPaviService\Controller\PageParameters;
 use MiniPaviService\Controller\Parameters;
 use MiniPaviService\Controller\Request;
 use MiniPaviService\Controller\Response;
@@ -21,7 +22,6 @@ use MiniPaviService\Page\InputCommand;
 use MiniPaviService\Tests\Support\CallbackController;
 use MiniPaviService\Tests\Support\ClearAndShow;
 use MiniPaviService\Tests\Support\MemoryLogger;
-use MiniPaviService\Tests\Support\PageParameters;
 use MiniPaviService\Vdt\VdtHelper;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
@@ -252,7 +252,7 @@ final class ServiceTest extends TestCase
         $answer = $this->handle(new GatewayRequest('ENVOI', [], '{"route":"mistyped","states":{},"parameters":{}}'));
 
         self::assertSame(VdtHelper::writeLine0(Service::ERROR_MESSAGE), $this->contentOf($answer));
-        self::assertStringContainsString('keeps parameters of MiniPaviService\\Controller\\NoParameters, not MiniPaviService\\Tests\\Support\\PageParameters', $this->logger->records[0][1] ?? '');
+        self::assertStringContainsString('keeps parameters of MiniPaviService\\Controller\\NoParameters, not MiniPaviService\\Controller\\PageParameters', $this->logger->records[0][1] ?? '');
     }
 
     public function testInputGoesToTheControllerOfTheCurrentRoute(): void

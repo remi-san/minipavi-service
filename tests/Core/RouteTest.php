@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace MiniPaviService\Tests\Core;
 
 use MiniPaviService\Controller\ControllerState;
+use MiniPaviService\Controller\PageParameters;
 use MiniPaviService\Controller\Response;
 use MiniPaviService\Controller\Values;
 use MiniPaviService\Core\Route;
 use MiniPaviService\Core\Terminal;
 use MiniPaviService\Tests\Support\FromParameters;
-use MiniPaviService\Tests\Support\PageParameters;
 use MiniPaviService\Tests\Support\SearchController;
 use MiniPaviService\Tests\Support\SearchState;
 use PHPUnit\Framework\TestCase;

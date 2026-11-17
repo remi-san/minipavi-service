@@ -6,6 +6,7 @@ namespace MiniPaviService\Tests\Controller;
 
 use MiniPaviService\Controller\CallMode;
 use MiniPaviService\Controller\ControllerState;
+use MiniPaviService\Controller\PageParameters;
 use MiniPaviService\Controller\Response;
 use MiniPaviService\Controller\Response\ChangePage;
 use MiniPaviService\Controller\Response\DisplayPage;
@@ -13,7 +14,6 @@ use MiniPaviService\Controller\Response\RunCommand;
 use MiniPaviService\Controller\Response\RunExternalService;
 use MiniPaviService\Page\InputCommand;
 use MiniPaviService\Tests\Support\FromParameters;
-use MiniPaviService\Tests\Support\PageParameters;
 use MiniPaviService\Tests\Support\RecordingFlow;
 use PHPUnit\Framework\TestCase;
 

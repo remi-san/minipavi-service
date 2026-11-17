@@ -6,6 +6,7 @@ namespace MiniPaviService\Tests\Core;
 
 use MiniPaviService\Controller\ControllerState;
 use MiniPaviService\Controller\NoParameters;
+use MiniPaviService\Controller\PageParameters;
 use MiniPaviService\Controller\Request;
 use MiniPaviService\Controller\Response;
 use MiniPaviService\Core\Context;
@@ -13,7 +14,6 @@ use MiniPaviService\Core\Router;
 use MiniPaviService\Core\Terminal;
 use MiniPaviService\Tests\Support\CallbackController;
 use MiniPaviService\Tests\Support\FromParameters;
-use MiniPaviService\Tests\Support\PageParameters;
 use MiniPaviService\Tests\Support\SearchController;
 use MiniPaviService\Tests\Support\SearchState;
 use PHPUnit\Framework\Attributes\DataProvider;

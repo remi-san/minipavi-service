@@ -6,11 +6,11 @@ namespace MiniPaviService\Tests\Controller;
 
 use MiniPaviService\Controller\ControllerState;
 use MiniPaviService\Controller\NoParameters;
+use MiniPaviService\Controller\PageParameters;
 use MiniPaviService\Controller\Request;
 use MiniPaviService\Core\FunctionKey;
 use MiniPaviService\Core\Terminal;
 use MiniPaviService\Gateway\GatewayRequest;
-use MiniPaviService\Tests\Support\PageParameters;
 use PHPUnit\Framework\TestCase;
 
 final class RequestTest extends TestCase
