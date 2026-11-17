@@ -71,6 +71,8 @@ final class RequestUrlTest extends TestCase
         yield 'IPv6' => ['::1', '::1', 'https'];
         yield 'IPv6 range' => ['fd00::/8', 'fd12:3456::1', 'https'];
         yield 'IPv6 address, IPv4 range' => ['10.0.0.0/8', '::1', 'http'];
+        // E.g. a Unix socket: not trusted
+        yield 'not an IP address' => ['10.0.0.0/8', 'unix:/run/php.sock', 'http'];
     }
 
     #[DataProvider('proxies')]

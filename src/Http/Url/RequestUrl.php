@@ -79,8 +79,8 @@ final readonly class RequestUrl
 
     private function fromTrustedProxy(ServerRequestInterface $request): bool
     {
-        $remote = @inet_pton(self::server($request, 'REMOTE_ADDR'));
-        if ($remote === false) {
+        $remote = self::packed(self::server($request, 'REMOTE_ADDR'));
+        if ($remote === null) {
             return false;
         }
         foreach ($this->proxies as [$address, $prefix]) {
@@ -90,6 +90,18 @@ final readonly class RequestUrl
         }
 
         return false;
+    }
+
+    // Packed IP address (inet_pton()), null for what isn't one (checked first: inet_pton() would
+    // warn)
+    private static function packed(string $ip): ?string
+    {
+        if (filter_var($ip, FILTER_VALIDATE_IP) === false) {
+            return null;
+        }
+        $address = inet_pton($ip);
+
+        return $address === false ? null : $address;
     }
 
     // Whether the first prefix bits of two packed addresses of the same family are the same
@@ -146,9 +158,9 @@ final readonly class RequestUrl
             $parts = explode('/', $proxy, 2);
             $ip = $parts[0];
             $prefix = $parts[1] ?? null;
-            $address = @inet_pton($ip);
-            $bits = $address === false ? 0 : \strlen($address) * 8;
-            if ($address === false || $prefix !== null && (!ctype_digit($prefix) || (int) $prefix > $bits)) {
+            $address = self::packed($ip);
+            $bits = $address === null ? 0 : \strlen($address) * 8;
+            if ($address === null || $prefix !== null && (!ctype_digit($prefix) || (int) $prefix > $bits)) {
                 throw new \InvalidArgumentException("TRUSTED_PROXIES: \"{$proxy}\" is not an IP address or range");
             }
             $proxies[] = [$address, $prefix === null ? $bits : (int) $prefix];
