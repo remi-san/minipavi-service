@@ -367,7 +367,7 @@ KernelBuilder::for($router, $messages)
   | `toArray()` | the variables of a template: `page`, `pageCount`, `itemCount`, `perPage`, `firstItem`, `lastItem` |
 
 - <a id="typed-state"></a>**Typed state and parameters.** What a controller keeps is typed
-  from end to end, and PHPStan checks it. A controller declares:
+  from end to end, and the static analysis checks it. A controller declares:
   - `initialState()`: a case of the string-backed enum of its states, implementing `State`
     (`ControllerState::Init` for an `AbstractController`);
   - `parametersType()`: the class of its parameters, implementing `Parameters`
@@ -677,15 +677,18 @@ or write, a wrong command line). The commands are Symfony `Command`s, in `Cli\`.
 
 ## Developing the framework
 
-The code follows [PER Coding Style](https://www.php-fig.org/per/coding-style/), with
-`declare(strict_types=1)` in every file, short arrays and sorted imports, checked by
-PHP-CS-Fixer (configuration in `.php-cs-fixer.dist.php`):
+The code is checked with [Mago](https://mago.carthage.software) (`mago.toml`): its formatter
+(PER Coding Style, 120 columns, one import per `use`), and its linter and static analyzer,
+which fail on any issue, notes included. `mago.toml` says why each rule turned off or ignored
+is, the ignored ones only in the files where they occur. `stubs/MiniPaviCli.php` gives the
+types `MiniPaviCli` doesn't declare (a patch of the library's class). Every file has
+`declare(strict_types=1)`.
 
 ```sh
 composer install    # once, in this folder: development tools in vendor/
-composer cs         # checks the style, showing what would change
-composer cs-fix     # fixes it
-composer analyse    # static analysis (PHPStan, phpstan.dist.neon)
+composer cs         # checks the formatting
+composer cs-fix     # formats the code
+composer analyse    # linter and static analysis (mago lint, mago analyze)
 composer test       # tests (PHPUnit, tests/)
 ```
 
