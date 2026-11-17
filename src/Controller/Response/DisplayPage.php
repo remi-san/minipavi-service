@@ -7,6 +7,7 @@ namespace MiniPaviService\Controller\Response;
 use MiniPaviService\Controller\Flow;
 use MiniPaviService\Controller\Parameters;
 use MiniPaviService\Controller\Response;
+use MiniPaviService\Controller\State;
 use MiniPaviService\Gateway\GatewayAnswer;
 
 /**
@@ -15,12 +16,11 @@ use MiniPaviService\Gateway\GatewayAnswer;
 final readonly class DisplayPage extends Response
 {
     /**
-     * @param array<string, mixed>|Parameters $parameters
      * @param string $vdt Videotex content
      */
     public function __construct(
-        string|\BackedEnum $state,
-        array|Parameters $parameters,
+        State $state,
+        ?Parameters $parameters,
         public string $vdt,
     ) {
         parent::__construct($state, $parameters);

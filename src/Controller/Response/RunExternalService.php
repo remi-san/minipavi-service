@@ -8,6 +8,7 @@ use MiniPaviService\Controller\CallMode;
 use MiniPaviService\Controller\Flow;
 use MiniPaviService\Controller\Parameters;
 use MiniPaviService\Controller\Response;
+use MiniPaviService\Controller\State;
 use MiniPaviService\Gateway\GatewayAnswer;
 
 /**
@@ -19,14 +20,13 @@ final readonly class RunExternalService extends Response
     public CallMode $callMode;
 
     /**
-     * @param array<string, mixed>|Parameters $parameters
      * @param string $vdt Videotex content shown before leaving (e.g. a message on line 0)
      * @param string $url URL of the other service
      * @param CallMode|string $callMode a CallMode, or its value ('yes-cnx', 'yes')
      */
     public function __construct(
-        string|\BackedEnum $state,
-        array|Parameters $parameters,
+        State $state,
+        ?Parameters $parameters,
         public string $vdt,
         public string $url,
         CallMode|string $callMode,

@@ -6,6 +6,7 @@ namespace MiniPaviService\Tests\Support;
 
 use MiniPaviService\Controller\CallMode;
 use MiniPaviService\Controller\Flow;
+use MiniPaviService\Controller\Parameters;
 use MiniPaviService\Gateway\GatewayAnswer;
 use MiniPaviService\Page\InputCommand;
 
@@ -24,7 +25,7 @@ final class RecordingFlow implements Flow
         return new GatewayAnswer($vdt, '{}');
     }
 
-    public function goTo(string $route, array $parameters = []): GatewayAnswer
+    public function goTo(string $route, ?Parameters $parameters = null): GatewayAnswer
     {
         $this->calls[] = ['goTo', ['route' => $route, 'parameters' => $parameters]];
 

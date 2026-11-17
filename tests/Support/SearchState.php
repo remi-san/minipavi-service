@@ -4,14 +4,15 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Tests\Support;
 
-use MiniPaviService\Controller;
+use MiniPaviService\Controller\State;
 
 /**
- * States of a search screen: the built-in ones it uses, and one of its own
+ * States of a search screen: the built-in ones it uses (same values as ControllerState), and
+ * one of its own
  */
-enum SearchState: string
+enum SearchState: string implements State
 {
-    case Init = Controller::STATE_INIT;
-    case ReadInput = Controller::STATE_READ_INPUT;
+    case Init = 'init';
+    case ReadInput = 'read-input';
     case ReadQuery = 'read-query';
 }

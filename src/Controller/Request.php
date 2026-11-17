@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Controller;
 
-use MiniPaviService\Controller;
 use MiniPaviService\Core\FunctionKey;
 use MiniPaviService\Core\Terminal;
 
@@ -15,31 +14,20 @@ use MiniPaviService\Core\Terminal;
 readonly class Request
 {
     /**
-     * @param array<string, mixed> $parameters
+     * @param string $state state kept in the context (a State's value): see stateAs()
+     * @param array<string, mixed> $parameters parameters kept in the context: see
+     *                                         parametersAs() and int(), string()...
      * @param string $key function key pressed (FunctionKey), or connection code
      *                    (GatewayRequest::FCTN_*)
      * @param list<string> $content text typed, one string per line of the input field
      */
     public function __construct(
-        private string $state = Controller::STATE_INIT,
+        private string $state = ControllerState::Init->value,
         private array $parameters = [],
         private string $key = '',
         private array $content = [],
         private Terminal $terminal = new Terminal(),
     ) {}
-
-    public function state(): string
-    {
-        return $this->state;
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    public function parameters(): array
-    {
-        return $this->parameters;
-    }
 
     /**
      * The parameters as an object (Parameters::fromRequest())
@@ -56,18 +44,18 @@ readonly class Request
     }
 
     /**
-     * The state as a case of a backed enum, whose values are states (e.g. Controller::STATE_*,
-     * and the controller's own); default for a state the enum doesn't have (e.g. kept by
-     * another version of the service)
+     * The state as a case of a State enum (ControllerState, or the controller's own); default
+     * for a state the enum doesn't have (e.g. kept by another version of the service, or by
+     * another enum)
      *
-     * @template T of \BackedEnum
+     * @template T of State
      *
      * @param class-string<T> $enum
      * @param T $default
      *
      * @return T
      */
-    public function stateAs(string $enum, \BackedEnum $default): \BackedEnum
+    public function stateAs(string $enum, State $default): State
     {
         foreach ($enum::cases() as $case) {
             if ((string) $case->value === $this->state) {
@@ -79,10 +67,10 @@ readonly class Request
     }
 
     /**
-     * A parameter as it was kept, null if missing; int(), string(), bool() and array() give
+     * A parameter as it was kept, null if missing: int(), string(), bool() and array() give
      * it typed
      */
-    public function parameter(string $name): mixed
+    private function parameter(string $name): mixed
     {
         return $this->parameters[$name] ?? null;
     }

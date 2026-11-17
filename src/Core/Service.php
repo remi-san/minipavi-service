@@ -67,7 +67,7 @@ final class Service
     {
         $this->logger->error('Error serving the request: ' . $error->getMessage(), ['exception' => $error]);
         try {
-            // The context keeps nothing: the default controller starts at STATE_INIT
+            // The context keeps nothing: the default controller starts at ControllerState::Init
             $flow = new RequestFlow($this->router, new Context($this->router->defaultRoute()), new Terminal(), self::MAX_PAGE_CHANGES);
 
             return Response::display(VdtHelper::writeLine0($this->errorMessage))->continueWith($flow);

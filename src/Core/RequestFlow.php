@@ -6,6 +6,7 @@ namespace MiniPaviService\Core;
 
 use MiniPaviService\Controller\CallMode;
 use MiniPaviService\Controller\Flow;
+use MiniPaviService\Controller\Parameters;
 use MiniPaviService\Gateway\GatewayAnswer;
 use MiniPaviService\Page\InputCommand;
 
@@ -42,7 +43,7 @@ final class RequestFlow implements Flow
 
         // What this controller keeps for its next run
         $this->context->updateState($response->state());
-        $this->context->updateParameters($response->parameters());
+        $this->context->updateParameters($response->parameters()?->toArray() ?? []);
 
         return $response->continueWith($this);
     }
@@ -52,7 +53,7 @@ final class RequestFlow implements Flow
         return new GatewayAnswer($vdt, $this->context->serialize(), $next, $command?->toArray(), $directCall);
     }
 
-    public function goTo(string $route, array $parameters = []): GatewayAnswer
+    public function goTo(string $route, ?Parameters $parameters = null): GatewayAnswer
     {
         if (\count($this->routes) > $this->maxPageChanges) {
             throw new \LogicException('Too many page changes in one request (more than ' . $this->maxPageChanges . '): ' . implode(' → ', [...$this->routes, $route]));
@@ -60,7 +61,7 @@ final class RequestFlow implements Flow
 
         $this->context->changeRoute($route);
         $this->context->resetState();
-        $this->context->updateParameters($parameters);
+        $this->context->updateParameters($parameters?->toArray() ?? []);
 
         // The input was for the controller left
         return $this->run('', []);

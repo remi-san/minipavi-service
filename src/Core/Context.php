@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Core;
 
-use MiniPaviService\Controller;
+use MiniPaviService\Controller\ControllerState;
 use MiniPaviService\Controller\Request;
+use MiniPaviService\Controller\State;
 
 /**
  * User context, sent to the gateway with each answer and given back with the next request:
@@ -145,19 +146,22 @@ final class Context
         );
     }
 
+    /**
+     * State of the current route, as kept (State's value)
+     */
     public function state(): string
     {
-        return $this->states[$this->route] ?? Controller::STATE_INIT;
+        return $this->states[$this->route] ?? ControllerState::Init->value;
     }
 
-    public function updateState(string $state): void
+    public function updateState(State $state): void
     {
-        $this->states[$this->route] = $state;
+        $this->states[$this->route] = (string) $state->value;
     }
 
     public function resetState(): void
     {
-        $this->updateState(Controller::STATE_INIT);
+        $this->updateState(ControllerState::Init);
     }
 
     /**

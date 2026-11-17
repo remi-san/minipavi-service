@@ -8,22 +8,21 @@ use MiniPaviService\Controller\Parameters;
 use MiniPaviService\Controller\Request;
 
 /**
- * Parameters of a paged screen: the page shown, and the text searched
+ * Parameters of a paged screen: the page shown, from 0
  */
 final readonly class PageParameters implements Parameters
 {
     public function __construct(
         public int $page = 0,
-        public string $query = '',
     ) {}
 
     public static function fromRequest(Request $request): static
     {
-        return new self(max(0, $request->int('page')), $request->string('query'));
+        return new self(max(0, $request->int('page')));
     }
 
     public function toArray(): array
     {
-        return ['page' => $this->page, 'query' => $this->query];
+        return ['page' => $this->page];
     }
 }

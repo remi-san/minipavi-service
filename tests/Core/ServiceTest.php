@@ -6,6 +6,7 @@ namespace MiniPaviService\Tests\Core;
 
 use MiniPaviService\Controller;
 use MiniPaviService\Controller\CallMode;
+use MiniPaviService\Controller\ControllerState;
 use MiniPaviService\Controller\Request;
 use MiniPaviService\Controller\Response;
 use MiniPaviService\Core\Context;
@@ -16,7 +17,9 @@ use MiniPaviService\Gateway\GatewayAnswer;
 use MiniPaviService\Gateway\GatewayRequest;
 use MiniPaviService\Page\InputCommand;
 use MiniPaviService\Tests\Support\ClearAndShow;
+use MiniPaviService\Tests\Support\FromParameters;
 use MiniPaviService\Tests\Support\MemoryLogger;
+use MiniPaviService\Tests\Support\PageParameters;
 use MiniPaviService\Vdt\VdtHelper;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
@@ -37,11 +40,11 @@ final class ServiceTest extends TestCase
         // menu: Envoi goes to the directory; directory: shows its page, reads a code
         $this->router = new Router();
         $this->router->addRoute('menu', $this->controller('menu', fn(Request $request) => $request->key() === 'ENVOI'
-            ? Response::goTo('directory', ['from' => 'menu'])
+            ? Response::goTo('directory', new FromParameters('menu'))
             : Response::display('menu')));
-        $this->router->addRoute('directory', $this->controller('directory', fn(Request $request) => $request->state() === Controller::STATE_READ_INPUT
+        $this->router->addRoute('directory', $this->controller('directory', fn(Request $request) => $request->stateAs(ControllerState::class, ControllerState::Init) === ControllerState::ReadInput
             ? Response::display('code ' . $request->contentAsString())
-            : Response::display('directory', parameters: ['page' => 2])));
+            : Response::display('directory', parameters: new PageParameters(2))));
         $this->router->addRoute('broken', $this->controller('broken', fn(Request $request) => throw new \RuntimeException('Template data missing')));
         // Two controllers changing to each other
         $this->router->addRoute('ping', $this->controller('ping', fn(Request $request) => Response::goTo('pong')));
@@ -72,7 +75,7 @@ final class ServiceTest extends TestCase
 
         self::assertSame('menu', $this->contentOf($this->handle(new GatewayRequest('CNX', ['typed before'], 'not a context'))));
         // A new session: at init, and without what was typed before
-        self::assertSame(Controller::STATE_INIT, $this->requests['menu'][0]->state());
+        self::assertSame(ControllerState::Init, $this->requests['menu'][0]->stateAs(ControllerState::class, ControllerState::Display));
         self::assertSame([], $this->requests['menu'][0]->content());
         self::assertSame([[LogLevel::INFO, 'Connection', ['fctn' => 'CNX']]], $this->logger->records);
     }
@@ -100,7 +103,7 @@ final class ServiceTest extends TestCase
         $context = $this->handle(new GatewayRequest('ENVOI', [], '{"route":"broken","states":{},"parameters":{}}'))?->context;
 
         self::assertSame('menu', $this->contentOf($this->handle(new GatewayRequest('SOMMAIRE', [], $context ?? ''))));
-        self::assertSame(Controller::STATE_INIT, $this->requests['menu'][0]->state());
+        self::assertSame(ControllerState::Init, $this->requests['menu'][0]->stateAs(ControllerState::class, ControllerState::Display));
     }
 
     public function testInvalidContextIsAnError(): void
@@ -145,15 +148,15 @@ final class ServiceTest extends TestCase
     public function testChangePageStartsTheTargetAtInitWithoutTheInput(): void
     {
         // The directory was left reading a code: it must not read the menu's "1" as one
-        $context = new Context('directory', ['directory' => Controller::STATE_READ_INPUT, 'menu' => Controller::STATE_READ_INPUT], ['directory' => ['page' => 5]]);
+        $context = new Context('directory', ['directory' => ControllerState::ReadInput->value, 'menu' => ControllerState::ReadInput->value], ['directory' => ['page' => 5]]);
         $context->changeRoute('menu');
 
         $answer = $this->serve($context, 'ENVOI', ['1']);
 
         self::assertSame('directory', $answer);
         $directory = $this->requests['directory'][0];
-        self::assertSame(Controller::STATE_INIT, $directory->state());
-        self::assertSame(['from' => 'menu'], $directory->parameters());
+        self::assertSame(ControllerState::Init, $directory->stateAs(ControllerState::class, ControllerState::Display));
+        self::assertEquals(new FromParameters('menu'), $directory->parametersAs(FromParameters::class));
         self::assertSame('', $directory->key());
         self::assertSame([], $directory->content());
         self::assertEquals(new Terminal('192.0.2.1', 'websocket', 'Cv5'), $directory->terminal());
@@ -161,38 +164,38 @@ final class ServiceTest extends TestCase
 
     public function testChangePageResetsTheControllerLeft(): void
     {
-        $context = new Context('menu', ['menu' => Controller::STATE_READ_INPUT], ['menu' => ['choice' => 1]]);
+        $context = new Context('menu', ['menu' => ControllerState::ReadInput->value], ['menu' => ['choice' => 1]]);
 
         $this->serve($context, 'ENVOI', ['1']);
 
         self::assertSame('directory', $context->route());
-        self::assertSame(Controller::STATE_READ_INPUT, $context->state());
+        self::assertSame(ControllerState::ReadInput->value, $context->state());
         self::assertSame(['page' => 2], $context->parameters());
         $context->changeRoute('menu');
-        self::assertSame(Controller::STATE_INIT, $context->state());
+        self::assertSame(ControllerState::Init->value, $context->state());
         self::assertSame([], $context->parameters());
     }
 
     public function testUnknownRouteStartsAgainAtTheDefaultRoute(): void
     {
         // E.g. a route removed in a new version of the service
-        $context = new Context('removed', ['removed' => Controller::STATE_READ_INPUT, 'directory' => Controller::STATE_READ_INPUT], ['directory' => ['page' => 5]]);
+        $context = new Context('removed', ['removed' => ControllerState::ReadInput->value, 'directory' => ControllerState::ReadInput->value], ['directory' => ['page' => 5]]);
 
         $answer = $this->serve($context, 'ENVOI', ['1']);
 
         self::assertSame('menu', $answer);
         $menu = $this->requests['menu'][0];
-        self::assertSame(Controller::STATE_INIT, $menu->state());
+        self::assertSame(ControllerState::Init, $menu->stateAs(ControllerState::class, ControllerState::Display));
         self::assertSame(['', []], [$menu->key(), $menu->content()]);
         // As a new connection: nothing kept from the former context
         $context->changeRoute('directory');
-        self::assertSame([Controller::STATE_INIT, []], [$context->state(), $context->parameters()]);
+        self::assertSame([ControllerState::Init->value, []], [$context->state(), $context->parameters()]);
         self::assertSame([[LogLevel::WARNING, 'Unknown route in the context, starting again at the default route', ['route' => 'removed']]], $this->logger->records);
     }
 
     public function testDisplayIsAnsweredWithTheContextKeepingItsStateAndParameters(): void
     {
-        $answer = $this->answerTo(Response::display('Hello', Controller::STATE_DISPLAY, ['page' => 2]));
+        $answer = $this->answerTo(Response::display('Hello', ControllerState::Display, new PageParameters(2)));
 
         // To this service (next: null), waiting for the user
         self::assertEquals(new GatewayAnswer('Hello', '{"route":"answer","states":{"answer":"display"},"parameters":{"answer":{"page":2}}}'), $answer);
@@ -222,13 +225,13 @@ final class ServiceTest extends TestCase
 
     public function testConnectToIsAnsweredWithTheOtherService(): void
     {
-        $answer = $this->answerTo(Response::connectTo('https://example.org/service', 'Cnx en cours', parameters: ['back' => true]));
+        $answer = $this->answerTo(Response::connectTo('https://example.org/service', 'Cnx en cours', parameters: new PageParameters(4)));
 
         self::assertSame('Cnx en cours', $answer->vdt);
         self::assertSame('https://example.org/service', $answer->next);
         self::assertSame(CallMode::Connect, $answer->directCall);
         // Kept for when the user comes back
-        self::assertSame('{"route":"answer","states":{"answer":"init"},"parameters":{"answer":{"back":true}}}', $answer->context);
+        self::assertSame('{"route":"answer","states":{"answer":"init"},"parameters":{"answer":{"page":4}}}', $answer->context);
     }
 
     public function testAResponseOfItsOwnNeedsNoChangeToTheService(): void
@@ -237,12 +240,12 @@ final class ServiceTest extends TestCase
 
         self::assertSame(VdtHelper::clearScreen() . 'Hello', $answer->vdt);
         // Its state and parameters are kept, as for any response
-        self::assertSame('{"route":"answer","states":{"answer":"display"},"parameters":{"answer":{"cleared":true}}}', $answer->context);
+        self::assertSame('{"route":"answer","states":{"answer":"display"},"parameters":{"answer":{"page":1}}}', $answer->context);
     }
 
     public function testInputGoesToTheControllerOfTheCurrentRoute(): void
     {
-        $context = new Context('directory', ['directory' => Controller::STATE_READ_INPUT]);
+        $context = new Context('directory', ['directory' => ControllerState::ReadInput->value]);
 
         self::assertSame('code 3615', ($this->serve($context, 'ENVOI', ['36', '15'])));
     }

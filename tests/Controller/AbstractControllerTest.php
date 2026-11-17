@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Tests\Controller;
 
-use MiniPaviService\Controller;
 use MiniPaviService\Controller\AbstractController;
+use MiniPaviService\Controller\ControllerState;
 use MiniPaviService\Controller\Request;
 use MiniPaviService\Controller\Response;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -18,10 +18,10 @@ final class AbstractControllerTest extends TestCase
      */
     public static function states(): iterable
     {
-        yield 'init shows the screen' => [Controller::STATE_INIT, 'display'];
-        yield 'display' => [Controller::STATE_DISPLAY, 'display'];
-        yield 'init-input shows the screen again' => [Controller::STATE_INIT_INPUT, 'display'];
-        yield 'read-input' => [Controller::STATE_READ_INPUT, 'read'];
+        yield 'init shows the screen' => [ControllerState::Init->value, 'display'];
+        yield 'display' => [ControllerState::Display->value, 'display'];
+        yield 'init-input shows the screen again' => [ControllerState::InitInput->value, 'display'];
+        yield 'read-input' => [ControllerState::ReadInput->value, 'read'];
         yield 'unknown state starts again' => ['state of an older version', 'display'];
     }
 
@@ -58,8 +58,8 @@ final class AbstractControllerTest extends TestCase
             }
         };
 
-        self::assertSame('first', self::vdt($controller->run(new Request(Controller::STATE_INIT))));
-        self::assertSame('input', self::vdt($controller->run(new Request(Controller::STATE_INIT_INPUT))));
+        self::assertSame('first', self::vdt($controller->run(new Request(ControllerState::Init->value))));
+        self::assertSame('input', self::vdt($controller->run(new Request(ControllerState::InitInput->value))));
     }
 
     private static function controller(): AbstractController

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Tests\Controller;
 
-use MiniPaviService\Controller;
+use MiniPaviService\Controller\ControllerState;
 use MiniPaviService\Controller\Request;
 use MiniPaviService\Core\FunctionKey;
 use MiniPaviService\Core\Terminal;
@@ -17,10 +17,10 @@ final class RequestTest extends TestCase
     public function testCarriesTheUserInput(): void
     {
         $terminal = new Terminal('CALLFROM 0102030405', 'other', '???');
-        $request = new Request(Controller::STATE_READ_INPUT, ['page' => 2], FunctionKey::Send->value, ['Hello ', 'world'], $terminal);
+        $request = new Request(ControllerState::ReadInput->value, ['page' => 2], FunctionKey::Send->value, ['Hello ', 'world'], $terminal);
 
-        self::assertSame(Controller::STATE_READ_INPUT, $request->state());
-        self::assertSame(2, $request->parameter('page'));
+        self::assertSame(ControllerState::ReadInput, $request->stateAs(ControllerState::class, ControllerState::Init));
+        self::assertSame(2, $request->int('page'));
         self::assertSame('ENVOI', $request->key());
         self::assertSame(['Hello ', 'world'], $request->content());
         self::assertSame('Hello world', $request->contentAsString());
@@ -38,7 +38,7 @@ final class RequestTest extends TestCase
     {
         $request = new Request();
 
-        self::assertSame(Controller::STATE_INIT, $request->state());
+        self::assertSame(ControllerState::Init, $request->stateAs(ControllerState::class, ControllerState::Display));
         self::assertSame('', $request->key());
         self::assertSame([], $request->content());
         self::assertSame('', $request->contentAsString());

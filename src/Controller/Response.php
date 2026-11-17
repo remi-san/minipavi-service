@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Controller;
 
-use MiniPaviService\Controller;
 use MiniPaviService\Controller\Response\ChangePage;
 use MiniPaviService\Controller\Response\DisplayPage;
 use MiniPaviService\Controller\Response\RunCommand;
@@ -20,44 +19,20 @@ use MiniPaviService\Page\InputCommand;
  *
  * The named constructors give each response the state it usually keeps: read the next
  * input after showing something, start again after leaving. Pass $state or $parameters
- * (by name) to keep others: a state, or an enum case whose value is one (see
- * Request::stateAs()), and parameters as an array or a Parameters object.
+ * (by name) to keep others: a State (ControllerState, or the controller's own enum), and a
+ * Parameters object (null: none).
  */
 abstract readonly class Response
 {
-    private string $state;
-
-    /** @var array<string, mixed> */
-    private array $parameters;
-
-    /**
-     * @param string|\BackedEnum $state a state, or an enum case whose value is one
-     * @param array<string, mixed>|Parameters $parameters
-     */
-    public function __construct(string|\BackedEnum $state, array|Parameters $parameters)
-    {
-        $this->state = \is_string($state) ? $state : (string) $state->value;
-        $this->parameters = self::parametersArray($parameters);
-    }
-
-    /**
-     * Parameters as kept in the context
-     *
-     * @param array<string, mixed>|Parameters $parameters
-     *
-     * @return array<string, mixed>
-     */
-    protected static function parametersArray(array|Parameters $parameters): array
-    {
-        return \is_array($parameters) ? $parameters : $parameters->toArray();
-    }
+    public function __construct(
+        private State $state,
+        private ?Parameters $parameters,
+    ) {}
 
     /**
      * Sends Videotex content to the gateway; the next key comes back to this controller
-     *
-     * @param array<string, mixed>|Parameters $parameters
      */
-    public static function display(string $vdt, string|\BackedEnum $state = Controller::STATE_READ_INPUT, array|Parameters $parameters = []): DisplayPage
+    public static function display(string $vdt, State $state = ControllerState::ReadInput, ?Parameters $parameters = null): DisplayPage
     {
         return new DisplayPage($state, $parameters, $vdt);
     }
@@ -65,21 +40,20 @@ abstract readonly class Response
     /**
      * Sends Videotex content and an input command (Page::inputCommand(); null for a page
      * without input: only the content is sent); what is typed comes back to this controller
-     *
-     * @param array<string, mixed>|Parameters $parameters
      */
-    public static function readInput(string $vdt, ?InputCommand $command, string|\BackedEnum $state = Controller::STATE_READ_INPUT, array|Parameters $parameters = []): RunCommand
+    public static function readInput(string $vdt, ?InputCommand $command, State $state = ControllerState::ReadInput, ?Parameters $parameters = null): RunCommand
     {
         return new RunCommand($state, $parameters, $vdt, $command);
     }
 
     /**
      * Switches to the controller of another route, and runs it at once: it starts at
-     * STATE_INIT with parameters, without the user's input. This controller is reset.
+     * ControllerState::Init with parameters, without the user's input. This controller is
+     * reset.
      *
-     * @param array<string, mixed>|Parameters $parameters parameters of the target controller
+     * @param ?Parameters $parameters parameters of the target controller; null: none
      */
-    public static function goTo(string $route, array|Parameters $parameters = []): ChangePage
+    public static function goTo(string $route, ?Parameters $parameters = null): ChangePage
     {
         return new ChangePage($route, $parameters);
     }
@@ -88,10 +62,8 @@ abstract readonly class Response
      * Connects the user to another service, at url, after showing vdt (e.g. a message on
      * line 0). state and parameters are kept for this controller, for when the user
      * comes back.
-     *
-     * @param array<string, mixed>|Parameters $parameters
      */
-    public static function connectTo(string $url, string $vdt = '', string|\BackedEnum $state = Controller::STATE_INIT, array|Parameters $parameters = []): RunExternalService
+    public static function connectTo(string $url, string $vdt = '', State $state = ControllerState::Init, ?Parameters $parameters = null): RunExternalService
     {
         return new RunExternalService($state, $parameters, $vdt, $url, CallMode::Connect);
     }
@@ -103,15 +75,15 @@ abstract readonly class Response
      */
     abstract public function continueWith(Flow $flow): GatewayAnswer;
 
-    public function state(): string
+    public function state(): State
     {
         return $this->state;
     }
 
     /**
-     * @return array<string, mixed>
+     * Parameters this controller keeps; null: none
      */
-    public function parameters(): array
+    public function parameters(): ?Parameters
     {
         return $this->parameters;
     }
