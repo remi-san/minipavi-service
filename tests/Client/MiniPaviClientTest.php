@@ -11,7 +11,6 @@ use MiniPaviService\Gateway\GatewayAnswer;
 use MiniPaviService\Gateway\GatewayRequest;
 use MiniPaviService\Http\EmptyHttpResponse;
 use MiniPaviService\Minitel\Terminal;
-use MiniPaviService\Tests\Support\HttpRequests;
 use MiniPaviService\Vdt\Vdt;
 use PHPUnit\Framework\TestCase;
 
@@ -111,7 +110,7 @@ final class MiniPaviClientTest extends TestCase
     {
         ob_start();
         try {
-            $response = (new MiniPaviClient())->response(HttpRequests::to('MiniPAVI'), new GatewayRequest('ENVOI', serviceUrl: self::SERVICE_URL), $answer);
+            $response = (new MiniPaviClient())->response(new GatewayRequest('ENVOI', serviceUrl: self::SERVICE_URL), $answer);
         } finally {
             $output = (string) ob_get_clean();
         }

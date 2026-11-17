@@ -8,6 +8,7 @@ use MiniPavi\MiniPaviCli;
 use MiniPaviService\Gateway\Client;
 use MiniPaviService\Gateway\GatewayAnswer;
 use MiniPaviService\Gateway\GatewayRequest;
+use MiniPaviService\Gateway\NoClientState;
 use MiniPaviService\Http\EmptyHttpResponse;
 use MiniPaviService\Minitel\Terminal;
 use Psr\Http\Message\ResponseInterface;
@@ -19,6 +20,8 @@ use Psr\Http\Message\ServerRequestInterface;
  * writes the answer itself (MiniPaviCli::send()), so the HTTP response is an
  * EmptyHttpResponse, which the Kernel doesn't send. With VdtHelper (Videotex helpers) and
  * InputCommand (input commands), the only classes calling MiniPaviCli.
+ *
+ * @implements Client<NoClientState>
  */
 final class MiniPaviClient implements Client
 {
@@ -37,6 +40,8 @@ final class MiniPaviClient implements Client
     /**
      * The request read by MiniPaviCli::start(), as it decoded it: values that aren't text
      * become empty
+     *
+     * @return GatewayRequest<NoClientState>
      */
     public function decoded(string $serviceUrl = ''): GatewayRequest
     {
@@ -60,7 +65,12 @@ final class MiniPaviClient implements Client
      * Writes the answer to the gateway (the body of the HTTP response): an answer without next
      * URL calls the service again, at the URL of the request
      */
-    public function response(ServerRequestInterface $httpRequest, GatewayRequest $request, GatewayAnswer $answer): ResponseInterface
+    public function initialState(): NoClientState
+    {
+        return new NoClientState();
+    }
+
+    public function response(GatewayRequest $request, GatewayAnswer $answer): ResponseInterface
     {
         MiniPaviCli::send(
             $answer->vdt->toString(),

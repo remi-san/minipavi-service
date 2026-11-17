@@ -9,6 +9,8 @@ use MiniPaviService\Minitel\Terminal;
 /**
  * Request of the MiniPavi gateway: what the user did (the key pressed, the text typed), the
  * context sent with the previous answer, and where the user connects from
+ *
+ * @template-covariant TState of ClientState
  */
 final readonly class GatewayRequest
 {
@@ -24,6 +26,8 @@ final readonly class GatewayRequest
      * @param string $serviceUrl URL of the service the request was sent to (Http\RequestUrl):
      *                           the next URL of answers without one; '' for a request built
      *                           in memory
+     * @param TState $clientState what the client needs to answer, besides what the service
+     *                            gets: given back to it with the request (Client::response())
      */
     public function __construct(
         public string $key,
@@ -31,6 +35,7 @@ final readonly class GatewayRequest
         public string $context = '',
         public Terminal $terminal = new Terminal(),
         public string $serviceUrl = '',
+        public ClientState $clientState = new NoClientState(),
     ) {}
 
     public function isConnecting(): bool

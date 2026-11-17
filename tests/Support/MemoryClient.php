@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace MiniPaviService\Tests\Support;
 
 use MiniPaviService\Gateway\Client;
+use MiniPaviService\Gateway\ClientState;
 use MiniPaviService\Gateway\GatewayAnswer;
 use MiniPaviService\Gateway\GatewayRequest;
+use MiniPaviService\Gateway\NoClientState;
 use Nyholm\Psr7\Response;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -14,13 +16,16 @@ use Psr\Http\Message\ServerRequestInterface;
 /**
  * Client giving a request (or failing to read it), and answering with the Videotex of the
  * answer; keeps the requests and answers it gave responses for in $responded
+ *
+ * @implements Client<NoClientState>
  */
 final class MemoryClient implements Client
 {
-    /** @var list<array{GatewayRequest, GatewayAnswer}> */
+    /** @var list<array{GatewayRequest<NoClientState>, GatewayAnswer}> */
     public array $responded = [];
 
     public function __construct(
+        /** @var GatewayRequest<ClientState>|\Throwable */
         private GatewayRequest|\Throwable $request,
         private ?\Throwable $responseFailure = null,
     ) {}
@@ -34,7 +39,12 @@ final class MemoryClient implements Client
         return new GatewayRequest($this->request->key, $this->request->content, $this->request->context, $this->request->terminal, $serviceUrl);
     }
 
-    public function response(ServerRequestInterface $httpRequest, GatewayRequest $request, GatewayAnswer $answer): ResponseInterface
+    public function initialState(): NoClientState
+    {
+        return new NoClientState();
+    }
+
+    public function response(GatewayRequest $request, GatewayAnswer $answer): ResponseInterface
     {
         if ($this->responseFailure !== null) {
             throw $this->responseFailure;

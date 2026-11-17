@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MiniPaviService\Tests\Client;
 
 use MiniPaviService\Client\HtmlClient;
+use MiniPaviService\Client\HtmlPageState;
 use MiniPaviService\Controller\Parameters\NoParameters;
 use MiniPaviService\Controller\Request;
 use MiniPaviService\Controller\Response;
@@ -47,7 +48,7 @@ final class HtmlClientTest extends TestCase
     public function testFirstRequestIsAConnection(array $query): void
     {
         self::assertEquals(
-            new GatewayRequest(GatewayRequest::FCTN_CONNECT, serviceUrl: self::SERVICE_URL),
+            new GatewayRequest(GatewayRequest::FCTN_CONNECT, serviceUrl: self::SERVICE_URL, clientState: new HtmlPageState()),
             self::client()->request(HttpRequests::to('Mozilla/5.0', $query), self::SERVICE_URL),
         );
     }
@@ -56,19 +57,24 @@ final class HtmlClientTest extends TestCase
     {
         // A user who just got there: no key, no input
         self::assertEquals(
-            new GatewayRequest('', [], '{"route":"games"}', serviceUrl: self::SERVICE_URL),
+            new GatewayRequest('', [], '{"route":"games"}', serviceUrl: self::SERVICE_URL, clientState: new HtmlPageState()),
             self::client()->request(HttpRequests::to('Mozilla/5.0', ['web' => 'true', 'route' => 'games']), self::SERVICE_URL),
         );
     }
 
     public function testKeyPressedWithWhatWasTyped(): void
     {
-        $form = ['key' => 'ENVOI', 'content' => ['36', '15'], 'context' => '{"route":"menu"}', 'screen' => ''];
+        $screen = VdtHelper::setPos(1, 1)->append(Vdt::text('Menu'));
+        $command = InputCommand::text(1, 2, 4, FunctionKey::masks(FunctionKey::Send))->toArray();
+        $form = ['key' => 'ENVOI', 'content' => ['36', '15'], 'context' => '{"route":"menu"}', 'screen' => base64_encode($screen->toString()), 'command' => (string) json_encode($command)];
 
-        self::assertEquals(
-            new GatewayRequest('ENVOI', ['36', '15'], '{"route":"menu"}', serviceUrl: self::SERVICE_URL),
-            self::client()->request(HttpRequests::posting('Mozilla/5.0', ['web' => 'true', 'route' => 'games'], $form), self::SERVICE_URL),
-        );
+        $request = self::client()->request(HttpRequests::posting('Mozilla/5.0', ['web' => 'true', 'route' => 'games'], $form), self::SERVICE_URL);
+
+        self::assertSame(['ENVOI', ['36', '15'], '{"route":"menu"}', self::SERVICE_URL], [$request->key, $request->content, $request->context, $request->serviceUrl]);
+        // With the page posted back: its screen and its input command
+        self::assertEquals($screen, $request->clientState->screen);
+        self::assertSame('InputTxt', $request->clientState->command['name'] ?? null);
+        self::assertSame(2, $request->clientState->command['param']['y'] ?? null);
     }
 
     public function testUnknownKeyIsAConnection(): void
@@ -94,7 +100,7 @@ final class HtmlClientTest extends TestCase
     {
         $before = VdtHelper::clearScreen()->append(VdtHelper::setPos(1, 3), Vdt::text('Page 2/2'));
 
-        $html = self::page(new GatewayAnswer(VdtHelper::writeLine0('Dernière page'), '{}'), ['screen' => base64_encode($before->toString())]);
+        $html = self::page(new GatewayAnswer(VdtHelper::writeLine0('Dernière page'), '{}'), ['key' => 'SUITE', 'screen' => base64_encode($before->toString())]);
 
         self::assertStringContainsString('Page 2/2', self::shownText($html));
         self::assertStringContainsString('Dernière page', self::shownText($html));
@@ -105,7 +111,7 @@ final class HtmlClientTest extends TestCase
         $before = VdtHelper::clearScreen()->append(VdtHelper::setPos(1, 3), Vdt::text('Avant'));
         $answer = VdtHelper::clearScreen()->append(VdtHelper::setPos(1, 3), Vdt::text('Après'));
 
-        $html = self::page(new GatewayAnswer($answer, '{}'), ['screen' => base64_encode($before->toString())]);
+        $html = self::page(new GatewayAnswer($answer, '{}'), ['key' => 'SUITE', 'screen' => base64_encode($before->toString())]);
 
         self::assertStringContainsString('<input type="hidden" name="screen" value="' . base64_encode($answer->fromLastClear()->toString()) . '">', $html);
         self::assertStringNotContainsString('Avant', self::shownText($html));
@@ -161,7 +167,7 @@ final class HtmlClientTest extends TestCase
         $page = self::page(new GatewayAnswer($before, '{"route":"directory"}', command: InputCommand::text(7, 23, 23, FunctionKey::masks(FunctionKey::Send))->toArray()));
         $form = ['key' => 'ENVOI'] + self::hiddenValues($page);
 
-        $html = self::page(new GatewayAnswer(VdtHelper::writeLine0('Cnx en cours'), '{"route":"elsewhere"}', 'https://example.org/'), $form, new GatewayRequest('ENVOI', [], '{"route":"directory"}', serviceUrl: self::SERVICE_URL));
+        $html = self::page(new GatewayAnswer(VdtHelper::writeLine0('Cnx en cours'), '{"route":"elsewhere"}', 'https://example.org/'), $form);
 
         $shown = self::shownText($html);
         self::assertStringContainsString('Annuaire', $shown);
@@ -224,16 +230,17 @@ final class HtmlClientTest extends TestCase
     }
 
     /**
-     * Page the client gives for an answer, to a form posted with values
+     * Page the client gives for an answer, to a form posted with values: the request is read
+     * by the client, with its state, as ServiceRunner does
      *
      * @param array<string, mixed> $form
      */
-    private static function page(GatewayAnswer $answer, array $form = [], ?GatewayRequest $request = null, ?Messages $messages = null): string
+    private static function page(GatewayAnswer $answer, array $form = [], ?Messages $messages = null): string
     {
-        $httpRequest = HttpRequests::posting('Mozilla/5.0', ['web' => 'true'], $form);
-        $request ??= new GatewayRequest(GatewayRequest::FCTN_CONNECT, serviceUrl: self::SERVICE_URL);
+        $client = self::client($messages);
+        $request = $client->request(HttpRequests::posting('Mozilla/5.0', ['web' => 'true'], $form), self::SERVICE_URL);
 
-        return (string) self::client($messages)->response($httpRequest, $request, $answer)->getBody();
+        return (string) $client->response($request, $answer)->getBody();
     }
 
     /**

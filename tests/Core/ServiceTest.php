@@ -15,6 +15,7 @@ use MiniPaviService\Core\Context;
 use MiniPaviService\Core\Router;
 use MiniPaviService\Core\Service;
 use MiniPaviService\Gateway\CallMode;
+use MiniPaviService\Gateway\ClientState;
 use MiniPaviService\Gateway\GatewayAnswer;
 use MiniPaviService\Gateway\GatewayRequest;
 use MiniPaviService\Message\FrameworkMessage;
@@ -321,6 +322,8 @@ final class ServiceTest extends TestCase
 
     /**
      * Service::handle() for a request of the gateway
+     *
+     * @param GatewayRequest<ClientState> $request
      */
     private function handle(GatewayRequest $request, ?string $errorMessage = null): ?GatewayAnswer
     {

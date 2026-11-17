@@ -28,6 +28,8 @@ use Psr\Http\Message\ServerRequestInterface;
  *
  * The first request (no key posted) is a connection, or with the query's route (?route=games)
  * a request on that route, its controller at its initial state.
+ *
+ * @implements Client<HtmlPageState>
  */
 final readonly class HtmlClient implements Client
 {
@@ -56,21 +58,35 @@ final readonly class HtmlClient implements Client
         $key = FunctionKey::tryFrom(self::text($form, self::KEY));
         if ($key !== null) {
             $content = \is_array($form[self::CONTENT] ?? null) ? $form[self::CONTENT] : [];
+            // What the page showed, posted back with the key
+            $state = new HtmlPageState(
+                Vdt::fromString((string) base64_decode(self::text($form, self::SCREEN), true)),
+                self::command(json_decode(self::text($form, self::COMMAND), true)),
+            );
 
             return new GatewayRequest(
                 $key->value,
                 array_values(array_map(fn(mixed $line) => \is_string($line) ? $line : '', $content)),
                 self::text($form, self::CONTEXT),
                 serviceUrl: $serviceUrl,
+                clientState: $state,
             );
         }
 
         $route = $request->getQueryParams()['route'] ?? null;
         if (!\is_string($route) || $route === '') {
-            return new GatewayRequest(GatewayRequest::FCTN_CONNECT, serviceUrl: $serviceUrl);
+            return new GatewayRequest(GatewayRequest::FCTN_CONNECT, serviceUrl: $serviceUrl, clientState: $this->initialState());
         }
 
-        return new GatewayRequest('', [], (string) json_encode(['route' => $route]), serviceUrl: $serviceUrl);
+        return new GatewayRequest('', [], (string) json_encode(['route' => $route]), serviceUrl: $serviceUrl, clientState: $this->initialState());
+    }
+
+    /**
+     * No page yet: an empty screen, no input
+     */
+    public function initialState(): HtmlPageState
+    {
+        return new HtmlPageState();
     }
 
     /**
@@ -78,16 +94,16 @@ final readonly class HtmlClient implements Client
      * function keys; or, for an answer leaving the service, the page as it was, with the error
      * on line 0
      */
-    public function response(ServerRequestInterface $httpRequest, GatewayRequest $request, GatewayAnswer $answer): ResponseInterface
+    public function response(GatewayRequest $request, GatewayAnswer $answer): ResponseInterface
     {
-        $form = self::form($httpRequest);
-        $screen = Vdt::fromString((string) base64_decode(self::text($form, self::SCREEN), true));
+        $page = $request->clientState;
+        $screen = $page->screen;
 
         if ($answer->next !== null && $answer->next !== $request->serviceUrl) {
             // Blocked: the user stays where they were
             $screen = $screen->append(VdtHelper::writeLine0($this->messages->get(FrameworkMessage::WebLeave)));
             $context = $request->context;
-            $command = self::command(json_decode(self::text($form, self::COMMAND), true));
+            $command = $page->command;
         } else {
             $screen = $screen->append($answer->vdt);
             $context = $answer->context;

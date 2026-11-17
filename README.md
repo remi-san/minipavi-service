@@ -141,7 +141,10 @@ $psr17 = new Psr17Factory();
 - **`ServiceRunner`** runs the service for an HTTP request, through a client
   (`Gateway\Client`, in `Client\`) translating between HTTP and the service's values: the
   client turns the HTTP request into a `GatewayRequest`, the service answers it, and the client
-  turns the `GatewayAnswer` into the HTTP response. A request that can't be read is answered
+  turns the `GatewayAnswer` into the HTTP response. What the client needs to answer, besides what the service
+  gets, is its state (`Gateway\ClientState`): read with the HTTP request, kept in the
+  `GatewayRequest` (`$clientState`), and given back to the client with it. A client without
+  any uses the null object `NoClientState`, as requests built in memory do. A request that can't be read is answered
   as an error (see `Service`). Two clients:
   - **`MiniPaviClient`**, for the MiniPavi gateway, through `MiniPaviCli` used unchanged: it
     reads the gateway's request itself, and writes the answer itself, so the HTTP response is an
@@ -157,7 +160,8 @@ $psr17 = new Psr17Factory();
       input doesn't accept (`validwith`) disabled; Enter in a field presses Envoi;
     - hidden, the context of the answer, its input command, and the **screen so far**: an
       answer drawing part of the screen (e.g. "Dernière page" on line 0) is drawn over it, as
-      on a Minitel (kept from its last clear screen).
+      on a Minitel (kept from its last clear screen). The page's screen and command come back
+      with the key as the client's state (`HtmlPageState`).
 
     A key that would **leave the service** (an answer whose next URL is another one, as
     `Response::connectTo()`) is blocked: the page stays as it was, with

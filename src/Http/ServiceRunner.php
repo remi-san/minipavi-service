@@ -6,6 +6,7 @@ namespace MiniPaviService\Http;
 
 use MiniPaviService\Core\Service;
 use MiniPaviService\Gateway\Client;
+use MiniPaviService\Gateway\ClientState;
 use MiniPaviService\Gateway\GatewayRequest;
 use MiniPaviService\Http\Url\UrlAttribute;
 use Psr\Http\Message\ResponseInterface;
@@ -19,12 +20,15 @@ use Psr\Log\NullLogger;
  * service's values (MiniPaviClient for the gateway, HtmlClient for a browser): the client
  * reads the request, the service answers it, and the client gives the response. The URL of
  * the service (UrlAttribute::Service, from WithUrls) goes to the client, in the GatewayRequest.
+ *
+ * @template TState of ClientState
  */
 final readonly class ServiceRunner implements RequestHandlerInterface
 {
     private LoggerInterface $logger;
 
     /**
+     * @param Client<TState> $client
      * @param ?LoggerInterface $logger where answers that can't be given are logged; none by
      *                                 default
      */
@@ -44,7 +48,7 @@ final readonly class ServiceRunner implements RequestHandlerInterface
             $answer = $this->service->handle($gatewayRequest);
         } catch (\Throwable $e) {
             // The request couldn't be read: all that is known of it is where it was sent
-            $gatewayRequest = new GatewayRequest('', serviceUrl: $serviceUrl);
+            $gatewayRequest = new GatewayRequest('', serviceUrl: $serviceUrl, clientState: $this->client->initialState());
             $answer = $this->service->error($e);
         }
         if ($answer === null) {
@@ -52,7 +56,7 @@ final readonly class ServiceRunner implements RequestHandlerInterface
         }
 
         try {
-            return $this->client->response($request, $gatewayRequest, $answer);
+            return $this->client->response($gatewayRequest, $answer);
         } catch (\Throwable $e) {
             $this->logger->critical('Cannot send the answer: ' . $e->getMessage(), ['exception' => $e]);
 

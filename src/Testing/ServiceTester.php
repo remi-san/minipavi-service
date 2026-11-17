@@ -7,6 +7,7 @@ namespace MiniPaviService\Testing;
 use MiniPaviService\Core\Context;
 use MiniPaviService\Core\Service;
 use MiniPaviService\Gateway\CallMode;
+use MiniPaviService\Gateway\ClientState;
 use MiniPaviService\Gateway\GatewayAnswer;
 use MiniPaviService\Gateway\GatewayRequest;
 use MiniPaviService\Minitel\FunctionKey;
@@ -165,6 +166,9 @@ final class ServiceTester
         return $this->service->restore($this->answer()->context);
     }
 
+    /**
+     * @param GatewayRequest<ClientState> $request
+     */
     private function send(GatewayRequest $request): self
     {
         $this->answer = $this->service->handle($request) ?? throw new \LogicException('No answer to ' . $request->key);
