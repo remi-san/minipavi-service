@@ -6,7 +6,8 @@ official [`ludosevilla/minipavi-cli`](https://packagist.org/packages/ludosevilla
 - **Pages** described in XML: static, or templates with placeholders, loops and conditions
 - **Controllers**, one per screen, each a small state machine returning **responses**
 - A **router** and a **context** keeping each controller's state between requests
-- **`MiniPaviClient`**, an instance wrapper of the static `MiniPaviCli`
+- A **service without I/O**: it answers a `GatewayRequest` with a `GatewayAnswer`, which
+  `MiniPaviClient` reads from and sends to the gateway, through the static `MiniPaviCli`
 - **`Vdt`**, to read Videotex content (e.g. pictures made with a Videotex editor) and move it on the screen
 
 Requires PHP 8.2.
@@ -20,7 +21,7 @@ The code (namespace `MiniPaviService`, in `src/`) is organized by layer:
 | `Controller\` | `AbstractController`, `Request`, `Response` and the response types |
 | `Page\` | static and template pages, their display elements, and the page XML parser |
 | `Vdt\` | Videotex codes, reading and moving Videotex content |
-| `Gateway\` | `MiniPaviClient`, the client of the MiniPavi gateway |
+| `Gateway\` | the MiniPavi gateway: its requests and answers (`GatewayRequest`, `GatewayAnswer`), and `MiniPaviClient`, which reads and sends them |
 | `Http\` | the entry point for the web server: `ServiceRunner`, `RequestUrl`, `EmulatorConfig`, `ServerVariable` |
 | `Log\` | `ErrorLogLogger` |
 
@@ -45,7 +46,6 @@ In Docker, the framework and the service keep the repository's layout (`/app/fra
 
 ```php
 use MiniPaviService\Core\{Router, Service};
-use MiniPaviService\Gateway\MiniPaviClient;
 use MiniPaviService\Http\ServiceRunner;
 use MiniPaviService\Log\ErrorLogLogger;
 use MiniPaviService\Page\Parser\PageXmlParser;
@@ -58,7 +58,7 @@ $router->setDefaultRoute(HomeController::NAME);
 
 $logger = new ErrorLogLogger();
 
-(new ServiceRunner(new Service(new MiniPaviClient(), $router, $logger), logger: $logger))->run();
+(new ServiceRunner(new Service($router, $logger), logger: $logger))->run();
 ```
 
 - **Lazy controllers:** a service with many screens shouldn't build every controller, and parse
@@ -78,8 +78,10 @@ $logger = new ErrorLogLogger();
   $router = $container->get(Router::class);
   ```
 
-- **`ServiceRunner`** runs the service for the gateway, and redirects browsers to an emulator
-  that opens the service: with `EMULATOR_URL` set (the local stack), that emulator and the
+- **`ServiceRunner`** runs the service for the gateway: `MiniPaviClient` reads the request,
+  the service answers it, and `MiniPaviClient` sends the answer. A request that can't be read
+  is answered as an error (see `Service`). It redirects browsers to an emulator that opens the
+  service: with `EMULATOR_URL` set (the local stack), that emulator and the
   gateway `GATEWAY_URL`, which reaches the service at `SERVICES_INTERNAL_HOST`; otherwise (a
   public server), the minipavi.fr emulator and gateway, with the URL the browser asked for.
 - **`RequestUrl`** builds the service's URLs for `ServiceRunner` (where browsers come back)
@@ -90,14 +92,22 @@ $logger = new ErrorLogLogger();
   - `TRUSTED_PROXIES` (e.g. `10.0.0.1, 172.16.0.0/12`): reverse proxies whose
     `X-Forwarded-Proto` is believed, when they terminate TLS. From anyone else, the header
     is ignored.
-- **`Service`** reads the gateway's request, restores the `Context`, and runs the controller of
-  the current route until a response is sent to the gateway. A context without route, or
+- **`Service`** answers a request of the gateway, without I/O:
+  `$service->handle(GatewayRequest): ?GatewayAnswer` (null for a disconnection, which has
+  nothing to answer). It restores the `Context`, and runs the controller of the current route
+  until a response answers the gateway. A context without route, or
   whose route the service doesn't have (e.g. removed in a new version), starts again at the
   default route.
   If serving a request fails (an exception or a PHP error, in a controller, a template, the
   context...), the error is logged, and the user gets a message on line 0 (`$errorMessage` of
   the constructor, by default `Service::ERROR_MESSAGE`): their next function key starts again
   at the default route.
+- **`GatewayRequest`** is what the gateway sends: `key` (the function key, or a connection
+  code), `content` (the text typed), `context` (given back from the previous answer) and
+  `terminal`. **`GatewayAnswer`** is what is sent back: `vdt`, `context`, `next` (the URL the
+  gateway calls next, null for this service's), `command` (e.g. an input command),
+  `directCall` (a `CallMode`, to call `next` at once) and `echo`. Both are plain values, so a
+  service can be tested, or run elsewhere than PHP's web server, without `MiniPaviCli`.
 - **Pages** are displayed for the user's terminal, which `<endkey>` depends on:
   `$page->display($request->terminal(), $data)`; display elements get it too
   (`Element::getContent(Terminal $terminal)`).
@@ -105,7 +115,7 @@ $logger = new ErrorLogLogger();
   the framework's `ErrorLogLogger`, writing to PHP's error log) and
   log connections, disconnections and browsers sent to the emulator at info level, and errors
   at error level (with the exception):
-  `new Service($client, $router, $logger)`, `new ServiceRunner($service, logger: $logger)`.
+  `new Service($router, $logger)`, `new ServiceRunner($service, logger: $logger)`.
   Without one, nothing is logged.
 - **A `Controller`** runs on a `Request` and returns a `Response`. The request gives:
   - `state()` (`STATE_INIT`, `STATE_DISPLAY`, `STATE_INIT_INPUT`, `STATE_READ_INPUT`) and
@@ -166,7 +176,7 @@ $logger = new ErrorLogLogger();
   A state it doesn't know (e.g. kept by an older version of the service) starts it again.
   To add states, override `run()` and call `parent::run()` for the others.
 
-- The `FCTN_*` constants of `MiniPaviClient` name the connection codes of `Request::key()`
+- The `FCTN_*` constants of `GatewayRequest` name the connection codes of `Request::key()`
   (`CNX`, `DIRECTCNX`, `FIN`).
 
 ## Page XML format
