@@ -20,6 +20,7 @@ final readonly class TemplatePage implements Page
     public function __construct(
         private array $nodes,
         private ?Input $input = null,
+        private Setup $setup = new Setup(),
     ) {}
 
     /**
@@ -27,7 +28,7 @@ final readonly class TemplatePage implements Page
      */
     public function display(Terminal $terminal, array $data = []): string
     {
-        return VdtHelper::clearScreen() . Videotex::CURSOR_OFF . $this->toDisplay($data)->toVdt($terminal);
+        return $this->setup->toVdt() . VdtHelper::clearScreen() . Videotex::CURSOR_OFF . $this->toDisplay($data)->toVdt($terminal);
     }
 
     /**

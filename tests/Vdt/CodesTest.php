@@ -7,7 +7,9 @@ namespace MiniPaviService\Tests\Vdt;
 use MiniPavi\MiniPaviCli;
 use MiniPaviService\Core\FunctionKey;
 use MiniPaviService\Http\EmulatorConfig;
-use MiniPaviService\Vdt\Protocol;
+use MiniPaviService\Vdt\Keyboard;
+use MiniPaviService\Vdt\LocalEcho;
+use MiniPaviService\Vdt\Scroll;
 use MiniPaviService\Vdt\Videotex;
 use PHPUnit\Framework\TestCase;
 
@@ -36,8 +38,9 @@ final class CodesTest extends TestCase
     public function testProtocolSequences(): void
     {
         self::assertSame(
-            [PRO_MIN, PRO_LOCALECHO_OFF, PRO_ROULEAU_OFF],
-            [Protocol::KEYBOARD_LOWERCASE, Protocol::LOCAL_ECHO_OFF, Protocol::SCROLL_OFF],
+            [PRO_MIN, PRO_MAJ, PRO_LOCALECHO_OFF, PRO_LOCALECHO_ON, PRO_ROULEAU_OFF, PRO_ROULEAU_ON],
+            [Keyboard::Lowercase->sequence(), Keyboard::Uppercase->sequence(), LocalEcho::Off->sequence(),
+                LocalEcho::On->sequence(), Scroll::Off->sequence(), Scroll::On->sequence()],
         );
     }
 

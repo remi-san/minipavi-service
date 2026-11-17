@@ -6,8 +6,9 @@ namespace MiniPaviService\Page\Parser;
 
 use MiniPaviService\Page;
 use MiniPaviService\Page\Display\Display;
-use MiniPaviService\Page\{Input, StaticPage, TemplatePage};
+use MiniPaviService\Page\{Input, Setup, StaticPage, TemplatePage};
 use MiniPaviService\Page\Template\{ElementNode, ForeachNode, IfNode, Node, Scope, TemplateException};
+use MiniPaviService\Vdt\{Keyboard, LocalEcho, Scroll};
 
 /**
  * Reads a page XML file (root element <page>, format documented in the framework's README.md)
@@ -59,12 +60,18 @@ final class PageXmlParser
             throw new PageXmlException("$name: <page>: " . ($type === '' ? 'type is missing' : "type=\"$type\" is unknown") . ' (type="' . implode('" or type="', self::TYPES) . '")');
         }
 
+        $setup = new Setup(
+            self::setting($root, 'keyboard', Keyboard::class, $name),
+            self::setting($root, 'echo', LocalEcho::class, $name),
+            self::setting($root, 'scroll', Scroll::class, $name),
+        );
+
         $factory = new ElementFactory($baseDir);
         $input = null;
         $nodes = $this->nodes($root, $factory, $name, $type == 'template', false, $input);
 
         if ($type == 'template') {
-            return new TemplatePage($nodes, $input);
+            return new TemplatePage($nodes, $input, $setup);
         }
 
         // Static page: elements are built now, so that their errors are found now
@@ -76,7 +83,36 @@ final class PageXmlParser
         } catch (TemplateException $e) {
             throw new PageXmlException($e->getMessage(), 0, $e);
         }
-        return new StaticPage(new Display(...$elements), $input);
+        return new StaticPage(new Display(...$elements), $input, $setup);
+    }
+
+    /**
+     * Setting of the Minitel given by an attribute of <page>, a case of its enum; null if the
+     * attribute is missing
+     *
+     * @template T of \BackedEnum
+     *
+     * @param class-string<T> $enum
+     *
+     * @return ?T
+     *
+     * @throws PageXmlException for a value the enum doesn't have
+     */
+    private static function setting(\SimpleXMLElement $root, string $attribute, string $enum, string $name): ?\BackedEnum
+    {
+        if (!isset($root[$attribute])) {
+            return null;
+        }
+        $value = (string) $root[$attribute];
+
+        return $enum::tryFrom($value) ?? throw new PageXmlException(\sprintf(
+            '%s line %d: <page>: %s="%s" is unknown (%s)',
+            $name,
+            dom_import_simplexml($root)->getLineNo(),
+            $attribute,
+            $value,
+            implode(' or ', array_map(fn(\BackedEnum $case) => "$attribute=\"$case->value\"", $enum::cases())),
+        ));
     }
 
     /**

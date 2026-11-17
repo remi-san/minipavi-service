@@ -9,6 +9,9 @@ use MiniPaviService\Page\Display\Color;
 use MiniPaviService\Page\Display\Size;
 use MiniPaviService\Page\Parser\ElementFactory;
 use MiniPaviService\Page\Parser\PageXmlParser;
+use MiniPaviService\Vdt\Keyboard;
+use MiniPaviService\Vdt\LocalEcho;
+use MiniPaviService\Vdt\Scroll;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
@@ -70,6 +73,7 @@ final class PageXsdTest extends TestCase
               <input/>
             </page>
             XML];
+        yield 'Minitel setup' => ['<page type="static" keyboard="lowercase" echo="off" scroll="on"/>'];
         yield 'schema location' => [<<<'XML'
             <page type="static" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xsi:noNamespaceSchemaLocation="../../vendor/remi-san/minipavi-service/schema/page.xsd"/>
@@ -123,6 +127,9 @@ final class PageXsdTest extends TestCase
     {
         self::assertSame(array_column(Color::cases(), 'value'), self::enumeration('color'));
         self::assertSame(array_column(Size::cases(), 'value'), self::enumeration('size'));
+        self::assertSame(array_column(Keyboard::cases(), 'value'), self::enumeration('keyboard'));
+        self::assertSame(array_column(LocalEcho::cases(), 'value'), self::enumeration('onOff'));
+        self::assertSame(array_column(Scroll::cases(), 'value'), self::enumeration('onOff'));
         $keys = array_map(fn(FunctionKey $key) => $key->xmlName(), FunctionKey::cases());
         sort($keys);
         $schemaKeys = self::enumeration('functionKey');

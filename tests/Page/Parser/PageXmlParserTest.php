@@ -12,7 +12,11 @@ use MiniPaviService\Page\Parser\PageXmlParser;
 use MiniPaviService\Page\StaticPage;
 use MiniPaviService\Page\Template\TemplateException;
 use MiniPaviService\Page\TemplatePage;
+use MiniPaviService\Vdt\Keyboard;
+use MiniPaviService\Vdt\LocalEcho;
+use MiniPaviService\Vdt\Scroll;
 use MiniPaviService\Vdt\Vdt;
+use MiniPaviService\Vdt\VdtHelper;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
@@ -59,6 +63,29 @@ final class PageXmlParserTest extends TestCase
         $vdt = $this->parse('<page type="static"><text row="1">x</text></page>')->display(new Terminal());
 
         self::assertSame([' 1|x' . str_repeat(' ', 39) . '|'], $this->drawnRows($before . $vdt));
+    }
+
+    public function testDisplaySetsUpTheMinitelFirst(): void
+    {
+        $page = $this->parse('<page type="static" keyboard="lowercase" echo="off" scroll="off"><text row="1">x</text></page>');
+
+        self::assertStringStartsWith(
+            Keyboard::Lowercase->sequence() . LocalEcho::Off->sequence() . Scroll::Off->sequence() . VdtHelper::clearScreen(),
+            $page->display(new Terminal()),
+        );
+        $template = $this->parse('<page type="template" keyboard="uppercase" echo="on" scroll="on"><text row="1">{{x}}</text></page>');
+        self::assertStringStartsWith(
+            Keyboard::Uppercase->sequence() . LocalEcho::On->sequence() . Scroll::On->sequence() . VdtHelper::clearScreen(),
+            $template->display(new Terminal(), ['x' => 'y']),
+        );
+    }
+
+    public function testWithoutSetupTheMinitelIsLeftAsItIs(): void
+    {
+        $clear = VdtHelper::clearScreen();
+        self::assertSame($clear, substr($this->parse('<page type="static"/>')->display(new Terminal()), 0, \strlen($clear)));
+        // Only what is given
+        self::assertStringStartsWith(Scroll::Off->sequence() . VdtHelper::clearScreen(), $this->parse('<page type="static" scroll="off"/>')->display(new Terminal()));
     }
 
     public function testCenteredTextOfEvenWidthHasOneMoreColumnOnTheRight(): void
@@ -199,6 +226,9 @@ final class PageXmlParserTest extends TestCase
         yield 'other root' => ['<pages/>', 'f.xml: root element must be <page>, not <pages>'];
         yield 'no type' => ['<page/>', 'f.xml: <page>: type is missing (type="static" or type="template")'];
         yield 'unknown type' => ['<page type="dynamic"/>', 'f.xml: <page>: type="dynamic" is unknown'];
+        yield 'unknown keyboard' => ["\n<page type=\"static\" keyboard=\"caps\"/>", 'f.xml line 2: <page>: keyboard="caps" is unknown (keyboard="uppercase" or keyboard="lowercase")'];
+        yield 'unknown echo' => ['<page type="static" echo="yes"/>', 'f.xml line 1: <page>: echo="yes" is unknown (echo="on" or echo="off")'];
+        yield 'unknown scroll' => ['<page type="static" scroll=""/>', 'f.xml line 1: <page>: scroll="" is unknown (scroll="on" or scroll="off")'];
         yield 'unknown element' => ["<page type=\"static\">\n\n<bogus/></page>", 'f.xml line 3: <bogus>: unknown element'];
         yield 'off the screen' => ['<page type="static"><text row="25">x</text></page>', 'f.xml line 1: <text>: Row 25 is off the screen (0 to 24)'];
         yield 'not a number' => ['<page type="static"><text row="a">x</text></page>', 'f.xml line 1: <text>: row="a" is not a number'];

@@ -46,8 +46,37 @@ Unknown elements and attributes are rejected, which the parser does for elements
 					</xs:restriction>
 				</xs:simpleType>
 			</xs:attribute>
+			<xs:attribute name="keyboard" type="keyboard">
+				<xs:annotation>
+					<xs:documentation>Case of the letters typed, set before the page is drawn (the Minitel starts in uppercase). Left as it is if missing.</xs:documentation>
+				</xs:annotation>
+			</xs:attribute>
+			<xs:attribute name="echo" type="onOff">
+				<xs:annotation>
+					<xs:documentation>Whether the Minitel shows what is typed itself: off when the gateway's input commands show it. Left as it is if missing.</xs:documentation>
+				</xs:annotation>
+			</xs:attribute>
+			<xs:attribute name="scroll" type="onOff">
+				<xs:annotation>
+					<xs:documentation>Whether the screen scrolls up past the last row: off for page mode. Left as it is if missing.</xs:documentation>
+				</xs:annotation>
+			</xs:attribute>
 		</xs:complexType>
 	</xs:element>
+
+	<xs:simpleType name="keyboard">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="uppercase"/>
+			<xs:enumeration value="lowercase"/>
+		</xs:restriction>
+	</xs:simpleType>
+
+	<xs:simpleType name="onOff">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="on"/>
+			<xs:enumeration value="off"/>
+		</xs:restriction>
+	</xs:simpleType>
 
 	<!-- Display elements, allowed everywhere -->
 	<xs:group name="displayElement">

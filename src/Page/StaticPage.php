@@ -18,6 +18,7 @@ final readonly class StaticPage implements Page
     public function __construct(
         private Display $display,
         private ?Input $input = null,
+        private Setup $setup = new Setup(),
     ) {}
 
     /**
@@ -28,7 +29,7 @@ final readonly class StaticPage implements Page
      */
     public function display(Terminal $terminal, array $data = []): string
     {
-        return VdtHelper::clearScreen() . Videotex::CURSOR_OFF . $this->display->toVdt($terminal);
+        return $this->setup->toVdt() . VdtHelper::clearScreen() . Videotex::CURSOR_OFF . $this->display->toVdt($terminal);
     }
 
     /**
