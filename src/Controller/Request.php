@@ -41,9 +41,72 @@ readonly class Request
         return $this->parameters;
     }
 
+    /**
+     * A parameter as it was kept, null if missing; int(), string(), bool() and array() give
+     * it typed
+     */
     public function parameter(string $name): mixed
     {
         return $this->parameters[$name] ?? null;
+    }
+
+    /**
+     * A parameter as an int: an int, or an integer as a float or as text ('12'); default
+     * otherwise (missing, or another value, e.g. from a context of another version)
+     */
+    public function int(string $name, int $default = 0): int
+    {
+        $value = $this->parameter($name);
+        // A float holds integers exactly up to 2^53
+        if (\is_float($value) && $value === floor($value) && abs($value) <= 2 ** 53) {
+            $value = (int) $value;
+        }
+        if (\is_string($value) && preg_match('/^-?[0-9]+$/', $value) === 1) {
+            $value = filter_var($value, FILTER_VALIDATE_INT, FILTER_NULL_ON_FAILURE);
+        }
+
+        return \is_int($value) ? $value : $default;
+    }
+
+    /**
+     * A parameter as text: text, or a number as text; default otherwise
+     */
+    public function string(string $name, string $default = ''): string
+    {
+        $value = $this->parameter($name);
+
+        return match (true) {
+            \is_string($value) => $value,
+            \is_int($value), \is_float($value) => (string) $value,
+            default => $default,
+        };
+    }
+
+    /**
+     * A parameter as a bool: a bool, 1 or 0, or 'true', 'false', '1' or '0' as text; default
+     * otherwise
+     */
+    public function bool(string $name, bool $default = false): bool
+    {
+        return match ($this->parameter($name)) {
+            true, 1, 'true', '1' => true,
+            false, 0, 'false', '0' => false,
+            default => $default,
+        };
+    }
+
+    /**
+     * A parameter as an array; default otherwise
+     *
+     * @param array<mixed> $default
+     *
+     * @return array<mixed>
+     */
+    public function array(string $name, array $default = []): array
+    {
+        $value = $this->parameter($name);
+
+        return \is_array($value) ? $value : $default;
     }
 
     /**
