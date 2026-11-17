@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace MiniPaviService\Vdt;
 
 /**
- * Draws a Screen as an HTML page, as the Minitel would show it: row 0 (the status line) and
- * the ROWS × COLS cells, in the Minitel's colours, with their sizes, inverse video,
- * underlining and blinking. Mosaic cells are drawn as their 2 × 3 pixels (separated when
- * underlined, as on the Minitel), without depending on a font. Self-contained: inline CSS,
- * no JavaScript.
+ * Draws a Screen as an HTML page, as the Minitel would show it (checked against MiniPavi's
+ * emulator): row 0 (the status line) and the ROWS × COLS cells, in the Minitel's colours,
+ * with their sizes, inverse video, underlining and blinking. Text glyphs are stretched to fill
+ * their cell. Mosaic cells are drawn as their 2 × 3 pixels (separated when underlined),
+ * without depending on a font. Self-contained: inline CSS, no JavaScript.
  */
 final class HtmlRenderer
 {
@@ -27,6 +27,7 @@ final class HtmlRenderer
             padding: 12px; background: #000; font: 18px/var(--h) "DejaVu Sans Mono", Menlo, Consolas, monospace; }
         .status { border-bottom: 1px solid #444; }
         .c { position: relative; white-space: pre; text-align: center; overflow: visible; }
+        .g { display: inline-block; transform: scaleX(1.4); }
         .w2 { grid-column: span 2; transform: scaleX(2); transform-origin: left; width: var(--w); }
         .h2 { transform: scaleY(2); transform-origin: bottom; z-index: 1; }
         .w2.h2 { transform: scale(2); transform-origin: bottom left; }
@@ -87,7 +88,8 @@ final class HtmlRenderer
             $classes[] = 'blink';
         }
         $underline = $attributes['underline'] === "\x5A";
-        if (!$mosaic && $underline) {
+        // Spaces aren't underlined, as in MiniPavi's emulator
+        if (!$mosaic && $underline && $cell->bytes !== ' ') {
             $classes[] = 'u';
         }
 
@@ -98,7 +100,7 @@ final class HtmlRenderer
         }
 
         return '<span class="' . implode(' ', $classes) . '" style="' . $style . '">'
-            . ($mosaic && self::isMosaic($cell->bytes) ? self::mosaic($cell->bytes, $underline) : self::escape($cell->text()))
+            . ($mosaic && self::isMosaic($cell->bytes) ? self::mosaic($cell->bytes, $underline) : '<b class="g">' . self::escape($cell->text()) . '</b>')
             . '</span>';
     }
 
@@ -116,10 +118,11 @@ final class HtmlRenderer
         return '<span class="m' . ($separated ? ' sep' : '') . '">' . $pixels . '</span>';
     }
 
-    // Mosaic characters are 0x20 to 0x3F and 0x60 to 0x7F; the others are shown as text
+    // Every character of the mosaic set is pixels (0x40 to 0x5F included, as MiniPavi's
+    // emulator draws them); G2 ones (more than a byte) are shown as text
     private static function isMosaic(string $bytes): bool
     {
-        return \strlen($bytes) === 1 && (\ord($bytes) & 0x20) !== 0;
+        return \strlen($bytes) === 1 && \ord($bytes) >= 0x20;
     }
 
     private static function color(string $code, int $base): string

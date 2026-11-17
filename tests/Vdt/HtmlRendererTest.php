@@ -30,15 +30,15 @@ final class HtmlRendererTest extends TestCase
     {
         $html = $this->render(Vdt::join(VdtHelper::setPos(1, 1), new Vdt("\x1B\x41"), Vdt::text('é<')));
 
-        self::assertStringContainsString('style="color:#ff0000;background:#000000">é</span>', $html);
-        self::assertStringContainsString('>&lt;</span>', $html);
+        self::assertStringContainsString('style="color:#ff0000;background:#000000"><b class="g">é</b></span>', $html);
+        self::assertStringContainsString('>&lt;</b></span>', $html);
     }
 
     public function testInverseVideoSwapsTheColours(): void
     {
         $html = $this->renderCell(new Cell('x', ['fg' => "\x44", 'bg' => "\x57", 'inverse' => "\x5D"] + Attributes::DEFAULTS));
 
-        self::assertStringContainsString('style="color:#ffffff;background:#0000ff">x</span>', $html);
+        self::assertStringContainsString('style="color:#ffffff;background:#0000ff"><b class="g">x</b></span>', $html);
     }
 
     public function testDoubleWidthTakesTwoColumns(): void
@@ -55,13 +55,15 @@ final class HtmlRendererTest extends TestCase
         self::assertStringContainsString('class="c h2"', $this->renderCell(new Cell('x', ['size' => "\x4D"] + Attributes::DEFAULTS)));
         self::assertStringContainsString('class="c blink"', $this->renderCell(new Cell('x', ['blink' => "\x48"] + Attributes::DEFAULTS)));
         self::assertStringContainsString('class="c u"', $this->renderCell(new Cell('x', ['underline' => "\x5A"] + Attributes::DEFAULTS)));
+        // Not an underlined space, as in MiniPavi's emulator
+        self::assertStringNotContainsString('class="c u"', $this->renderCell(new Cell(' ', ['underline' => "\x5A"] + Attributes::DEFAULTS)));
     }
 
     public function testMaskedTextIsHidden(): void
     {
         $html = $this->renderCell(new Cell('s', ['mask' => "\x58"] + Attributes::DEFAULTS));
 
-        self::assertStringNotContainsString('>s</span>', $html);
+        self::assertStringNotContainsString('>s<', $html);
     }
 
     public function testDrawsMosaicPixels(): void
@@ -71,6 +73,8 @@ final class HtmlRendererTest extends TestCase
 
         self::assertStringContainsString('<span class="m"><i class="on"></i><i></i><i></i><i></i><i></i><i></i></span>', $this->renderCell(new Cell("\x21", $mosaic)));
         self::assertSame(6, substr_count($this->renderCell(new Cell("\x7F", $mosaic)), '<i class="on">'));
+        // 0x40 to 0x5F too: 0x4A is the right column
+        self::assertStringContainsString('<span class="m"><i></i><i class="on"></i><i></i><i class="on"></i><i></i><i class="on"></i></span>', $this->renderCell(new Cell("\x4A", $mosaic)));
         // Underlined mosaic is separated
         self::assertStringContainsString('<span class="m sep">', $this->renderCell(new Cell("\x7F", ['underline' => "\x5A"] + $mosaic)));
     }
@@ -79,7 +83,7 @@ final class HtmlRendererTest extends TestCase
     {
         $html = $this->render(VdtHelper::writeLine0('Bonjour'));
 
-        self::assertStringContainsString('<span class="c status" style="color:#ffffff;background:#000000">B</span>', $html);
+        self::assertStringContainsString('<span class="c status" style="color:#ffffff;background:#000000"><b class="g">B</b></span>', $html);
     }
 
     private function render(Vdt $vdt): string
