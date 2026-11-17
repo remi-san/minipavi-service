@@ -96,7 +96,10 @@ $logger = new ErrorLogLogger();
 - **`Service`** answers a request of the gateway, without I/O:
   `$service->handle(GatewayRequest): ?GatewayAnswer` (null for a disconnection, which has
   nothing to answer). It restores the `Context`, and runs the controller of the current route
-  until a response answers the gateway. A context without route, or
+  until a response answers the gateway. Responses are plain data, and `Service` interprets
+  them, in this order: it keeps the state and parameters the response gives for its
+  controller, then either changes route (`goTo()`, running the target controller) or builds
+  the `GatewayAnswer`. A context without route, or
   whose route the service doesn't have (e.g. removed in a new version), starts again at the
   default route.
   If serving a request fails (an exception or a PHP error, in a controller, a template, the
@@ -145,6 +148,9 @@ $logger = new ErrorLogLogger();
   user comes back to it); give others by name, e.g.
   `Response::readInput($vdt, $command, parameters: ['page' => 2])`. The classes behind them
   (`DisplayPage`, `RunCommand`, `ChangePage`, `RunExternalService`) can also be built directly.
+  They are readonly data, without behaviour, and a closed set (`@phpstan-sealed`): `Service`
+  handles each of them, so a new kind of response is a new class and a new case in
+  `Service`, not a subclass of `Response` elsewhere.
 
 - **`AbstractController`** runs the method of the request's state, so a controller only
   writes what each state does:
