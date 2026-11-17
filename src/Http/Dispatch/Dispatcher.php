@@ -11,8 +11,8 @@ use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 
 /**
- * Decides who the HTTP request is for: the handler of the first of its rules whose matcher
- * matches it, or else its fallback. A service gives its own rules, e.g. the gateway's requests
+ * Decides who the HTTP request is for: the first of its conditional handlers matching it,
+ * or else its fallback. A service gives its own, e.g. the gateway's requests
  * (FromMiniPaviGateway) to a ServiceRunner with MiniPaviClient, browsers asking ?web=true
  * (QueryParameterEquals) to one with HtmlClient, and other browsers to the fallback
  * (EmulatorRedirect).
@@ -22,14 +22,14 @@ final readonly class Dispatcher implements RequestHandlerInterface
     private LoggerInterface $logger;
 
     /**
-     * @param RequestHandlerInterface $fallback handles the requests no rule matches
-     * @param list<Rule> $rules tried in this order
-     * @param ?LoggerInterface $logger where the rule handling each request is logged (debug);
+     * @param ConditionalRequestHandlers $handlers tried in their order
+     * @param RequestHandlerInterface $fallback handles the requests none of them matches
+     * @param ?LoggerInterface $logger where the case handling each request is logged (debug);
      *                                 none by default
      */
     public function __construct(
+        private ConditionalRequestHandlers $handlers,
         private RequestHandlerInterface $fallback,
-        private array $rules,
         ?LoggerInterface $logger = null,
     ) {
         $this->logger = $logger ?? new NullLogger();
@@ -37,15 +37,15 @@ final readonly class Dispatcher implements RequestHandlerInterface
 
     public function handle(ServerRequestInterface $request): ResponseInterface
     {
-        foreach ($this->rules as $rule) {
-            if ($rule->matcher->matches($request)) {
-                $this->logger->debug('Request dispatched', ['rule' => $rule->name]);
+        foreach ($this->handlers as $handler) {
+            if ($handler->matches($request)) {
+                $this->logger->debug('Request dispatched', ['handler' => $handler->name()]);
 
-                return $rule->handler->handle($request);
+                return $handler->handle($request);
             }
         }
 
-        $this->logger->debug('Request dispatched', ['rule' => 'fallback']);
+        $this->logger->debug('Request dispatched', ['handler' => 'fallback']);
 
         return $this->fallback->handle($request);
     }

@@ -7,7 +7,7 @@ namespace MiniPaviService\Http\Dispatch;
 use Psr\Http\Message\ServerRequestInterface;
 
 /**
- * Condition of a Rule of the Dispatcher: whether its handler is for the request
+ * Condition of a ConditionalRequestHandler: whether its handler is for the request
  */
 interface RequestMatcher
 {

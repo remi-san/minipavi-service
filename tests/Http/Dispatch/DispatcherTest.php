@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Tests\Http\Dispatch;
 
+use MiniPaviService\Http\Dispatch\ConditionalRequestHandler;
+use MiniPaviService\Http\Dispatch\ConditionalRequestHandlers;
 use MiniPaviService\Http\Dispatch\Dispatcher;
 use MiniPaviService\Http\Dispatch\FromMiniPaviGateway;
 use MiniPaviService\Http\Dispatch\QueryParameterEquals;
-use MiniPaviService\Http\Dispatch\Rule;
 use MiniPaviService\Tests\Support\HttpRequests;
 use MiniPaviService\Tests\Support\MemoryLogger;
 use MiniPaviService\Tests\Support\RecordingHandler;
@@ -23,25 +24,25 @@ final class DispatcherTest extends TestCase
 
     protected function setUp(): void
     {
-        // The services' rules
+        // The services' handlers
         $this->logger = new MemoryLogger();
-        $this->dispatcher = new Dispatcher(new RecordingHandler('browser'), [
-            new Rule('gateway', new FromMiniPaviGateway(), new RecordingHandler('gateway')),
-            new Rule('web', new QueryParameterEquals('web', 'true'), new RecordingHandler('web')),
-        ], $this->logger);
+        $this->dispatcher = new Dispatcher(new ConditionalRequestHandlers(
+            new ConditionalRequestHandler('gateway', new FromMiniPaviGateway(), new RecordingHandler('gateway')),
+            new ConditionalRequestHandler('web', new QueryParameterEquals('web', 'true'), new RecordingHandler('web')),
+        ), new RecordingHandler('browser'), $this->logger);
     }
 
-    public function testGivesTheRequestToTheFirstRuleMatchingIt(): void
+    public function testGivesTheRequestToTheFirstHandlerMatchingIt(): void
     {
-        // The gateway's rule comes first, even with web=true
+        // The gateway's handler comes first, even with web=true
         self::assertSame('gateway', (string) $this->dispatcher->handle(HttpRequests::to('MiniPAVI', ['web' => 'true']))->getBody());
-        self::assertSame([[LogLevel::DEBUG, 'Request dispatched', ['rule' => 'gateway']]], $this->logger->records);
+        self::assertSame([[LogLevel::DEBUG, 'Request dispatched', ['handler' => 'gateway']]], $this->logger->records);
     }
 
-    public function testGivesABrowserAskingWebTrueToTheWebRule(): void
+    public function testGivesABrowserAskingWebTrueToTheWebHandler(): void
     {
         self::assertSame('web', (string) $this->dispatcher->handle(HttpRequests::to('Mozilla/5.0', ['web' => 'true', 'route' => 'games']))->getBody());
-        self::assertSame([[LogLevel::DEBUG, 'Request dispatched', ['rule' => 'web']]], $this->logger->records);
+        self::assertSame([[LogLevel::DEBUG, 'Request dispatched', ['handler' => 'web']]], $this->logger->records);
     }
 
     /**
@@ -59,25 +60,25 @@ final class DispatcherTest extends TestCase
      * @param array<string, string> $query
      */
     #[DataProvider('otherQueries')]
-    public function testGivesWhatNoRuleMatchesToTheFallback(array $query): void
+    public function testGivesWhatNoHandlerMatchesToTheFallback(array $query): void
     {
         self::assertSame('browser', (string) $this->dispatcher->handle(HttpRequests::to('Mozilla/5.0', $query))->getBody());
-        self::assertSame([[LogLevel::DEBUG, 'Request dispatched', ['rule' => 'fallback']]], $this->logger->records);
+        self::assertSame([[LogLevel::DEBUG, 'Request dispatched', ['handler' => 'fallback']]], $this->logger->records);
     }
 
-    public function testAServiceAddsItsOwnRules(): void
+    public function testAServiceAddsItsOwnHandlers(): void
     {
         // E.g. a health check, before the others
-        $dispatcher = new Dispatcher(new RecordingHandler('browser'), [
-            new Rule('health', new QueryParameterEquals('health', '1'), new RecordingHandler('ok')),
-            new Rule('web', new QueryParameterEquals('web', 'true'), new RecordingHandler('web')),
-        ]);
+        $dispatcher = new Dispatcher(new ConditionalRequestHandlers(
+            new ConditionalRequestHandler('health', new QueryParameterEquals('health', '1'), new RecordingHandler('ok')),
+            new ConditionalRequestHandler('web', new QueryParameterEquals('web', 'true'), new RecordingHandler('web')),
+        ), new RecordingHandler('browser'));
 
         self::assertSame('ok', (string) $dispatcher->handle(HttpRequests::to('Mozilla/5.0', ['health' => '1', 'web' => 'true']))->getBody());
     }
 
-    public function testWithoutRulesEverythingGoesToTheFallback(): void
+    public function testWithoutHandlersEverythingGoesToTheFallback(): void
     {
-        self::assertSame('browser', (string) (new Dispatcher(new RecordingHandler('browser'), []))->handle(HttpRequests::to('MiniPAVI'))->getBody());
+        self::assertSame('browser', (string) (new Dispatcher(new ConditionalRequestHandlers(), new RecordingHandler('browser')))->handle(HttpRequests::to('MiniPAVI'))->getBody());
     }
 }
