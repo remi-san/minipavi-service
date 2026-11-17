@@ -31,7 +31,7 @@ which depend on nothing above them):
 | `Vdt\` | Videotex: codes, reading, moving and playing Videotex content (`Screen`) |
 | `Gateway\` | the requests and answers the service handles (`GatewayRequest`, `GatewayAnswer`, `CallMode`), and the `Client` interface reading and sending them |
 | `Client\` | the clients: `MiniPaviClient` for the MiniPavi gateway, `HtmlClient` for a browser (`?web=true`) |
-| `Http\` | the entry point for the web server: `Dispatcher`, `ServiceRunner`, `Runner`, and its environment (`RequestUrl`, `EmulatorConfig`, `ServerVariable`) |
+| `Http\` | the entry point for the web server, on PSR-7 / PSR-15: `Kernel`, `WithUrls`, `Dispatcher`, `ServiceRunner`, `EmulatorRedirect`, `EmptyHttpResponse`, the request's URLs (`RequestUrl`, `UrlAttribute`) and `EmulatorConfig` |
 | `Log\` | `ErrorLogLogger` |
 | `Testing\` | `ServiceTester`, functional tests of a service (needs PHPUnit) |
 
@@ -58,7 +58,7 @@ In Docker, the framework and the service keep the repository's layout (`/app/fra
 use MiniPaviService\Core\{Router, Service};
 use MiniPaviService\Client\MiniPaviClient;
 use MiniPaviService\Client\HtmlClient;
-use MiniPaviService\Http\{Dispatcher, ServiceRunner};
+use MiniPaviService\Http\{Dispatcher, EmulatorConfig, EmulatorRedirect, Kernel, RequestUrl, ServiceRunner, WithUrls};
 use MiniPaviService\Log\ErrorLogLogger;
 use MiniPaviService\Message\Messages;
 use MiniPaviService\Page\Parser\PageXmlParser;
@@ -76,12 +76,20 @@ $logger = new ErrorLogLogger();
 
 $service = new Service($router, $messages, $logger);
 
+// The environment is read here (or in the container): the framework doesn't read it itself
+$url = new RequestUrl(getenv('SERVICE_URL') ?: null, getenv('TRUSTED_PROXIES') ?: '');
+$emulator = EmulatorConfig::fromValues(getenv('EMULATOR_URL') ?: null, getenv('GATEWAY_URL') ?: null, getenv('SERVICES_INTERNAL_HOST') ?: null);
+
 // The gateway's requests, browsers asking ?web=true, and the others (sent to the emulator)
-(new Dispatcher(
-    new ServiceRunner($service, new MiniPaviClient(), $logger),
-    new ServiceRunner($service, new HtmlClient(), $logger),
-    logger: $logger,
-))->run();
+(new Kernel(new WithUrls(
+    new Dispatcher(
+        new ServiceRunner($service, new MiniPaviClient(), $logger),
+        new ServiceRunner($service, new HtmlClient(), $logger),
+        new EmulatorRedirect($emulator, $logger),
+        $logger,
+    ),
+    $url,
+)))->run();
 ```
 
 - **Lazy controllers:** a service with many screens shouldn't build every controller, and parse
@@ -101,32 +109,47 @@ $service = new Service($router, $messages, $logger);
   $router = $container->get(Router::class);
   ```
 
-- **`ServiceRunner`** runs the service for a client (`Gateway\Client`, in `Client\`): the client
-  reads the request, the service answers it, and the client sends the answer. A request that
-  can't be read is answered as an error (see `Service`). Two clients:
-  - **`MiniPaviClient`**, for the MiniPavi gateway;
-  - **`HtmlClient`**, for a browser: it asks for the default route's first screen, as on a
-    connection, or with `?route=games` for that route's screen (its controller at its initial
-    state; a route the service doesn't have starts again at the default route, as for any
-    context), and shows the answer as an HTML page (`Vdt\HtmlRenderer`). No interaction, no
-    gateway: just the Videotex interpreted, in the Minitel's colours, with double sizes, inverse
-    video, underlining, blinking and mosaic pixels, drawn as MiniPavi's emulator does, in
-    self-contained HTML (inline CSS, no JavaScript).
-- **`Dispatcher`** decides who the HTTP request is for, around two runners (`Http\Runner`):
-  the gateway's requests go to the runner with `MiniPaviClient`, browsers asking
-  **`?web=true`** to the runner with `HtmlClient`, and other browsers (any other value of
-  `web`, or none) are sent to an emulator that opens the service: with `EMULATOR_URL` set (the
-  local stack), that emulator and the gateway `GATEWAY_URL`, which reaches the service at
-  `SERVICES_INTERNAL_HOST`; otherwise (a public server), the minipavi.fr emulator and gateway,
-  with the URL the browser asked for.
-- **`RequestUrl`** builds the service's URLs for `Dispatcher` (where browsers come back)
-  and `MiniPaviClient` (the next URL given to the gateway): https when the web server says
-  the request came over TLS (`HTTPS`, port 443). Both read from the environment:
+- **`Kernel`** is what `public/index.php` runs, and the only place reading the globals: it
+  creates the HTTP request (`symfony/http-foundation`, converted to PSR-7 with
+  `symfony/psr-http-message-bridge`), has its handler (PSR-15) handle it, and sends the
+  response, unless it is an `EmptyHttpResponse` (already written, or nothing to answer). No
+  other class reads `$_SERVER`, the environment or the request's body, nor writes headers or
+  output, except `MiniPaviCli` for the gateway (below).
+- **`WithUrls`** computes the service's URLs for the request once, with **`RequestUrl`**, and
+  passes it on with them in its attributes (**`UrlAttribute`**): `Service`, the script, given
+  to the gateway as the next URL to call (it travels in `GatewayRequest::$serviceUrl`), and
+  `Current`, the URL asked for, where the emulator sends browsers back. `RequestUrl` takes
+  https when the request came over TLS (`HTTPS`, port 443), and its configuration explicitly
+  (read from the environment in the service's container):
   - `SERVICE_URL` (e.g. `https://minitel.example.org`): scheme and host to use instead of the
     request's;
   - `TRUSTED_PROXIES` (e.g. `10.0.0.1, 172.16.0.0/12`): reverse proxies whose
     `X-Forwarded-Proto` is believed, when they terminate TLS. From anyone else, the header
     is ignored.
+- **`Dispatcher`** decides who the HTTP request is for, among three handlers: the gateway's
+  requests (`User-Agent` with `MiniPAVI`), browsers asking **`?web=true`** (that value only),
+  and other browsers. A fixed choice for now (#76 makes it extensible).
+- **`ServiceRunner`** runs the service for an HTTP request, through a client
+  (`Gateway\Client`, in `Client\`) translating between HTTP and the service's values: the
+  client turns the HTTP request into a `GatewayRequest`, the service answers it, and the client
+  turns the `GatewayAnswer` into the HTTP response. A request that can't be read is answered
+  as an error (see `Service`). Two clients:
+  - **`MiniPaviClient`**, for the MiniPavi gateway, through `MiniPaviCli` used unchanged: it
+    reads the gateway's request itself, and writes the answer itself, so the HTTP response is an
+    `EmptyHttpResponse`;
+  - **`HtmlClient`**, for a browser: it asks for the default route's first screen, as on a
+    connection, or with `?route=games` for that route's screen (its controller at its initial
+    state; a route the service doesn't have starts again at the default route, as for any
+    context), and gives the answer as an HTML page (`Vdt\HtmlRenderer`). No interaction, no
+    gateway: just the Videotex interpreted, in the Minitel's colours, with double sizes, inverse
+    video, underlining, blinking and mosaic pixels, drawn as MiniPavi's emulator does, in
+    self-contained HTML (inline CSS, no JavaScript).
+- **`EmulatorRedirect`** sends other browsers to an emulator that opens the service
+  (`EmulatorConfig`): with an emulator configured (`EMULATOR_URL`, the local stack), that
+  emulator and the gateway `GATEWAY_URL`, which reaches the service at
+  `SERVICES_INTERNAL_HOST`; otherwise (a public server), the minipavi.fr emulator and gateway,
+  with the URL the browser asked for. `EmulatorConfig::fromValues()` takes those values, read
+  from the environment in the service's container.
 - **`Service`** answers a request of the gateway, without I/O:
   `$service->handle(GatewayRequest): ?GatewayAnswer` (null for a disconnection, which has
   nothing to answer). It restores the `Context`, and runs the controller of the current route
@@ -148,12 +171,12 @@ $service = new Service($router, $messages, $logger);
 - **Pages** are displayed for the user's terminal, which `<endkey>` depends on:
   `$page->display($request->terminal(), $data)`; display elements get it too
   (`Element::getContent(Terminal $terminal)`).
-- **Logging:** `Service`, `ServiceRunner` and `Dispatcher` take an optional PSR-3 logger (e.g.
+- **Logging:** `Service`, `ServiceRunner`, `Dispatcher` and `EmulatorRedirect` take an optional PSR-3 logger (e.g.
   Monolog, or the framework's `ErrorLogLogger`, writing to PHP's error log) and log
   connections, disconnections, browsers sent to the emulator or shown a screen at info level,
   and errors at error level (with the exception):
   `new Service($router, $messages, $logger)`, `new ServiceRunner($service, $client, $logger)`,
-  `new Dispatcher($gateway, $web, logger: $logger)`.
+  `new Dispatcher($gateway, $web, $browser, $logger)`, `new EmulatorRedirect($emulator, $logger)`.
   Without one, nothing is logged.
 - **A `Controller`** runs on a `Request` and returns a `Response`. The request gives:
   - `state()` and `parameters()`: what the controller's previous response asked to keep,
