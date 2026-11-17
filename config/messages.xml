@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+Messages the framework shows on the Minitel (MiniPaviService\Message\FrameworkMessage). A
+service redefines them in its own messages file, and a page with <message> (see the README).
+-->
+<messages xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:noNamespaceSchemaLocation="../schema/messages.xsd">
+	<!-- On line 0 when a request fails: any function key then leads to the default route -->
+	<message name="error">Erreur ! Sommaire pour revenir</message>
+	<!-- On line 0 for Retour on the first page, Suite on the last one -->
+	<message name="page.first">Première page</message>
+	<message name="page.last">Dernière page</message>
+	<!-- <endkey>: the key coming back to the screen, and before it for ESP32/Minimit adapters -->
+	<message name="endkey">Connexion/fin</message>
+	<message name="endkey.shift">[Maj] +</message>
+</messages>

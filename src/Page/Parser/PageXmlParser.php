@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Page\Parser;
 
+use MiniPaviService\Message\Messages;
 use MiniPaviService\Page;
 use MiniPaviService\Page\Display\Display;
 use MiniPaviService\Page\{Input, Setup, StaticPage, TemplatePage};
@@ -20,6 +21,17 @@ use MiniPaviService\Vdt\{Keyboard, LocalEcho, Scroll};
 final class PageXmlParser
 {
     private const TYPES = ['static','template'];
+
+    private Messages $messages;
+
+    /**
+     * @param ?Messages $messages the service's messages, which a page's <message> redefine;
+     *                            null: the framework's (Messages::defaults())
+     */
+    public function __construct(?Messages $messages = null)
+    {
+        $this->messages = $messages ?? Messages::defaults();
+    }
 
     /**
      * Page from a file; <background> and <image> files are read from the same folder
@@ -66,12 +78,13 @@ final class PageXmlParser
             self::setting($root, 'scroll', Scroll::class, $name),
         );
 
-        $factory = new ElementFactory($baseDir);
+        $messages = $this->messages->with($this->messageTexts($root, $name));
+        $factory = new ElementFactory($baseDir, $messages);
         $input = null;
         $nodes = $this->nodes($root, $factory, $name, $type == 'template', false, $input);
 
         if ($type == 'template') {
-            return new TemplatePage($nodes, $input, $setup);
+            return new TemplatePage($nodes, $input, $setup, $messages);
         }
 
         // Static page: elements are built now, so that their errors are found now
@@ -83,7 +96,7 @@ final class PageXmlParser
         } catch (TemplateException $e) {
             throw new PageXmlException($e->getMessage(), 0, $e);
         }
-        return new StaticPage(new Display(...$elements), $input, $setup);
+        return new StaticPage(new Display(...$elements), $input, $setup, $messages);
     }
 
     /**
@@ -136,6 +149,13 @@ final class PageXmlParser
             $hasPlaceholder = (bool) preg_match(Scope::PLACEHOLDER, implode("\n", $attributes) . "\n" . (string) $elem);
 
             switch ($tag) {
+                case 'message':
+                    // Read by messageTexts()
+                    if ($parent->getName() != 'page') {
+                        throw new PageXmlException("$at: <message>: only at the top level of the page");
+                    }
+                    break;
+
                 case 'input':
                     $input = $this->check($at, $tag, function () use ($parent, $input, $hasPlaceholder, $factory, $attributes) {
                         if ($parent->getName() != 'page') {
@@ -201,6 +221,38 @@ final class PageXmlParser
             }
         }
         return $nodes;
+    }
+
+    /**
+     * Texts of the messages the page redefines (<message name> at its top level), by name:
+     * messages of the service only
+     *
+     * @return array<string, string>
+     *
+     * @throws PageXmlException
+     */
+    private function messageTexts(\SimpleXMLElement $root, string $name): array
+    {
+        $texts = [];
+        foreach ($root->children() as $tag => $element) {
+            if ($tag !== 'message') {
+                continue;
+            }
+            $at = $name . ' line ' . dom_import_simplexml($element)->getLineNo() . ': <message>';
+            $messageName = trim((string) $element['name']);
+            if ($messageName === '') {
+                throw new PageXmlException("$at: name is missing");
+            }
+            if (!$this->messages->has($messageName)) {
+                throw new PageXmlException("$at: name=\"$messageName\" is not a message of the service");
+            }
+            if (isset($texts[$messageName])) {
+                throw new PageXmlException("$at: name=\"$messageName\" is already in the page");
+            }
+            $texts[$messageName] = trim((string) $element);
+        }
+
+        return $texts;
     }
 
     /**

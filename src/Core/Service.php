@@ -7,6 +7,9 @@ namespace MiniPaviService\Core;
 use MiniPaviService\Controller\Response;
 use MiniPaviService\Gateway\GatewayAnswer;
 use MiniPaviService\Gateway\GatewayRequest;
+use MiniPaviService\Message\FrameworkMessage;
+use MiniPaviService\Message\Messages;
+use MiniPaviService\Message\MessagesException;
 use MiniPaviService\Vdt\VdtHelper;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
@@ -20,26 +23,29 @@ use Psr\Log\NullLogger;
  */
 final class Service
 {
-    // Shown on line 0 when a request fails; any function key then leads to the default route
-    public const ERROR_MESSAGE = 'Erreur ! Sommaire pour revenir';
-
     // Page changes (ChangePage) allowed in one request: more is taken as controllers changing
     // to each other endlessly
     public const MAX_PAGE_CHANGES = 10;
 
     private LoggerInterface $logger;
 
+    private Messages $messages;
+
     /**
      * @param ?LoggerInterface $logger where connections, disconnections and errors are logged;
      *                                 none by default
-     * @param string $errorMessage shown on line 0 when a request fails
+     * @param ?Messages $messages the service's, for the message of a failed request
+     *                            (FrameworkMessage::Error); null: the framework's
+     *
+     * @throws MessagesException if the messages miss some of the framework's
      */
     public function __construct(
         private Router $router,
         ?LoggerInterface $logger = null,
-        private string $errorMessage = self::ERROR_MESSAGE,
+        ?Messages $messages = null,
     ) {
         $this->logger = $logger ?? new NullLogger();
+        $this->messages = ($messages ?? Messages::defaults())->check(FrameworkMessage::class);
     }
 
     /**
@@ -70,7 +76,7 @@ final class Service
             // The context keeps nothing: the default controller starts at its initial state
             $flow = new RequestFlow(new Context($this->router, $this->router->defaultRoute()), new Terminal(), self::MAX_PAGE_CHANGES);
 
-            return Response::display(VdtHelper::writeLine0($this->errorMessage))->continueWith($flow);
+            return Response::display(VdtHelper::writeLine0($this->messages->get(FrameworkMessage::Error)))->continueWith($flow);
         } catch (\Throwable $e) {
             $this->logger->critical('Cannot answer the error: ' . $e->getMessage(), ['exception' => $e]);
 

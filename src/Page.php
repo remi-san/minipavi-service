@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MiniPaviService;
 
 use MiniPaviService\Core\Terminal;
+use MiniPaviService\Message\Message;
 use MiniPaviService\Page\InputCommand;
 
 /**
@@ -27,4 +28,13 @@ interface Page
      * @param string[] $prefill text of the field, one string per line
      */
     public function inputCommand(array $prefill = []): ?InputCommand;
+
+    /**
+     * Text of a message for this page: the page's own (<message>), or the service's
+     *
+     * @param array<string, string|int> $variables values of its {{placeholders}}
+     *
+     * @throws \LogicException for a message without text, or a placeholder without variable
+     */
+    public function message(Message $message, array $variables = []): string;
 }

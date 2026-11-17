@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+	<xs:annotation>
+		<xs:documentation>
+			Messages file of a MiniPavi service (read by MiniPaviService\Message\MessagesXmlParser):
+			the texts shown on the Minitel, by name. They redefine the framework's
+			(config/messages.xml), and pages redefine them with their own message elements.
+			Duplicate names are refused by the parser, and by this schema.
+		</xs:documentation>
+	</xs:annotation>
+
+	<xs:element name="messages">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="message" type="message" minOccurs="0" maxOccurs="unbounded"/>
+			</xs:sequence>
+		</xs:complexType>
+		<xs:unique name="uniqueMessageName">
+			<xs:selector xpath="message"/>
+			<xs:field xpath="@name"/>
+		</xs:unique>
+	</xs:element>
+
+	<xs:complexType name="message">
+		<xs:annotation>
+			<xs:documentation>Text of a message, with {{placeholders}} for the variables given with it.</xs:documentation>
+		</xs:annotation>
+		<xs:simpleContent>
+			<xs:extension base="xs:string">
+				<xs:attribute name="name" use="required">
+					<xs:simpleType>
+						<xs:restriction base="xs:string">
+							<xs:pattern value="[A-Za-z0-9_.\-]+"/>
+						</xs:restriction>
+					</xs:simpleType>
+				</xs:attribute>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+</xs:schema>

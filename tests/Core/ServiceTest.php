@@ -18,6 +18,9 @@ use MiniPaviService\Core\Service;
 use MiniPaviService\Core\Terminal;
 use MiniPaviService\Gateway\GatewayAnswer;
 use MiniPaviService\Gateway\GatewayRequest;
+use MiniPaviService\Message\FrameworkMessage;
+use MiniPaviService\Message\Messages;
+use MiniPaviService\Message\MessagesException;
 use MiniPaviService\Page\InputCommand;
 use MiniPaviService\Tests\Support\CallbackController;
 use MiniPaviService\Tests\Support\ClearAndShow;
@@ -94,7 +97,7 @@ final class ServiceTest extends TestCase
     {
         $answer = $this->handle(new GatewayRequest('ENVOI', [], '{"route":"broken","states":{"broken":"read-input","menu":"read-input"},"parameters":{}}'));
 
-        self::assertSame(VdtHelper::writeLine0(Service::ERROR_MESSAGE), $this->contentOf($answer));
+        self::assertSame(self::errorLine0(), $this->contentOf($answer));
         self::assertNull($answer?->command);
         self::assertSame('{"route":"menu","states":{},"parameters":{}}', $answer?->context);
         [[$level, $message, $context]] = $this->logger->records;
@@ -113,7 +116,7 @@ final class ServiceTest extends TestCase
     public function testInvalidContextIsAnError(): void
     {
 
-        self::assertSame(VdtHelper::writeLine0(Service::ERROR_MESSAGE), $this->contentOf($this->handle(new GatewayRequest('ENVOI', [], 'not a context'))));
+        self::assertSame(self::errorLine0(), $this->contentOf($this->handle(new GatewayRequest('ENVOI', [], 'not a context'))));
         self::assertSame(LogLevel::ERROR, $this->logger->records[0][0] ?? null);
     }
 
@@ -122,7 +125,7 @@ final class ServiceTest extends TestCase
         // On a connection, the default controller fails: no loop, an error answer
         $this->router->setDefaultRoute('broken');
 
-        self::assertSame(VdtHelper::writeLine0(Service::ERROR_MESSAGE), $this->contentOf($this->handle(new GatewayRequest('CNX', [], ''))));
+        self::assertSame(self::errorLine0(), $this->contentOf($this->handle(new GatewayRequest('CNX', [], ''))));
         self::assertCount(1, $this->requests['broken']);
     }
 
@@ -130,6 +133,14 @@ final class ServiceTest extends TestCase
     {
 
         self::assertSame(VdtHelper::writeLine0('Oops'), $this->contentOf($this->handle(new GatewayRequest('ENVOI', [], 'not a context'), 'Oops')));
+    }
+
+    public function testMessagesMustHaveTheFrameworks(): void
+    {
+        $this->expectException(MessagesException::class);
+        $this->expectExceptionMessage('No text for the messages: error, page.first, page.last, endkey, endkey.shift');
+
+        new Service($this->router, messages: new Messages(['other' => 'x']));
     }
 
     public function testEndlessPageChangesAreStopped(): void
@@ -145,7 +156,7 @@ final class ServiceTest extends TestCase
     public function testEndlessPageChangesAreAnsweredAsAnError(): void
     {
 
-        self::assertSame(VdtHelper::writeLine0(Service::ERROR_MESSAGE), $this->contentOf($this->handle(new GatewayRequest('ENVOI', [], '{"route":"ping","states":{},"parameters":{}}'))));
+        self::assertSame(self::errorLine0(), $this->contentOf($this->handle(new GatewayRequest('ENVOI', [], '{"route":"ping","states":{},"parameters":{}}'))));
         self::assertCount(Service::MAX_PAGE_CHANGES + 1, array_merge($this->requests['ping'], $this->requests['pong']));
     }
 
@@ -251,7 +262,7 @@ final class ServiceTest extends TestCase
     {
         $answer = $this->handle(new GatewayRequest('ENVOI', [], '{"route":"mistyped","states":{},"parameters":{}}'));
 
-        self::assertSame(VdtHelper::writeLine0(Service::ERROR_MESSAGE), $this->contentOf($answer));
+        self::assertSame(self::errorLine0(), $this->contentOf($answer));
         self::assertStringContainsString('keeps parameters of MiniPaviService\\Controller\\NoParameters, not MiniPaviService\\Controller\\PageParameters', $this->logger->records[0][1] ?? '');
     }
 
@@ -300,13 +311,21 @@ final class ServiceTest extends TestCase
     }
 
     /**
+     * Line 0 of an error answer: the framework's message
+     */
+    private static function errorLine0(): string
+    {
+        return VdtHelper::writeLine0(Messages::defaults()->get(FrameworkMessage::Error));
+    }
+
+    /**
      * Service::handle() for a request of the gateway
      */
     private function handle(GatewayRequest $request, ?string $errorMessage = null): ?GatewayAnswer
     {
         $service = $errorMessage === null
             ? new Service($this->router, $this->logger)
-            : new Service($this->router, $this->logger, $errorMessage);
+            : new Service($this->router, $this->logger, Messages::defaults()->with(['error' => $errorMessage]));
 
         return $service->handle($request);
     }

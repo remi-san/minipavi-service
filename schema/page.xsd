@@ -34,6 +34,7 @@ Unknown elements and attributes are rejected, which the parser does for elements
 				<xs:element name="input" type="input"/>
 				<xs:element name="foreach" type="foreach"/>
 				<xs:element name="if" type="if"/>
+				<xs:element name="message" type="message"/>
 			</xs:choice>
 			<xs:attribute name="type" use="required">
 				<xs:annotation>
@@ -62,7 +63,28 @@ Unknown elements and attributes are rejected, which the parser does for elements
 				</xs:annotation>
 			</xs:attribute>
 		</xs:complexType>
+		<xs:unique name="uniqueMessageName">
+			<xs:selector xpath="message"/>
+			<xs:field xpath="@name"/>
+		</xs:unique>
 	</xs:element>
+
+	<xs:complexType name="message">
+		<xs:annotation>
+			<xs:documentation>Redefines, for this page, a message of the service (its messages file, over the framework's): its text, with {{placeholders}} for the variables given with it. Only at the top level of the page; the parser also checks the service has the message.</xs:documentation>
+		</xs:annotation>
+		<xs:simpleContent>
+			<xs:extension base="xs:string">
+				<xs:attribute name="name" use="required">
+					<xs:simpleType>
+						<xs:restriction base="xs:string">
+							<xs:pattern value="[A-Za-z0-9_.\-]+"/>
+						</xs:restriction>
+					</xs:simpleType>
+				</xs:attribute>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
 
 	<xs:simpleType name="keyboard">
 		<xs:restriction base="xs:string">

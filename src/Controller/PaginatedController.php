@@ -5,13 +5,15 @@ declare(strict_types=1);
 namespace MiniPaviService\Controller;
 
 use MiniPaviService\Core\FunctionKey;
+use MiniPaviService\Message\FrameworkMessage;
 use MiniPaviService\Page;
 use MiniPaviService\Vdt\VdtHelper;
 
 /**
  * Controller of a screen showing items one page at a time, its page index kept in the context
  * (PageParameters): Suite and Retour change page, with a message on line 0 at the ends
- * (lastPageMessage(), firstPageMessage()), and Répétition redraws the page.
+ * (FrameworkMessage::LastPage, FirstPage, which the page can redefine), and Répétition
+ * redraws the page.
  *
  * A controller gives the number of items (itemCount()) and of items per page
  * (itemsPerPage()), the data of a page (pageData(), from its Paginator: offset() and limit()
@@ -55,22 +57,6 @@ abstract class PaginatedController extends AbstractController
      * @param Request<ControllerState, PageParameters> $request
      */
     abstract protected function onOtherKey(Request $request, Paginator $paginator): Response;
-
-    /**
-     * Shown on line 0 for Retour on the first page
-     */
-    protected function firstPageMessage(): string
-    {
-        return 'Première page';
-    }
-
-    /**
-     * Shown on line 0 for Suite on the last page
-     */
-    protected function lastPageMessage(): string
-    {
-        return 'Dernière page';
-    }
 
     final protected function onInit(Request $request): Response
     {
@@ -129,10 +115,10 @@ abstract class PaginatedController extends AbstractController
         $target = $paginator->index() + $by;
 
         if ($target < 0) {
-            return $this->stay($paginator, VdtHelper::writeLine0($this->firstPageMessage()));
+            return $this->stay($paginator, VdtHelper::writeLine0($this->page->message(FrameworkMessage::FirstPage)));
         }
         if ($target >= $paginator->pageCount()) {
-            return $this->stay($paginator, VdtHelper::writeLine0($this->lastPageMessage()));
+            return $this->stay($paginator, VdtHelper::writeLine0($this->page->message(FrameworkMessage::LastPage)));
         }
 
         return $this->display($request, $paginator->at($target));

@@ -29,7 +29,7 @@ final class KeyTest extends TestCase
 
     public function testEndKeyIsOnTheLastRowForAMinitel(): void
     {
-        $vdt = (new EndKey())->getContent(new Terminal('CALLFROM 0102030405', 'other', '???'));
+        $vdt = (new EndKey('Connexion/fin', '[Maj] +'))->getContent(new Terminal('CALLFROM 0102030405', 'other', '???'));
 
         self::assertStringNotContainsString('[Maj] +', $vdt);
         self::assertSame('Connexion/fin', self::text(Vdt::fromString($vdt), 24, 14, 13));
@@ -38,16 +38,28 @@ final class KeyTest extends TestCase
     public function testEndKeyTellsAdaptersToPressShift(): void
     {
         // ESP32 / Minimit adapters: a websocket with a known Minitel
-        $vdt = (new EndKey())->getContent(new Terminal('192.0.2.1', 'websocket', 'Cv5'));
+        $vdt = (new EndKey('Connexion/fin', '[Maj] +'))->getContent(new Terminal('192.0.2.1', 'websocket', 'Cv5'));
 
         self::assertSame('[Maj] +', self::text(Vdt::fromString($vdt), 23, 9, 7));
         self::assertSame('Connexion/fin', self::text(Vdt::fromString($vdt), 23, 18, 13));
     }
 
+    public function testEndKeyIsCenteredWhateverItsLabels(): void
+    {
+        $minitel = (new EndKey('Fin', 'Shift'))->getContent(new Terminal('CALLFROM 0102030405', 'other', '???'));
+        $adapter = (new EndKey('Fin', 'Shift'))->getContent(new Terminal('192.0.2.1', 'websocket', 'Cv5'));
+
+        // The badge " Fin " has a cell on each side: 7 cells, from column 17
+        self::assertSame('Fin', self::text(Vdt::fromString($minitel), 24, 19, 3));
+        // "Shift" and the badge: 12 cells, from column 15
+        self::assertSame('Shift', self::text(Vdt::fromString($adapter), 23, 15, 5));
+        self::assertSame('Fin', self::text(Vdt::fromString($adapter), 23, 22, 3));
+    }
+
     public function testEndKeyOfAnEmulatorIsOnTheLastRow(): void
     {
         // An emulator is a websocket without a known Minitel
-        $vdt = (new EndKey(row: 22))->getContent(new Terminal('192.0.2.1', 'websocket', '???'));
+        $vdt = (new EndKey('Connexion/fin', '[Maj] +', row: 22))->getContent(new Terminal('192.0.2.1', 'websocket', '???'));
 
         self::assertSame('Connexion/fin', self::text(Vdt::fromString($vdt), 22, 14, 13));
     }

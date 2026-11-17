@@ -66,6 +66,16 @@ final class PaginatedControllerTest extends TestCase
             ->press(FunctionKey::Previous)->assertScreenContains('Page 1/2');
     }
 
+    public function testPageRedefinesTheEndMessages(): void
+    {
+        $page = (new PageXmlParser())->parse(str_replace('<foreach', '<message name="page.last">Fin de la liste</message><foreach', self::PAGE), __DIR__);
+        $this->router->addRoute('list', new ListController($page, ['a', 'b', 'c']));
+
+        (new ServiceTester(new Service($this->router)))->connect()->press(FunctionKey::Send)
+            ->press(FunctionKey::Next)->press(FunctionKey::Next)->assertLine0('Fin de la liste')
+            ->press(FunctionKey::Previous)->press(FunctionKey::Previous)->assertLine0('Première page');
+    }
+
     public function testRepetitionRedrawsTheCurrentPage(): void
     {
         $tester = $this->tester(['a', 'b', 'c'])->press(FunctionKey::Next)->press(FunctionKey::Refresh);

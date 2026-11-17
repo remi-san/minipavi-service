@@ -34,6 +34,7 @@ final class PageXsdTest extends TestCase
         'foreach in a static page',
         'foreach as loop',
         'two inputs',
+        'message of no service',
     ];
 
     /**
@@ -73,6 +74,7 @@ final class PageXsdTest extends TestCase
               <input/>
             </page>
             XML];
+        yield 'messages' => ['<page type="static"><message name="page.last">Fin de l\'article</message><message name="endkey">Fin</message></page>'];
         yield 'Minitel setup' => ['<page type="static" keyboard="lowercase" echo="off" scroll="on"/>'];
         yield 'schema location' => [<<<'XML'
             <page type="static" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -144,7 +146,7 @@ final class PageXsdTest extends TestCase
         foreach ($xpath->query('//xs:group[@name="displayElement"]//xs:element/@name | //xs:element[@name="page"]//xs:element/@name') ?: [] as $name) {
             $names[] = $name->nodeValue;
         }
-        $expected = [...ElementFactory::TAGS, 'input', 'foreach', 'if'];
+        $expected = [...ElementFactory::TAGS, 'input', 'foreach', 'if', 'message'];
         sort($expected);
         $names = array_values(array_unique($names));
         sort($names);

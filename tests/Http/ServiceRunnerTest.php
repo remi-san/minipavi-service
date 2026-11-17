@@ -13,6 +13,8 @@ use MiniPaviService\Gateway\MiniPaviClient;
 use MiniPaviService\Http\EmulatorConfig;
 use MiniPaviService\Http\RequestUrl;
 use MiniPaviService\Http\ServiceRunner;
+use MiniPaviService\Message\FrameworkMessage;
+use MiniPaviService\Message\Messages;
 use MiniPaviService\Tests\Support\CallbackController;
 use MiniPaviService\Tests\Support\MemoryLogger;
 use MiniPaviService\Vdt\VdtHelper;
@@ -70,7 +72,7 @@ final class ServiceRunnerTest extends TestCase
 
         $answer = json_decode($output, true);
         self::assertIsArray($answer);
-        self::assertSame(base64_encode(VdtHelper::writeLine0(Service::ERROR_MESSAGE)), $answer['content'] ?? null);
+        self::assertSame(base64_encode(VdtHelper::writeLine0(Messages::defaults()->get(FrameworkMessage::Error))), $answer['content'] ?? null);
         self::assertSame('{"route":"home","states":{},"parameters":{}}', $answer['context'] ?? null);
         self::assertSame('http://services/Svc/index.php', $answer['next'] ?? null);
         self::assertSame(LogLevel::ERROR, $logger->records[0][0] ?? null);

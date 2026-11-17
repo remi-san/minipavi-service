@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace MiniPaviService\Page;
 
 use MiniPaviService\Core\Terminal;
+use MiniPaviService\Message\Message;
+use MiniPaviService\Message\Messages;
 use MiniPaviService\Page;
 use MiniPaviService\Page\Display\Display;
 use MiniPaviService\Vdt\VdtHelper;
@@ -19,6 +21,7 @@ final readonly class StaticPage implements Page
         private Display $display,
         private ?Input $input = null,
         private Setup $setup = new Setup(),
+        private Messages $messages = new Messages(),
     ) {}
 
     /**
@@ -38,5 +41,10 @@ final readonly class StaticPage implements Page
     public function inputCommand(array $prefill = []): ?InputCommand
     {
         return $this->input?->toCommand($prefill);
+    }
+
+    public function message(Message $message, array $variables = []): string
+    {
+        return $this->messages->get($message, $variables);
     }
 }

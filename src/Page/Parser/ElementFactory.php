@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace MiniPaviService\Page\Parser;
 
 use MiniPaviService\Core\FunctionKey;
+use MiniPaviService\Message\FrameworkMessage;
+use MiniPaviService\Message\Messages;
 use MiniPaviService\Page\Display\{Background, Color, Element, EndKey, Image, Key, Line, Size, Text};
 use MiniPaviService\Page\Input;
 use MiniPaviService\Vdt\Vdt;
@@ -30,9 +32,11 @@ final class ElementFactory
 
     /**
      * @param string $baseDir folder of the <background> and <image> files (and their subfolders)
+     * @param Messages $messages of the page, for the texts of <endkey>
      */
     public function __construct(
         private string $baseDir,
+        private Messages $messages,
     ) {}
 
     /**
@@ -75,6 +79,8 @@ final class ElementFactory
                 bg: $this->color($attributes, 'bg'),
             ),
             'endkey' => new EndKey(
+                $this->messages->get(FrameworkMessage::EndKey),
+                $this->messages->get(FrameworkMessage::EndKeyShift),
                 row: isset($attributes['row']) ? $this->int($attributes, 'row', 0) : null,
                 color: $this->color($attributes, 'color') ?? Color::Green,
             ),

@@ -6,12 +6,15 @@ namespace MiniPaviService\Tests\Page\Parser;
 
 use MiniPaviService\Core\FunctionKey;
 use MiniPaviService\Core\Terminal;
+use MiniPaviService\Message\FrameworkMessage;
+use MiniPaviService\Message\Messages;
 use MiniPaviService\Page;
 use MiniPaviService\Page\Parser\PageXmlException;
 use MiniPaviService\Page\Parser\PageXmlParser;
 use MiniPaviService\Page\StaticPage;
 use MiniPaviService\Page\Template\TemplateException;
 use MiniPaviService\Page\TemplatePage;
+use MiniPaviService\Tests\Support\TestMessage;
 use MiniPaviService\Vdt\Keyboard;
 use MiniPaviService\Vdt\LocalEcho;
 use MiniPaviService\Vdt\Scroll;
@@ -86,6 +89,31 @@ final class PageXmlParserTest extends TestCase
         self::assertSame($clear, substr($this->parse('<page type="static"/>')->display(new Terminal()), 0, \strlen($clear)));
         // Only what is given
         self::assertStringStartsWith(Scroll::Off->sequence() . VdtHelper::clearScreen(), $this->parse('<page type="static" scroll="off"/>')->display(new Terminal()));
+    }
+
+    public function testPageRedefinesMessagesOfTheService(): void
+    {
+        $service = Messages::defaults()->with(['welcome' => 'Bonjour {{name}}']);
+        $page = (new PageXmlParser($service))->parse(<<<'XML'
+            <page type="static">
+              <message name="welcome">Salut {{name}}</message>
+              <message name="endkey">Fin</message>
+              <endkey/>
+            </page>
+            XML, self::FIXTURES);
+
+        self::assertSame('Salut Léa', $page->message(TestMessage::Welcome, ['name' => 'Léa']));
+        self::assertSame('Dernière page', $page->message(FrameworkMessage::LastPage));
+        // Its elements too
+        self::assertStringContainsString(' Fin ', $page->display(new Terminal()));
+        self::assertStringNotContainsString('Connexion/fin', $page->display(new Terminal()));
+    }
+
+    public function testPageWithoutMessagesHasTheServices(): void
+    {
+        $page = (new PageXmlParser(Messages::defaults()->with(['welcome' => 'Bonjour'])))->parse('<page type="template"/>', self::FIXTURES);
+
+        self::assertSame('Bonjour', $page->message(TestMessage::Welcome));
     }
 
     public function testCenteredTextOfEvenWidthHasOneMoreColumnOnTheRight(): void
@@ -226,6 +254,10 @@ final class PageXmlParserTest extends TestCase
         yield 'other root' => ['<pages/>', 'f.xml: root element must be <page>, not <pages>'];
         yield 'no type' => ['<page/>', 'f.xml: <page>: type is missing (type="static" or type="template")'];
         yield 'unknown type' => ['<page type="dynamic"/>', 'f.xml: <page>: type="dynamic" is unknown'];
+        yield 'message of no service' => ["<page type=\"static\">\n<message name=\"welcom\">x</message></page>", 'f.xml line 2: <message>: name="welcom" is not a message of the service'];
+        yield 'message without name' => ['<page type="static"><message>x</message></page>', 'f.xml line 1: <message>: name is missing'];
+        yield 'message twice' => ['<page type="static"><message name="page.last">x</message><message name="page.last">y</message></page>', 'name="page.last" is already in the page'];
+        yield 'message in a loop' => ['<page type="template"><foreach items="a" as="b"><message name="page.last">x</message></foreach></page>', '<message>: only at the top level of the page'];
         yield 'unknown keyboard' => ["\n<page type=\"static\" keyboard=\"caps\"/>", 'f.xml line 2: <page>: keyboard="caps" is unknown (keyboard="uppercase" or keyboard="lowercase")'];
         yield 'unknown echo' => ['<page type="static" echo="yes"/>', 'f.xml line 1: <page>: echo="yes" is unknown (echo="on" or echo="off")'];
         yield 'unknown scroll' => ['<page type="static" scroll=""/>', 'f.xml line 1: <page>: scroll="" is unknown (scroll="on" or scroll="off")'];
