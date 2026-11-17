@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace MiniPaviService\Client;
 
 use MiniPaviService\Gateway\Client;
-use MiniPaviService\Gateway\GatewayAnswer;
 use MiniPaviService\Gateway\GatewayRequest;
+use MiniPaviService\Gateway\GatewayResponse;
 use MiniPaviService\Message\FrameworkMessage;
 use MiniPaviService\Message\Messages;
 use MiniPaviService\Minitel\FunctionKey;
@@ -94,7 +94,7 @@ final readonly class HtmlClient implements Client
      * function keys; or, for an answer leaving the service, the page as it was, with the error
      * on line 0
      */
-    public function response(GatewayRequest $request, GatewayAnswer $answer): ResponseInterface
+    public function response(GatewayRequest $request, GatewayResponse $answer): ResponseInterface
     {
         $page = $request->clientState;
         $screen = $page->screen;

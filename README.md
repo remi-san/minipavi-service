@@ -6,7 +6,7 @@ official [`ludosevilla/minipavi-cli`](https://packagist.org/packages/ludosevilla
 - **Pages** described in XML: static, or templates with placeholders, loops and conditions
 - **Controllers**, one per screen, each a small state machine returning **responses**
 - A **router** and a **context** keeping each controller's state between requests
-- A **service without I/O**: it answers a `GatewayRequest` with a `GatewayAnswer`, which
+- A **service without I/O**: it answers a `GatewayRequest` with a `GatewayResponse`, which
   `MiniPaviClient` reads from and sends to the gateway, through the static `MiniPaviCli`
 - **`Vdt`**, to read Videotex content (e.g. pictures made with a Videotex editor) and move it on the screen
 
@@ -29,7 +29,7 @@ which depend on nothing above them):
 | `Message\` | the messages shown on screen: `Message`, `FrameworkMessage`, `Messages` and their XML parser |
 | `Minitel\` | the user's terminal: `Terminal`, its `FunctionKey`s, and its settings (`Keyboard`, `LocalEcho`, `Scroll`) |
 | `Vdt\` | Videotex: codes, reading, moving and playing Videotex content (`Screen`) |
-| `Gateway\` | the requests and answers the service handles (`GatewayRequest`, `GatewayAnswer`, `CallMode`), and the `Client` interface reading and sending them |
+| `Gateway\` | the requests and answers the service handles (`GatewayRequest`, `GatewayResponse`, `CallMode`), and the `Client` interface reading and sending them |
 | `Client\` | the clients: `MiniPaviClient` for the MiniPavi gateway, `HtmlClient` for a browser (`?web=true`) |
 | `Http\` | the entry point for the web server, on PSR-7 / PSR-15: `Kernel`, `ResponseEmitter`, `EmptyHttpResponse`, `Dispatcher`, `ServiceRunner`; in `Url\`, the request's URLs (`RequestUrl`, `UrlAttribute`, `WithUrls`); in `Emulator\`, the emulator browsers are sent to (`EmulatorConfig`, `EmulatorRedirect`) |
 | `Log\` | `ErrorLogLogger` |
@@ -141,7 +141,7 @@ $psr17 = new Psr17Factory();
 - **`ServiceRunner`** runs the service for an HTTP request, through a client
   (`Gateway\Client`, in `Client\`) translating between HTTP and the service's values: the
   client turns the HTTP request into a `GatewayRequest`, the service answers it, and the client
-  turns the `GatewayAnswer` into the HTTP response. What the client needs to answer, besides what the service
+  turns the `GatewayResponse` into the HTTP response. What the client needs to answer, besides what the service
   gets, is its state (`Gateway\ClientState`): read with the HTTP request, kept in the
   `GatewayRequest` (`$clientState`), and given back to the client with it. A client without
   any uses the null object `NoClientState`, as requests built in memory do. A request that can't be read is answered
@@ -178,7 +178,7 @@ $psr17 = new Psr17Factory();
   with the URL the browser asked for. `EmulatorConfig::fromValues()` takes those values, read
   from the environment in the service's container.
 - **`Service`** answers a request of the gateway, without I/O:
-  `$service->handle(GatewayRequest): ?GatewayAnswer` (null for a disconnection, which has
+  `$service->handle(GatewayRequest): ?GatewayResponse` (null for a disconnection, which has
   nothing to answer). It restores the `Context`, and runs the controller of the current route
   until a response answers the gateway. `Service` owns the context: it keeps the state and
   parameters a response gives for its controller, then the response says what comes next,
@@ -191,7 +191,7 @@ $psr17 = new Psr17Factory();
   [Messages](#messages)): their next function key starts again at the default route.
 - **`GatewayRequest`** is what the gateway sends: `key` (the function key, or a connection
   code), `content` (the text typed), `context` (given back from the previous answer) and
-  `terminal`. **`GatewayAnswer`** is what is sent back: `vdt`, `context`, `next` (the URL the
+  `terminal`. **`GatewayResponse`** is what is sent back: `vdt`, `context`, `next` (the URL the
   gateway calls next, null for this service's), `command` (e.g. an input command),
   `directCall` (a `CallMode`, to call `next` at once) and `echo`. Both are plain values, so a
   service can be tested, or run elsewhere than PHP's web server, without `MiniPaviCli`.
@@ -235,7 +235,7 @@ $psr17 = new Psr17Factory();
   DirectoryParameters(2))`. The classes behind them
   (`DisplayPage`, `RunCommand`, `ChangePage`, `RunExternalService`) can also be built directly.
   They are readonly, and don't change the context. Once `Service` has kept a response's
-  state and parameters, it calls `continueWith(Flow $flow): GatewayAnswer`, where the
+  state and parameters, it calls `continueWith(Flow $flow): GatewayResponse`, where the
   response says what comes next: `$flow->answer($vdt, $command, $next, $directCall)` ends
   the request with that answer to the gateway, and `$flow->goTo($route, $parameters)` runs
   another controller and gives its answer. A response of your own extends `Response` and
@@ -249,7 +249,7 @@ $psr17 = new Psr17Factory();
           parent::__construct(ControllerState::ReadInput, null);
       }
 
-      public function continueWith(Flow $flow): GatewayAnswer
+      public function continueWith(Flow $flow): GatewayResponse
       {
           return $flow->answer(VdtHelper::clearScreen()->append($this->vdt));
       }
@@ -448,7 +448,7 @@ $tester->connect()->assertRoute('home')->assertScreenContains('OCTOBLUE')
   (`Screen::text()`); `assertRoute()` the route the user's next key goes to, and
   `assertConnectsTo($url)` a connection to another service (`Response::connectTo()`). A
   failed assertion shows the screen.
-- `screen()`, `answer()` (the last `GatewayAnswer`) and `context()` give the rest, for
+- `screen()`, `answer()` (the last `GatewayResponse`) and `context()` give the rest, for
   other assertions.
 
 To test the service as it is served, build its `Service` from the same wiring as its
@@ -567,7 +567,7 @@ format changes, change `page.xsd` with the parser.
 ## Videotex content
 
 Videotex goes through the framework as a **`Vdt` value**, never as a string: pages display
-one (`Page::display()`), responses and `Flow::answer()` take one, and `GatewayAnswer` holds
+one (`Page::display()`), responses and `Flow::answer()` take one, and `GatewayResponse` holds
 one. Only the gateway client (`MiniPaviClient::send()`) turns it into bytes. Text and
 Videotex can't be mixed up:
 

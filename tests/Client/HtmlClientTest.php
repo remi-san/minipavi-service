@@ -11,8 +11,8 @@ use MiniPaviService\Controller\Request;
 use MiniPaviService\Controller\Response;
 use MiniPaviService\Core\Router;
 use MiniPaviService\Core\Service;
-use MiniPaviService\Gateway\GatewayAnswer;
 use MiniPaviService\Gateway\GatewayRequest;
+use MiniPaviService\Gateway\GatewayResponse;
 use MiniPaviService\Http\ServiceRunner;
 use MiniPaviService\Message\FrameworkMessage;
 use MiniPaviService\Message\Messages;
@@ -85,7 +85,7 @@ final class HtmlClientTest extends TestCase
     public function testPageKeepsTheContextAndTheScreen(): void
     {
         $vdt = VdtHelper::clearScreen()->append(VdtHelper::setPos(1, 1), Vdt::text('Bonjour <3'));
-        $html = self::page(new GatewayAnswer($vdt, '{"route":"home"}'));
+        $html = self::page(new GatewayResponse($vdt, '{"route":"home"}'));
 
         self::assertStringStartsWith('<!doctype html>', $html);
         self::assertStringContainsString('<form method="post" class="page">', $html);
@@ -100,7 +100,7 @@ final class HtmlClientTest extends TestCase
     {
         $before = VdtHelper::clearScreen()->append(VdtHelper::setPos(1, 3), Vdt::text('Page 2/2'));
 
-        $html = self::page(new GatewayAnswer(VdtHelper::writeLine0('Dernière page'), '{}'), ['key' => 'SUITE', 'screen' => base64_encode($before->toString())]);
+        $html = self::page(new GatewayResponse(VdtHelper::writeLine0('Dernière page'), '{}'), ['key' => 'SUITE', 'screen' => base64_encode($before->toString())]);
 
         self::assertStringContainsString('Page 2/2', self::shownText($html));
         self::assertStringContainsString('Dernière page', self::shownText($html));
@@ -111,7 +111,7 @@ final class HtmlClientTest extends TestCase
         $before = VdtHelper::clearScreen()->append(VdtHelper::setPos(1, 3), Vdt::text('Avant'));
         $answer = VdtHelper::clearScreen()->append(VdtHelper::setPos(1, 3), Vdt::text('Après'));
 
-        $html = self::page(new GatewayAnswer($answer, '{}'), ['key' => 'SUITE', 'screen' => base64_encode($before->toString())]);
+        $html = self::page(new GatewayResponse($answer, '{}'), ['key' => 'SUITE', 'screen' => base64_encode($before->toString())]);
 
         self::assertStringContainsString('<input type="hidden" name="screen" value="' . base64_encode($answer->fromLastClear()->toString()) . '">', $html);
         self::assertStringNotContainsString('Avant', self::shownText($html));
@@ -119,7 +119,7 @@ final class HtmlClientTest extends TestCase
 
     public function testTextFieldOverTheScreen(): void
     {
-        $html = self::page(new GatewayAnswer(new Vdt(), '{}', command: InputCommand::text(16, 24, 2, FunctionKey::masks(FunctionKey::Send), prefill: 'ab')->toArray()));
+        $html = self::page(new GatewayResponse(new Vdt(), '{}', command: InputCommand::text(16, 24, 2, FunctionKey::masks(FunctionKey::Send), prefill: 'ab')->toArray()));
 
         self::assertSame(1, substr_count($html, 'class="field"'));
         self::assertStringContainsString('name="content[]" maxlength="2" value="ab" style="' . HtmlRenderer::at(16, 24, 2) . '" autofocus', $html);
@@ -127,7 +127,7 @@ final class HtmlClientTest extends TestCase
 
     public function testMessageFieldHasAnInputPerLine(): void
     {
-        $html = self::page(new GatewayAnswer(new Vdt(), '{}', command: InputCommand::message(1, 13, 40, 2, FunctionKey::masks(FunctionKey::Send), prefill: ['l1', 'l2'])->toArray()));
+        $html = self::page(new GatewayResponse(new Vdt(), '{}', command: InputCommand::message(1, 13, 40, 2, FunctionKey::masks(FunctionKey::Send), prefill: ['l1', 'l2'])->toArray()));
 
         self::assertStringContainsString('value="l1" style="' . HtmlRenderer::at(1, 13, 40) . '"', $html);
         self::assertStringContainsString('value="l2" style="' . HtmlRenderer::at(1, 14, 40) . '"', $html);
@@ -135,7 +135,7 @@ final class HtmlClientTest extends TestCase
 
     public function testKeysTheInputDoesntAcceptAreDisabled(): void
     {
-        $html = self::page(new GatewayAnswer(new Vdt(), '{}', command: InputCommand::text(1, 1, 1, FunctionKey::masks(FunctionKey::Send, FunctionKey::Next))->toArray()));
+        $html = self::page(new GatewayResponse(new Vdt(), '{}', command: InputCommand::text(1, 1, 1, FunctionKey::masks(FunctionKey::Send, FunctionKey::Next))->toArray()));
 
         self::assertSame(8, substr_count($html, 'name="key"'));
         self::assertSame(6, substr_count($html, ' disabled>'));
@@ -146,7 +146,7 @@ final class HtmlClientTest extends TestCase
 
     public function testWithoutInputEveryKeyIsEnabled(): void
     {
-        $html = self::page(new GatewayAnswer(new Vdt(), '{}'));
+        $html = self::page(new GatewayResponse(new Vdt(), '{}'));
 
         self::assertSame(8, substr_count($html, 'name="key"'));
         self::assertStringNotContainsString(' disabled>', $html);
@@ -155,7 +155,7 @@ final class HtmlClientTest extends TestCase
 
     public function testKeyLabelsAreMessages(): void
     {
-        $html = self::page(new GatewayAnswer(new Vdt(), '{}'), messages: Messages::defaults()->with(['key.send' => 'Valider']));
+        $html = self::page(new GatewayResponse(new Vdt(), '{}'), messages: Messages::defaults()->with(['key.send' => 'Valider']));
 
         self::assertStringContainsString('value="ENVOI" style="order: 7">Valider</button>', $html);
     }
@@ -164,10 +164,10 @@ final class HtmlClientTest extends TestCase
     {
         // The page the key is pressed on: its hidden values, posted back as they are
         $before = VdtHelper::clearScreen()->append(VdtHelper::setPos(1, 3), Vdt::text('Annuaire'));
-        $page = self::page(new GatewayAnswer($before, '{"route":"directory"}', command: InputCommand::text(7, 23, 23, FunctionKey::masks(FunctionKey::Send))->toArray()));
+        $page = self::page(new GatewayResponse($before, '{"route":"directory"}', command: InputCommand::text(7, 23, 23, FunctionKey::masks(FunctionKey::Send))->toArray()));
         $form = ['key' => 'ENVOI'] + self::hiddenValues($page);
 
-        $html = self::page(new GatewayAnswer(VdtHelper::writeLine0('Cnx en cours'), '{"route":"elsewhere"}', 'https://example.org/'), $form);
+        $html = self::page(new GatewayResponse(VdtHelper::writeLine0('Cnx en cours'), '{"route":"elsewhere"}', 'https://example.org/'), $form);
 
         $shown = self::shownText($html);
         self::assertStringContainsString('Annuaire', $shown);
@@ -181,7 +181,7 @@ final class HtmlClientTest extends TestCase
 
     public function testNextUrlOfTheServiceIsntLeaving(): void
     {
-        $html = self::page(new GatewayAnswer(VdtHelper::setPos(1, 1)->append(Vdt::text('Ici')), '{}', self::SERVICE_URL));
+        $html = self::page(new GatewayResponse(VdtHelper::setPos(1, 1)->append(Vdt::text('Ici')), '{}', self::SERVICE_URL));
 
         self::assertStringContainsString('Ici', self::shownText($html));
         self::assertStringNotContainsString(Messages::defaults()->get(FrameworkMessage::WebLeave), self::shownText($html));
@@ -235,7 +235,7 @@ final class HtmlClientTest extends TestCase
      *
      * @param array<string, mixed> $form
      */
-    private static function page(GatewayAnswer $answer, array $form = [], ?Messages $messages = null): string
+    private static function page(GatewayResponse $answer, array $form = [], ?Messages $messages = null): string
     {
         $client = self::client($messages);
         $request = $client->request(HttpRequests::posting('Mozilla/5.0', ['web' => 'true'], $form), self::SERVICE_URL);

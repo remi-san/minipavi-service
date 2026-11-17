@@ -6,8 +6,8 @@ namespace MiniPaviService\Core;
 
 use MiniPaviService\Controller\Response;
 use MiniPaviService\Gateway\ClientState;
-use MiniPaviService\Gateway\GatewayAnswer;
 use MiniPaviService\Gateway\GatewayRequest;
+use MiniPaviService\Gateway\GatewayResponse;
 use MiniPaviService\Message\FrameworkMessage;
 use MiniPaviService\Message\Messages;
 use MiniPaviService\Message\MessagesException;
@@ -56,7 +56,7 @@ final class Service
      *
      * @param GatewayRequest<ClientState> $request
      */
-    public function handle(GatewayRequest $request): ?GatewayAnswer
+    public function handle(GatewayRequest $request): ?GatewayResponse
     {
         try {
             return $this->answer($request);
@@ -73,7 +73,7 @@ final class Service
      *
      * Null if even that answer fails (e.g. no default route): logged as critical.
      */
-    public function error(\Throwable $error): ?GatewayAnswer
+    public function error(\Throwable $error): ?GatewayResponse
     {
         $this->logger->error('Error serving the request: ' . $error->getMessage(), ['exception' => $error]);
         try {
@@ -91,7 +91,7 @@ final class Service
     /**
      * @param GatewayRequest<ClientState> $request
      */
-    private function answer(GatewayRequest $request): ?GatewayAnswer
+    private function answer(GatewayRequest $request): ?GatewayResponse
     {
         // Nothing to answer, nor to do with the context, which may be missing
         if ($request->isDisconnecting()) {
@@ -112,7 +112,7 @@ final class Service
     }
 
     /**
-     * Context sent with a previous answer (GatewayAnswer::$context), typed with the
+     * Context sent with a previous answer (GatewayResponse::$context), typed with the
      * declarations of this service's controllers (Context::unserialize())
      *
      * @throws \RuntimeException if it isn't a JSON object
@@ -131,7 +131,7 @@ final class Service
      *
      * @param list<string> $content
      */
-    public function serve(Context $context, string $key, array $content, Terminal $terminal): GatewayAnswer
+    public function serve(Context $context, string $key, array $content, Terminal $terminal): GatewayResponse
     {
         // A route this service doesn't have, e.g. removed in a new version: the input was for
         // a screen that doesn't exist any more

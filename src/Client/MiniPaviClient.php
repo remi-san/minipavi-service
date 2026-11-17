@@ -6,8 +6,8 @@ namespace MiniPaviService\Client;
 
 use MiniPavi\MiniPaviCli;
 use MiniPaviService\Gateway\Client;
-use MiniPaviService\Gateway\GatewayAnswer;
 use MiniPaviService\Gateway\GatewayRequest;
+use MiniPaviService\Gateway\GatewayResponse;
 use MiniPaviService\Gateway\NoClientState;
 use MiniPaviService\Http\EmptyHttpResponse;
 use MiniPaviService\Minitel\Terminal;
@@ -70,7 +70,7 @@ final class MiniPaviClient implements Client
         return new NoClientState();
     }
 
-    public function response(GatewayRequest $request, GatewayAnswer $answer): ResponseInterface
+    public function response(GatewayRequest $request, GatewayResponse $answer): ResponseInterface
     {
         MiniPaviCli::send(
             $answer->vdt->toString(),

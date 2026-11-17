@@ -16,8 +16,8 @@ use MiniPaviService\Core\Router;
 use MiniPaviService\Core\Service;
 use MiniPaviService\Gateway\CallMode;
 use MiniPaviService\Gateway\ClientState;
-use MiniPaviService\Gateway\GatewayAnswer;
 use MiniPaviService\Gateway\GatewayRequest;
+use MiniPaviService\Gateway\GatewayResponse;
 use MiniPaviService\Message\FrameworkMessage;
 use MiniPaviService\Message\Messages;
 use MiniPaviService\Message\MessagesException;
@@ -215,7 +215,7 @@ final class ServiceTest extends TestCase
         $answer = $this->answerTo(Response::display(new Vdt('Hello'), ControllerState::Display, new PageParameters(2)));
 
         // To this service (next: null), waiting for the user
-        self::assertEquals(new GatewayAnswer(new Vdt('Hello'), '{"route":"answer","states":{"answer":"display"},"parameters":{"answer":{"page":2}}}'), $answer);
+        self::assertEquals(new GatewayResponse(new Vdt('Hello'), '{"route":"answer","states":{"answer":"display"},"parameters":{"answer":{"page":2}}}'), $answer);
     }
 
     public function testReadInputIsAnsweredWithTheCommand(): void
@@ -305,7 +305,7 @@ final class ServiceTest extends TestCase
     /**
      * Answer of the service when the controller of its route returns response
      */
-    private function answerTo(Response $response): GatewayAnswer
+    private function answerTo(Response $response): GatewayResponse
     {
         $this->router->addRoute('answer', $this->controller('answer', PageParameters::class, fn(Request $request) => $response));
 
@@ -325,7 +325,7 @@ final class ServiceTest extends TestCase
      *
      * @param GatewayRequest<ClientState> $request
      */
-    private function handle(GatewayRequest $request, ?string $errorMessage = null): ?GatewayAnswer
+    private function handle(GatewayRequest $request, ?string $errorMessage = null): ?GatewayResponse
     {
         $service = $errorMessage === null
             ? new Service($this->router, Messages::defaults(), $this->logger)
@@ -337,7 +337,7 @@ final class ServiceTest extends TestCase
     /**
      * Videotex content of an answer
      */
-    private function contentOf(?GatewayAnswer $answer): string
+    private function contentOf(?GatewayResponse $answer): string
     {
         if ($answer === null) {
             self::fail('No answer');

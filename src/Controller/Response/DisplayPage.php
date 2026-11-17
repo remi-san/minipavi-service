@@ -8,7 +8,7 @@ use MiniPaviService\Controller\Flow;
 use MiniPaviService\Controller\Parameters\Parameters;
 use MiniPaviService\Controller\Response;
 use MiniPaviService\Controller\State;
-use MiniPaviService\Gateway\GatewayAnswer;
+use MiniPaviService\Gateway\GatewayResponse;
 use MiniPaviService\Vdt\Vdt;
 
 /**
@@ -27,7 +27,7 @@ final readonly class DisplayPage extends Response
         parent::__construct($state, $parameters);
     }
 
-    public function continueWith(Flow $flow): GatewayAnswer
+    public function continueWith(Flow $flow): GatewayResponse
     {
         return $flow->answer($this->vdt);
     }

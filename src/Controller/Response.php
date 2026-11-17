@@ -10,7 +10,7 @@ use MiniPaviService\Controller\Response\DisplayPage;
 use MiniPaviService\Controller\Response\RunCommand;
 use MiniPaviService\Controller\Response\RunExternalService;
 use MiniPaviService\Gateway\CallMode;
-use MiniPaviService\Gateway\GatewayAnswer;
+use MiniPaviService\Gateway\GatewayResponse;
 use MiniPaviService\Page\InputCommand;
 use MiniPaviService\Vdt\Vdt;
 
@@ -83,7 +83,7 @@ abstract readonly class Response
      * the gateway (Flow::answer()) or run another controller (Flow::goTo()); gives the answer
      * the request ends with
      */
-    abstract public function continueWith(Flow $flow): GatewayAnswer;
+    abstract public function continueWith(Flow $flow): GatewayResponse;
 
     /**
      * State this controller keeps; null: its initial state

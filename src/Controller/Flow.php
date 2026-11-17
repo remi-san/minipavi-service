@@ -6,7 +6,7 @@ namespace MiniPaviService\Controller;
 
 use MiniPaviService\Controller\Parameters\Parameters;
 use MiniPaviService\Gateway\CallMode;
-use MiniPaviService\Gateway\GatewayAnswer;
+use MiniPaviService\Gateway\GatewayResponse;
 use MiniPaviService\Page\InputCommand;
 use MiniPaviService\Vdt\Vdt;
 
@@ -26,7 +26,7 @@ interface Flow
      * @param ?string $next URL the gateway calls next; null: this service's
      * @param ?CallMode $directCall calls next at once, without waiting for the user; null: waits
      */
-    public function answer(Vdt $vdt, ?InputCommand $command = null, ?string $next = null, ?CallMode $directCall = null): GatewayAnswer;
+    public function answer(Vdt $vdt, ?InputCommand $command = null, ?string $next = null, ?CallMode $directCall = null): GatewayResponse;
 
     /**
      * Runs the controller of route at once, at its initial state with parameters, and
@@ -37,5 +37,5 @@ interface Flow
      *
      * @throws \LogicException after too many page changes in one request
      */
-    public function goTo(string $route, ?Parameters $parameters = null): GatewayAnswer;
+    public function goTo(string $route, ?Parameters $parameters = null): GatewayResponse;
 }

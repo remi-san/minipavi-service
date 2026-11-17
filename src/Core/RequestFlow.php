@@ -7,7 +7,7 @@ namespace MiniPaviService\Core;
 use MiniPaviService\Controller\Flow;
 use MiniPaviService\Controller\Parameters\Parameters;
 use MiniPaviService\Gateway\CallMode;
-use MiniPaviService\Gateway\GatewayAnswer;
+use MiniPaviService\Gateway\GatewayResponse;
 use MiniPaviService\Minitel\Terminal;
 use MiniPaviService\Page\InputCommand;
 use MiniPaviService\Vdt\Vdt;
@@ -36,7 +36,7 @@ final class RequestFlow implements Flow
      *
      * @param list<string> $content
      */
-    public function run(string $key, array $content): GatewayAnswer
+    public function run(string $key, array $content): GatewayResponse
     {
         $this->routes[] = $this->context->route();
         $response = $this->context->run($key, $content, $this->terminal);
@@ -47,12 +47,12 @@ final class RequestFlow implements Flow
         return $response->continueWith($this);
     }
 
-    public function answer(Vdt $vdt, ?InputCommand $command = null, ?string $next = null, ?CallMode $directCall = null): GatewayAnswer
+    public function answer(Vdt $vdt, ?InputCommand $command = null, ?string $next = null, ?CallMode $directCall = null): GatewayResponse
     {
-        return new GatewayAnswer($vdt, $this->context->serialize(), $next, $command?->toArray(), $directCall);
+        return new GatewayResponse($vdt, $this->context->serialize(), $next, $command?->toArray(), $directCall);
     }
 
-    public function goTo(string $route, ?Parameters $parameters = null): GatewayAnswer
+    public function goTo(string $route, ?Parameters $parameters = null): GatewayResponse
     {
         if (\count($this->routes) > $this->maxPageChanges) {
             throw new \LogicException('Too many page changes in one request (more than ' . $this->maxPageChanges . '): ' . implode(' → ', [...$this->routes, $route]));

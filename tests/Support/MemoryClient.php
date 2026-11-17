@@ -6,8 +6,8 @@ namespace MiniPaviService\Tests\Support;
 
 use MiniPaviService\Gateway\Client;
 use MiniPaviService\Gateway\ClientState;
-use MiniPaviService\Gateway\GatewayAnswer;
 use MiniPaviService\Gateway\GatewayRequest;
+use MiniPaviService\Gateway\GatewayResponse;
 use MiniPaviService\Gateway\NoClientState;
 use Nyholm\Psr7\Response;
 use Psr\Http\Message\ResponseInterface;
@@ -21,7 +21,7 @@ use Psr\Http\Message\ServerRequestInterface;
  */
 final class MemoryClient implements Client
 {
-    /** @var list<array{GatewayRequest<NoClientState>, GatewayAnswer}> */
+    /** @var list<array{GatewayRequest<NoClientState>, GatewayResponse}> */
     public array $responded = [];
 
     public function __construct(
@@ -44,7 +44,7 @@ final class MemoryClient implements Client
         return new NoClientState();
     }
 
-    public function response(GatewayRequest $request, GatewayAnswer $answer): ResponseInterface
+    public function response(GatewayRequest $request, GatewayResponse $answer): ResponseInterface
     {
         if ($this->responseFailure !== null) {
             throw $this->responseFailure;

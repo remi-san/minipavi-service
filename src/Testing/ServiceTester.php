@@ -8,8 +8,8 @@ use MiniPaviService\Core\Context;
 use MiniPaviService\Core\Service;
 use MiniPaviService\Gateway\CallMode;
 use MiniPaviService\Gateway\ClientState;
-use MiniPaviService\Gateway\GatewayAnswer;
 use MiniPaviService\Gateway\GatewayRequest;
+use MiniPaviService\Gateway\GatewayResponse;
 use MiniPaviService\Minitel\FunctionKey;
 use MiniPaviService\Minitel\Terminal;
 use MiniPaviService\Vdt\Screen;
@@ -34,7 +34,7 @@ final class ServiceTester
     // Videotex the session received, since the connection: the screen is all of it, played
     private Vdt $vdt;
 
-    private ?GatewayAnswer $answer = null;
+    private ?GatewayResponse $answer = null;
 
     /** @var list<string> text typed for the next key, one string per line */
     private array $typed = [];
@@ -153,7 +153,7 @@ final class ServiceTester
     /**
      * Last answer of the service
      */
-    public function answer(): GatewayAnswer
+    public function answer(): GatewayResponse
     {
         return $this->answer ?? throw new \LogicException('No answer yet: connect() first');
     }

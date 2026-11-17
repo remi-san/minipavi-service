@@ -9,7 +9,7 @@ use MiniPaviService\Controller\Parameters\Parameters;
 use MiniPaviService\Controller\Response;
 use MiniPaviService\Controller\State;
 use MiniPaviService\Gateway\CallMode;
-use MiniPaviService\Gateway\GatewayAnswer;
+use MiniPaviService\Gateway\GatewayResponse;
 use MiniPaviService\Vdt\Vdt;
 
 /**
@@ -36,7 +36,7 @@ final readonly class RunExternalService extends Response
         $this->callMode = \is_string($callMode) ? CallMode::from($callMode) : $callMode;
     }
 
-    public function continueWith(Flow $flow): GatewayAnswer
+    public function continueWith(Flow $flow): GatewayResponse
     {
         return $flow->answer($this->vdt, next: $this->url, directCall: $this->callMode);
     }

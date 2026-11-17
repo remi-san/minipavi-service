@@ -9,7 +9,7 @@ use Psr\Http\Message\ServerRequestInterface;
 
 /**
  * Translates between HTTP and what the service handles: the HTTP request into a
- * GatewayRequest, the GatewayAnswer into an HTTP response. What the client needs to answer,
+ * GatewayRequest, the GatewayResponse into an HTTP response. What the client needs to answer,
  * besides what the service gets, is its state (TState), read with the request and given back
  * in it. Implemented in Client\: MiniPaviClient for the MiniPavi gateway, HtmlClient for a
  * browser.
@@ -42,5 +42,5 @@ interface Client
      *
      * @param GatewayRequest<TState> $request
      */
-    public function response(GatewayRequest $request, GatewayAnswer $answer): ResponseInterface;
+    public function response(GatewayRequest $request, GatewayResponse $answer): ResponseInterface;
 }
