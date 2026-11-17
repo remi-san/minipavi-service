@@ -210,44 +210,61 @@ $logger = new ErrorLogLogger();
   A state it doesn't know (e.g. kept by an older version of the service) starts it again.
   A controller with states of its own implements `Controller` with its own `State` enum.
 
-- **`PaginatedController`** shows a screen one page at a time: Suite and Retour change page,
+- **`PaginatedController`** shows items one page at a time: Suite and Retour change page,
   with "Première page" / "Dernière page" on line 0 at the ends (`firstPageMessage()`,
   `lastPageMessage()` to change them), Répétition redraws the page, and the page index is kept
-  in `PageParameters`. A controller gives the page count and the data of a page, and handles
-  its other keys, with `display($request, $page)`, `stay($page, $vdt)` (reads the next input on
-  the page, after `$vdt`) and `turn($request, 1)` (the next page, or the end message):
+  in `PageParameters`. A controller gives the number of items and of items per page, the data
+  of a page from its `Paginator`, and handles its other keys, with `display($request,
+  $paginator)`, `stay($paginator, $vdt)` (reads the next input on the page, after `$vdt`) and
+  `turn($request, 1)` (the next page, or the end message):
 
   ```php
-  final class ArticleController extends PaginatedController
+  final class DirectoryController extends PaginatedController
   {
-      public function __construct(Page $page, private Article $article)
+      public function __construct(Page $page, private Directory $directory)
       {
           parent::__construct($page);
       }
 
-      protected function pageCount(): int
+      protected function itemCount(): int
       {
-          return \count($this->article->pages);
+          return $this->directory->count();
       }
 
-      // The template also gets {{page}} (from 1) and {{pageCount}}
-      protected function pageData(int $page): array
+      protected function itemsPerPage(): int
       {
-          return ['title' => $this->article->title, 'lines' => $this->article->pages[$page]];
+          return 4;
       }
 
-      protected function onOtherKey(Request $request, int $page): Response
+      // The template also gets the paginator's variables: {{page}}, {{pageCount}}, {{itemCount}}...
+      protected function pageData(Paginator $paginator): array
+      {
+          return ['services' => $this->directory->getServices($paginator->offset(), $paginator->limit())];
+      }
+
+      protected function onOtherKey(Request $request, Paginator $paginator): Response
       {
           return match ($request->functionKey()) {
-              FunctionKey::Summary => Response::goTo('menu'),
+              FunctionKey::Summary => Response::goTo('home'),
               FunctionKey::Send => $this->turn($request, 1),
-              default => $this->stay($page),
+              default => $this->stay($paginator),
           };
       }
   }
   ```
 
-  A page index kept beyond the last page (the content got shorter) shows the last one.
+- **`Paginator`** is a page of `$itemCount` items, `$perPage` at a time (immutable; there is
+  always one page, empty without items, and an index out of the pages is kept within them):
+
+  | Method | Gives |
+  |---|---|
+  | `offset()`, `limit()` | what to retrieve for the page (e.g. `LIMIT` / `OFFSET` of a query) |
+  | `slice($items)` | the page's items, out of a list of all of them |
+  | `index()`, `number()` | the page, from 0 (what `PageParameters` keeps) and from 1 (what the user sees) |
+  | `pageCount()`, `itemCountOnPage()` | the number of pages, and of items on this one |
+  | `firstItem()`, `lastItem()` | the numbers of its first and last items, from 1 (0 without items) |
+  | `isFirst()`, `isLast()`, `next()`, `previous()`, `at($index)` | where it is, and the pages around it (`next()` and `previous()`: null at the ends) |
+  | `toArray()` | the variables of a template: `page`, `pageCount`, `itemCount`, `perPage`, `firstItem`, `lastItem` |
 
 - <a id="typed-state"></a>**Typed state and parameters.** What a controller keeps is typed
   from end to end, and PHPStan checks it. A controller declares:
