@@ -13,7 +13,7 @@ use MiniPaviService\Minitel\Terminal;
  * a GatewayRequest (receive()), and sends it a GatewayAnswer (send()). With VdtHelper
  * (Videotex helpers) and InputCommand (input commands), the only classes calling MiniPaviCli.
  */
-final class MiniPaviClient
+final class MiniPaviClient implements GatewayClient
 {
     private RequestUrl $url;
 

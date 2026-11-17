@@ -63,28 +63,6 @@ final class Service
     }
 
     /**
-     * Answer showing a screen, without a user: as on a connection (the default route's first
-     * screen), or route's, its controller run at its initial state, as on Response::goTo(). An
-     * error, e.g. a route the router doesn't have, is answered as such (see error()).
-     */
-    public function preview(?string $route = null): ?GatewayAnswer
-    {
-        if ($route === null) {
-            return $this->handle(new GatewayRequest(GatewayRequest::FCTN_CONNECT));
-        }
-
-        try {
-            if (!$this->router->has($route)) {
-                throw new \InvalidArgumentException("Unknown route \"$route\"");
-            }
-
-            return $this->serve(new Context($this->router, $route), '', [], new Terminal());
-        } catch (\Throwable $e) {
-            return $this->error($e);
-        }
-    }
-
-    /**
      * Answer to a request that failed, e.g. that couldn't be read: the error is logged, and
      * the error message shown on line 0, with a new context at the default route, whose
      * controller the user's next function key runs. It is not run now: if it is the one

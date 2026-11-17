@@ -9,101 +9,78 @@ use MiniPaviService\Controller\Request;
 use MiniPaviService\Controller\Response;
 use MiniPaviService\Core\Router;
 use MiniPaviService\Core\Service;
+use MiniPaviService\Gateway\GatewayRequest;
 use MiniPaviService\Gateway\MiniPaviClient;
-use MiniPaviService\Http\EmulatorConfig;
 use MiniPaviService\Http\RequestUrl;
 use MiniPaviService\Http\ServiceRunner;
 use MiniPaviService\Message\FrameworkMessage;
 use MiniPaviService\Message\Messages;
 use MiniPaviService\Tests\Support\CallbackController;
+use MiniPaviService\Tests\Support\MemoryClient;
 use MiniPaviService\Tests\Support\MemoryLogger;
 use MiniPaviService\Vdt\Vdt;
 use MiniPaviService\Vdt\VdtHelper;
-use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\RunInSeparateProcess;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LogLevel;
 
 final class ServiceRunnerTest extends TestCase
 {
-    /**
-     * @return iterable<string, array{string, string}>
-     */
-    public static function screensShownToBrowsers(): iterable
+    private MemoryLogger $logger;
+
+    private Service $service;
+
+    protected function setUp(): void
     {
-        yield 'the first screen' => ['web=true', 'HOME'];
-        yield "a route's" => ['web=true&route=games', 'GAMES'];
-        yield 'an empty route: the first screen' => ['web=true&route=', 'HOME'];
+        $router = new Router();
+        $router->addRoute('home', new CallbackController(NoParameters::class, fn(Request $request) => Response::display(new Vdt('home'))));
+        $router->setDefaultRoute('home');
+        $this->logger = new MemoryLogger();
+        $this->service = new Service($router, Messages::defaults(), $this->logger);
     }
 
-    #[RunInSeparateProcess]
-    #[DataProvider('screensShownToBrowsers')]
-    public function testShowsBrowsersTheScreenWithWebTrue(string $query, string $shown): void
+    public function testSendsTheAnswerToTheRequestOfTheClient(): void
     {
-        $html = $this->runForBrowser($query);
+        $client = new MemoryClient(new GatewayRequest(GatewayRequest::FCTN_CONNECT));
 
-        self::assertStringStartsWith('<!doctype html>', $html);
-        self::assertStringContainsString($shown, self::shownText($html));
-        self::assertContains([LogLevel::INFO, 'Screen shown in a browser'], array_map(fn(array $record) => [$record[0], $record[1]], $this->logger->records));
+        (new ServiceRunner($this->service, $client))->run();
+
+        self::assertCount(1, $client->sent);
+        self::assertEquals(new Vdt('home'), $client->sent[0]->vdt);
     }
 
-    #[RunInSeparateProcess]
-    public function testUnknownRouteShowsTheErrorMessage(): void
+    public function testAnswersARequestThatCantBeReadAsAnError(): void
     {
-        $html = $this->runForBrowser('web=true&route=nope');
+        $client = new MemoryClient(new \RuntimeException('Not JSON'));
 
-        self::assertStringContainsString(Messages::defaults()->get(FrameworkMessage::Error), self::shownText($html));
-        self::assertSame([LogLevel::ERROR, 'Error serving the request: Unknown route "nope"'], [$this->logger->records[0][0] ?? null, $this->logger->records[0][1] ?? null]);
+        (new ServiceRunner($this->service, $client))->run();
+
+        self::assertEquals(VdtHelper::writeLine0(Messages::defaults()->get(FrameworkMessage::Error)), $client->sent[0]->vdt);
+        self::assertSame([LogLevel::ERROR, 'Error serving the request: Not JSON'], [$this->logger->records[0][0], $this->logger->records[0][1]]);
     }
 
-    /**
-     * @return iterable<string, array{string}>
-     */
-    public static function otherWebValues(): iterable
+    public function testSendsNothingForADisconnection(): void
     {
-        yield 'web=1' => ['web=1'];
-        yield 'web=yes' => ['web=yes'];
-        yield 'web=TRUE' => ['web=TRUE'];
-        yield 'no web' => ['route=games'];
+        $client = new MemoryClient(new GatewayRequest(GatewayRequest::FCTN_DISCONNECT));
+
+        (new ServiceRunner($this->service, $client))->run();
+
+        self::assertSame([], $client->sent);
     }
 
-    #[RunInSeparateProcess]
-    #[DataProvider('otherWebValues')]
-    public function testOtherwiseSendsBrowsersToTheEmulator(string $query): void
+    public function testLogsAnAnswerThatCantBeSent(): void
     {
-        $output = $this->runForBrowser($query);
-
-        self::assertSame('', $output);
-        self::assertSame('Browser sent to the emulator', $this->logger->records[0][1] ?? null);
-    }
-
-    /**
-     * In a separate process: if the service ran, MiniPaviCli::start() would exit
-     */
-    #[RunInSeparateProcess]
-    public function testSendsBrowsersToTheEmulatorAndReturns(): void
-    {
-        $_SERVER['HTTP_USER_AGENT'] = 'Mozilla/5.0';
-        $_SERVER['HTTP_HOST'] = 'example.org';
-        $_SERVER['REQUEST_URI'] = '/Svc/';
         $logger = new MemoryLogger();
-        $runner = new ServiceRunner(
-            new Service(new Router(), Messages::defaults()),
-            new MiniPaviClient(new RequestUrl()),
-            new EmulatorConfig('http://emulator', 'ws://gateway'),
-            new RequestUrl(),
-            $logger,
-        );
+        $client = new MemoryClient(new GatewayRequest(GatewayRequest::FCTN_CONNECT), new \RuntimeException('Connection reset'));
 
-        $runner->run();
+        (new ServiceRunner($this->service, $client, $logger))->run();
 
-        $url = 'http://emulator/index.php?gw=' . urlencode('ws://gateway/?url=' . urlencode('http://example.org/Svc/'));
-        self::assertSame([[LogLevel::INFO, 'Browser sent to the emulator', ['url' => $url]]], $logger->records);
+        self::assertSame([LogLevel::CRITICAL, 'Cannot send the answer: Connection reset'], [$logger->records[0][0], $logger->records[0][1]]);
     }
 
     /**
-     * In a separate process: MiniPaviCli::start() reads the body of the request (empty here,
-     * so not JSON), and the answer is written to the output
+     * With the gateway's client. In a separate process: MiniPaviCli::start() reads the body of
+     * the request (empty here, so not JSON), and the answer is written to the output
      */
     #[RunInSeparateProcess]
     public function testAnswersAnUnreadableRequestOfTheGatewayAsAnError(): void
@@ -111,14 +88,10 @@ final class ServiceRunnerTest extends TestCase
         $_SERVER['HTTP_USER_AGENT'] = 'MiniPAVI';
         $_SERVER['HTTP_HOST'] = 'services';
         $_SERVER['PHP_SELF'] = '/Svc/index.php';
-        $router = new Router();
-        $router->addRoute('home', new CallbackController(NoParameters::class, fn(Request $request) => Response::display(new Vdt('home'))));
-        $router->setDefaultRoute('home');
-        $logger = new MemoryLogger();
 
         ob_start();
         try {
-            (new ServiceRunner(new Service($router, Messages::defaults(), $logger), new MiniPaviClient(new RequestUrl()), new EmulatorConfig('http://emulator', 'ws://gateway'), new RequestUrl()))->run();
+            (new ServiceRunner($this->service, new MiniPaviClient(new RequestUrl())))->run();
         } finally {
             $output = (string) ob_get_clean();
         }
@@ -128,41 +101,6 @@ final class ServiceRunnerTest extends TestCase
         self::assertSame(base64_encode(VdtHelper::writeLine0(Messages::defaults()->get(FrameworkMessage::Error))->toString()), $answer['content'] ?? null);
         self::assertSame('{"route":"home","states":{},"parameters":{}}', $answer['context'] ?? null);
         self::assertSame('http://services/Svc/index.php', $answer['next'] ?? null);
-        self::assertSame(LogLevel::ERROR, $logger->records[0][0] ?? null);
-    }
-
-    private MemoryLogger $logger;
-
-    /**
-     * Text the page shows: its cells, without the markup and the style
-     */
-    private static function shownText(string $html): string
-    {
-        return html_entity_decode(strip_tags((string) preg_replace('#<style>.*</style>#s', '', $html)));
-    }
-
-    /**
-     * Runs a service (home, games) for a browser asking it with query, and gives the output
-     */
-    private function runForBrowser(string $query): string
-    {
-        $_SERVER['HTTP_USER_AGENT'] = 'Mozilla/5.0';
-        $_SERVER['HTTP_HOST'] = 'example.org';
-        $_SERVER['REQUEST_URI'] = '/Svc/?' . $query;
-        $_SERVER['QUERY_STRING'] = $query;
-        $router = new Router();
-        $router->addRoute('home', new CallbackController(NoParameters::class, fn(Request $request) => Response::display(VdtHelper::setPos(1, 1)->append(Vdt::text('HOME')))));
-        $router->addRoute('games', new CallbackController(NoParameters::class, fn(Request $request) => Response::display(VdtHelper::setPos(1, 1)->append(Vdt::text('GAMES')))));
-        $router->setDefaultRoute('home');
-        $this->logger = new MemoryLogger();
-
-        ob_start();
-        try {
-            (new ServiceRunner(new Service($router, Messages::defaults(), $this->logger), new MiniPaviClient(new RequestUrl()), new EmulatorConfig('http://emulator', 'ws://gateway'), new RequestUrl(), $this->logger))->run();
-        } finally {
-            $output = (string) ob_get_clean();
-        }
-
-        return $output;
+        self::assertSame(LogLevel::ERROR, $this->logger->records[0][0] ?? null);
     }
 }
