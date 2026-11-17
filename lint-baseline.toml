@@ -25,6 +25,12 @@ message = "Parameters that may contain sensitive information should be marked wi
 count = 3
 
 [[issues]]
+file = "tests/Log/ErrorLogLoggerTest.php"
+code = "no-ini-set"
+message = "ini_set should not be used."
+count = 2
+
+[[issues]]
 file = "tests/Page/Parser/PageXsdTest.php"
 code = "no-boolean-flag-parameter"
 message = "Avoid boolean flag parameters."
