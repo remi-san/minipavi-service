@@ -23,25 +23,22 @@ final class ServiceRunner
 
     private LoggerInterface $logger;
 
-    private MiniPaviClient $client;
-
     /**
+     * @param MiniPaviClient $client client of the gateway: reads its requests, sends the answers
      * @param ?RequestUrl $url URLs of the service, by default from the environment
      * @param ?LoggerInterface $logger where browsers sent to the emulator, and answers that
      *                                 can't be sent, are logged; none by default
-     * @param ?MiniPaviClient $client client of the gateway, by default with url
      */
     public function __construct(
         private Service $service,
+        private MiniPaviClient $client,
         ?EmulatorConfig $emulator = null,
         ?RequestUrl $url = null,
         ?LoggerInterface $logger = null,
-        ?MiniPaviClient $client = null,
     ) {
         $this->emulator = $emulator ?? EmulatorConfig::init();
         $this->url = $url ?? RequestUrl::fromEnvironment();
         $this->logger = $logger ?? new NullLogger();
-        $this->client = $client ?? new MiniPaviClient($this->url);
     }
 
     /**

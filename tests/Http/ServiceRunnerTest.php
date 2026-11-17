@@ -9,6 +9,7 @@ use MiniPaviService\Controller\Request;
 use MiniPaviService\Controller\Response;
 use MiniPaviService\Core\Router;
 use MiniPaviService\Core\Service;
+use MiniPaviService\Gateway\MiniPaviClient;
 use MiniPaviService\Http\EmulatorConfig;
 use MiniPaviService\Http\RequestUrl;
 use MiniPaviService\Http\ServiceRunner;
@@ -32,6 +33,7 @@ final class ServiceRunnerTest extends TestCase
         $logger = new MemoryLogger();
         $runner = new ServiceRunner(
             new Service(new Router()),
+            new MiniPaviClient(new RequestUrl()),
             new EmulatorConfig('http://emulator', 'ws://gateway'),
             new RequestUrl(),
             $logger,
@@ -65,7 +67,7 @@ final class ServiceRunnerTest extends TestCase
 
         ob_start();
         try {
-            (new ServiceRunner(new Service($router, $logger), new EmulatorConfig('http://emulator', 'ws://gateway'), new RequestUrl()))->run();
+            (new ServiceRunner(new Service($router, $logger), new MiniPaviClient(new RequestUrl()), new EmulatorConfig('http://emulator', 'ws://gateway'), new RequestUrl()))->run();
         } finally {
             $output = (string) ob_get_clean();
         }
