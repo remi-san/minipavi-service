@@ -25,8 +25,11 @@ use MiniPaviService\Vdt\VdtHelper;
  */
 abstract class PaginatedController extends AbstractController
 {
+    /**
+     * @param Page $page shown, with its messages ($this->page->message())
+     */
     public function __construct(
-        private readonly Page $page,
+        protected readonly Page $page,
     ) {}
 
     final public function parametersType(): string

@@ -103,9 +103,10 @@ $logger = new ErrorLogLogger();
   whose route the service doesn't have (e.g. removed in a new version), starts again at the
   default route.
   If serving a request fails (an exception or a PHP error, in a controller, a template, the
-  context...), the error is logged, and the user gets a message on line 0 (`$errorMessage` of
-  the constructor, by default `Service::ERROR_MESSAGE`): their next function key starts again
-  at the default route.
+  context...), the error is logged, and the user gets a message on line 0
+  (`FrameworkMessage::Error`, from the `$messages` of the constructor, the framework's by
+  default; see [Messages](#messages)): their next function key starts again at the default
+  route.
 - **`GatewayRequest`** is what the gateway sends: `key` (the function key, or a connection
   code), `content` (the text typed), `context` (given back from the previous answer) and
   `terminal`. **`GatewayAnswer`** is what is sent back: `vdt`, `context`, `next` (the URL the
@@ -211,8 +212,8 @@ $logger = new ErrorLogLogger();
   A controller with states of its own implements `Controller` with its own `State` enum.
 
 - **`PaginatedController`** shows items one page at a time: Suite and Retour change page,
-  with "Première page" / "Dernière page" on line 0 at the ends (`firstPageMessage()`,
-  `lastPageMessage()` to change them), Répétition redraws the page, and the page index is kept
+  with "Première page" / "Dernière page" on line 0 at the ends (`FrameworkMessage::FirstPage`,
+  `LastPage`: see [Messages](#messages)), Répétition redraws the page, and the page index is kept
   in `PageParameters`. A controller gives the number of items and of items per page, the data
   of a page from its `Paginator`, and handles its other keys, with `display($request,
   $paginator)`, `stay($paginator, $vdt)` (reads the next input on the page, after `$vdt`) and
@@ -371,6 +372,48 @@ To test the service as it is served, build its `Service` from the same wiring as
 `public/index.php`: the services of this repository keep it in `config/container.php`, which
 both require (see their `tests/`).
 
+## Messages
+
+Text shown on the Minitel is not written in the code: it is read from messages files, by name.
+
+- **Names** are enum cases implementing `Message\Message`, whose value is the name in the
+  files: `FrameworkMessage` for the framework's (`error`, `page.first`, `page.last`,
+  `endkey`, `endkey.shift`), and an enum of its own for a service's.
+- **Texts** come from `config/messages.xml` in the framework (its defaults,
+  `Messages::defaults()`), then the service's messages file over them, then a page's
+  `<message>` over those, for that page. A text can have `{{placeholders}}`.
+
+```xml
+<messages xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:noNamespaceSchemaLocation="../vendor/remi-san/minipavi-service/schema/messages.xsd">
+  <message name="service.unknown">Service inexistant</message>
+  <message name="connected.from">Connexion de {{remoteAddr}}</message>
+  <message name="page.last">Fin de la liste</message>   <!-- redefines the framework's -->
+</messages>
+```
+
+```php
+enum AccMessage: string implements Message
+{
+    case UnknownService = 'service.unknown';
+    case ConnectedFrom = 'connected.from';
+}
+
+// Composition root: read and checked at startup (every message of these enums has a text)
+$messages = (new MessagesXmlParser())
+    ->parseFile("$config/messages.xml", Messages::defaults())
+    ->check(FrameworkMessage::class, AccMessage::class);
+$parser = new PageXmlParser($messages);              // pages redefine them with <message>
+$service = new Service($router, $logger, $messages);  // for its error message
+
+// In a controller: the page's text, its placeholders replaced
+VdtHelper::writeLine0($this->page->message(AccMessage::ConnectedFrom, ['remoteAddr' => $addr]));
+```
+
+A message without text, or a placeholder without its variable, is a `LogicException`; a
+messages file that can't be read is a `MessagesException` with the file and line.
+`schema/messages.xsd` describes messages files.
+
 ## Page XML format
 
 A page file has a `<page>` root, read by `PageXmlParser`. Errors throw a `PageXmlException`
@@ -384,7 +427,7 @@ elements are drawn in order:
 | `<text row col align="center" color bg size fill="yes">…</text>` | text; `size`: normal, double-height, double-width, double; `fill="yes"` paints the rest of the row with `bg` |
 | `<line row col length char color/>` | horizontal line; `char`: top (`_`), middle (`` ` ``), bottom (`~`) or any character |
 | `<key row col color bg>Envoi</key>` | function key badge, in reverse video (`bg`: around it) |
-| `<endkey row color/>` | "Connexion/fin" hint, with "[Maj] +" for ESP32/Minimit adapters |
+| `<endkey row color/>` | "Connexion/fin" hint, centered, with "[Maj] +" for ESP32/Minimit adapters (messages `endkey`, `endkey.shift`) |
 | `<input row col length lines validwith/>` | input field read by `Page::inputCommand()` (default: row 13, 2 lines, to the end of the row) |
 
 - `validwith`: keys validating the input, separated by spaces (default `envoi`): envoi, sommaire,
@@ -403,6 +446,9 @@ left out is left as it is):
 
 e.g. `<page type="static" keyboard="lowercase" echo="off" scroll="off">`, for a screen
 reading what the user types.
+
+At its top level, `<message name="page.last">Fin de l'article</message>` redefines a message
+of the service for this page (see [Messages](#messages)).
 
 `<page type="static">` is drawn as is. `<page type="template">` can also have placeholders and
 instructions, filled in with the data given to `Page::display($terminal, $data)`:
