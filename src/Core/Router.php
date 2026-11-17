@@ -37,7 +37,7 @@ final class Router
 
     public function has(string $name): bool
     {
-        return isset($this->routes[$name]);
+        return array_key_exists($name, $this->routes);
     }
 
     /**

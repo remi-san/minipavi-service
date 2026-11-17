@@ -46,7 +46,7 @@ final readonly class Messages
 
     public function has(string $name): bool
     {
-        return isset($this->texts[$name]);
+        return array_key_exists($name, $this->texts);
     }
 
     /**

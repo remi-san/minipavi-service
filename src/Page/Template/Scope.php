@@ -74,7 +74,11 @@ final readonly class Scope
                 $value = $value[$name];
             } elseif ($value instanceof \ArrayAccess && $value->offsetExists($name)) {
                 $value = $value[$name];
-            } elseif (is_object($value) && (isset($value->$name) || property_exists($value, $name))) {
+            } elseif (
+                is_object($value)
+                // Its property, or one it gives through __isset() and __get()
+                && (property_exists($value, $name) || method_exists($value, '__isset') && $value->__isset($name))
+            ) {
                 $value = $value->$name;
             } else {
                 throw new \InvalidArgumentException(

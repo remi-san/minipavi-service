@@ -27,6 +27,7 @@ ignore = [
     { code = "invalid-property-assignment-value", in = ["src/Core/RouteContext.php"] },
     # Template variables read the property of an object named in the template
     { code = "string-member-selector", in = ["src/Page/Template/Scope.php"] },
+    { code = "ambiguous-object-property-access", in = ["src/Page/Template/Scope.php"] },
 ]
 
 [linter]

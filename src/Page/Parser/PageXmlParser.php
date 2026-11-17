@@ -315,7 +315,7 @@ final class PageXmlParser
             if (!$this->messages->has($messageName)) {
                 throw new PageXmlException("{$at}: name=\"{$messageName}\" is not a message of the service");
             }
-            if (isset($texts[$messageName])) {
+            if (array_key_exists($messageName, $texts)) {
                 throw new PageXmlException("{$at}: name=\"{$messageName}\" is already in the page");
             }
             $texts[$messageName] = trim((string) $element);

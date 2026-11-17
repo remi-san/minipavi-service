@@ -20,7 +20,7 @@ final class RequestUrlTest extends TestCase
     private static function request(array $server = []): ServerRequestInterface
     {
         $server += ['HTTP_HOST' => 'example.org', 'PHP_SELF' => '/Svc/index.php', 'REQUEST_URI' => '/Svc/?code=1'];
-        $headers = isset($server['HTTP_X_FORWARDED_PROTO'])
+        $headers = array_key_exists('HTTP_X_FORWARDED_PROTO', $server)
             ? ['X-Forwarded-Proto' => $server['HTTP_X_FORWARDED_PROTO']]
             : [];
 

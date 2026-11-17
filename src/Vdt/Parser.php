@@ -29,7 +29,7 @@ final class Parser
                 case 0x19: // SS2: G2 character, possibly an accent followed by its letter
                     $glyph = substr($vdt, $i, 2);
                     $accent = ord($vdt[$i + 1] ?? "\0");
-                    if ($accent >= 0x41 && $accent <= 0x4F && isset($vdt[$i + 2]) && ord($vdt[$i + 2]) >= 0x20) {
+                    if ($accent >= 0x41 && $accent <= 0x4F && ($i + 2) < \strlen($vdt) && ord($vdt[$i + 2]) >= 0x20) {
                         $glyph .= $vdt[$i + 2];
                     }
                     $tokens[] = new Token(TokenType::Glyph, $glyph, $glyph);

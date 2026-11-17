@@ -118,18 +118,18 @@ final readonly class RequestUrl
         if (
             $parts === false
             || !\in_array($scheme, ['http', 'https'], true)
-            || !isset($parts['host'])
+            || !array_key_exists('host', $parts)
             || !\in_array($parts['path'] ?? '', ['', '/'], true)
-            || isset($parts['query'])
-            || isset($parts['fragment'])
-            || isset($parts['user'])
+            || array_key_exists('query', $parts)
+            || array_key_exists('fragment', $parts)
+            || array_key_exists('user', $parts)
         ) {
             throw new \InvalidArgumentException(
                 "SERVICE_URL \"{$serviceUrl}\" must be the scheme and host of the service, e.g. https://minitel.example.org",
             );
         }
 
-        return $scheme . '://' . $parts['host'] . (isset($parts['port']) ? ':' . $parts['port'] : '');
+        return $scheme . '://' . $parts['host'] . (array_key_exists('port', $parts) ? ':' . $parts['port'] : '');
     }
 
     /**

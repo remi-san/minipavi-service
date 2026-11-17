@@ -78,7 +78,7 @@ final class MessagesXmlParser
             if ($messageName === '') {
                 throw new MessagesException("{$at}: name is missing");
             }
-            if (isset($texts[$messageName])) {
+            if (array_key_exists($messageName, $texts)) {
                 throw new MessagesException("{$at}: name=\"{$messageName}\" is already in the file");
             }
             $texts[$messageName] = trim((string) $element);

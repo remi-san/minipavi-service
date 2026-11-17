@@ -1,60 +1,6 @@
 variant = "loose"
 
 [[issues]]
-file = "src/Core/Router.php"
-code = "no-isset"
-message = "Use of the `isset` construct."
-count = 1
-
-[[issues]]
-file = "src/Http/Url/RequestUrl.php"
-code = "no-isset"
-message = "Use of the `isset` construct."
-count = 5
-
-[[issues]]
-file = "src/Message/Messages.php"
-code = "no-isset"
-message = "Use of the `isset` construct."
-count = 1
-
-[[issues]]
-file = "src/Message/MessagesXmlParser.php"
-code = "no-isset"
-message = "Use of the `isset` construct."
-count = 1
-
-[[issues]]
-file = "src/Page/Parser/ElementFactory.php"
-code = "no-isset"
-message = "Use of the `isset` construct."
-count = 7
-
-[[issues]]
-file = "src/Page/Parser/PageXmlParser.php"
-code = "no-isset"
-message = "Use of the `isset` construct."
-count = 1
-
-[[issues]]
-file = "src/Page/Template/Scope.php"
-code = "no-isset"
-message = "Use of the `isset` construct."
-count = 1
-
-[[issues]]
-file = "src/Vdt/Parser.php"
-code = "no-isset"
-message = "Use of the `isset` construct."
-count = 1
-
-[[issues]]
-file = "src/Vdt/Screen/Screen.php"
-code = "no-isset"
-message = "Use of the `isset` construct."
-count = 1
-
-[[issues]]
 file = "src/Vdt/Screen/Screen.php"
 code = "sensitive-parameter"
 message = "Parameters that may contain sensitive information should be marked with the `#[SensitiveParameter]` attribute."
@@ -65,18 +11,6 @@ file = "src/Vdt/Vdt.php"
 code = "sensitive-parameter"
 message = "Parameters that may contain sensitive information should be marked with the `#[SensitiveParameter]` attribute."
 count = 3
-
-[[issues]]
-file = "tests/Cli/PreviewCommandTest.php"
-code = "no-isset"
-message = "Use of the `isset` construct."
-count = 1
-
-[[issues]]
-file = "tests/Http/Url/RequestUrlTest.php"
-code = "no-isset"
-message = "Use of the `isset` construct."
-count = 1
 
 [[issues]]
 file = "tests/Vdt/ParserTest.php"

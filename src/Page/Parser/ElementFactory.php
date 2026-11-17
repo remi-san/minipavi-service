@@ -74,7 +74,7 @@ final class ElementFactory
             'line' => new Line(
                 row: $this->int($attributes, 'row', 1),
                 col: $this->int($attributes, 'col', 1),
-                length: isset($attributes['length']) ? $this->int($attributes, 'length', 0) : null,
+                length: array_key_exists('length', $attributes) ? $this->int($attributes, 'length', 0) : null,
                 char: $this->lineChar($attributes),
                 color: $this->color($attributes, 'color') ?? Color::White,
             ),
@@ -88,7 +88,7 @@ final class ElementFactory
             'endkey' => new EndKey(
                 $this->messages->get(FrameworkMessage::EndKey),
                 $this->messages->get(FrameworkMessage::EndKeyShift),
-                row: isset($attributes['row']) ? $this->int($attributes, 'row', 0) : null,
+                row: array_key_exists('row', $attributes) ? $this->int($attributes, 'row', 0) : null,
                 color: $this->color($attributes, 'color') ?? Color::Green,
             ),
             default => throw new PageXmlException('unknown element'),
@@ -142,7 +142,7 @@ final class ElementFactory
         return new Input(
             row: $this->int($attributes, 'row', 13),
             col: $this->int($attributes, 'col', 1),
-            length: isset($attributes['length']) ? $this->int($attributes, 'length', 0) : null,
+            length: array_key_exists('length', $attributes) ? $this->int($attributes, 'length', 0) : null,
             lines: $this->int($attributes, 'lines', 2),
             validWith: $validWith,
         );
@@ -155,7 +155,7 @@ final class ElementFactory
      */
     public function int(array $attributes, string $attr, int $default): int
     {
-        if (!isset($attributes[$attr])) {
+        if (!array_key_exists($attr, $attributes)) {
             return $default;
         }
         $value = trim($attributes[$attr]);
@@ -174,7 +174,7 @@ final class ElementFactory
      */
     private function choice(array $attributes, string $attr, array $values, mixed $default): mixed
     {
-        if (!isset($attributes[$attr])) {
+        if (!array_key_exists($attr, $attributes)) {
             return $default;
         }
         $value = $attributes[$attr];
@@ -189,7 +189,7 @@ final class ElementFactory
      */
     private function color(array $attributes, string $attr): ?Color
     {
-        if (!isset($attributes[$attr])) {
+        if (!array_key_exists($attr, $attributes)) {
             return null;
         }
         return (
@@ -208,7 +208,7 @@ final class ElementFactory
      */
     private function size(array $attributes): ?Size
     {
-        if (!isset($attributes['size'])) {
+        if (!array_key_exists('size', $attributes)) {
             return null;
         }
         return (

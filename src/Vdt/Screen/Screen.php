@@ -63,7 +63,7 @@ final readonly class Screen
      */
     public function line(int $row): string
     {
-        if (!isset($this->cells[$row])) {
+        if (!array_key_exists($row, $this->cells)) {
             return '';
         }
 

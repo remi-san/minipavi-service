@@ -128,7 +128,7 @@ final class PreviewCommandTest extends TestCase
             $arguments = \array_slice($arguments, 2);
         }
         foreach (['page', 'data'] as $i => $name) {
-            if (!isset($arguments[$i])) {
+            if (!array_key_exists($i, $arguments)) {
                 continue;
             }
 
