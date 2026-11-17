@@ -32,7 +32,6 @@ which depend on nothing above them):
 | `Gateway\` | the requests and answers the service handles (`GatewayRequest`, `GatewayResponse`, `CallMode`), and the `Client` interface reading and sending them |
 | `Client\` | the clients: `MiniPaviClient` for the MiniPavi gateway, `HtmlClient` for a browser (`?web=true`) |
 | `Http\` | the entry point for the web server, on PSR-7 / PSR-15: `Kernel`, `ResponseEmitter`, `ServiceRunner`; in `Dispatch\`, who handles the request (`Dispatcher`, `ConditionalRequestHandler`, `RequestMatcher`s); in `Url\`, the request's URLs (`RequestUrl`, `UrlAttribute`, `WithUrls`); in `Emulator\`, the emulator browsers are sent to (`EmulatorConfig`, `EmulatorRedirect`) |
-| `Log\` | `LineLogger` and where it writes (`LogLines`: `PhpErrorLog`) |
 | `Testing\` | `ServiceTester`, functional tests of a service (needs PHPUnit) |
 
 ## Installing
@@ -55,12 +54,12 @@ In Docker, the framework and the service keep the repository's layout (`/app/fra
 `public/index.php` builds the pages and controllers, and hands them to the service:
 
 ```php
+use Monolog\Handler\ErrorLogHandler;
+use Monolog\Logger;
 use MiniPaviService\Core\Router;
 use MiniPaviService\Http\Emulator\EmulatorConfig;
 use MiniPaviService\Http\KernelBuilder;
 use MiniPaviService\Http\Url\RequestUrl;
-use MiniPaviService\Log\LineLogger;
-use MiniPaviService\Log\PhpErrorLog;
 use MiniPaviService\Message\Messages;
 use MiniPaviService\Page\Parser\PageXmlParser;
 
@@ -75,7 +74,7 @@ $router->setDefaultRoute(HomeController::NAME);
 
 // The environment is read here (or in the container): the framework doesn't read it itself
 KernelBuilder::for($router, $messages)
-    ->withLogger(new LineLogger(new PhpErrorLog()))
+    ->withLogger(new Logger('my-service', [new ErrorLogHandler()]))   // Monolog
     ->withContextKey(getenv('CONTEXT_SECRET') ?: '')
     ->withRequestUrl(new RequestUrl(getenv('SERVICE_URL') ?: null, getenv('TRUSTED_PROXIES') ?: ''))
     ->withEmulator(EmulatorConfig::fromValues(getenv('EMULATOR_URL') ?: null, getenv('GATEWAY_URL') ?: null, getenv('SERVICES_INTERNAL_HOST') ?: null))
@@ -216,7 +215,7 @@ KernelBuilder::for($router, $messages)
   `$page->display($request->terminal(), $data)`; display elements get it too
   (`Element::getContent(Terminal $terminal)`).
 - **Logging:** `Service`, `ServiceRunner`, `Dispatcher` and `EmulatorRedirect` take an optional PSR-3 logger (`KernelBuilder::withLogger()` gives it to all of them; e.g.
-  Monolog, or the framework's `LineLogger`, writing a line per record to a `LogLines`: `new LineLogger(new PhpErrorLog())` for PHP's error log) and log
+  Monolog, with its `ErrorLogHandler` for PHP's error log, as the services of this repository do) and log
   connections, disconnections and browsers sent to the emulator at info level, the handler
   of each request at debug level, and errors at error level (with the exception):
   `new Service($router, $messages, $logger)`, `new ServiceRunner($service, $client, $signer, $logger)`,
