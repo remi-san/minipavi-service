@@ -55,20 +55,13 @@ In Docker, the framework and the service keep the repository's layout (`/app/fra
 `public/index.php` builds the pages and controllers, and hands them to the service:
 
 ```php
-use MiniPaviService\Core\{Router, Service};
-use MiniPaviService\Client\MiniPaviClient;
-use MiniPaviService\Client\HtmlClient;
-use MiniPaviService\Core\Signing\HmacContextSigner;
-use MiniPaviService\Http\{Kernel, ResponseEmitter, ServiceRunner};
-use MiniPaviService\Http\Dispatch\{ConditionalRequestHandler, Dispatcher, FromMiniPaviGateway, QueryParameterEquals};
-use MiniPaviService\Http\Emulator\{EmulatorConfig, EmulatorRedirect};
-use MiniPaviService\Http\Url\{RequestUrl, WithUrls};
-use Nyholm\Psr7\Factory\Psr17Factory;
-use Nyholm\Psr7Server\ServerRequestCreator;
+use MiniPaviService\Core\Router;
+use MiniPaviService\Http\Emulator\EmulatorConfig;
+use MiniPaviService\Http\KernelBuilder;
+use MiniPaviService\Http\Url\RequestUrl;
 use MiniPaviService\Log\ErrorLogLogger;
 use MiniPaviService\Message\Messages;
 use MiniPaviService\Page\Parser\PageXmlParser;
-use MiniPaviService\Vdt\Screen\HtmlRenderer;
 
 require __DIR__.'/../vendor/autoload.php';
 
@@ -79,37 +72,38 @@ $router = new Router();
 $router->addRoute(HomeController::NAME, new HomeController((new PageXmlParser($messages))->parseFile(__DIR__.'/../config/pages/home.xml')));
 $router->setDefaultRoute(HomeController::NAME);
 
-$logger = new ErrorLogLogger();
-
-$service = new Service($router, $messages, $logger);
-
 // The environment is read here (or in the container): the framework doesn't read it itself
-$signer = new HmacContextSigner(getenv('CONTEXT_SECRET') ?: throw new \RuntimeException('CONTEXT_SECRET is not set'));
-$url = new RequestUrl(getenv('SERVICE_URL') ?: null, getenv('TRUSTED_PROXIES') ?: '');
-$emulator = EmulatorConfig::fromValues(getenv('EMULATOR_URL') ?: null, getenv('GATEWAY_URL') ?: null, getenv('SERVICES_INTERNAL_HOST') ?: null);
-
-// The PSR-7 request is created from the globals with nyholm/psr7-server, and Nyholm's factories (PSR-17)
-$psr17 = new Psr17Factory();
-
-// The gateway's requests, browsers asking ?web=true, and the others (sent to the emulator)
-(new Kernel(new WithUrls(
-    new Dispatcher(
-        [
-            new ConditionalRequestHandler('gateway', new FromMiniPaviGateway(), new ServiceRunner($service, new MiniPaviClient(), $signer, $logger)),
-            new ConditionalRequestHandler('web', new QueryParameterEquals('web', 'true'), new ServiceRunner($service, new HtmlClient(new HtmlRenderer(HtmlRenderer::MINITEL_FONT), $messages), $signer, $logger)),
-        ],
-        new EmulatorRedirect($emulator, $logger),     // what none matches
-        $logger,
-    ),
-    $url,
-), new ServerRequestCreator($psr17, $psr17, $psr17, $psr17), new ResponseEmitter()))->run();
+KernelBuilder::for($router, $messages)
+    ->withLogger(new ErrorLogLogger())
+    ->withContextKey(getenv('CONTEXT_SECRET') ?: '')
+    ->withRequestUrl(new RequestUrl(getenv('SERVICE_URL') ?: null, getenv('TRUSTED_PROXIES') ?: ''))
+    ->withEmulator(EmulatorConfig::fromValues(getenv('EMULATOR_URL') ?: null, getenv('GATEWAY_URL') ?: null, getenv('SERVICES_INTERNAL_HOST') ?: null))
+    ->build()
+    ->run();
 ```
+
+- **`Http\KernelBuilder`** builds the `Kernel` with the framework's wiring, described below:
+  a `Service` for the router and messages; the gateway's requests run it with
+  `MiniPaviClient`, browsers asking `?web=true` with `HtmlClient`, the others are sent to the
+  emulator (`EmulatorRedirect`); the URLs are computed by `WithUrls`, the request created with
+  `nyholm/psr7-server`. It is immutable: each `with...()` gives a builder changing one thing.
+  What a service doesn't give has a default:
+  - `withLogger()`: where every part logs (default: nowhere);
+  - `withContextKey()`: the key signing the context (`HmacContextSigner`); without it, or with
+    `''`, the context isn't signed, and a warning is logged on each request;
+  - `withRequestUrl()`: how the service's URLs are computed (default: the request's);
+  - `withEmulator()`: where browsers are sent (default: the minipavi.fr emulator and gateway);
+  - `withHandler()`: a `ConditionalRequestHandler` of the service (e.g. an API, a health
+    check), tried before the framework's, in the order they are added.
+
+  `handler()` gives what the `Kernel` has handle the request, e.g. to test it. A service
+  needing another wiring builds the `Kernel` itself, from the classes below.
 
 - **Lazy controllers:** a service with many screens shouldn't build every controller, and parse
   every page, on each request. With a dependency injection container such as PHP-DI, define
   the controllers as lazy: the router gets proxies, and a controller is only built when its
   route runs (PHP 8.4's native lazy objects, which keep controllers `final`). See
-  `services/*/public/index.php`:
+  `services/*/config/container.php`:
 
   ```php
   $container = (new ContainerBuilder())->addDefinitions([
@@ -221,11 +215,11 @@ $psr17 = new Psr17Factory();
 - **Pages** are displayed for the user's terminal, which `<endkey>` depends on:
   `$page->display($request->terminal(), $data)`; display elements get it too
   (`Element::getContent(Terminal $terminal)`).
-- **Logging:** `Service`, `ServiceRunner`, `Dispatcher` and `EmulatorRedirect` take an optional PSR-3 logger (e.g.
+- **Logging:** `Service`, `ServiceRunner`, `Dispatcher` and `EmulatorRedirect` take an optional PSR-3 logger (`KernelBuilder::withLogger()` gives it to all of them; e.g.
   Monolog, or the framework's `ErrorLogLogger`, writing to PHP's error log) and log
   connections, disconnections and browsers sent to the emulator at info level, the handler
   of each request at debug level, and errors at error level (with the exception):
-  `new Service($router, $messages, $logger)`, `new ServiceRunner($service, $client, $logger)`,
+  `new Service($router, $messages, $logger)`, `new ServiceRunner($service, $client, $signer, $logger)`,
   `new Dispatcher($handlers, $fallback, $logger)`, `new EmulatorRedirect($emulator, $logger)`.
   Without one, nothing is logged.
 - **A `Controller`** runs on a `Request` and returns a `Response`. The request gives:
