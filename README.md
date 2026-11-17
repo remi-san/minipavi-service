@@ -336,6 +336,18 @@ elements are drawn in order:
   where every key validates; with several lines, Suite and Retour move between them.
 - Colors: black, red, green, yellow, blue, magenta, cyan, white. `col` defaults to 1.
 
+`<page>` can also set up the Minitel, sent by `Page::display()` before the content (a setting
+left out is left as it is):
+
+| Attribute | Values | Sets |
+|---|---|---|
+| `keyboard` | `uppercase`, `lowercase` | the case of the letters typed (the Minitel starts in uppercase) |
+| `echo` | `on`, `off` | whether the Minitel shows what is typed itself: `off` when the gateway's input commands show it |
+| `scroll` | `on`, `off` | whether the screen scrolls up past the last row: `off` for page mode |
+
+e.g. `<page type="static" keyboard="lowercase" echo="off" scroll="off">`, for a screen
+reading what the user types.
+
 `<page type="static">` is drawn as is. `<page type="template">` can also have placeholders and
 instructions, filled in with the data given to `Page::display($terminal, $data)`:
 
@@ -368,12 +380,10 @@ format changes, change `page.xsd` with the parser.
 ## Videotex content
 
 Codes to send as they are have names: `Vdt\Videotex` for Videotex (`CLEAR_LINE`,
-`CURSOR_OFF`, `INVERSE_ON`, sizes, `RESET_CHARSETS`...), and `Vdt\Protocol` for the sequences
-configuring the Minitel, typically sent before a page:
-
-```php
-$vdt = Protocol::KEYBOARD_LOWERCASE . Protocol::LOCAL_ECHO_OFF . Protocol::SCROLL_OFF . $page->display($request->terminal());
-```
+`CURSOR_OFF`, `INVERSE_ON`, sizes, `RESET_CHARSETS`...), and the `Vdt\Keyboard`,
+`Vdt\LocalEcho` and `Vdt\Scroll` enums for the sequences configuring the Minitel
+(`Keyboard::Lowercase->sequence()`...). A page sends them itself, from the attributes of
+`<page>` (see [Page XML format](#page-xml-format)); `Page\Setup` sends them for other content.
 
 They replace MiniPaviCli's global `VDT_*` and `PRO_*` constants, which are only defined once
 `MiniPaviCli` is loaded. `VdtHelper` gives MiniPaviCli's Videotex helpers (`setPos()`,
