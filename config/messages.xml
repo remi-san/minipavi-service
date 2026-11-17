@@ -13,4 +13,15 @@ service redefines them in its own messages file, and a page with <message> (see 
 	<!-- <endkey>: the key coming back to the screen, and before it for ESP32/Minimit adapters -->
 	<message name="endkey">Connexion/fin</message>
 	<message name="endkey.shift">[Maj] +</message>
+	<!-- The HTML view of a service (?web=true): its function key buttons -->
+	<message name="key.summary">Sommaire</message>
+	<message name="key.cancel">Annulation</message>
+	<message name="key.previous">Retour</message>
+	<message name="key.refresh">Répétition</message>
+	<message name="key.guide">Guide</message>
+	<message name="key.correction">Correction</message>
+	<message name="key.next">Suite</message>
+	<message name="key.send">Envoi</message>
+	<!-- On its line 0, when a key would leave the service -->
+	<message name="web.leave">Impossible de quitter le service ici</message>
 </messages>

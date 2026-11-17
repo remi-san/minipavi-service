@@ -39,6 +39,15 @@ final class VdtTest extends TestCase
         self::assertSame([], (new Vdt())->tokens());
     }
 
+    public function testKeepsWhatShowsFromTheLastClearScreen(): void
+    {
+        $vdt = new Vdt("\x1F\x41\x41A\x0C\x1F\x41\x41B\x0C\x1F\x42\x41C");
+
+        self::assertSame("\x0C\x1F\x42\x41C", $vdt->fromLastClear()->toString());
+        // Without a clear screen: all of it
+        self::assertSame("\x1F\x41\x41A", (new Vdt("\x1F\x41\x41A"))->fromLastClear()->toString());
+    }
+
     public function testKeepsTheBytesAndReadsThemWhenNeeded(): void
     {
         $vdt = new Vdt("\x1F\x41\x41Hi");

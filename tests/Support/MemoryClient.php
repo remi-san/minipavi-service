@@ -34,7 +34,7 @@ final class MemoryClient implements Client
         return new GatewayRequest($this->request->key, $this->request->content, $this->request->context, $this->request->terminal, $serviceUrl);
     }
 
-    public function response(GatewayRequest $request, GatewayAnswer $answer): ResponseInterface
+    public function response(ServerRequestInterface $httpRequest, GatewayRequest $request, GatewayAnswer $answer): ResponseInterface
     {
         if ($this->responseFailure !== null) {
             throw $this->responseFailure;

@@ -60,7 +60,7 @@ final class MiniPaviClient implements Client
      * Writes the answer to the gateway (the body of the HTTP response): an answer without next
      * URL calls the service again, at the URL of the request
      */
-    public function response(GatewayRequest $request, GatewayAnswer $answer): ResponseInterface
+    public function response(ServerRequestInterface $httpRequest, GatewayRequest $request, GatewayAnswer $answer): ResponseInterface
     {
         MiniPaviCli::send(
             $answer->vdt->toString(),

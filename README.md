@@ -92,7 +92,7 @@ $psr17 = new Psr17Factory();
 (new Kernel(new WithUrls(
     new Dispatcher(
         new ServiceRunner($service, new MiniPaviClient(), $logger),
-        new ServiceRunner($service, new HtmlClient(new HtmlRenderer(HtmlRenderer::MINITEL_FONT)), $logger),
+        new ServiceRunner($service, new HtmlClient(new HtmlRenderer(HtmlRenderer::MINITEL_FONT), $messages), $logger),
         new EmulatorRedirect($emulator, $logger),
         $logger,
     ),
@@ -146,15 +146,27 @@ $psr17 = new Psr17Factory();
   - **`MiniPaviClient`**, for the MiniPavi gateway, through `MiniPaviCli` used unchanged: it
     reads the gateway's request itself, and writes the answer itself, so the HTTP response is an
     `EmptyHttpResponse`;
-  - **`HtmlClient`**, for a browser: it asks for the default route's first screen, as on a
-    connection, or with `?route=games` for that route's screen (its controller at its initial
+  - **`HtmlClient`**, for a browser: it shows the service's screen as an HTML page
+    (`Vdt\HtmlRenderer`), and lets the user navigate it as on a Minitel. The first request is a
+    connection, or with `?route=games` a request on that route (its controller at its initial
     state; a route the service doesn't have starts again at the default route, as for any
-    context), and gives the answer as an HTML page (`Vdt\HtmlRenderer`). No interaction, no
-    gateway: just the Videotex interpreted, in the Minitel's colours, with double sizes, inverse
-    video, underlining, blinking and mosaic pixels, drawn as MiniPavi's emulator does, in
-    self-contained HTML (inline CSS, no JavaScript). The text is drawn with the Minitel font of
-    [Minitel-Canvas](https://github.com/Zigazou/Minitel-Canvas) (CC0, in `resources/fonts`),
-    embedded in the page (`HtmlRenderer::MINITEL_FONT`).
+    context). The page is a form posting back to its URL:
+    - the answer's **input field** (`InputTxt`, `InputMsg`) over the screen, at its position
+      and size, one input per line;
+    - the 8 **function keys** under the screen, in the Minitel's 2 × 4 layout, those the
+      input doesn't accept (`validwith`) disabled; Enter in a field presses Envoi;
+    - hidden, the context of the answer, its input command, and the **screen so far**: an
+      answer drawing part of the screen (e.g. "Dernière page" on line 0) is drawn over it, as
+      on a Minitel (kept from its last clear screen).
+
+    A key that would **leave the service** (an answer whose next URL is another one, as
+    `Response::connectTo()`) is blocked: the page stays as it was, with
+    `FrameworkMessage::WebLeave` on line 0. The key labels and that error are messages
+    (`key.send`, `key.next`…, `web.leave`). The screen is drawn in the Minitel's colours, with
+    double sizes, inverse video, underlining, blinking and mosaic pixels, as MiniPavi's
+    emulator does, in self-contained HTML (inline CSS, no JavaScript). The text is drawn with the
+    Minitel font of [Minitel-Canvas](https://github.com/Zigazou/Minitel-Canvas) (CC0, in
+    `resources/fonts`), embedded in the page (`HtmlRenderer::MINITEL_FONT`).
 - **`EmulatorRedirect`** sends other browsers to an emulator that opens the service
   (`EmulatorConfig`): with an emulator configured (`EMULATOR_URL`, the local stack), that
   emulator and the gateway `GATEWAY_URL`, which reaches the service at
@@ -445,7 +457,7 @@ Text shown on the Minitel is not written in the code: it is read from messages f
 
 - **Names** are enum cases implementing `Message\Message`, whose value is the name in the
   files: `FrameworkMessage` for the framework's (`error`, `page.first`, `page.last`,
-  `endkey`, `endkey.shift`), and an enum of its own for a service's.
+  `endkey`, `endkey.shift`, and for the HTML view the key labels `key.*` and `web.leave`), and an enum of its own for a service's.
 - **Texts** come from `config/messages.xml` in the framework (its defaults,
   `Messages::defaults()`), then the service's messages file over them, then a page's
   `<message>` over those, for that page. A text can have `{{placeholders}}`.

@@ -71,6 +71,23 @@ final readonly class Vdt
     }
 
     /**
+     * The content from its last clear screen (FF), which erases what comes before it but row
+     * 0: what still shows, without the content drawn over since
+     */
+    public function fromLastClear(): self
+    {
+        $tokens = $this->tokens();
+        $start = 0;
+        foreach ($tokens as $i => $token) {
+            if ($token->type === TokenType::Clear) {
+                $start = $i;
+            }
+        }
+
+        return new self(implode('', array_map(fn(Token $token) => $token->source, \array_slice($tokens, $start))));
+    }
+
+    /**
      * The bytes sent to the Minitel
      */
     public function toString(): string

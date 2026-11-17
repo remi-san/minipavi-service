@@ -52,7 +52,7 @@ final readonly class ServiceRunner implements RequestHandlerInterface
         }
 
         try {
-            return $this->client->response($gatewayRequest, $answer);
+            return $this->client->response($request, $gatewayRequest, $answer);
         } catch (\Throwable $e) {
             $this->logger->critical('Cannot send the answer: ' . $e->getMessage(), ['exception' => $e]);
 

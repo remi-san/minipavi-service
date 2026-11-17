@@ -26,6 +26,9 @@ interface Client
 
     /**
      * The HTTP response giving the answer to the request
+     *
+     * @param ServerRequestInterface $httpRequest the HTTP request it answers (e.g. for what
+     *                                            the client itself sent with it)
      */
-    public function response(GatewayRequest $request, GatewayAnswer $answer): ResponseInterface;
+    public function response(ServerRequestInterface $httpRequest, GatewayRequest $request, GatewayAnswer $answer): ResponseInterface;
 }
