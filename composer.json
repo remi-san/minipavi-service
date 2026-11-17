@@ -15,6 +15,9 @@
         "phpstan/phpstan": "^2.1",
         "phpunit/phpunit": "^11.5"
     },
+    "suggest": {
+        "phpunit/phpunit": "For Testing\\ServiceTester, functional tests of a service (^11.5)"
+    },
     "autoload": {
         "psr-4": { "MiniPaviService\\": "src/" }
     },
