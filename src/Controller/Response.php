@@ -20,24 +20,44 @@ use MiniPaviService\Page\InputCommand;
  *
  * The named constructors give each response the state it usually keeps: read the next
  * input after showing something, start again after leaving. Pass $state or $parameters
- * (by name) to keep others.
+ * (by name) to keep others: a state, or an enum case whose value is one (see
+ * Request::stateAs()), and parameters as an array or a Parameters object.
  */
 abstract readonly class Response
 {
+    private string $state;
+
+    /** @var array<string, mixed> */
+    private array $parameters;
+
     /**
-     * @param array<string, mixed> $parameters
+     * @param string|\BackedEnum $state a state, or an enum case whose value is one
+     * @param array<string, mixed>|Parameters $parameters
      */
-    public function __construct(
-        private string $state,
-        private array $parameters,
-    ) {}
+    public function __construct(string|\BackedEnum $state, array|Parameters $parameters)
+    {
+        $this->state = \is_string($state) ? $state : (string) $state->value;
+        $this->parameters = self::parametersArray($parameters);
+    }
+
+    /**
+     * Parameters as kept in the context
+     *
+     * @param array<string, mixed>|Parameters $parameters
+     *
+     * @return array<string, mixed>
+     */
+    protected static function parametersArray(array|Parameters $parameters): array
+    {
+        return \is_array($parameters) ? $parameters : $parameters->toArray();
+    }
 
     /**
      * Sends Videotex content to the gateway; the next key comes back to this controller
      *
-     * @param array<string, mixed> $parameters
+     * @param array<string, mixed>|Parameters $parameters
      */
-    public static function display(string $vdt, string $state = Controller::STATE_READ_INPUT, array $parameters = []): DisplayPage
+    public static function display(string $vdt, string|\BackedEnum $state = Controller::STATE_READ_INPUT, array|Parameters $parameters = []): DisplayPage
     {
         return new DisplayPage($state, $parameters, $vdt);
     }
@@ -46,9 +66,9 @@ abstract readonly class Response
      * Sends Videotex content and an input command (Page::inputCommand(); null for a page
      * without input: only the content is sent); what is typed comes back to this controller
      *
-     * @param array<string, mixed> $parameters
+     * @param array<string, mixed>|Parameters $parameters
      */
-    public static function readInput(string $vdt, ?InputCommand $command, string $state = Controller::STATE_READ_INPUT, array $parameters = []): RunCommand
+    public static function readInput(string $vdt, ?InputCommand $command, string|\BackedEnum $state = Controller::STATE_READ_INPUT, array|Parameters $parameters = []): RunCommand
     {
         return new RunCommand($state, $parameters, $vdt, $command);
     }
@@ -57,9 +77,9 @@ abstract readonly class Response
      * Switches to the controller of another route, and runs it at once: it starts at
      * STATE_INIT with parameters, without the user's input. This controller is reset.
      *
-     * @param array<string, mixed> $parameters parameters of the target controller
+     * @param array<string, mixed>|Parameters $parameters parameters of the target controller
      */
-    public static function goTo(string $route, array $parameters = []): ChangePage
+    public static function goTo(string $route, array|Parameters $parameters = []): ChangePage
     {
         return new ChangePage($route, $parameters);
     }
@@ -69,9 +89,9 @@ abstract readonly class Response
      * line 0). state and parameters are kept for this controller, for when the user
      * comes back.
      *
-     * @param array<string, mixed> $parameters
+     * @param array<string, mixed>|Parameters $parameters
      */
-    public static function connectTo(string $url, string $vdt = '', string $state = Controller::STATE_INIT, array $parameters = []): RunExternalService
+    public static function connectTo(string $url, string $vdt = '', string|\BackedEnum $state = Controller::STATE_INIT, array|Parameters $parameters = []): RunExternalService
     {
         return new RunExternalService($state, $parameters, $vdt, $url, CallMode::Connect);
     }

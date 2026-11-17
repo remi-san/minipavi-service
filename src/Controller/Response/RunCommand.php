@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MiniPaviService\Controller\Response;
 
 use MiniPaviService\Controller\Flow;
+use MiniPaviService\Controller\Parameters;
 use MiniPaviService\Controller\Response;
 use MiniPaviService\Gateway\GatewayAnswer;
 use MiniPaviService\Page\InputCommand;
@@ -16,13 +17,13 @@ use MiniPaviService\Page\InputCommand;
 final readonly class RunCommand extends Response
 {
     /**
-     * @param array<string, mixed> $parameters
+     * @param array<string, mixed>|Parameters $parameters
      * @param ?string $vdt Videotex content; null: none
      * @param ?InputCommand $command from Page::inputCommand(); null: only the content is sent
      */
     public function __construct(
-        string $state,
-        array $parameters,
+        string|\BackedEnum $state,
+        array|Parameters $parameters,
         public ?string $vdt,
         public ?InputCommand $command,
     ) {

@@ -42,6 +42,43 @@ readonly class Request
     }
 
     /**
+     * The parameters as an object (Parameters::fromRequest())
+     *
+     * @template T of Parameters
+     *
+     * @param class-string<T> $class
+     *
+     * @return T
+     */
+    public function parametersAs(string $class): Parameters
+    {
+        return $class::fromRequest($this);
+    }
+
+    /**
+     * The state as a case of a backed enum, whose values are states (e.g. Controller::STATE_*,
+     * and the controller's own); default for a state the enum doesn't have (e.g. kept by
+     * another version of the service)
+     *
+     * @template T of \BackedEnum
+     *
+     * @param class-string<T> $enum
+     * @param T $default
+     *
+     * @return T
+     */
+    public function stateAs(string $enum, \BackedEnum $default): \BackedEnum
+    {
+        foreach ($enum::cases() as $case) {
+            if ((string) $case->value === $this->state) {
+                return $case;
+            }
+        }
+
+        return $default;
+    }
+
+    /**
      * A parameter as it was kept, null if missing; int(), string(), bool() and array() give
      * it typed
      */
