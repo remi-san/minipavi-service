@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MiniPaviService\Tests\Vdt;
 
 use MiniPaviService\Vdt\Vdt;
+use MiniPaviService\Vdt\VdtHelper;
 use PHPUnit\Framework\TestCase;
 
 final class ScreenTest extends TestCase
@@ -30,5 +31,35 @@ final class ScreenTest extends TestCase
 
         self::assertSame('S', $screen->cell(0, 1)?->bytes);
         self::assertNull($screen->cell(5, 5));
+    }
+
+    public function testLineGivesTheTextOfARowWithItsAccents(): void
+    {
+        $vdt = VdtHelper::setPos(1, 3) . VdtHelper::toG2('Dernière page, ça coûte 5£ ½ Œuvre') . VdtHelper::writeLine0('Accès refusé');
+
+        $screen = Vdt::fromString($vdt)->screen();
+
+        $text = 'Dernière page, ça coûte 5£ ½ Œuvre';
+        self::assertSame($text . str_repeat(' ', 40 - mb_strlen($text)), $screen->line(3));
+        self::assertStringStartsWith('Accès refusé', ltrim($screen->line(0)));
+        self::assertSame(str_repeat(' ', 40), $screen->line(4));
+        self::assertSame('', $screen->line(99));
+    }
+
+    public function testLineShowsMosaicAsInThePreview(): void
+    {
+        // A mosaic cell with pixels, one empty on black, one empty on blue
+        $screen = Vdt::fromString("\x1F\x41\x41\x0E\x21\x20\x1B\x54\x20")->screen();
+
+        self::assertSame('# #', substr($screen->line(1), 0, 3));
+    }
+
+    public function testTextGivesEveryRow(): void
+    {
+        $text = Vdt::fromString(VdtHelper::setPos(1, 1) . 'Hello')->screen()->text();
+
+        $lines = explode("\n", $text);
+        self::assertCount(25, $lines);
+        self::assertSame(str_pad('Hello', 40), $lines[1]);
     }
 }

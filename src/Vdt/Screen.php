@@ -54,6 +54,27 @@ final readonly class Screen
     }
 
     /**
+     * Text of a row (0: status line), a character per cell (Cell::text()), empty cells as
+     * spaces: COLS characters, or '' for a row the screen doesn't have
+     */
+    public function line(int $row): string
+    {
+        if (!isset($this->cells[$row])) {
+            return '';
+        }
+
+        return implode('', array_map(fn(?Cell $cell) => $cell?->text() ?? ' ', $this->cells[$row]));
+    }
+
+    /**
+     * Text of the screen: line() of each row, from 0 (status line) to ROWS, a row per line
+     */
+    public function text(): string
+    {
+        return implode("\n", array_map($this->line(...), array_keys($this->cells)));
+    }
+
+    /**
      * Screen as text, a line per row: text characters as they are (G2 ones as ?), mosaic
      * cells as # when they have pixels or a background color, empty cells as spaces
      */
