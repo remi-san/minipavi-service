@@ -204,6 +204,42 @@ $logger = new ErrorLogLogger();
   A state it doesn't know (e.g. kept by an older version of the service) starts it again.
   To add states, override `run()` and call `parent::run()` for the others.
 
+- **Typed state and parameters.** A controller can keep its parameters in an object
+  implementing `Parameters`, and name its states with a string-backed enum, so PHPStan checks
+  what it keeps:
+
+  ```php
+  final readonly class DirectoryParameters implements Parameters
+  {
+      public function __construct(public int $page = 0) {}
+
+      // Reads them with the typed accessors: a missing or invalid value gets its default
+      public static function fromRequest(Request $request): static
+      {
+          return new self(max(0, $request->int('page')));
+      }
+
+      public function toArray(): array
+      {
+          return ['page' => $this->page];
+      }
+  }
+
+  enum SearchState: string
+  {
+      case Init = Controller::STATE_INIT;
+      case ReadQuery = 'read-query';
+  }
+
+  // In the controller
+  $page = $request->parametersAs(DirectoryParameters::class)->page;
+  $state = $request->stateAs(SearchState::class, SearchState::Init);  // default for an unknown state
+  return Response::readInput($vdt, $command, SearchState::ReadQuery, new DirectoryParameters($page + 1));
+  ```
+
+  Every response takes a `Parameters` object for `$parameters` (and `goTo()` for the target's)
+  and an enum case for `$state`, as well as an array and a string.
+
 - The `FCTN_*` constants of `GatewayRequest` name the connection codes of `Request::key()`
   (`CNX`, `DIRECTCNX`, `FIN`).
 
