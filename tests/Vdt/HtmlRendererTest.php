@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Tests\Vdt;
 
+use MiniPaviService\Minitel\Terminal;
+use MiniPaviService\Page\Display\Key;
 use MiniPaviService\Vdt\Attributes;
 use MiniPaviService\Vdt\Cell;
 use MiniPaviService\Vdt\HtmlRenderer;
@@ -71,8 +73,18 @@ final class HtmlRendererTest extends TestCase
         self::assertStringContainsString('class="c h2"', $this->renderCell(new Cell('x', ['size' => "\x4D"] + Attributes::DEFAULTS)));
         self::assertStringContainsString('class="c blink"', $this->renderCell(new Cell('x', ['blink' => "\x48"] + Attributes::DEFAULTS)));
         self::assertStringContainsString('class="c u"', $this->renderCell(new Cell('x', ['underline' => "\x5A"] + Attributes::DEFAULTS)));
+        // Not in inverse video: the key badges, as in MiniPavi's emulator
+        self::assertStringNotContainsString('class="c u"', $this->renderCell(new Cell('x', ['underline' => "\x5A", 'inverse' => "\x5D"] + Attributes::DEFAULTS)));
         // Not an underlined space, as in MiniPavi's emulator
         self::assertStringNotContainsString('class="c u"', $this->renderCell(new Cell(' ', ['underline' => "\x5A"] + Attributes::DEFAULTS)));
+    }
+
+    public function testKeyBadgesArentUnderlined(): void
+    {
+        $html = (new HtmlRenderer(HtmlRenderer::MINITEL_FONT))->render((new Vdt((new Key('Envoi', 1, 1))->getContent(new Terminal())))->screen(), 'test');
+
+        self::assertStringContainsString('>E</span>', $html);
+        self::assertStringNotContainsString(' u"', $html);
     }
 
     public function testMaskedTextIsHidden(): void

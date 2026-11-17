@@ -7,7 +7,8 @@ namespace MiniPaviService\Vdt;
 /**
  * Draws a Screen as an HTML page, as the Minitel would show it (checked against MiniPavi's
  * emulator): row 0 (the status line) and the ROWS × COLS cells, in the Minitel's colours,
- * with their sizes, inverse video, underlining and blinking. Text is drawn with a Minitel
+ * with their sizes, inverse video, underlining (but not in inverse video, as the emulator
+ * draws the key badges) and blinking. Text is drawn with a Minitel
  * font (MINITEL_FONT: Minitel-Canvas's, whose glyphs fill the cells), embedded in the page.
  * Mosaic cells are drawn as their 2 × 3 pixels (separated when underlined), without depending
  * on a font. Self-contained: inline CSS and font, no JavaScript.
@@ -86,7 +87,8 @@ final readonly class HtmlRenderer
         $foreground = self::color($attributes['fg'], 0x40);
         $background = self::color($attributes['bg'], 0x50);
         $mosaic = $attributes['charset'] === Attributes::MOSAIC;
-        if (!$mosaic && $attributes['inverse'] === "\x5D") {
+        $inverse = !$mosaic && $attributes['inverse'] === "\x5D";
+        if ($inverse) {
             [$foreground, $background] = [$background, $foreground];
         }
         if (Attributes::width($attributes) === 2) {
@@ -99,8 +101,9 @@ final readonly class HtmlRenderer
             $classes[] = 'blink';
         }
         $underline = $attributes['underline'] === "\x5A";
-        // Spaces aren't underlined, as in MiniPavi's emulator
-        if (!$mosaic && $underline && $cell->bytes !== ' ') {
+        // Neither spaces nor inverse video (the key badges, Page\Display\Key) are underlined,
+        // as in MiniPavi's emulator
+        if (!$mosaic && $underline && !$inverse && $cell->bytes !== ' ') {
             $classes[] = 'u';
         }
 
