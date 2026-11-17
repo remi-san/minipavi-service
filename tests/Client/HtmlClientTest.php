@@ -11,6 +11,7 @@ use MiniPaviService\Controller\Request;
 use MiniPaviService\Controller\Response;
 use MiniPaviService\Core\Router;
 use MiniPaviService\Core\Service;
+use MiniPaviService\Core\Signing\HmacContextSigner;
 use MiniPaviService\Gateway\GatewayRequest;
 use MiniPaviService\Gateway\GatewayResponse;
 use MiniPaviService\Http\ServiceRunner;
@@ -186,7 +187,7 @@ final class HtmlClientTest extends TestCase
             : Response::display(VdtHelper::clearScreen()->append(VdtHelper::setPos(1, 1), Vdt::text('HOME')))));
         $router->addRoute('games', new CallbackController(NoParameters::class, fn(Request $request) => Response::display(VdtHelper::clearScreen()->append(VdtHelper::setPos(1, 1), Vdt::text('GAMES ' . $request->contentAsString())))));
         $router->setDefaultRoute('home');
-        $runner = new ServiceRunner(new Service($router, Messages::defaults(), new MemoryLogger()), self::client());
+        $runner = new ServiceRunner(new Service($router, Messages::defaults(), new MemoryLogger()), self::client(), new HmacContextSigner('secret'));
 
         $home = (string) $runner->handle(HttpRequests::to('Mozilla/5.0', ['web' => 'true']))->getBody();
         self::assertStringContainsString('HOME', self::shownText($home));

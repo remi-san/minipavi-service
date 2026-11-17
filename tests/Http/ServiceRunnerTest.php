@@ -10,6 +10,9 @@ use MiniPaviService\Controller\Request;
 use MiniPaviService\Controller\Response;
 use MiniPaviService\Core\Router;
 use MiniPaviService\Core\Service;
+use MiniPaviService\Core\Signing\ForgedContextException;
+use MiniPaviService\Core\Signing\HmacContextSigner;
+use MiniPaviService\Core\Signing\UnsignedContext;
 use MiniPaviService\Gateway\GatewayRequest;
 use MiniPaviService\Http\ServiceRunner;
 use MiniPaviService\Message\FrameworkMessage;
@@ -43,7 +46,7 @@ final class ServiceRunnerTest extends TestCase
     {
         $client = new MemoryClient(new GatewayRequest(GatewayRequest::FCTN_CONNECT));
 
-        $response = (new ServiceRunner($this->service, $client))->handle(HttpRequests::to('MiniPAVI'));
+        $response = (new ServiceRunner($this->service, $client, new UnsignedContext()))->handle(HttpRequests::to('MiniPAVI'));
 
         self::assertSame('home', (string) $response->getBody());
         [[$request, $answer]] = $client->responded;
@@ -56,7 +59,7 @@ final class ServiceRunnerTest extends TestCase
     {
         $client = new MemoryClient(new \RuntimeException('Not JSON'));
 
-        (new ServiceRunner($this->service, $client))->handle(HttpRequests::to('MiniPAVI'));
+        (new ServiceRunner($this->service, $client, new UnsignedContext()))->handle(HttpRequests::to('MiniPAVI'));
 
         [[$request, $answer]] = $client->responded;
         self::assertEquals(VdtHelper::writeLine0(Messages::defaults()->get(FrameworkMessage::Error)), $answer->vdt);
@@ -64,11 +67,38 @@ final class ServiceRunnerTest extends TestCase
         self::assertSame([LogLevel::ERROR, 'Error serving the request: Not JSON'], [$this->logger->records[0][0], $this->logger->records[0][1]]);
     }
 
+    public function testChecksTheContextOfTheRequestAndSignsTheOneOfTheAnswer(): void
+    {
+        $signer = new HmacContextSigner('secret');
+        $client = new MemoryClient(new GatewayRequest('ENVOI', [], $signer->sign('{"route":"home","states":{},"parameters":{}}')));
+
+        (new ServiceRunner($this->service, $client, $signer))->handle(HttpRequests::to('MiniPAVI'));
+
+        [[$request, $answer]] = $client->responded;
+        self::assertEquals(new Vdt('home'), $answer->vdt);
+        self::assertSame('{"route":"home","states":{"home":"read-input"},"parameters":{"home":{}}}', $signer->verify($answer->context));
+        // The client gets the request it read, its context still signed
+        self::assertSame($signer->sign('{"route":"home","states":{},"parameters":{}}'), $request->context);
+    }
+
+    public function testAnswersAForgedContextAsAnErrorWithASignedContext(): void
+    {
+        $signer = new HmacContextSigner('secret');
+        $client = new MemoryClient(new GatewayRequest('ENVOI', [], '{"route":"home","states":{},"parameters":{}}'));
+
+        (new ServiceRunner($this->service, $client, $signer))->handle(HttpRequests::to('MiniPAVI'));
+
+        [[, $answer]] = $client->responded;
+        self::assertEquals(VdtHelper::writeLine0(Messages::defaults()->get(FrameworkMessage::Error)), $answer->vdt);
+        self::assertSame('{"route":"home","states":{},"parameters":{}}', $signer->verify($answer->context));
+        self::assertInstanceOf(ForgedContextException::class, $this->logger->records[0][2]['exception'] ?? null);
+    }
+
     public function testNothingToAnswerToADisconnection(): void
     {
         $client = new MemoryClient(new GatewayRequest(GatewayRequest::FCTN_DISCONNECT));
 
-        $response = (new ServiceRunner($this->service, $client))->handle(HttpRequests::to('MiniPAVI'));
+        $response = (new ServiceRunner($this->service, $client, new UnsignedContext()))->handle(HttpRequests::to('MiniPAVI'));
 
         self::assertSame(204, $response->getStatusCode());
         self::assertSame('', (string) $response->getBody());
@@ -80,7 +110,7 @@ final class ServiceRunnerTest extends TestCase
         $logger = new MemoryLogger();
         $client = new MemoryClient(new GatewayRequest(GatewayRequest::FCTN_CONNECT), new \RuntimeException('Connection reset'));
 
-        $response = (new ServiceRunner($this->service, $client, $logger))->handle(HttpRequests::to('MiniPAVI'));
+        $response = (new ServiceRunner($this->service, $client, new UnsignedContext(), $logger))->handle(HttpRequests::to('MiniPAVI'));
 
         self::assertSame(500, $response->getStatusCode());
         self::assertSame([LogLevel::CRITICAL, 'Cannot send the answer: Connection reset'], [$logger->records[0][0], $logger->records[0][1]]);
@@ -98,7 +128,7 @@ final class ServiceRunnerTest extends TestCase
 
         ob_start();
         try {
-            $response = (new ServiceRunner($this->service, new MiniPaviClient()))->handle(HttpRequests::to('MiniPAVI'));
+            $response = (new ServiceRunner($this->service, new MiniPaviClient(), new UnsignedContext()))->handle(HttpRequests::to('MiniPAVI'));
         } finally {
             $output = (string) ob_get_clean();
         }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Gateway;
 
+use MiniPaviService\Core\Signing\ContextSigner;
 use MiniPaviService\Vdt\Vdt;
 
 /**
@@ -14,7 +15,8 @@ final readonly class GatewayResponse
 {
     /**
      * @param Vdt $vdt Videotex content, stringified by MiniPaviClient only
-     * @param string $context serialized context (Context::serialize())
+     * @param string $context serialized context (Context::serialize()), signed by sign() before
+     *                        it goes to the gateway
      * @param ?string $next URL the gateway calls next; null: this service's
      * @param ?array<string, mixed> $command command for the gateway (e.g. InputCommand::toArray())
      * @param ?CallMode $directCall calls next at once, without waiting for the user; null: waits
@@ -28,4 +30,13 @@ final readonly class GatewayResponse
         public ?CallMode $directCall = null,
         public bool $echo = true,
     ) {}
+
+    /**
+     * The answer with its context signed by signer, so that it can't be forged on its way back
+     * (GatewayRequest::verify())
+     */
+    public function sign(ContextSigner $signer): self
+    {
+        return new self($this->vdt, $signer->sign($this->context), $this->next, $this->command, $this->directCall, $this->echo);
+    }
 }
