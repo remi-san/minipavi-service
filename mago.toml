@@ -46,8 +46,6 @@ no-else-clause = { enabled = false }
 # @ silences the warning of a file function whose false result is then handled (reading a
 # page, a messages file, a Videotex file)
 no-error-control-operator = { enabled = false }
-# Boolean options of display elements (centered, fill, blink) are their XML attributes
-no-boolean-flag-parameter = { enabled = false }
 # ErrorLogLogger's test points PHP's error log to a file
 no-ini-set = { enabled = false }
 # Size and complexity metrics are not enforced: display elements take their XML attributes as
