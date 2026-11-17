@@ -52,6 +52,36 @@ final class ScopeTest extends TestCase
         (new Scope(['game' => []]))->substitute('{{game}}');
     }
 
+    public function testReadsPropertiesOfObjects(): void
+    {
+        $game = new class {
+            public ?string $year = null;
+
+            public string $title = 'Alien';
+
+            public function __isset(string $name): bool
+            {
+                return $name === 'studio';
+            }
+
+            public function __get(string $name): string
+            {
+                return 'Octoblue';
+            }
+        };
+        $scope = new Scope(['game' => $game]);
+
+        // Declared (even null), or given by __isset() and __get()
+        self::assertSame(['Alien', null, 'Octoblue'], [
+            $scope->value('game.title'),
+            $scope->value('game.year'),
+            $scope->value('game.studio'),
+        ]);
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('no "city" in class@anonymous');
+        $scope->value('game.city');
+    }
+
     public function testWithAddsVariablesAndChangesTheRowOffset(): void
     {
         $scope = (new Scope(['a' => 1, 'b' => 2]))->with(['b' => 3], 5);
