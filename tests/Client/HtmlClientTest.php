@@ -26,7 +26,6 @@ use MiniPaviService\Vdt\Vdt;
 use MiniPaviService\Vdt\VdtHelper;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
-use Psr\Log\LogLevel;
 
 final class HtmlClientTest extends TestCase
 {
@@ -37,8 +36,9 @@ final class HtmlClientTest extends TestCase
      */
     public static function connections(): iterable
     {
-        yield 'no route' => [['web' => 'true']];
-        yield 'an empty route' => [['web' => 'true', 'route' => '']];
+        yield 'web' => [['web' => 'true']];
+        // No other route than the default one: anything else is in the context
+        yield 'a route' => [['web' => 'true', 'route' => 'games']];
     }
 
     /**
@@ -50,15 +50,6 @@ final class HtmlClientTest extends TestCase
         self::assertEquals(
             new GatewayRequest(GatewayRequest::FCTN_CONNECT, serviceUrl: self::SERVICE_URL, clientState: new HtmlPageState()),
             self::client()->request(HttpRequests::to('Mozilla/5.0', $query), self::SERVICE_URL),
-        );
-    }
-
-    public function testFirstRequestOnARoute(): void
-    {
-        // A user who just got there: no key, no input
-        self::assertEquals(
-            new GatewayRequest('', [], '{"route":"games"}', serviceUrl: self::SERVICE_URL, clientState: new HtmlPageState()),
-            self::client()->request(HttpRequests::to('Mozilla/5.0', ['web' => 'true', 'route' => 'games']), self::SERVICE_URL),
         );
     }
 
@@ -209,19 +200,6 @@ final class HtmlClientTest extends TestCase
 
         self::assertStringContainsString('GAMES', self::shownText($games));
         self::assertStringNotContainsString('HOME', self::shownText($games));
-    }
-
-    public function testUnknownRouteShowsTheFirstScreenAsTheServiceDoes(): void
-    {
-        $router = new Router();
-        $router->addRoute('home', new CallbackController(NoParameters::class, fn(Request $request) => Response::display(VdtHelper::setPos(1, 1)->append(Vdt::text('HOME')))));
-        $router->setDefaultRoute('home');
-        $logger = new MemoryLogger();
-
-        $html = (string) (new ServiceRunner(new Service($router, Messages::defaults(), $logger), self::client()))->handle(HttpRequests::to('Mozilla/5.0', ['web' => 'true', 'route' => 'nope']))->getBody();
-
-        self::assertStringContainsString('HOME', self::shownText($html));
-        self::assertSame([LogLevel::WARNING, 'Unknown route in the context, starting again at the default route', ['route' => 'nope']], $logger->records[0]);
     }
 
     private static function client(?Messages $messages = null): HtmlClient

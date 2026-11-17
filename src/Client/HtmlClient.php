@@ -26,8 +26,7 @@ use Psr\Http\Message\ServerRequestInterface;
  * it). A key leaving the service (an answer whose next URL is another one) is blocked: the
  * screen stays, with FrameworkMessage::WebLeave on line 0.
  *
- * The first request (no key posted) is a connection, or with the query's route (?route=games)
- * a request on that route, its controller at its initial state.
+ * The first request (no key posted) is a connection, as the gateway's: at the default route.
  *
  * @implements Client<HtmlPageState>
  */
@@ -50,7 +49,7 @@ final readonly class HtmlClient implements Client
 
     /**
      * The key posted, with the lines typed and the context of the last answer; without one, a
-     * connection, or a request on the route of the query
+     * connection
      */
     public function request(ServerRequestInterface $request, string $serviceUrl): GatewayRequest
     {
@@ -73,12 +72,7 @@ final readonly class HtmlClient implements Client
             );
         }
 
-        $route = $request->getQueryParams()['route'] ?? null;
-        if (!\is_string($route) || $route === '') {
-            return new GatewayRequest(GatewayRequest::FCTN_CONNECT, serviceUrl: $serviceUrl, clientState: $this->initialState());
-        }
-
-        return new GatewayRequest('', [], (string) json_encode(['route' => $route]), serviceUrl: $serviceUrl, clientState: $this->initialState());
+        return new GatewayRequest(GatewayRequest::FCTN_CONNECT, serviceUrl: $serviceUrl, clientState: $this->initialState());
     }
 
     /**

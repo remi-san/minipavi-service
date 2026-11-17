@@ -162,9 +162,7 @@ $psr17 = new Psr17Factory();
     it as the body of the HTTP response;
   - **`HtmlClient`**, for a browser: it shows the service's screen as an HTML page
     (`Vdt\Screen\HtmlRenderer`), and lets the user navigate it as on a Minitel. The first request is a
-    connection, or with `?route=games` a request on that route (its controller at its initial
-    state; a route the service doesn't have starts again at the default route, as for any
-    context). The page is a form posting back to its URL:
+    connection, at the default route, as the gateway's. The page is a form posting back to its URL:
     - the answer's **input field** (`InputTxt`, `InputMsg`) over the screen, at its position
       and size, one input per line;
     - the 8 **function keys** under the screen, in the Minitel's 2 × 4 layout, those the
