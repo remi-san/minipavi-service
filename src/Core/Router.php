@@ -5,20 +5,29 @@ declare(strict_types=1);
 namespace MiniPaviService\Core;
 
 use MiniPaviService\Controller;
+use MiniPaviService\Controller\Parameters;
+use MiniPaviService\Controller\State;
 
 final class Router
 {
-    /**
-     * @param array<string, Controller> $routes
-     */
+    /** @var array<string, Route<*, *>> */
+    private array $routes = [];
+
     public function __construct(
-        private array $routes = [],
         private ?string $defaultRoute = null,
     ) {}
 
+    /**
+     * Adds a route, binding its controller with the types of what it keeps (Route)
+     *
+     * @template TState of State
+     * @template TParameters of Parameters
+     *
+     * @param Controller<TState, TParameters> $controller
+     */
     public function addRoute(string $name, Controller $controller): void
     {
-        $this->routes[$name] = $controller;
+        $this->routes[$name] = new Route($controller);
     }
 
     public function setDefaultRoute(string $name): void
@@ -32,9 +41,11 @@ final class Router
     }
 
     /**
+     * @return Route<*, *>
+     *
      * @throws \LogicException if there is no such route
      */
-    public function route(string $name): Controller
+    public function route(string $name): Route
     {
         return $this->routes[$name] ?? throw new \LogicException("Unknown route \"$name\" (routes: {$this->names()})");
     }

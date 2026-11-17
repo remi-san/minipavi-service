@@ -4,92 +4,143 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Core;
 
-use MiniPaviService\Controller\ControllerState;
-use MiniPaviService\Controller\Request;
+use MiniPaviService\Controller\Parameters;
+use MiniPaviService\Controller\Response;
 use MiniPaviService\Controller\State;
+use MiniPaviService\Controller\Values;
 
 /**
  * User context, sent to the gateway with each answer and given back with the next request:
- * the current route, and the state and data of each controller
+ * the current route, and the state and parameters each route keeps, typed as its controller
+ * declares them (a RouteContext per route). A route without any has its controller's initial
+ * state and the defaults of its parameters.
  */
 final class Context
 {
     /**
-     * @param array<string, string> $states state of each route
-     * @param array<string, array<string, mixed>> $parameters parameters of each route
+     * @param array<string, RouteContext<*, *>> $routes what each route keeps
      */
     public function __construct(
+        private Router $router,
         private string $route,
-        private array $states = [],
-        private array $parameters = [],
+        private array $routes = [],
     ) {}
 
     /**
-     * Context sent with the previous answer (JSON, see serialize()); a context without route
-     * (e.g. sent by another version of the service) starts at defaultRoute
+     * Context sent with the previous answer (JSON, see serialize()), typed by the router's
+     * routes (Route::restore()): a state their enum doesn't have is the initial one, invalid
+     * parameters get their defaults, and routes the router doesn't have are dropped. A
+     * context without route (e.g. sent by another version of the service) starts at the
+     * default route.
+     *
+     * @throws \RuntimeException if it isn't a JSON object
      */
-    public static function unserialize(string $serialized, string $defaultRoute): self
+    public static function unserialize(string $serialized, Router $router): self
     {
         $context = self::decode($serialized);
+        $states = \is_array($context['states'] ?? null) ? $context['states'] : [];
+        $parameters = \is_array($context['parameters'] ?? null) ? $context['parameters'] : [];
+
+        $routes = [];
+        foreach (array_keys($states + $parameters) as $route) {
+            if (\is_string($route) && $router->has($route)) {
+                $state = \is_string($states[$route] ?? null) ? $states[$route] : null;
+                $values = \is_array($parameters[$route] ?? null) ? array_filter($parameters[$route], \is_string(...), ARRAY_FILTER_USE_KEY) : [];
+                $routes[$route] = $router->route($route)->restore($state, new Values($values));
+            }
+        }
 
         return new self(
-            \is_string($context['route'] ?? null) ? $context['route'] : $defaultRoute,
-            self::validStates($context['states'] ?? []),
-            self::validParameters($context['parameters'] ?? []),
+            $router,
+            \is_string($context['route'] ?? null) ? $context['route'] : $router->defaultRoute(),
+            $routes,
         );
     }
 
     /**
-     * States of an unserialized context: route => state, other entries are dropped
-     *
-     * @return array<string, string>
-     */
-    private static function validStates(mixed $states): array
-    {
-        $valid = [];
-        foreach (\is_array($states) ? $states : [] as $route => $state) {
-            if (\is_string($route) && \is_string($state)) {
-                $valid[$route] = $state;
-            }
-        }
-
-        return $valid;
-    }
-
-    /**
-     * Parameters of an unserialized context: route => (name => value), other entries are
-     * dropped
-     *
-     * @return array<string, array<string, mixed>>
-     */
-    private static function validParameters(mixed $parameters): array
-    {
-        $valid = [];
-        foreach (\is_array($parameters) ? $parameters : [] as $route => $values) {
-            if (\is_string($route) && \is_array($values)) {
-                $valid[$route] = array_filter($values, \is_string(...), ARRAY_FILTER_USE_KEY);
-            }
-        }
-
-        return $valid;
-    }
-
-    /**
      * The context as JSON: {"route": ..., "states": {route: state}, "parameters": {route:
-     * {name: value}}}. Parameters must be JSON values (UTF-8 text, numbers, booleans, null,
-     * arrays).
+     * {name: value}}}, states as their enum's value, parameters as Parameters::toArray()
      */
     public function serialize(): string
     {
         try {
             return json_encode([
                 'route' => $this->route,
-                'states' => (object) $this->states,
-                'parameters' => (object) array_map(fn(array $parameters) => (object) $parameters, $this->parameters),
+                'states' => (object) array_map(fn(RouteContext $route) => $route->state()->value, $this->routes),
+                'parameters' => (object) array_map(fn(RouteContext $route) => (object) $route->parameters()->toArray(), $this->routes),
             ], JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         } catch (\JsonException $e) {
             throw new \RuntimeException('Cannot serialize context: ' . $e->getMessage(), 0, $e);
         }
+    }
+
+    public function route(): string
+    {
+        return $this->route;
+    }
+
+    /**
+     * Starts again at route, as a new connection: without what the routes kept
+     */
+    public function restart(string $route): void
+    {
+        $this->route = $route;
+        $this->routes = [];
+    }
+
+    public function changeRoute(string $route): void
+    {
+        $this->route = $route;
+    }
+
+    /**
+     * State of the current route: the one kept, or its controller's initial state
+     */
+    public function state(): State
+    {
+        return $this->current()->state();
+    }
+
+    /**
+     * Parameters of the current route: the ones kept, or the defaults of its controller's
+     */
+    public function parameters(): Parameters
+    {
+        return $this->current()->parameters();
+    }
+
+    /**
+     * Keeps the state and parameters of the current route (RouteContext::keep())
+     *
+     * @param ?State $state a case of the enum of its controller's states; null: the initial one
+     * @param ?Parameters $parameters of the class its controller declares; null: the defaults
+     *
+     * @throws \LogicException for a state or parameters of other types than the controller's
+     */
+    public function keep(?State $state, ?Parameters $parameters): void
+    {
+        $route = $this->current();
+        $route->keep($state, $parameters);
+        $this->routes[$this->route] = $route;
+    }
+
+    /**
+     * Runs the controller of the current route on its state and parameters, and the input of
+     * the gateway
+     *
+     * @param list<string> $content
+     */
+    public function run(string $key = '', array $content = [], Terminal $terminal = new Terminal()): Response
+    {
+        return $this->current()->run($key, $content, $terminal);
+    }
+
+    /**
+     * @return RouteContext<*, *>
+     */
+    private function current(): RouteContext
+    {
+        return $this->routes[$this->route] ?? $this->router->route($this->route)->start();
     }
 
     /**
@@ -107,81 +158,5 @@ final class Context
         }
 
         return $context;
-    }
-
-    public function route(): string
-    {
-        return $this->route;
-    }
-
-    /**
-     * Starts again at route, as a new connection: without the states and parameters of the
-     * routes
-     */
-    public function restart(string $route): void
-    {
-        $this->route = $route;
-        $this->states = [];
-        $this->parameters = [];
-    }
-
-    public function changeRoute(string $route): void
-    {
-        $this->route = $route;
-    }
-
-    /**
-     * Request for the controller of the current route, with the input of the gateway
-     *
-     * @param list<string> $content
-     */
-    public function getRequest(string $key = '', array $content = [], Terminal $terminal = new Terminal()): Request
-    {
-        return new Request(
-            $this->state(),
-            $this->parameters(),
-            $key,
-            $content,
-            $terminal,
-        );
-    }
-
-    /**
-     * State of the current route, as kept (State's value)
-     */
-    public function state(): string
-    {
-        return $this->states[$this->route] ?? ControllerState::Init->value;
-    }
-
-    public function updateState(State $state): void
-    {
-        $this->states[$this->route] = (string) $state->value;
-    }
-
-    public function resetState(): void
-    {
-        $this->updateState(ControllerState::Init);
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    public function parameters(): array
-    {
-        return $this->parameters[$this->route] ?? [];
-    }
-
-    /**
-     * @param array<string, mixed> $data
-     */
-    public function updateParameters(array $data): void
-    {
-        $this->parameters[$this->route] = $data;
-    }
-
-    public function resetParameters(): void
-    {
-        $this->updateParameters([]);
     }
 }

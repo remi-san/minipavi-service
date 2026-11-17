@@ -22,7 +22,7 @@ final readonly class RunCommand extends Response
      * @param ?InputCommand $command from Page::inputCommand(); null: only the content is sent
      */
     public function __construct(
-        State $state,
+        ?State $state,
         ?Parameters $parameters,
         public ?string $vdt,
         public ?InputCommand $command,

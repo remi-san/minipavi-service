@@ -19,13 +19,20 @@ use MiniPaviService\Page\InputCommand;
  *
  * The named constructors give each response the state it usually keeps: read the next
  * input after showing something, start again after leaving. Pass $state or $parameters
- * (by name) to keep others: a State (ControllerState, or the controller's own enum), and a
- * Parameters object (null: none).
+ * (by name) to keep others: a case of the controller's State enum (ControllerState for an
+ * AbstractController), and a Parameters object of the class it declares (null: the
+ * defaults).
  */
 abstract readonly class Response
 {
+    /**
+     * @param ?State $state state this controller keeps; null: its initial state
+     *                      (Controller::initialState())
+     * @param ?Parameters $parameters parameters this controller keeps, of the class it declares
+     *                                (Controller::parametersType()); null: their defaults
+     */
     public function __construct(
-        private State $state,
+        private ?State $state,
         private ?Parameters $parameters,
     ) {}
 
@@ -47,11 +54,11 @@ abstract readonly class Response
     }
 
     /**
-     * Switches to the controller of another route, and runs it at once: it starts at
-     * ControllerState::Init with parameters, without the user's input. This controller is
-     * reset.
+     * Switches to the controller of another route, and runs it at once: it starts at its
+     * initial state with parameters, without the user's input. This controller is reset.
      *
-     * @param ?Parameters $parameters parameters of the target controller; null: none
+     * @param ?Parameters $parameters parameters of the target controller, of the class it
+     *                                declares; null: their defaults
      */
     public static function goTo(string $route, ?Parameters $parameters = null): ChangePage
     {
@@ -63,7 +70,7 @@ abstract readonly class Response
      * line 0). state and parameters are kept for this controller, for when the user
      * comes back.
      */
-    public static function connectTo(string $url, string $vdt = '', State $state = ControllerState::Init, ?Parameters $parameters = null): RunExternalService
+    public static function connectTo(string $url, string $vdt = '', ?State $state = null, ?Parameters $parameters = null): RunExternalService
     {
         return new RunExternalService($state, $parameters, $vdt, $url, CallMode::Connect);
     }
@@ -75,13 +82,16 @@ abstract readonly class Response
      */
     abstract public function continueWith(Flow $flow): GatewayAnswer;
 
-    public function state(): State
+    /**
+     * State this controller keeps; null: its initial state
+     */
+    public function state(): ?State
     {
         return $this->state;
     }
 
     /**
-     * Parameters this controller keeps; null: none
+     * Parameters this controller keeps; null: their defaults
      */
     public function parameters(): ?Parameters
     {

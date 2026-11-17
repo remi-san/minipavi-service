@@ -52,7 +52,8 @@ final class ResponseTest extends TestCase
         self::assertInstanceOf(ChangePage::class, $response);
         self::assertSame('menu', $response->route);
         self::assertEquals(new FromParameters('home'), $response->targetParameters);
-        self::assertSame(ControllerState::Init, $response->state());
+        // null: the controller's initial state
+        self::assertNull($response->state());
         self::assertNull($response->parameters());
     }
 
@@ -64,7 +65,8 @@ final class ResponseTest extends TestCase
         self::assertSame('Cnx en cours', $response->vdt);
         self::assertSame('https://example.org/service', $response->url);
         self::assertSame(CallMode::Connect, $response->callMode);
-        self::assertSame(ControllerState::Init, $response->state());
+        // null: the controller's initial state
+        self::assertNull($response->state());
     }
 
     public function testRunExternalServiceTakesACallMode(): void

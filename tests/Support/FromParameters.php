@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace MiniPaviService\Tests\Support;
 
 use MiniPaviService\Controller\Parameters;
-use MiniPaviService\Controller\Request;
+use MiniPaviService\Controller\Values;
 
 /**
  * Parameters of a screen opened from another: the route it was opened from
@@ -16,9 +16,9 @@ final readonly class FromParameters implements Parameters
         public string $from = '',
     ) {}
 
-    public static function fromRequest(Request $request): static
+    public static function fromValues(Values $values): static
     {
-        return new self($request->string('from'));
+        return new self($values->string('from'));
     }
 
     public function toArray(): array

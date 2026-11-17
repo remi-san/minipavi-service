@@ -19,7 +19,7 @@ final readonly class DisplayPage extends Response
      * @param string $vdt Videotex content
      */
     public function __construct(
-        State $state,
+        ?State $state,
         ?Parameters $parameters,
         public string $vdt,
     ) {

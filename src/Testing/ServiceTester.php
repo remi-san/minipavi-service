@@ -160,7 +160,7 @@ final class ServiceTester
      */
     public function context(): Context
     {
-        return Context::unserialize($this->answer()->context, '');
+        return $this->service->restore($this->answer()->context);
     }
 
     private function send(GatewayRequest $request): self

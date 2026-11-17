@@ -7,20 +7,29 @@ namespace MiniPaviService\Controller;
 use MiniPaviService\Controller;
 
 /**
- * Controller running the method of its state (ControllerState): onDisplay() to show its screen, and
- * onReadInput() to handle what the user typed or pressed, the two to write. onInit() and
- * onInitInput() show the screen too, unless overridden.
+ * Controller running the method of its state (ControllerState): onDisplay() to show its
+ * screen, and onReadInput() to handle what the user typed or pressed, the two to write.
+ * onInit() and onInitInput() show the screen too, unless overridden.
  *
  * A state the controller doesn't know (e.g. kept in the context by an older version of the
- * service) starts it again, as ControllerState::Init. To add states, name them in an enum
- * implementing State, override run() to read it (Request::stateAs()), and call parent::run()
- * for the others.
+ * service) starts it again, as ControllerState::Init. It declares the class of its parameters
+ * (parametersType(), NoParameters for none), with @extends AbstractController<TheClass>. A
+ * controller with states of its own implements Controller, with its own enum.
+ *
+ * @template TParameters of Parameters
+ *
+ * @implements Controller<ControllerState, TParameters>
  */
 abstract class AbstractController implements Controller
 {
+    final public function initialState(): ControllerState
+    {
+        return ControllerState::Init;
+    }
+
     public function run(Request $request): Response
     {
-        return match ($request->stateAs(ControllerState::class, ControllerState::Init)) {
+        return match ($request->state()) {
             ControllerState::Init => $this->onInit($request),
             ControllerState::Display => $this->onDisplay($request),
             ControllerState::InitInput => $this->onInitInput($request),
@@ -30,6 +39,8 @@ abstract class AbstractController implements Controller
 
     /**
      * First run, or the user comes back to the controller: shows the screen
+     *
+     * @param Request<ControllerState, TParameters> $request
      */
     protected function onInit(Request $request): Response
     {
@@ -38,11 +49,15 @@ abstract class AbstractController implements Controller
 
     /**
      * Shows the screen, usually with Response::readInput() to read what the user types
+     *
+     * @param Request<ControllerState, TParameters> $request
      */
     abstract protected function onDisplay(Request $request): Response;
 
     /**
      * Asks for input again: shows the screen again
+     *
+     * @param Request<ControllerState, TParameters> $request
      */
     protected function onInitInput(Request $request): Response
     {
@@ -51,6 +66,8 @@ abstract class AbstractController implements Controller
 
     /**
      * Handles the key pressed (Request::key()) and the text typed (Request::content())
+     *
+     * @param Request<ControllerState, TParameters> $request
      */
     abstract protected function onReadInput(Request $request): Response;
 }

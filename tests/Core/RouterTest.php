@@ -4,22 +4,29 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Tests\Core;
 
-use MiniPaviService\Controller;
+use MiniPaviService\Controller\ControllerState;
+use MiniPaviService\Controller\NoParameters;
 use MiniPaviService\Controller\Request;
 use MiniPaviService\Controller\Response;
+use MiniPaviService\Controller\Values;
 use MiniPaviService\Core\Router;
+use MiniPaviService\Core\Terminal;
+use MiniPaviService\Tests\Support\CallbackController;
+use MiniPaviService\Tests\Support\PageParameters;
 use PHPUnit\Framework\TestCase;
 
 final class RouterTest extends TestCase
 {
-    public function testGivesTheControllerOfARoute(): void
+    public function testGivesTheRouteOfItsController(): void
     {
-        $controller = self::controller();
         $router = new Router();
-        $router->addRoute('home', $controller);
+        $router->addRoute('home', new CallbackController(PageParameters::class, fn(Request $request) => Response::display('home ' . $request->parameters()->page)));
         $router->setDefaultRoute('home');
 
-        self::assertSame($controller, $router->route('home'));
+        $route = $router->route('home');
+        self::assertSame(ControllerState::Init, $route->start()->state());
+        self::assertEquals(new PageParameters(3), $route->restore('read-input', new Values(['page' => 3]))->parameters());
+        self::assertEquals(Response::display('home 0'), $route->start()->run('', [], new Terminal()));
         self::assertTrue($router->has('home'));
         self::assertFalse($router->has('menu'));
         self::assertSame('home', $router->defaultRoute());
@@ -57,13 +64,11 @@ final class RouterTest extends TestCase
         $router->route('directory');
     }
 
-    private static function controller(): Controller
+    /**
+     * @return CallbackController<NoParameters>
+     */
+    private static function controller(): CallbackController
     {
-        return new class implements Controller {
-            public function run(Request $request): Response
-            {
-                throw new \LogicException('not run');
-            }
-        };
+        return new CallbackController(NoParameters::class, fn(Request $request) => throw new \LogicException('not run'));
     }
 }

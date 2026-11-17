@@ -25,7 +25,7 @@ final readonly class RunExternalService extends Response
      * @param CallMode|string $callMode a CallMode, or its value ('yes-cnx', 'yes')
      */
     public function __construct(
-        State $state,
+        ?State $state,
         ?Parameters $parameters,
         public string $vdt,
         public string $url,

@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Tests\Testing;
 
-use MiniPaviService\Controller;
 use MiniPaviService\Controller\CallMode;
+use MiniPaviService\Controller\ControllerState;
+use MiniPaviService\Controller\NoParameters;
 use MiniPaviService\Controller\Request;
 use MiniPaviService\Controller\Response;
 use MiniPaviService\Core\FunctionKey;
@@ -13,6 +14,7 @@ use MiniPaviService\Core\Router;
 use MiniPaviService\Core\Service;
 use MiniPaviService\Core\Terminal;
 use MiniPaviService\Testing\ServiceTester;
+use MiniPaviService\Tests\Support\CallbackController;
 use MiniPaviService\Vdt\VdtHelper;
 use PHPUnit\Framework\AssertionFailedError;
 use PHPUnit\Framework\TestCase;
@@ -21,7 +23,7 @@ final class ServiceTesterTest extends TestCase
 {
     private ServiceTester $tester;
 
-    /** @var list<Request> requests the controllers ran on */
+    /** @var list<Request<ControllerState, NoParameters>> requests the controllers ran on */
     private array $requests = [];
 
     protected function setUp(): void
@@ -116,24 +118,18 @@ final class ServiceTesterTest extends TestCase
     }
 
     /**
-     * @param \Closure(Request): Response $run
+     * Controller without parameters, recording the requests it runs on, in $this->requests
+     *
+     * @param \Closure(Request<ControllerState, NoParameters>): Response $run
+     *
+     * @return CallbackController<NoParameters>
      */
-    private function controller(\Closure $run): Controller
+    private function controller(\Closure $run): CallbackController
     {
-        return new class (function (Request $request) use ($run): Response {
+        return new CallbackController(NoParameters::class, function (Request $request) use ($run): Response {
             $this->requests[] = $request;
 
             return $run($request);
-        }) implements Controller {
-            /**
-             * @param \Closure(Request): Response $run
-             */
-            public function __construct(private \Closure $run) {}
-
-            public function run(Request $request): Response
-            {
-                return ($this->run)($request);
-            }
-        };
+        });
     }
 }

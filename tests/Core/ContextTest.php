@@ -4,96 +4,119 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Tests\Core;
 
-use MiniPaviService\Controller;
 use MiniPaviService\Controller\ControllerState;
+use MiniPaviService\Controller\NoParameters;
+use MiniPaviService\Controller\Request;
+use MiniPaviService\Controller\Response;
 use MiniPaviService\Core\Context;
+use MiniPaviService\Core\Router;
 use MiniPaviService\Core\Terminal;
+use MiniPaviService\Tests\Support\CallbackController;
+use MiniPaviService\Tests\Support\FromParameters;
+use MiniPaviService\Tests\Support\PageParameters;
+use MiniPaviService\Tests\Support\SearchController;
+use MiniPaviService\Tests\Support\SearchState;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class ContextTest extends TestCase
 {
-    public function testNewRouteStartsInInitWithoutParameters(): void
-    {
-        $context = new Context('home');
+    private Router $router;
 
-        self::assertSame(ControllerState::Init->value, $context->state());
-        self::assertSame([], $context->parameters());
-        self::assertEquals(new Controller\Request(ControllerState::Init->value, []), $context->getRequest());
+    protected function setUp(): void
+    {
+        // home: built-in states, a page; search: states of its own, a page; menu: nothing;
+        // origin: the route it was opened from
+        $this->router = new Router();
+        $this->router->addRoute('home', new CallbackController(PageParameters::class, fn(Request $request) => Response::display('home ' . $request->state()->value . ' ' . $request->parameters()->page)));
+        $this->router->addRoute('search', new SearchController());
+        $this->router->addRoute('menu', new CallbackController(NoParameters::class, fn(Request $request) => Response::display('menu')));
+        $this->router->addRoute('origin', new CallbackController(FromParameters::class, fn(Request $request) => Response::display('from ' . $request->parameters()->from)));
+        $this->router->setDefaultRoute('home');
     }
 
-    public function testRequestCarriesTheInputOfTheGateway(): void
+    public function testNewRouteHasTheInitialStateAndDefaultParametersOfItsController(): void
     {
-        $context = new Context('home');
-        $context->updateState(ControllerState::ReadInput);
-        $terminal = new Terminal('192.0.2.1', 'websocket', 'Cv5');
+        $context = new Context($this->router, 'search');
 
-        self::assertEquals(
-            new Controller\Request(ControllerState::ReadInput->value, [], 'ENVOI', ['abc'], $terminal),
-            $context->getRequest('ENVOI', ['abc'], $terminal),
-        );
+        self::assertSame(SearchState::Init, $context->state());
+        self::assertEquals(new PageParameters(), $context->parameters());
+        self::assertSame('{"route":"search","states":{},"parameters":{}}', $context->serialize());
+    }
+
+    public function testRunsTheControllerOnWhatItKeptAndTheInput(): void
+    {
+        $context = new Context($this->router, 'home');
+        $context->keep(ControllerState::ReadInput, new PageParameters(2));
+
+        self::assertEquals(Response::display('home read-input 2'), $context->run('ENVOI', ['abc'], new Terminal('192.0.2.1')));
     }
 
     public function testKeepsStateAndParametersPerRoute(): void
     {
-        $context = new Context('home');
-        $context->updateState(ControllerState::ReadInput);
-        $context->updateParameters(['page' => 2]);
-        $context->changeRoute('directory');
+        $context = new Context($this->router, 'home');
+        $context->keep(ControllerState::ReadInput, new PageParameters(2));
+        $context->changeRoute('search');
 
-        self::assertSame(ControllerState::Init->value, $context->state());
+        self::assertSame(SearchState::Init, $context->state());
 
         $context->changeRoute('home');
-        self::assertSame(ControllerState::ReadInput->value, $context->state());
-        self::assertSame(['page' => 2], $context->parameters());
-        self::assertSame(2, $context->getRequest()->int('page'));
+        self::assertSame(ControllerState::ReadInput, $context->state());
+        self::assertEquals(new PageParameters(2), $context->parameters());
     }
 
-    public function testResetsTheCurrentRoute(): void
+    public function testKeepingNothingResetsTheCurrentRoute(): void
     {
-        $context = new Context('home');
-        $context->updateState(ControllerState::ReadInput);
-        $context->updateParameters(['page' => 2]);
-        $context->resetState();
-        $context->resetParameters();
+        $context = new Context($this->router, 'search');
+        $context->keep(SearchState::ReadQuery, new PageParameters(2));
+        $context->keep(null, null);
 
-        self::assertSame(ControllerState::Init->value, $context->state());
-        self::assertSame([], $context->parameters());
+        self::assertSame(SearchState::Init, $context->state());
+        self::assertEquals(new PageParameters(), $context->parameters());
     }
 
-    public function testSurvivesSerialization(): void
+    public function testKeepingAnotherTypeThanTheControllersIsAnError(): void
     {
-        $context = new Context('home');
-        $context->updateState(ControllerState::ReadInput);
-        $context->updateParameters(['page' => 2, 'query' => 'abc']);
-        $context->changeRoute('directory');
-        $context->updateState(ControllerState::Display);
+        $context = new Context($this->router, 'search');
 
-        $restored = Context::unserialize($context->serialize(), 'home');
+        $this->expectException(\LogicException::class);
+        $this->expectExceptionMessage('keeps states of ' . SearchState::class . ', not ' . ControllerState::class);
 
-        self::assertSame('directory', $restored->route());
-        self::assertSame(ControllerState::Display->value, $restored->state());
+        $context->keep(ControllerState::ReadInput, null);
+    }
+
+    public function testSurvivesSerializationTyped(): void
+    {
+        $context = new Context($this->router, 'home');
+        $context->keep(ControllerState::ReadInput, new PageParameters(2));
+        $context->changeRoute('search');
+        $context->keep(SearchState::ReadQuery, new PageParameters(5));
+
+        $restored = Context::unserialize($context->serialize(), $this->router);
+
+        self::assertSame('search', $restored->route());
+        self::assertSame(SearchState::ReadQuery, $restored->state());
+        self::assertEquals(new PageParameters(5), $restored->parameters());
         $restored->changeRoute('home');
-        self::assertSame(ControllerState::ReadInput->value, $restored->state());
-        self::assertSame(['page' => 2, 'query' => 'abc'], $restored->parameters());
+        self::assertSame(ControllerState::ReadInput, $restored->state());
+        self::assertEquals(new PageParameters(2), $restored->parameters());
     }
 
     public function testSerializesAsJson(): void
     {
-        $context = new Context('home');
-        $context->updateState(ControllerState::ReadInput);
-        $context->updateParameters(['query' => 'café/thé', 'page' => 2]);
+        $context = new Context($this->router, 'origin');
+        $context->keep(ControllerState::ReadInput, new FromParameters('café/thé'));
 
         self::assertSame(
-            '{"route":"home","states":{"home":"read-input"},"parameters":{"home":{"query":"café/thé","page":2}}}',
+            '{"route":"origin","states":{"origin":"read-input"},"parameters":{"origin":{"from":"café/thé"}}}',
             $context->serialize(),
         );
     }
 
     public function testParametersThatAreNotJsonCannotBeSerialized(): void
     {
-        $context = new Context('home');
-        $context->updateParameters(['query' => "\xE9t\xE9"]);
+        $context = new Context($this->router, 'origin');
+        $context->keep(null, new FromParameters("\xE9t\xE9"));
 
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('Cannot serialize context');
@@ -103,25 +126,30 @@ final class ContextTest extends TestCase
 
     public function testUnserializeWithoutRouteStartsAtTheDefaultRoute(): void
     {
-        $context = Context::unserialize('{"states":{"menu":"read-input"}}', 'home');
+        $context = Context::unserialize('{"states":{"menu":"read-input"}}', $this->router);
 
         self::assertSame('home', $context->route());
-        self::assertSame(ControllerState::Init->value, $context->state());
+        self::assertSame(ControllerState::Init, $context->state());
     }
 
-    public function testUnserializeDropsMalformedEntries(): void
+    public function testUnserializeTypesWhatWasKeptOrFallsBack(): void
     {
         $context = Context::unserialize((string) json_encode([
             'route' => 'home',
-            'states' => ['home' => ControllerState::ReadInput->value, 3 => 'display', 'menu' => ['not a state']],
-            'parameters' => ['home' => ['page' => 2, 0 => 'no name'], 'menu' => 'not parameters'],
-        ]), 'home');
+            'states' => ['home' => 'read-input', 'search' => 'removed state', 3 => 'display', 'menu' => ['not a state'], 'removed' => 'display'],
+            'parameters' => ['home' => ['page' => '2', 0 => 'no name'], 'search' => ['page' => -1], 'menu' => 'not parameters'],
+        ]), $this->router);
 
-        self::assertSame(ControllerState::ReadInput->value, $context->state());
-        self::assertSame(['page' => 2], $context->parameters());
+        self::assertSame(ControllerState::ReadInput, $context->state());
+        self::assertEquals(new PageParameters(2), $context->parameters());
+        // A state its enum doesn't have, invalid parameters
+        $context->changeRoute('search');
+        self::assertSame(SearchState::Init, $context->state());
+        self::assertEquals(new PageParameters(), $context->parameters());
         $context->changeRoute('menu');
-        self::assertSame(ControllerState::Init->value, $context->state());
-        self::assertSame([], $context->parameters());
+        self::assertSame(ControllerState::Init, $context->state());
+        // Routes the router doesn't have are dropped
+        self::assertStringNotContainsString('removed', $context->serialize());
     }
 
     /**
@@ -142,6 +170,6 @@ final class ContextTest extends TestCase
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('Cannot unserialize context');
 
-        Context::unserialize($serialized, 'home');
+        Context::unserialize($serialized, $this->router);
     }
 }

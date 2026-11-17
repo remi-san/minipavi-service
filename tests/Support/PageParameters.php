@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace MiniPaviService\Tests\Support;
 
 use MiniPaviService\Controller\Parameters;
-use MiniPaviService\Controller\Request;
+use MiniPaviService\Controller\Values;
 
 /**
  * Parameters of a paged screen: the page shown, from 0
@@ -16,9 +16,9 @@ final readonly class PageParameters implements Parameters
         public int $page = 0,
     ) {}
 
-    public static function fromRequest(Request $request): static
+    public static function fromValues(Values $values): static
     {
-        return new self(max(0, $request->int('page')));
+        return new self(max(0, $values->int('page')));
     }
 
     public function toArray(): array

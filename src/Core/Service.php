@@ -67,8 +67,8 @@ final class Service
     {
         $this->logger->error('Error serving the request: ' . $error->getMessage(), ['exception' => $error]);
         try {
-            // The context keeps nothing: the default controller starts at ControllerState::Init
-            $flow = new RequestFlow($this->router, new Context($this->router->defaultRoute()), new Terminal(), self::MAX_PAGE_CHANGES);
+            // The context keeps nothing: the default controller starts at its initial state
+            $flow = new RequestFlow(new Context($this->router, $this->router->defaultRoute()), new Terminal(), self::MAX_PAGE_CHANGES);
 
             return Response::display(VdtHelper::writeLine0($this->errorMessage))->continueWith($flow);
         } catch (\Throwable $e) {
@@ -90,12 +90,23 @@ final class Service
             $this->logger->info('Connection', ['fctn' => $request->key]);
 
             // A new session: without what was typed before
-            return $this->serve(new Context($this->router->defaultRoute()), $request->key, [], $request->terminal);
+            return $this->serve(new Context($this->router, $this->router->defaultRoute()), $request->key, [], $request->terminal);
         }
 
-        $context = Context::unserialize($request->context, $this->router->defaultRoute());
+        $context = $this->restore($request->context);
 
         return $this->serve($context, $request->key, $request->content, $request->terminal);
+    }
+
+    /**
+     * Context sent with a previous answer (GatewayAnswer::$context), typed with the
+     * declarations of this service's controllers (Context::unserialize())
+     *
+     * @throws \RuntimeException if it isn't a JSON object
+     */
+    public function restore(string $serialized): Context
+    {
+        return Context::unserialize($serialized, $this->router);
     }
 
     /**
@@ -118,6 +129,6 @@ final class Service
             $content = [];
         }
 
-        return (new RequestFlow($this->router, $context, $terminal, self::MAX_PAGE_CHANGES))->run($key, $content);
+        return (new RequestFlow($context, $terminal, self::MAX_PAGE_CHANGES))->run($key, $content);
     }
 }

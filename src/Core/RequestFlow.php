@@ -23,7 +23,6 @@ final class RequestFlow implements Flow
     private array $routes = [];
 
     public function __construct(
-        private Router $router,
         private Context $context,
         private Terminal $terminal,
         private int $maxPageChanges,
@@ -38,12 +37,10 @@ final class RequestFlow implements Flow
     public function run(string $key, array $content): GatewayAnswer
     {
         $this->routes[] = $this->context->route();
-        $controller = $this->router->route($this->context->route());
-        $response = $controller->run($this->context->getRequest($key, $content, $this->terminal));
+        $response = $this->context->run($key, $content, $this->terminal);
 
         // What this controller keeps for its next run
-        $this->context->updateState($response->state());
-        $this->context->updateParameters($response->parameters()?->toArray() ?? []);
+        $this->context->keep($response->state(), $response->parameters());
 
         return $response->continueWith($this);
     }
@@ -60,8 +57,7 @@ final class RequestFlow implements Flow
         }
 
         $this->context->changeRoute($route);
-        $this->context->resetState();
-        $this->context->updateParameters($parameters?->toArray() ?? []);
+        $this->context->keep(null, $parameters);
 
         // The input was for the controller left
         return $this->run('', []);

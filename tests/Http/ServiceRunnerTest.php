@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Tests\Http;
 
-use MiniPaviService\Controller;
+use MiniPaviService\Controller\NoParameters;
 use MiniPaviService\Controller\Request;
 use MiniPaviService\Controller\Response;
 use MiniPaviService\Core\Router;
@@ -13,6 +13,7 @@ use MiniPaviService\Gateway\MiniPaviClient;
 use MiniPaviService\Http\EmulatorConfig;
 use MiniPaviService\Http\RequestUrl;
 use MiniPaviService\Http\ServiceRunner;
+use MiniPaviService\Tests\Support\CallbackController;
 use MiniPaviService\Tests\Support\MemoryLogger;
 use MiniPaviService\Vdt\VdtHelper;
 use PHPUnit\Framework\Attributes\RunInSeparateProcess;
@@ -56,12 +57,7 @@ final class ServiceRunnerTest extends TestCase
         $_SERVER['HTTP_HOST'] = 'services';
         $_SERVER['PHP_SELF'] = '/Svc/index.php';
         $router = new Router();
-        $router->addRoute('home', new class implements Controller {
-            public function run(Request $request): Response
-            {
-                return Response::display('home');
-            }
-        });
+        $router->addRoute('home', new CallbackController(NoParameters::class, fn(Request $request) => Response::display('home')));
         $router->setDefaultRoute('home');
         $logger = new MemoryLogger();
 

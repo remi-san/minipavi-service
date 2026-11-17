@@ -26,11 +26,11 @@ interface Flow
     public function answer(string $vdt, ?InputCommand $command = null, ?string $next = null, ?CallMode $directCall = null): GatewayAnswer;
 
     /**
-     * Runs the controller of route at once, at ControllerState::Init with parameters, and
+     * Runs the controller of route at once, at its initial state with parameters, and
      * without the user's input (it was for the controller left); gives the answer the request
      * ends with
      *
-     * @param ?Parameters $parameters parameters of the target controller; null: none
+     * @param ?Parameters $parameters parameters of the target controller; null: their defaults
      *
      * @throws \LogicException after too many page changes in one request
      */

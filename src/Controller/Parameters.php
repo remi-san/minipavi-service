@@ -5,22 +5,22 @@ declare(strict_types=1);
 namespace MiniPaviService\Controller;
 
 /**
- * Parameters of a controller as an object, e.g. a readonly class with a property per
- * parameter: read with Request::parametersAs(), kept by giving it to a Response
- * ($parameters), so PHPStan checks what the controller keeps.
+ * Parameters of a controller, as an object (e.g. a readonly class with a property per
+ * parameter): the controller declares its class (Controller::parametersType()), gets them
+ * typed (Request::parameters()) and keeps them by giving them to a Response. NoParameters for
+ * a controller without any.
  */
 interface Parameters
 {
     /**
-     * The parameters of the request (kept by the previous response), typed: read them with
-     * Request::int(), string(), bool() and array(), so a missing or invalid value (e.g. from
-     * another version of the service) gets its default
+     * The parameters from the values the context keeps: read them with Values::int(),
+     * string(), bool() and array(), so a missing or invalid value (e.g. from another version
+     * of the service) gets its default. Empty values give the defaults.
      */
-    public static function fromRequest(Request $request): static;
+    public static function fromValues(Values $values): static;
 
     /**
-     * The parameters kept in the context: name => JSON value (text, number, bool, null or
-     * array)
+     * The values the context keeps: name => JSON value (text, number, bool, null or array)
      *
      * @return array<string, mixed>
      */
