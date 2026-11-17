@@ -7,6 +7,7 @@ namespace MiniPaviService\Http;
 use MiniPaviService\Core\Service;
 use MiniPaviService\Gateway\Client;
 use MiniPaviService\Gateway\GatewayRequest;
+use MiniPaviService\Http\Url\UrlAttribute;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;

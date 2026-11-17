@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Tests\Support;
 
-use MiniPaviService\Http\UrlAttribute;
+use MiniPaviService\Http\Url\UrlAttribute;
 use Nyholm\Psr7\ServerRequest;
 use Psr\Http\Message\ServerRequestInterface;
 

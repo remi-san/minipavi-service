@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace MiniPaviService\Tests\Http;
+namespace MiniPaviService\Tests\Http\Emulator;
 
-use MiniPaviService\Http\EmulatorConfig;
-use MiniPaviService\Http\EmulatorRedirect;
+use MiniPaviService\Http\Emulator\EmulatorConfig;
+use MiniPaviService\Http\Emulator\EmulatorRedirect;
 use MiniPaviService\Tests\Support\HttpRequests;
 use MiniPaviService\Tests\Support\MemoryLogger;
 use PHPUnit\Framework\TestCase;

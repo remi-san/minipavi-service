@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace MiniPaviService\Tests\Http;
+namespace MiniPaviService\Tests\Http\Url;
 
-use MiniPaviService\Http\RequestUrl;
-use MiniPaviService\Http\UrlAttribute;
-use MiniPaviService\Http\WithUrls;
+use MiniPaviService\Http\Url\RequestUrl;
+use MiniPaviService\Http\Url\UrlAttribute;
+use MiniPaviService\Http\Url\WithUrls;
 use MiniPaviService\Tests\Support\RecordingHandler;
 use Nyholm\Psr7\ServerRequest;
 use PHPUnit\Framework\TestCase;

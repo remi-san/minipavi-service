@@ -31,7 +31,7 @@ which depend on nothing above them):
 | `Vdt\` | Videotex: codes, reading, moving and playing Videotex content (`Screen`) |
 | `Gateway\` | the requests and answers the service handles (`GatewayRequest`, `GatewayAnswer`, `CallMode`), and the `Client` interface reading and sending them |
 | `Client\` | the clients: `MiniPaviClient` for the MiniPavi gateway, `HtmlClient` for a browser (`?web=true`) |
-| `Http\` | the entry point for the web server, on PSR-7 / PSR-15: `Kernel`, `ResponseEmitter`, `WithUrls`, `Dispatcher`, `ServiceRunner`, `EmulatorRedirect`, `EmptyHttpResponse`, the request's URLs (`RequestUrl`, `UrlAttribute`) and `EmulatorConfig` |
+| `Http\` | the entry point for the web server, on PSR-7 / PSR-15: `Kernel`, `ResponseEmitter`, `EmptyHttpResponse`, `Dispatcher`, `ServiceRunner`; in `Url\`, the request's URLs (`RequestUrl`, `UrlAttribute`, `WithUrls`); in `Emulator\`, the emulator browsers are sent to (`EmulatorConfig`, `EmulatorRedirect`) |
 | `Log\` | `ErrorLogLogger` |
 | `Testing\` | `ServiceTester`, functional tests of a service (needs PHPUnit) |
 
@@ -58,7 +58,9 @@ In Docker, the framework and the service keep the repository's layout (`/app/fra
 use MiniPaviService\Core\{Router, Service};
 use MiniPaviService\Client\MiniPaviClient;
 use MiniPaviService\Client\HtmlClient;
-use MiniPaviService\Http\{Dispatcher, EmulatorConfig, EmulatorRedirect, Kernel, RequestUrl, ResponseEmitter, ServiceRunner, WithUrls};
+use MiniPaviService\Http\{Dispatcher, Kernel, ResponseEmitter, ServiceRunner};
+use MiniPaviService\Http\Emulator\{EmulatorConfig, EmulatorRedirect};
+use MiniPaviService\Http\Url\{RequestUrl, WithUrls};
 use Nyholm\Psr7\Factory\Psr17Factory;
 use Symfony\Bridge\PsrHttpMessage\Factory\PsrHttpFactory;
 use MiniPaviService\Log\ErrorLogLogger;

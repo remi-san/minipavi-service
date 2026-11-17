@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace MiniPaviService\Http;
+namespace MiniPaviService\Http\Emulator;
 
 /**
  * Emulator that browsers are sent to, and gateway through which it opens the service

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace MiniPaviService\Tests\Vdt;
 
 use MiniPavi\MiniPaviCli;
-use MiniPaviService\Http\EmulatorConfig;
+use MiniPaviService\Http\Emulator\EmulatorConfig;
 use MiniPaviService\Minitel\FunctionKey;
 use MiniPaviService\Minitel\Keyboard;
 use MiniPaviService\Minitel\LocalEcho;

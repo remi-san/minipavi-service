@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace MiniPaviService\Http;
+namespace MiniPaviService\Http\Url;
 
 use Psr\Http\Message\ServerRequestInterface;
 

@@ -2,8 +2,9 @@
 
 declare(strict_types=1);
 
-namespace MiniPaviService\Http;
+namespace MiniPaviService\Http\Emulator;
 
+use MiniPaviService\Http\Url\UrlAttribute;
 use Nyholm\Psr7\Response;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;

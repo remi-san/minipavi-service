@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace MiniPaviService\Tests\Http;
+namespace MiniPaviService\Tests\Http\Emulator;
 
-use MiniPaviService\Http\EmulatorConfig;
+use MiniPaviService\Http\Emulator\EmulatorConfig;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
