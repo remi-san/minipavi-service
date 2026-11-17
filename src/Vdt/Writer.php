@@ -28,15 +28,9 @@ final class Writer
      */
     public function glyph(int $row, int $col, string $bytes, int $width, array $attributes): void
     {
-        $moved = $this->moveTo($row, $col);
-        $changed = $this->setAttributes($attributes);
-        if (!$moved && !$changed && $this->pending === $bytes && $this->repeat < 63) {
-            $this->repeat++;
-        } else {
-            $this->flush();
-            $this->vdt .= $bytes;
-            $this->pending = $bytes;
-        }
+        $this->moveTo($row, $col);
+        $this->setAttributes($attributes);
+        $this->put($bytes);
         // At col since moveTo()
         $this->col = $col + $width;
         if ($this->col > Screen::COLS) {
@@ -75,24 +69,36 @@ final class Writer
         return $this->vdt;
     }
 
-    // Positions the cursor if needed, which resets the attributes; true if it did
-    private function moveTo(int $row, int $col): bool
+    // A character, or one more repetition of the last one sent: sending anything else (a
+    // position, attributes) sends the repetitions first (flush())
+    private function put(string $bytes): void
+    {
+        if ($this->pending === $bytes && $this->repeat < 63) {
+            $this->repeat++;
+            return;
+        }
+        $this->flush();
+        $this->vdt .= $bytes;
+        $this->pending = $bytes;
+    }
+
+    // Positions the cursor if needed, which resets the attributes
+    private function moveTo(int $row, int $col): void
     {
         if ($this->row === $row && $this->col === $col) {
-            return false;
+            return;
         }
         $this->send("\x1F" . chr(0x40 + $row) . chr(0x40 + $col));
         $this->row = $row;
         $this->col = $col;
         $this->attributes = Attributes::DEFAULTS;
-        return true;
     }
 
-    // Sends the attributes that differ from the current ones; true if there were some
+    // Sends the attributes that differ from the current ones
     /**
      * @param array<string, string> $attributes
      */
-    private function setAttributes(array $attributes): bool
+    private function setAttributes(array $attributes): void
     {
         $codes = '';
         if ($attributes['charset'] !== $this->attributes['charset']) {
@@ -107,10 +113,9 @@ final class Writer
         }
         $this->attributes = $attributes;
         if ($codes === '') {
-            return false;
+            return;
         }
         $this->send($codes);
-        return true;
     }
 
     private function send(string $bytes): void

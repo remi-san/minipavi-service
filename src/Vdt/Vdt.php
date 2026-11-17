@@ -169,7 +169,9 @@ final readonly class Vdt
                             for ($col = max(1, $cursor->col + $x); $col <= (Screen::COLS + $x); $col++) {
                                 $out->glyph($row, $col, ' ', 1, $cursor->attributes);
                             }
-                        } elseif (($cursor->col + $x) <= Screen::COLS) {
+                            break;
+                        }
+                        if (($cursor->col + $x) <= Screen::COLS) {
                             $out->clearLine($row, $cursor->col + $x, $cursor->attributes);
                         }
                         break;

@@ -95,18 +95,33 @@ final readonly class HtmlClient implements Client
     public function response(GatewayRequest $request, GatewayResponse $answer): ResponseInterface
     {
         $page = $request->clientState;
-        $screen = $page->screen;
 
         if ($answer->next !== null && $answer->next !== $request->serviceUrl) {
             // Blocked: the user stays where they were
-            $screen = $screen->append(VdtHelper::writeLine0($this->messages->get(FrameworkMessage::WebLeave)));
-            $context = $request->context;
-            $command = $page->command;
-        } else {
-            $screen = $screen->append($answer->vdt);
-            $context = $answer->context;
-            $command = self::command($answer->command);
+            return $this->page(
+                $page->screen->append(VdtHelper::writeLine0($this->messages->get(FrameworkMessage::WebLeave))),
+                $request->context,
+                $page->command,
+                $request->serviceUrl,
+            );
         }
+
+        return $this->page(
+            $page->screen->append($answer->vdt),
+            $answer->context,
+            self::command($answer->command),
+            $request->serviceUrl,
+        );
+    }
+
+    /**
+     * The page showing the screen so far, with the input fields of the command, the keys, and,
+     * hidden, the context and command to post back to the service's URL
+     *
+     * @param ?array{name: string, param: array<string, mixed>} $command
+     */
+    private function page(Vdt $screen, string $context, ?array $command, string $serviceUrl): ResponseInterface
+    {
         $screen = $screen->fromLastClear();
 
         $hidden =
@@ -120,7 +135,7 @@ final readonly class HtmlClient implements Client
             ['Content-Type' => 'text/html; charset=utf-8'],
             $this->renderer->render(
                 $screen->screen(),
-                $request->serviceUrl,
+                $serviceUrl,
                 self::fields($command),
                 $hidden . $this->keys($command),
             ),

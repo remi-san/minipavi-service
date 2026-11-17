@@ -70,22 +70,33 @@ final readonly class Scope
         }
         $value = $this->vars[$first];
         foreach ($names as $name) {
-            if (is_array($value) && array_key_exists($name, $value)) {
-                $value = $value[$name];
-            } elseif ($value instanceof \ArrayAccess && $value->offsetExists($name)) {
-                $value = $value[$name];
-            } elseif (
-                is_object($value)
-                // Its property, or one it gives through __isset() and __get()
-                && (property_exists($value, $name) || method_exists($value, '__isset') && $value->__isset($name))
-            ) {
-                $value = $value->$name;
-            } else {
-                throw new \InvalidArgumentException(
-                    "unknown variable {{{$path}}}: no \"{$name}\" in " . get_debug_type($value),
-                );
-            }
+            $value = self::member($value, $name, $path);
         }
         return $value;
+    }
+
+    /**
+     * Element of an array (or ArrayAccess), or property of an object, by name
+     *
+     * @throws \InvalidArgumentException if it hasn't any of that name
+     */
+    private static function member(mixed $value, string $name, string $path): mixed
+    {
+        if (is_array($value) && array_key_exists($name, $value)) {
+            return $value[$name];
+        }
+        if ($value instanceof \ArrayAccess && $value->offsetExists($name)) {
+            return $value[$name];
+        }
+        // Its property, or one it gives through __isset() and __get()
+        if (
+            is_object($value)
+            && (property_exists($value, $name) || method_exists($value, '__isset') && $value->__isset($name))
+        ) {
+            return $value->$name;
+        }
+        throw new \InvalidArgumentException(
+            "unknown variable {{{$path}}}: no \"{$name}\" in " . get_debug_type($value),
+        );
     }
 }

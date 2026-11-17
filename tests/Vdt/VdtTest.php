@@ -139,17 +139,18 @@ final class VdtTest extends TestCase
         for ($row = 0; $row <= Screen::ROWS; $row++) {
             for ($col = 1; $col <= Screen::COLS; $col++) {
                 if ($row === 0) {
-                    $expected = $before->cell(0, $col);
-                } else {
-                    [$fromRow, $fromCol] = [$row - $y, $col - $x];
-                    [$start, $width] = $glyphs[$fromRow][$fromCol] ?? [$fromCol, 1];
-                    $onScreen =
-                        $fromRow >= 1
-                        && $fromRow <= Screen::ROWS
-                        && ($start + $x) >= 1
-                        && ($start + $x + $width - 1) <= Screen::COLS;
-                    $expected = $onScreen ? $before->cell($fromRow, $fromCol) : null;
+                    // The status line isn't moved
+                    self::assertEquals($before->cell(0, $col), $after->cell(0, $col), "row 0, column {$col}");
+                    continue;
                 }
+                [$fromRow, $fromCol] = [$row - $y, $col - $x];
+                [$start, $width] = $glyphs[$fromRow][$fromCol] ?? [$fromCol, 1];
+                $onScreen =
+                    $fromRow >= 1
+                    && $fromRow <= Screen::ROWS
+                    && ($start + $x) >= 1
+                    && ($start + $x + $width - 1) <= Screen::COLS;
+                $expected = $onScreen ? $before->cell($fromRow, $fromCol) : null;
                 self::assertEquals($expected, $after->cell($row, $col), "row {$row}, column {$col}");
             }
         }

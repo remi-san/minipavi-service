@@ -126,9 +126,9 @@ final class LintCommandTest extends TestCase
         for ($i = 0; $i < \count($arguments); $i++) {
             if ($arguments[$i] === '--messages') {
                 $input['--messages'] = $arguments[++$i] ?? '';
-            } else {
-                $paths[] = $arguments[$i];
+                continue;
             }
+            $paths[] = $arguments[$i];
         }
 
         if ($paths !== []) {

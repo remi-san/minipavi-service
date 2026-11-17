@@ -35,22 +35,29 @@ final readonly class Text implements Element
         $attr = ($this->size?->vdt() ?? '') . ($this->bg?->background() ?? '') . $this->color->text();
         // Characters of double width take two columns each
         $charWidth = $this->size?->width() ?? 1;
-        $text = VdtHelper::toG2($this->text)->toString();
+        $vdt = $this->placed($attr, VdtHelper::toG2($this->text)->toString(), $charWidth);
+
+        // Fills the rest of the row with the background color
+        return $this->fill ? $vdt . Videotex::CLEAR_LINE : $vdt;
+    }
+
+    /**
+     * The text, after its attributes, at its position, or centered on its row
+     */
+    private function placed(string $attr, string $text, int $charWidth): string
+    {
         if (!$this->centered) {
-            $vdt = VdtHelper::setPos($this->col, $this->row)->toString() . $attr . $text;
-        } elseif ($this->fill) {
+            return VdtHelper::setPos($this->col, $this->row)->toString() . $attr . $text;
+        }
+        if ($this->fill) {
             // Starts at column 1 and pads with spaces up to the text (the spaces having the
             // text's width): the background color only applies from a space onwards
             $pad = max(0, intdiv($this->centeredCol($charWidth) - 1, $charWidth));
-            $vdt = VdtHelper::setPos(1, $this->row)->toString() . $attr . str_repeat(' ', $pad) . $text;
-        } else {
-            $vdt = VdtHelper::setPos($this->centeredCol($charWidth), $this->row)->toString() . $attr . $text;
+
+            return VdtHelper::setPos(1, $this->row)->toString() . $attr . str_repeat(' ', $pad) . $text;
         }
-        // Fills the rest of the row with the background color
-        if ($this->fill) {
-            $vdt .= Videotex::CLEAR_LINE;
-        }
-        return $vdt;
+
+        return VdtHelper::setPos($this->centeredCol($charWidth), $this->row)->toString() . $attr . $text;
     }
 
     /**

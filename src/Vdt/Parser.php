@@ -51,25 +51,9 @@ final class Parser
                     $tokens[] = new Token(TokenType::Charset, $byte, $byte);
                     break;
                 case 0x1F: // US: row, column as 0x40+n, or as 4 decimal digits
-                    $first = $vdt[$i + 1] ?? '';
-                    if ($first !== '' && ctype_digit($first)) {
-                        $digits = substr($vdt, $i + 1, 4);
-                        $tokens[] = new Token(
-                            TokenType::Position,
-                            "\x1F" . $digits,
-                            row: (int) substr($digits, 0, 2),
-                            col: (int) substr($digits, 2, 2),
-                        );
-                        $i += 4;
-                    } else {
-                        $tokens[] = new Token(
-                            TokenType::Position,
-                            substr($vdt, $i, 3),
-                            row: ord($first) - 0x40,
-                            col: ord($vdt[$i + 2] ?? "\x41") - 0x40,
-                        );
-                        $i += 2;
-                    }
+                    [$position, $skipped] = self::position($vdt, $i);
+                    $tokens[] = $position;
+                    $i += $skipped;
                     break;
                 case 0x08:
                 case 0x09:
@@ -123,6 +107,39 @@ final class Parser
             default => 2,
         };
         return substr($vdt, $start, $length);
+    }
+
+    /**
+     * Position (US) at offset i: the token, and how many bytes it takes after US
+     *
+     * @return array{Token, int}
+     */
+    private static function position(string $vdt, int $i): array
+    {
+        $first = $vdt[$i + 1] ?? '';
+        if ($first !== '' && ctype_digit($first)) {
+            $digits = substr($vdt, $i + 1, 4);
+
+            return [
+                new Token(
+                    TokenType::Position,
+                    "\x1F" . $digits,
+                    row: (int) substr($digits, 0, 2),
+                    col: (int) substr($digits, 2, 2),
+                ),
+                4,
+            ];
+        }
+
+        return [
+            new Token(
+                TokenType::Position,
+                substr($vdt, $i, 3),
+                row: ord($first) - 0x40,
+                col: ord($vdt[$i + 2] ?? "\x41") - 0x40,
+            ),
+            2,
+        ];
     }
 
     private function csiLength(string $vdt, int $start): int
