@@ -21,6 +21,7 @@
         "phpunit/phpunit": "^11.5"
     },
     "suggest": {
+        "monolog/monolog": "A PSR-3 logger for the service, e.g. to PHP's error log (ErrorLogHandler)",
         "phpunit/phpunit": "For Testing\\ServiceTester, functional tests of a service (^11.5)"
     },
     "autoload": {
