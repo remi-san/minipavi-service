@@ -2,8 +2,9 @@
 
 declare(strict_types=1);
 
-namespace MiniPaviService\Tests\Http;
+namespace MiniPaviService\Tests\Client;
 
+use MiniPaviService\Client\HtmlClient;
 use MiniPaviService\Controller\Parameters\NoParameters;
 use MiniPaviService\Controller\Request;
 use MiniPaviService\Controller\Response;
@@ -11,7 +12,6 @@ use MiniPaviService\Core\Router;
 use MiniPaviService\Core\Service;
 use MiniPaviService\Gateway\GatewayAnswer;
 use MiniPaviService\Gateway\GatewayRequest;
-use MiniPaviService\Http\HtmlClient;
 use MiniPaviService\Http\RequestUrl;
 use MiniPaviService\Http\ServiceRunner;
 use MiniPaviService\Message\Messages;

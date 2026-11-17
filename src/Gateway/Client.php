@@ -6,9 +6,10 @@ namespace MiniPaviService\Gateway;
 
 /**
  * What a service is run for: reads the request (receive()), and sends the answer (send()).
- * MiniPaviClient talks to the MiniPavi gateway; Http\HtmlClient shows a browser the screen.
+ * Implemented in Client\: MiniPaviClient talks to the MiniPavi gateway, HtmlClient shows a
+ * browser the screen.
  */
-interface GatewayClient
+interface Client
 {
     /**
      * The request to answer

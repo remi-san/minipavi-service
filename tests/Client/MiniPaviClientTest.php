@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace MiniPaviService\Tests\Gateway;
+namespace MiniPaviService\Tests\Client;
 
 use MiniPavi\MiniPaviCli;
+use MiniPaviService\Client\MiniPaviClient;
 use MiniPaviService\Gateway\CallMode;
 use MiniPaviService\Gateway\GatewayAnswer;
 use MiniPaviService\Gateway\GatewayRequest;
-use MiniPaviService\Gateway\MiniPaviClient;
 use MiniPaviService\Http\RequestUrl;
 use MiniPaviService\Minitel\Terminal;
 use MiniPaviService\Vdt\Vdt;

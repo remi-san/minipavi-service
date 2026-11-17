@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace MiniPaviService\Http;
 
 use MiniPaviService\Core\Service;
-use MiniPaviService\Gateway\GatewayClient;
+use MiniPaviService\Gateway\Client;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 
@@ -19,13 +19,13 @@ final class ServiceRunner implements Runner
     private LoggerInterface $logger;
 
     /**
-     * @param GatewayClient $client reads the requests, sends the answers
+     * @param Client $client reads the requests, sends the answers
      * @param ?LoggerInterface $logger where answers that can't be sent are logged; none by
      *                                 default
      */
     public function __construct(
         private Service $service,
-        private GatewayClient $client,
+        private Client $client,
         ?LoggerInterface $logger = null,
     ) {
         $this->logger = $logger ?? new NullLogger();

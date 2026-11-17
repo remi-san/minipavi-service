@@ -14,8 +14,9 @@ Requires PHP 8.2.
 
 The code (namespace `MiniPaviService`, in `src/`) is organized by layer. The runtime uses the
 controllers, which use the pages, and none uses those above it: `Core\` → `Controller\` →
-`Page\` → `Message\`, `Minitel\`, `Vdt\` (`Core\` and `Controller\` also use the
-gateway's requests and answers, in `Gateway\`):
+`Page\` → `Message\`, `Minitel\`, `Vdt\`, and the clients and the entry point sit on top:
+`Client\` → `Http\` → `Core\` (`Gateway\`'s requests and answers are values all of them use,
+which depend on nothing above them):
 
 | Namespace | Holds |
 |---|---|
@@ -28,8 +29,9 @@ gateway's requests and answers, in `Gateway\`):
 | `Message\` | the messages shown on screen: `Message`, `FrameworkMessage`, `Messages` and their XML parser |
 | `Minitel\` | the user's terminal: `Terminal`, its `FunctionKey`s, and its settings (`Keyboard`, `LocalEcho`, `Scroll`) |
 | `Vdt\` | Videotex: codes, reading, moving and playing Videotex content (`Screen`) |
-| `Gateway\` | the MiniPavi gateway: its requests and answers (`GatewayRequest`, `GatewayAnswer`, `CallMode`), and `MiniPaviClient`, which reads and sends them |
-| `Http\` | the entry point for the web server: `Dispatcher`, `ServiceRunner`, `HtmlClient`, `RequestUrl`, `EmulatorConfig`, `ServerVariable` |
+| `Gateway\` | the requests and answers the service handles (`GatewayRequest`, `GatewayAnswer`, `CallMode`), and the `Client` interface reading and sending them |
+| `Client\` | the clients: `MiniPaviClient` for the MiniPavi gateway, `HtmlClient` for a browser (`?web=true`) |
+| `Http\` | the entry point for the web server: `Dispatcher`, `ServiceRunner`, `Runner`, and its environment (`RequestUrl`, `EmulatorConfig`, `ServerVariable`) |
 | `Log\` | `ErrorLogLogger` |
 | `Testing\` | `ServiceTester`, functional tests of a service (needs PHPUnit) |
 
@@ -54,8 +56,9 @@ In Docker, the framework and the service keep the repository's layout (`/app/fra
 
 ```php
 use MiniPaviService\Core\{Router, Service};
-use MiniPaviService\Gateway\MiniPaviClient;
-use MiniPaviService\Http\{Dispatcher, HtmlClient, ServiceRunner};
+use MiniPaviService\Client\MiniPaviClient;
+use MiniPaviService\Client\HtmlClient;
+use MiniPaviService\Http\{Dispatcher, ServiceRunner};
 use MiniPaviService\Log\ErrorLogLogger;
 use MiniPaviService\Message\Messages;
 use MiniPaviService\Page\Parser\PageXmlParser;
@@ -98,7 +101,7 @@ $service = new Service($router, $messages, $logger);
   $router = $container->get(Router::class);
   ```
 
-- **`ServiceRunner`** runs the service for a client (`Gateway\GatewayClient`): the client
+- **`ServiceRunner`** runs the service for a client (`Gateway\Client`, in `Client\`): the client
   reads the request, the service answers it, and the client sends the answer. A request that
   can't be read is answered as an error (see `Service`). Two clients:
   - **`MiniPaviClient`**, for the MiniPavi gateway;

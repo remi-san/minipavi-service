@@ -2,11 +2,13 @@
 
 declare(strict_types=1);
 
-namespace MiniPaviService\Http;
+namespace MiniPaviService\Client;
 
+use MiniPaviService\Gateway\Client;
 use MiniPaviService\Gateway\GatewayAnswer;
-use MiniPaviService\Gateway\GatewayClient;
 use MiniPaviService\Gateway\GatewayRequest;
+use MiniPaviService\Http\RequestUrl;
+use MiniPaviService\Http\ServerVariable;
 use MiniPaviService\Vdt\HtmlRenderer;
 
 /**
@@ -15,7 +17,7 @@ use MiniPaviService\Vdt\HtmlRenderer;
  * query string's route (?route=games), a request on that route, its controller at its
  * initial state.
  */
-final class HtmlClient implements GatewayClient
+final class HtmlClient implements Client
 {
     private RequestUrl $url;
 

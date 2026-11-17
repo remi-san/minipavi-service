@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Tests\Http;
 
+use MiniPaviService\Client\MiniPaviClient;
 use MiniPaviService\Controller\Parameters\NoParameters;
 use MiniPaviService\Controller\Request;
 use MiniPaviService\Controller\Response;
 use MiniPaviService\Core\Router;
 use MiniPaviService\Core\Service;
 use MiniPaviService\Gateway\GatewayRequest;
-use MiniPaviService\Gateway\MiniPaviClient;
 use MiniPaviService\Http\RequestUrl;
 use MiniPaviService\Http\ServiceRunner;
 use MiniPaviService\Message\FrameworkMessage;

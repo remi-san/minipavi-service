@@ -2,9 +2,12 @@
 
 declare(strict_types=1);
 
-namespace MiniPaviService\Gateway;
+namespace MiniPaviService\Client;
 
 use MiniPavi\MiniPaviCli;
+use MiniPaviService\Gateway\Client;
+use MiniPaviService\Gateway\GatewayAnswer;
+use MiniPaviService\Gateway\GatewayRequest;
 use MiniPaviService\Http\RequestUrl;
 use MiniPaviService\Minitel\Terminal;
 
@@ -13,7 +16,7 @@ use MiniPaviService\Minitel\Terminal;
  * a GatewayRequest (receive()), and sends it a GatewayAnswer (send()). With VdtHelper
  * (Videotex helpers) and InputCommand (input commands), the only classes calling MiniPaviCli.
  */
-final class MiniPaviClient implements GatewayClient
+final class MiniPaviClient implements Client
 {
     private RequestUrl $url;
 

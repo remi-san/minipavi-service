@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Tests\Support;
 
+use MiniPaviService\Gateway\Client;
 use MiniPaviService\Gateway\GatewayAnswer;
-use MiniPaviService\Gateway\GatewayClient;
 use MiniPaviService\Gateway\GatewayRequest;
 
 /**
  * Client giving a request (or failing to read it), and keeping the answers sent in $sent
  */
-final class MemoryClient implements GatewayClient
+final class MemoryClient implements Client
 {
     /** @var list<GatewayAnswer> */
     public array $sent = [];
