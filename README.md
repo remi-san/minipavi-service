@@ -122,15 +122,11 @@ $logger = new ErrorLogLogger();
   `new Service($router, $logger)`, `new ServiceRunner($service, $client, logger: $logger)`.
   Without one, nothing is logged.
 - **A `Controller`** runs on a `Request` and returns a `Response`. The request gives:
-  - the state and parameters the controller's previous response asked to keep, from one
-    request of the gateway to the next (the context keeps them per route, and goes to the
-    gateway as JSON), read typed only (see [Typed state and parameters](#typed-state)):
-    `stateAs($enum, $default)` gives the state as a case of a `State` enum (`ControllerState`:
-    `Init`, `Display`, `InitInput`, `ReadInput`, or the controller's own);
-    `parametersAs($class)` the parameters as a `Parameters` object; and `int($name,
-    $default)`, `string()`, `bool()` and `array()` one parameter, coercing what is safe
-    (`'12'` or `12.0` to `12`, a number to text, `1`/`0` and `'true'`/`'false'` to a bool)
-    and giving the default for a missing or other value;
+  - `state()` and `parameters()`: what the controller's previous response asked to keep,
+    from one request of the gateway to the next, typed as the controller declares them (see
+    [Typed state and parameters](#typed-state)): a case of its `State` enum
+    (`ControllerState`: `Init`, `Display`, `InitInput`, `ReadInput`, or its own), and an
+    object of its `Parameters` class;
   - `functionKey()`: the function key the user pressed, a `FunctionKey` (`Send`, `Next`,
     `Previous`, `Refresh`, `Summary`, `Guide`, `Cancel`, `Correction`), or null for a
     connection code; `key()` gives the name the gateway sent (`ENVOI`…, or `CNX`, `FIN`…);
@@ -180,11 +176,18 @@ $logger = new ErrorLogLogger();
   writes what each state does:
 
   ```php
+  /** @extends AbstractController<NoParameters> */
   final class HomeController extends AbstractController
   {
       public const NAME = 'home';
 
       public function __construct(private Page $page) {}
+
+      // What it keeps besides its state: nothing
+      public function parametersType(): string
+      {
+          return NoParameters::class;
+      }
 
       // Shows the screen (onInit() and onInitInput() do the same, unless overridden)
       protected function onDisplay(Request $request): Response
@@ -205,23 +208,28 @@ $logger = new ErrorLogLogger();
   ```
 
   A state it doesn't know (e.g. kept by an older version of the service) starts it again.
-  To add states, name them in an enum implementing `State`, override `run()` to read it with
-  `stateAs()`, and call `parent::run()` for the others.
+  A controller with states of its own implements `Controller` with its own `State` enum.
 
-- <a id="typed-state"></a>**Typed state and parameters.** What a controller keeps is typed,
-  so PHPStan checks it: its parameters in an object implementing `Parameters`, and its
-  states in a string-backed enum implementing `State` (`ControllerState` for the built-in
-  ones):
+- <a id="typed-state"></a>**Typed state and parameters.** What a controller keeps is typed
+  from end to end, and PHPStan checks it. A controller declares:
+  - `initialState()`: a case of the string-backed enum of its states, implementing `State`
+    (`ControllerState::Init` for an `AbstractController`);
+  - `parametersType()`: the class of its parameters, implementing `Parameters`
+    (`NoParameters` for none);
+
+  and gets them typed: `Request<TState, TParameters>`, `$request->state()` and
+  `$request->parameters()`. Its responses keep a case of its enum and an object of its class
+  (null: the initial state, the default parameters); another type is an error.
 
   ```php
   final readonly class DirectoryParameters implements Parameters
   {
       public function __construct(public int $page = 0) {}
 
-      // Reads them with the typed accessors: a missing or invalid value gets its default
-      public static function fromRequest(Request $request): static
+      // From what the context kept: a missing or invalid value gets its default
+      public static function fromValues(Values $values): static
       {
-          return new self(max(0, $request->int('page')));
+          return new self(max(0, $values->int('page')));
       }
 
       public function toArray(): array
@@ -232,19 +240,46 @@ $logger = new ErrorLogLogger();
 
   enum SearchState: string implements State
   {
-      case Init = 'init';             // same value as ControllerState::Init
+      case Init = 'init';
       case ReadQuery = 'read-query';
   }
 
-  // In the controller
-  $page = $request->parametersAs(DirectoryParameters::class)->page;
-  $state = $request->stateAs(SearchState::class, SearchState::Init);  // default for an unknown state
-  return Response::readInput($vdt, $command, SearchState::ReadQuery, new DirectoryParameters($page + 1));
+  /** @implements Controller<SearchState, DirectoryParameters> */
+  final class SearchController implements Controller
+  {
+      public function initialState(): SearchState
+      {
+          return SearchState::Init;
+      }
+
+      public function parametersType(): string
+      {
+          return DirectoryParameters::class;
+      }
+
+      public function run(Request $request): Response
+      {
+          $page = $request->parameters()->page;          // DirectoryParameters
+          if ($request->state() === SearchState::ReadQuery) {
+              // ...
+          }
+
+          return Response::readInput($vdt, $command, SearchState::ReadQuery, new DirectoryParameters($page + 1));
+      }
+  }
   ```
 
-  Responses only take a `State` for `$state`, and a `Parameters` object (or null) for
-  `$parameters` and `goTo()`'s target parameters: the arrays and strings the context keeps
-  are made from them (`toArray()`, the enum's value).
+  `Values` reads what the context kept (JSON, from a previous request, possibly of another
+  version of the service, or forged): `int($name, $default)`, `string()`, `bool()` and
+  `array()` coerce what is safe (`'12'` or `12.0` to `12`, a number to text, `1`/`0` and
+  `'true'`/`'false'` to a bool), and give the default for anything else.
+
+  Behind it, `Router::addRoute()` binds each controller with its types (`Route`), and the
+  `Context` keeps a `RouteContext` per route: restored from the JSON with these types (a
+  state the enum doesn't have is the initial one, unknown routes are dropped), and serialized
+  as the enum's value and `toArray()`. `initialState()` and `parametersType()` are called for
+  routes that don't run: they must not use the controller's properties, so that lazy
+  controllers stay unbuilt.
 
 - The `FCTN_*` constants of `GatewayRequest` name the connection codes of `Request::key()`
   (`CNX`, `DIRECTCNX`, `FIN`).
