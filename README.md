@@ -31,7 +31,7 @@ which depend on nothing above them):
 | `Vdt\` | Videotex: codes, reading, moving and playing Videotex content (`Screen`) |
 | `Gateway\` | the requests and answers the service handles (`GatewayRequest`, `GatewayResponse`, `CallMode`), and the `Client` interface reading and sending them |
 | `Client\` | the clients: `MiniPaviClient` for the MiniPavi gateway, `HtmlClient` for a browser (`?web=true`) |
-| `Http\` | the entry point for the web server, on PSR-7 / PSR-15: `Kernel`, `ResponseEmitter`, `EmptyHttpResponse`, `Dispatcher`, `ServiceRunner`; in `Url\`, the request's URLs (`RequestUrl`, `UrlAttribute`, `WithUrls`); in `Emulator\`, the emulator browsers are sent to (`EmulatorConfig`, `EmulatorRedirect`) |
+| `Http\` | the entry point for the web server, on PSR-7 / PSR-15: `Kernel`, `ResponseEmitter`, `EmptyHttpResponse`, `ServiceRunner`; in `Dispatch\`, who handles the request (`Dispatcher`, its `Rule`s and `RequestMatcher`s); in `Url\`, the request's URLs (`RequestUrl`, `UrlAttribute`, `WithUrls`); in `Emulator\`, the emulator browsers are sent to (`EmulatorConfig`, `EmulatorRedirect`) |
 | `Log\` | `ErrorLogLogger` |
 | `Testing\` | `ServiceTester`, functional tests of a service (needs PHPUnit) |
 
@@ -58,7 +58,8 @@ In Docker, the framework and the service keep the repository's layout (`/app/fra
 use MiniPaviService\Core\{Router, Service};
 use MiniPaviService\Client\MiniPaviClient;
 use MiniPaviService\Client\HtmlClient;
-use MiniPaviService\Http\{Dispatcher, Kernel, ResponseEmitter, ServiceRunner};
+use MiniPaviService\Http\{Kernel, ResponseEmitter, ServiceRunner};
+use MiniPaviService\Http\Dispatch\{Dispatcher, FromMiniPaviGateway, QueryParameterEquals, Rule};
 use MiniPaviService\Http\Emulator\{EmulatorConfig, EmulatorRedirect};
 use MiniPaviService\Http\Url\{RequestUrl, WithUrls};
 use Nyholm\Psr7\Factory\Psr17Factory;
@@ -91,9 +92,11 @@ $psr17 = new Psr17Factory();
 // The gateway's requests, browsers asking ?web=true, and the others (sent to the emulator)
 (new Kernel(new WithUrls(
     new Dispatcher(
-        new ServiceRunner($service, new MiniPaviClient(), $logger),
-        new ServiceRunner($service, new HtmlClient(new HtmlRenderer(HtmlRenderer::MINITEL_FONT), $messages), $logger),
-        new EmulatorRedirect($emulator, $logger),
+        new EmulatorRedirect($emulator, $logger),     // what no rule matches
+        [
+            new Rule('gateway', new FromMiniPaviGateway(), new ServiceRunner($service, new MiniPaviClient(), $logger)),
+            new Rule('web', new QueryParameterEquals('web', 'true'), new ServiceRunner($service, new HtmlClient(new HtmlRenderer(HtmlRenderer::MINITEL_FONT), $messages), $logger)),
+        ],
         $logger,
     ),
     $url,
@@ -135,9 +138,14 @@ $psr17 = new Psr17Factory();
   - `TRUSTED_PROXIES` (e.g. `10.0.0.1, 172.16.0.0/12`): reverse proxies whose
     `X-Forwarded-Proto` is believed, when they terminate TLS. From anyone else, the header
     is ignored.
-- **`Dispatcher`** decides who the HTTP request is for, among three handlers: the gateway's
-  requests (`User-Agent` with `MiniPAVI`), browsers asking **`?web=true`** (that value only),
-  and other browsers. A fixed choice for now (#76 makes it extensible).
+- **`Dispatch\Dispatcher`** decides who the HTTP request is for: the handler of the first of
+  its **`Rule`**s whose matcher (`RequestMatcher`) matches the request, or else its fallback.
+  The framework's matchers are `FromMiniPaviGateway` (`User-Agent` with `MiniPAVI`) and
+  `QueryParameterEquals` (e.g. `web=true`, that value only). The services' rules send the
+  gateway's requests to a `ServiceRunner` with `MiniPaviClient`, browsers asking
+  **`?web=true`** to one with `HtmlClient`, and other browsers to the fallback,
+  `EmulatorRedirect`. A service adds its own rules (e.g. an API, a health check) with its own
+  matchers. The `Dispatcher` logs the rule handling each request, at debug level.
 - **`ServiceRunner`** runs the service for an HTTP request, through a client
   (`Gateway\Client`, in `Client\`) translating between HTTP and the service's values: the
   client turns the HTTP request into a `GatewayRequest`, the service answers it, and the client
@@ -200,10 +208,10 @@ $psr17 = new Psr17Factory();
   (`Element::getContent(Terminal $terminal)`).
 - **Logging:** `Service`, `ServiceRunner`, `Dispatcher` and `EmulatorRedirect` take an optional PSR-3 logger (e.g.
   Monolog, or the framework's `ErrorLogLogger`, writing to PHP's error log) and log
-  connections, disconnections, browsers sent to the emulator or shown a screen at info level,
-  and errors at error level (with the exception):
+  connections, disconnections and browsers sent to the emulator at info level, the rule
+  handling each request at debug level, and errors at error level (with the exception):
   `new Service($router, $messages, $logger)`, `new ServiceRunner($service, $client, $logger)`,
-  `new Dispatcher($gateway, $web, $browser, $logger)`, `new EmulatorRedirect($emulator, $logger)`.
+  `new Dispatcher($fallback, $rules, $logger)`, `new EmulatorRedirect($emulator, $logger)`.
   Without one, nothing is logged.
 - **A `Controller`** runs on a `Request` and returns a `Response`. The request gives:
   - `state()` and `parameters()`: what the controller's previous response asked to keep,
