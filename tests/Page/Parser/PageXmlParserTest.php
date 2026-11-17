@@ -237,6 +237,37 @@ final class PageXmlParserTest extends TestCase
         $this->parser->parse("<page type=\"static\">\n<image>images/missing.vdt</image></page>", self::FIXTURES, 'f.xml');
     }
 
+    /**
+     * @return iterable<string, array{string}>
+     */
+    public static function templateErrorsFoundWhenParsing(): iterable
+    {
+        yield 'missing image' => ["<page type=\"template\">\n<image>images/missing.vdt</image></page>", 'f.xml line 2: <image>: Videotex file not found: ' . self::FIXTURES . '/images/missing.vdt'];
+        yield 'missing background, in an <if>' => ["<page type=\"template\">\n<if test=\"x\">\n<background>missing.vdt</background></if></page>", 'f.xml line 3: <background>: Videotex file not found: ' . self::FIXTURES . '/missing.vdt'];
+        yield 'missing image, in a <foreach>' => ["<page type=\"template\">\n<foreach items=\"xs\" as=\"x\">\n<image row=\"0\">images/missing.vdt</image></foreach></page>", 'f.xml line 3: <image>: Videotex file not found: ' . self::FIXTURES . '/images/missing.vdt'];
+        yield 'unknown color' => ["<page type=\"template\">\n<text color=\"purple\">x</text></page>", 'f.xml line 2: <text>: '];
+    }
+
+    /**
+     * Elements without placeholders are checked as in a static page
+     */
+    #[DataProvider('templateErrorsFoundWhenParsing')]
+    public function testTemplateElementWithoutPlaceholderIsCheckedWhenParsing(string $xml, string $error): void
+    {
+        $this->expectException(PageXmlException::class);
+        $this->expectExceptionMessage($error);
+
+        $this->parser->parse($xml, self::FIXTURES, 'f.xml');
+    }
+
+    public function testTemplateRowInAForeachIsCheckedWhenDisplayed(): void
+    {
+        // Relative to the item: row 0 is the item's first row
+        $page = $this->parser->parse('<page type="template"><foreach items="xs" as="x" row="5"><image row="0">images/logo.vdt</image></foreach></page>', self::FIXTURES, 'f.xml');
+
+        self::assertSame([' 5|##                                      |', ' 6|ok                                      |'], $this->drawnRows($page->display(new Terminal(), ['xs' => [1]])));
+    }
+
     public function testParseFileThrowsWhenTheFileIsMissing(): void
     {
         $this->expectException(PageXmlException::class);

@@ -203,7 +203,7 @@ final class PageXmlParser
                     break;
 
                 default:
-                    $this->check($at, $tag, function () use ($tag, $inLoop, $template, $hasPlaceholder) {
+                    $this->check($at, $tag, function () use ($tag, $inLoop, $template, $hasPlaceholder, $factory, $attributes, $elem) {
                         if (!in_array($tag, ElementFactory::TAGS)) {
                             throw new PageXmlException('unknown element');
                         }
@@ -212,6 +212,12 @@ final class PageXmlParser
                         }
                         if ($hasPlaceholder && !$template) {
                             throw new PageXmlException('{{placeholders}} only in a page of type="template"');
+                        }
+                        if ($template && !$hasPlaceholder) {
+                            // Without placeholders, its errors (e.g. a missing file) are found now,
+                            // as in a static page, rather than when it is displayed. In a <foreach>,
+                            // its row is relative to the item: checked when displayed
+                            $factory->element($tag, $inLoop ? array_diff_key($attributes, ['row' => '']) : $attributes, (string) $elem);
                         }
                     });
                     $nodes[] = new ElementNode($factory, $tag, $attributes, (string) $elem, $at);
