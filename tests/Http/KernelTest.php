@@ -9,10 +9,10 @@ use MiniPaviService\Http\ResponseEmitter;
 use MiniPaviService\Tests\Support\RecordingHandler;
 use Nyholm\Psr7\Factory\Psr17Factory;
 use Nyholm\Psr7\Response;
+use Nyholm\Psr7Server\ServerRequestCreator;
 use PHPUnit\Framework\Attributes\RunInSeparateProcess;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Server\RequestHandlerInterface;
-use Symfony\Bridge\PsrHttpMessage\Factory\PsrHttpFactory;
 
 /**
  * The only place reading the globals and writing the response: in separate processes
@@ -44,10 +44,35 @@ final class KernelTest extends TestCase
         self::assertSame('/Svc/index.php', $request->getServerParams()['PHP_SELF'] ?? null);
     }
 
+    #[RunInSeparateProcess]
+    public function testGivesTheHandlerTheFormPosted(): void
+    {
+        $_SERVER['REQUEST_METHOD'] = 'POST';
+        $_SERVER['HTTP_HOST'] = 'example.org';
+        $_SERVER['REQUEST_URI'] = '/Svc/?web=true';
+        $_SERVER['QUERY_STRING'] = 'web=true';
+        $_SERVER['CONTENT_TYPE'] = 'application/x-www-form-urlencoded';
+        $_GET = ['web' => 'true'];
+        $_POST = ['key' => 'ENVOI', 'content' => ['36', '15']];
+        $handler = new RecordingHandler('page');
+
+        ob_start();
+        try {
+            self::kernel($handler)->run();
+        } finally {
+            ob_end_clean();
+        }
+
+        $request = $handler->requests[0];
+        self::assertSame('POST', $request->getMethod());
+        self::assertSame(['key' => 'ENVOI', 'content' => ['36', '15']], $request->getParsedBody());
+        self::assertSame('http://example.org/Svc/?web=true', (string) $request->getUri());
+    }
+
     private static function kernel(RequestHandlerInterface $handler): Kernel
     {
         $psr17 = new Psr17Factory();
 
-        return new Kernel($handler, new PsrHttpFactory($psr17, $psr17, $psr17, $psr17), new ResponseEmitter());
+        return new Kernel($handler, new ServerRequestCreator($psr17, $psr17, $psr17, $psr17), new ResponseEmitter());
     }
 }

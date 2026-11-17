@@ -4,35 +4,28 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Http;
 
+use Nyholm\Psr7Server\ServerRequestCreatorInterface;
 use Psr\Http\Server\RequestHandlerInterface;
-use Symfony\Bridge\PsrHttpMessage\HttpMessageFactoryInterface;
-use Symfony\Component\HttpFoundation\Request;
 
 /**
- * What public/index.php runs: creates the HTTP request from the globals (the only place they
- * are read), with symfony/http-foundation, converted to PSR-7; has the handler (PSR-15) handle
- * it; and sends the response it returns
+ * What public/index.php runs: creates the PSR-7 request from the globals (the only place they
+ * are read), has the handler (PSR-15) handle it, and sends the response it returns
  */
 final readonly class Kernel
 {
     /**
-     * @param HttpMessageFactoryInterface $requestFactory converts the request to PSR-7, e.g.
-     *                                                    the bridge's PsrHttpFactory
+     * @param ServerRequestCreatorInterface $requestCreator creates the request from the
+     *                                                      globals, e.g. nyholm/psr7-server's
+     *                                                      ServerRequestCreator
      */
     public function __construct(
         private RequestHandlerInterface $handler,
-        private HttpMessageFactoryInterface $requestFactory,
+        private ServerRequestCreatorInterface $requestCreator,
         private ResponseEmitter $emitter,
     ) {}
 
     public function run(): void
     {
-        $response = $this->handler->handle(
-            $this->requestFactory->createRequest(
-                Request::createFromGlobals(),
-            ),
-        );
-
-        $this->emitter->emit($response);
+        $this->emitter->emit($this->handler->handle($this->requestCreator->fromGlobals()));
     }
 }
