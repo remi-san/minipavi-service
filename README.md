@@ -29,7 +29,7 @@ gateway's requests and answers, in `Gateway\`):
 | `Minitel\` | the user's terminal: `Terminal`, its `FunctionKey`s, and its settings (`Keyboard`, `LocalEcho`, `Scroll`) |
 | `Vdt\` | Videotex: codes, reading, moving and playing Videotex content (`Screen`) |
 | `Gateway\` | the MiniPavi gateway: its requests and answers (`GatewayRequest`, `GatewayAnswer`, `CallMode`), and `MiniPaviClient`, which reads and sends them |
-| `Http\` | the entry point for the web server: `ServiceRunner`, `RequestUrl`, `EmulatorConfig`, `ServerVariable` |
+| `Http\` | the entry point for the web server: `Dispatcher`, `ServiceRunner`, `HtmlClient`, `RequestUrl`, `EmulatorConfig`, `ServerVariable` |
 | `Log\` | `ErrorLogLogger` |
 | `Testing\` | `ServiceTester`, functional tests of a service (needs PHPUnit) |
 
@@ -55,7 +55,7 @@ In Docker, the framework and the service keep the repository's layout (`/app/fra
 ```php
 use MiniPaviService\Core\{Router, Service};
 use MiniPaviService\Gateway\MiniPaviClient;
-use MiniPaviService\Http\ServiceRunner;
+use MiniPaviService\Http\{Dispatcher, HtmlClient, ServiceRunner};
 use MiniPaviService\Log\ErrorLogLogger;
 use MiniPaviService\Message\Messages;
 use MiniPaviService\Page\Parser\PageXmlParser;
@@ -71,7 +71,14 @@ $router->setDefaultRoute(HomeController::NAME);
 
 $logger = new ErrorLogLogger();
 
-(new ServiceRunner(new Service($router, $messages, $logger), new MiniPaviClient(), logger: $logger))->run();
+$service = new Service($router, $messages, $logger);
+
+// The gateway's requests, browsers asking ?web=true, and the others (sent to the emulator)
+(new Dispatcher(
+    new ServiceRunner($service, new MiniPaviClient(), $logger),
+    new ServiceRunner($service, new HtmlClient(), $logger),
+    logger: $logger,
+))->run();
 ```
 
 - **Lazy controllers:** a service with many screens shouldn't build every controller, and parse
@@ -91,22 +98,25 @@ $logger = new ErrorLogLogger();
   $router = $container->get(Router::class);
   ```
 
-- **`ServiceRunner`** runs the service for the gateway, through the `MiniPaviClient` it is given:
-  the client reads the request, the service answers it, and the client sends the answer. A request that can't be read
-  is answered as an error (see `Service`). It redirects browsers to an emulator that opens the
-  service: with `EMULATOR_URL` set (the local stack), that emulator and the
-  gateway `GATEWAY_URL`, which reaches the service at `SERVICES_INTERNAL_HOST`; otherwise (a
-  public server), the minipavi.fr emulator and gateway, with the URL the browser asked for.
-
-  **`?web=true`** shows a browser the screen instead, drawn as an HTML page: no interaction,
-  no gateway, just the Videotex interpreted (`Service::preview()`, `Vdt\HtmlRenderer`).
-  `?web=true` shows the default route's first screen, as on a connection, and
-  `?web=true&route=games` that route's, its controller run at its initial state. An unknown
-  route shows the error message on line 0. Only `web=true` does it: any other value, or none,
-  sends the browser to the emulator. The page is in the Minitel's colours, with double sizes,
-  inverse video, underlining, blinking and mosaic pixels, drawn as MiniPavi's emulator does,
-  in self-contained HTML (inline CSS, no JavaScript).
-- **`RequestUrl`** builds the service's URLs for `ServiceRunner` (where browsers come back)
+- **`ServiceRunner`** runs the service for a client (`Gateway\GatewayClient`): the client
+  reads the request, the service answers it, and the client sends the answer. A request that
+  can't be read is answered as an error (see `Service`). Two clients:
+  - **`MiniPaviClient`**, for the MiniPavi gateway;
+  - **`HtmlClient`**, for a browser: it asks for the default route's first screen, as on a
+    connection, or with `?route=games` for that route's screen (its controller at its initial
+    state; a route the service doesn't have starts again at the default route, as for any
+    context), and shows the answer as an HTML page (`Vdt\HtmlRenderer`). No interaction, no
+    gateway: just the Videotex interpreted, in the Minitel's colours, with double sizes, inverse
+    video, underlining, blinking and mosaic pixels, drawn as MiniPavi's emulator does, in
+    self-contained HTML (inline CSS, no JavaScript).
+- **`Dispatcher`** decides who the HTTP request is for, around two runners (`Http\Runner`):
+  the gateway's requests go to the runner with `MiniPaviClient`, browsers asking
+  **`?web=true`** to the runner with `HtmlClient`, and other browsers (any other value of
+  `web`, or none) are sent to an emulator that opens the service: with `EMULATOR_URL` set (the
+  local stack), that emulator and the gateway `GATEWAY_URL`, which reaches the service at
+  `SERVICES_INTERNAL_HOST`; otherwise (a public server), the minipavi.fr emulator and gateway,
+  with the URL the browser asked for.
+- **`RequestUrl`** builds the service's URLs for `Dispatcher` (where browsers come back)
   and `MiniPaviClient` (the next URL given to the gateway): https when the web server says
   the request came over TLS (`HTTPS`, port 443). Both read from the environment:
   - `SERVICE_URL` (e.g. `https://minitel.example.org`): scheme and host to use instead of the
@@ -135,11 +145,12 @@ $logger = new ErrorLogLogger();
 - **Pages** are displayed for the user's terminal, which `<endkey>` depends on:
   `$page->display($request->terminal(), $data)`; display elements get it too
   (`Element::getContent(Terminal $terminal)`).
-- **Logging:** `Service` and `ServiceRunner` take an optional PSR-3 logger (e.g. Monolog, or
-  the framework's `ErrorLogLogger`, writing to PHP's error log) and
-  log connections, disconnections and browsers sent to the emulator at info level, and errors
-  at error level (with the exception):
-  `new Service($router, $messages, $logger)`, `new ServiceRunner($service, $client, logger: $logger)`.
+- **Logging:** `Service`, `ServiceRunner` and `Dispatcher` take an optional PSR-3 logger (e.g.
+  Monolog, or the framework's `ErrorLogLogger`, writing to PHP's error log) and log
+  connections, disconnections, browsers sent to the emulator or shown a screen at info level,
+  and errors at error level (with the exception):
+  `new Service($router, $messages, $logger)`, `new ServiceRunner($service, $client, $logger)`,
+  `new Dispatcher($gateway, $web, logger: $logger)`.
   Without one, nothing is logged.
 - **A `Controller`** runs on a `Request` and returns a `Response`. The request gives:
   - `state()` and `parameters()`: what the controller's previous response asked to keep,
@@ -547,7 +558,7 @@ echo $moved->screen()->preview();      // the screen, as text
   the status line, is not moved.
 - **`withoutClear()`**: the same content without its clear screens (FF), to draw it over
   other content.
-- **`HtmlRenderer::render($screen, $title)`**: the screen as an HTML page (see `?web=true`
+- **`HtmlRenderer::render($screen, $title)`**: the screen as an HTML page (see `HtmlClient`
   above).
 - **`screen()`**: the `Screen` drawn by the content: a `Cell` (character and attributes) or
   `null` per row and column. `preview()` prints it as text, with row numbers (G2 characters
