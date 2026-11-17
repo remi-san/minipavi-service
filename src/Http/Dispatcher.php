@@ -4,61 +4,51 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Http;
 
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Server\RequestHandlerInterface;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 
 /**
- * Decides who the HTTP request is for: the gateway's requests go to its runner (a
- * ServiceRunner with MiniPaviClient), browsers asking ?web=true to the web runner (a
- * ServiceRunner with HtmlClient), and other browsers are sent to an emulator that opens the
- * service through a gateway: by default the one of EmulatorConfig::init(), from the
- * environment (the local stack of this repository) or else minipavi.fr's.
+ * Decides who the HTTP request is for: the gateway's requests go to its handler (a
+ * ServiceRunner with MiniPaviClient), browsers asking ?web=true to the web one (a
+ * ServiceRunner with HtmlClient), and other browsers to the browser one (EmulatorRedirect).
+ * Making the choice extensible is #76.
  */
-final class Dispatcher implements Runner
+final readonly class Dispatcher implements RequestHandlerInterface
 {
-    private EmulatorConfig $emulator;
-
-    private RequestUrl $url;
-
     private LoggerInterface $logger;
 
     /**
-     * @param Runner $gateway runs the service for the gateway
-     * @param Runner $web runs the service for a browser asking ?web=true
-     * @param ?RequestUrl $url URLs of the service, by default from the environment
-     * @param ?LoggerInterface $logger where browsers sent to the emulator and shown a screen
-     *                                 are logged; none by default
+     * @param RequestHandlerInterface $gateway handles the gateway's requests
+     * @param RequestHandlerInterface $web handles a browser asking ?web=true
+     * @param RequestHandlerInterface $browser handles other browsers
+     * @param ?LoggerInterface $logger where browsers shown a screen are logged; none by default
      */
     public function __construct(
-        private Runner $gateway,
-        private Runner $web,
-        ?EmulatorConfig $emulator = null,
-        ?RequestUrl $url = null,
+        private RequestHandlerInterface $gateway,
+        private RequestHandlerInterface $web,
+        private RequestHandlerInterface $browser,
         ?LoggerInterface $logger = null,
     ) {
-        $this->emulator = $emulator ?? EmulatorConfig::init();
-        $this->url = $url ?? RequestUrl::fromEnvironment();
         $this->logger = $logger ?? new NullLogger();
     }
 
-    public function run(): void
+    public function handle(ServerRequestInterface $request): ResponseInterface
     {
-        if (str_contains(ServerVariable::get('HTTP_USER_AGENT'), 'MiniPAVI')) {
-            $this->gateway->run();
-
-            return;
+        if (str_contains($request->getHeaderLine('User-Agent'), 'MiniPAVI')) {
+            return $this->gateway->handle($request);
         }
 
-        // Only web=true: any other value sends the browser to the emulator
-        if (ServerVariable::query('web') === 'true') {
-            $this->logger->info('Screen shown in a browser', ['route' => ServerVariable::query('route')]);
-            $this->web->run();
+        // Only web=true: any other value is a browser like the others
+        $query = $request->getQueryParams();
+        if (($query['web'] ?? null) === 'true') {
+            $this->logger->info('Screen shown in a browser', ['route' => \is_string($query['route'] ?? null) ? $query['route'] : null]);
 
-            return;
+            return $this->web->handle($request);
         }
 
-        $url = $this->emulator->getEmulatorUrl($this->url->current());
-        $this->logger->info('Browser sent to the emulator', ['url' => $url]);
-        header('Location: ' . $url);
+        return $this->browser->handle($request);
     }
 }

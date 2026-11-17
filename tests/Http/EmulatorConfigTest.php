@@ -5,30 +5,11 @@ declare(strict_types=1);
 namespace MiniPaviService\Tests\Http;
 
 use MiniPaviService\Http\EmulatorConfig;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class EmulatorConfigTest extends TestCase
 {
-    private const VARIABLES = ['EMULATOR_URL', 'GATEWAY_URL', 'SERVICES_INTERNAL_HOST'];
-
-    /** @var array<string, string|false> */
-    private array $environment = [];
-
-    protected function setUp(): void
-    {
-        foreach (self::VARIABLES as $name) {
-            $this->environment[$name] = getenv($name);
-            putenv($name);
-        }
-    }
-
-    protected function tearDown(): void
-    {
-        foreach ($this->environment as $name => $value) {
-            putenv($value === false ? $name : "$name=$value");
-        }
-    }
-
     public function testPublicEmulatorOpensTheServiceAtItsUrl(): void
     {
         self::assertSame(
@@ -47,19 +28,22 @@ final class EmulatorConfigTest extends TestCase
         );
     }
 
-    public function testInitWithoutEnvironmentUsesMiniPaviFr(): void
+    /**
+     * The values of the environment, as the container reads them (getenv() ?: null)
+     *
+     * @return iterable<string, array{?string, ?string, ?string, EmulatorConfig}>
+     */
+    public static function environments(): iterable
     {
-        self::assertEquals(new EmulatorConfig(), EmulatorConfig::init());
+        yield 'none: minipavi.fr' => [null, null, null, new EmulatorConfig()];
+        yield 'empty: minipavi.fr' => ['', '', '', new EmulatorConfig()];
+        yield 'a local emulator: the services host' => ['http://localhost:8081', 'ws://localhost:8182', null, new EmulatorConfig('http://localhost:8081', 'ws://localhost:8182', 'services')];
+        yield 'another services host' => ['http://localhost:8081', 'ws://localhost:8182', 'web', new EmulatorConfig('http://localhost:8081', 'ws://localhost:8182', 'web')];
     }
 
-    public function testInitWithALocalEmulatorReachesTheServicesHost(): void
+    #[DataProvider('environments')]
+    public function testFromTheValuesOfTheEnvironment(?string $emulatorUrl, ?string $gatewayUrl, ?string $servicesHost, EmulatorConfig $config): void
     {
-        putenv('EMULATOR_URL=http://localhost:8081');
-        putenv('GATEWAY_URL=ws://localhost:8182');
-
-        self::assertEquals(new EmulatorConfig('http://localhost:8081', 'ws://localhost:8182', 'services'), EmulatorConfig::init());
-
-        putenv('SERVICES_INTERNAL_HOST=web');
-        self::assertEquals(new EmulatorConfig('http://localhost:8081', 'ws://localhost:8182', 'web'), EmulatorConfig::init());
+        self::assertEquals($config, EmulatorConfig::fromValues($emulatorUrl, $gatewayUrl, $servicesHost));
     }
 }

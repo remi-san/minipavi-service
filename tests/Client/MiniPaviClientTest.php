@@ -9,7 +9,7 @@ use MiniPaviService\Client\MiniPaviClient;
 use MiniPaviService\Gateway\CallMode;
 use MiniPaviService\Gateway\GatewayAnswer;
 use MiniPaviService\Gateway\GatewayRequest;
-use MiniPaviService\Http\RequestUrl;
+use MiniPaviService\Http\EmptyHttpResponse;
 use MiniPaviService\Minitel\Terminal;
 use MiniPaviService\Vdt\Vdt;
 use PHPUnit\Framework\TestCase;
@@ -20,20 +20,11 @@ use PHPUnit\Framework\TestCase;
  */
 final class MiniPaviClientTest extends TestCase
 {
-    /** @var array<mixed> */
-    private array $server;
-
-    protected function setUp(): void
-    {
-        // The service's URL, sent to the gateway as the next one to call
-        $this->server = $_SERVER;
-        $_SERVER['HTTP_HOST'] = 'services';
-        $_SERVER['PHP_SELF'] = '/Svc/index.php';
-    }
+    // The service's URL, sent to the gateway as the next one to call
+    private const SERVICE_URL = 'http://services/Svc/index.php';
 
     protected function tearDown(): void
     {
-        $_SERVER = $this->server;
         MiniPaviCli::$fctn = '';
         MiniPaviCli::$content = [];
         MiniPaviCli::$context = '';
@@ -52,8 +43,8 @@ final class MiniPaviClientTest extends TestCase
         MiniPaviCli::$versionMinitel = 'Cv5';
 
         self::assertEquals(
-            new GatewayRequest('ENVOI', ['ab', 'cd'], '{"route":"home"}', new Terminal('CALLFROM 0102030405', 'websocket', 'Cv5')),
-            (new MiniPaviClient(new RequestUrl()))->request(),
+            new GatewayRequest('ENVOI', ['ab', 'cd'], '{"route":"home"}', new Terminal('CALLFROM 0102030405', 'websocket', 'Cv5'), self::SERVICE_URL),
+            (new MiniPaviClient())->decoded(self::SERVICE_URL),
         );
     }
 
@@ -65,21 +56,21 @@ final class MiniPaviClientTest extends TestCase
         MiniPaviCli::$typeSocket = new \stdClass();
         MiniPaviCli::$versionMinitel = null;
 
-        self::assertEquals(new GatewayRequest('', [], '', new Terminal('', null, null)), (new MiniPaviClient(new RequestUrl()))->request());
+        self::assertEquals(new GatewayRequest('', [], '', new Terminal('', null, null)), (new MiniPaviClient())->decoded());
     }
 
     public function testContentIsAListOfTexts(): void
     {
-        $client = new MiniPaviClient(new RequestUrl());
+        $client = new MiniPaviClient();
 
         MiniPaviCli::$content = 'one line';
-        self::assertSame(['one line'], $client->request()->content);
+        self::assertSame(['one line'], $client->decoded()->content);
 
         MiniPaviCli::$content = [2 => 'a', 5 => 12, 7 => null, 9 => ['x']];
-        self::assertSame(['a', '12', '', ''], $client->request()->content);
+        self::assertSame(['a', '12', '', ''], $client->decoded()->content);
 
         MiniPaviCli::$content = null;
-        self::assertSame([], $client->request()->content);
+        self::assertSame([], $client->decoded()->content);
     }
 
     public function testSendsTheAnswerToThisService(): void
@@ -119,10 +110,12 @@ final class MiniPaviClientTest extends TestCase
     {
         ob_start();
         try {
-            (new MiniPaviClient(new RequestUrl()))->send($answer);
+            $response = (new MiniPaviClient())->response(new GatewayRequest('ENVOI', serviceUrl: self::SERVICE_URL), $answer);
         } finally {
             $output = (string) ob_get_clean();
         }
+        // Written by MiniPaviCli: the HTTP response isn't sent
+        self::assertInstanceOf(EmptyHttpResponse::class, $response);
         $sent = json_decode($output, true);
 
         return \is_array($sent) ? $sent : self::fail("Not an answer: $output");

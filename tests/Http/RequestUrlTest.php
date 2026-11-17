@@ -5,46 +5,32 @@ declare(strict_types=1);
 namespace MiniPaviService\Tests\Http;
 
 use MiniPaviService\Http\RequestUrl;
+use Nyholm\Psr7\ServerRequest;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use Psr\Http\Message\ServerRequestInterface;
 
 final class RequestUrlTest extends TestCase
 {
-    /** @var array<mixed> */
-    private array $server;
-
-    /** @var array<string, string|false> */
-    private array $environment = [];
-
-    protected function setUp(): void
+    /**
+     * A request with these server parameters, over those of /Svc/?code=1 on example.org
+     *
+     * @param array<string, string> $server
+     */
+    private static function request(array $server = []): ServerRequestInterface
     {
-        $this->server = $_SERVER;
-        foreach (['HTTPS', 'SERVER_PORT', 'HTTP_X_FORWARDED_PROTO', 'HTTP_FRONT_END_HTTPS', 'REMOTE_ADDR'] as $name) {
-            unset($_SERVER[$name]);
-        }
-        $_SERVER['HTTP_HOST'] = 'example.org';
-        $_SERVER['PHP_SELF'] = '/Svc/index.php';
-        $_SERVER['REQUEST_URI'] = '/Svc/?code=1';
-        foreach (['SERVICE_URL', 'TRUSTED_PROXIES'] as $name) {
-            $this->environment[$name] = getenv($name);
-            putenv($name);
-        }
-    }
+        $server += ['HTTP_HOST' => 'example.org', 'PHP_SELF' => '/Svc/index.php', 'REQUEST_URI' => '/Svc/?code=1'];
+        $headers = isset($server['HTTP_X_FORWARDED_PROTO']) ? ['X-Forwarded-Proto' => $server['HTTP_X_FORWARDED_PROTO']] : [];
 
-    protected function tearDown(): void
-    {
-        $_SERVER = $this->server;
-        foreach ($this->environment as $name => $value) {
-            putenv($value === false ? $name : "$name=$value");
-        }
+        return new ServerRequest('GET', '/Svc/?code=1', $headers, null, '1.1', $server);
     }
 
     public function testBuildsTheUrlsOfTheRequest(): void
     {
         $url = new RequestUrl();
 
-        self::assertSame('http://example.org/Svc/index.php', $url->script());
-        self::assertSame('http://example.org/Svc/?code=1', $url->current());
+        self::assertSame('http://example.org/Svc/index.php', $url->script(self::request()));
+        self::assertSame('http://example.org/Svc/?code=1', $url->current(self::request()));
     }
 
     /**
@@ -68,9 +54,7 @@ final class RequestUrlTest extends TestCase
     #[DataProvider('schemes')]
     public function testSchemeComesFromTheServer(array $server, string $scheme): void
     {
-        $_SERVER = array_merge($_SERVER, $server);
-
-        self::assertSame($scheme . '://example.org/Svc/index.php', (new RequestUrl())->script());
+        self::assertSame($scheme . '://example.org/Svc/index.php', (new RequestUrl())->script(self::request($server)));
     }
 
     /**
@@ -90,20 +74,18 @@ final class RequestUrlTest extends TestCase
     #[DataProvider('proxies')]
     public function testForwardedProtoComesOnlyFromTrustedProxies(string $trusted, string $remote, string $scheme): void
     {
-        $_SERVER['REMOTE_ADDR'] = $remote;
-        $_SERVER['HTTP_X_FORWARDED_PROTO'] = 'https';
+        $request = self::request(['REMOTE_ADDR' => $remote, 'HTTP_X_FORWARDED_PROTO' => 'https']);
 
-        self::assertSame($scheme . '://example.org/Svc/index.php', (new RequestUrl(trustedProxies: $trusted))->script());
+        self::assertSame($scheme . '://example.org/Svc/index.php', (new RequestUrl(trustedProxies: $trusted))->script($request));
     }
 
     public function testServiceUrlReplacesTheSchemeAndHost(): void
     {
-        $_SERVER['HTTP_HOST'] = 'attacker.example';
-        $_SERVER['HTTP_X_FORWARDED_PROTO'] = 'http';
+        $request = self::request(['HTTP_HOST' => 'attacker.example', 'HTTP_X_FORWARDED_PROTO' => 'http']);
         $url = new RequestUrl('https://minitel.example.org:8443/');
 
-        self::assertSame('https://minitel.example.org:8443/Svc/index.php', $url->script());
-        self::assertSame('https://minitel.example.org:8443/Svc/?code=1', $url->current());
+        self::assertSame('https://minitel.example.org:8443/Svc/index.php', $url->script($request));
+        self::assertSame('https://minitel.example.org:8443/Svc/?code=1', $url->current($request));
     }
 
     /**
@@ -132,19 +114,5 @@ final class RequestUrlTest extends TestCase
         $this->expectExceptionMessage('TRUSTED_PROXIES: "proxy.local" is not an IP address or range');
 
         new RequestUrl(trustedProxies: '10.0.0.1, proxy.local');
-    }
-
-    public function testFromEnvironmentReadsServiceUrlAndTrustedProxies(): void
-    {
-        $_SERVER['REMOTE_ADDR'] = '10.0.0.5';
-        $_SERVER['HTTP_X_FORWARDED_PROTO'] = 'https';
-
-        self::assertSame('http://example.org/Svc/index.php', RequestUrl::fromEnvironment()->script());
-
-        putenv('TRUSTED_PROXIES=10.0.0.5');
-        self::assertSame('https://example.org/Svc/index.php', RequestUrl::fromEnvironment()->script());
-
-        putenv('SERVICE_URL=https://minitel.example.org');
-        self::assertSame('https://minitel.example.org/Svc/index.php', RequestUrl::fromEnvironment()->script());
     }
 }

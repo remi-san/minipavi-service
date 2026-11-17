@@ -12,96 +12,96 @@ use MiniPaviService\Core\Router;
 use MiniPaviService\Core\Service;
 use MiniPaviService\Gateway\GatewayAnswer;
 use MiniPaviService\Gateway\GatewayRequest;
-use MiniPaviService\Http\RequestUrl;
 use MiniPaviService\Http\ServiceRunner;
 use MiniPaviService\Message\Messages;
 use MiniPaviService\Tests\Support\CallbackController;
+use MiniPaviService\Tests\Support\HttpRequests;
 use MiniPaviService\Tests\Support\MemoryLogger;
 use MiniPaviService\Vdt\Vdt;
 use MiniPaviService\Vdt\VdtHelper;
-use PHPUnit\Framework\Attributes\BackupGlobals;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LogLevel;
 
-#[BackupGlobals(true)]
 final class HtmlClientTest extends TestCase
 {
-    protected function setUp(): void
-    {
-        $_SERVER['HTTP_HOST'] = 'example.org';
-        $_SERVER['REQUEST_URI'] = '/Svc/?web=true';
-    }
-
     /**
-     * @return iterable<string, array{string}>
+     * @return iterable<string, array{array<string, string>}>
      */
     public static function connections(): iterable
     {
-        yield 'no route' => ['web=true'];
-        yield 'an empty route' => ['web=true&route='];
+        yield 'no route' => [['web' => 'true']];
+        yield 'an empty route' => [['web' => 'true', 'route' => '']];
     }
 
+    /**
+     * @param array<string, string> $query
+     */
     #[DataProvider('connections')]
-    public function testAsksForTheFirstScreenAsOnAConnection(string $query): void
+    public function testAsksForTheFirstScreenAsOnAConnection(array $query): void
     {
-        $_SERVER['QUERY_STRING'] = $query;
-
-        self::assertEquals(new GatewayRequest(GatewayRequest::FCTN_CONNECT), (new HtmlClient(new RequestUrl()))->receive());
+        self::assertEquals(
+            new GatewayRequest(GatewayRequest::FCTN_CONNECT, serviceUrl: 'http://services/Svc/index.php'),
+            (new HtmlClient())->request(HttpRequests::to('Mozilla/5.0', $query), 'http://services/Svc/index.php'),
+        );
     }
 
     public function testAsksForTheScreenOfARoute(): void
     {
-        $_SERVER['QUERY_STRING'] = 'web=true&route=games';
-
         // A user who just got there: no key, no input
-        self::assertEquals(new GatewayRequest('', [], '{"route":"games"}'), (new HtmlClient(new RequestUrl()))->receive());
+        self::assertEquals(
+            new GatewayRequest('', [], '{"route":"games"}', serviceUrl: 'http://services/Svc/index.php'),
+            (new HtmlClient())->request(HttpRequests::to('Mozilla/5.0', ['web' => 'true', 'route' => 'games']), 'http://services/Svc/index.php'),
+        );
     }
 
-    public function testShowsTheScreenOfTheAnswerAsAPage(): void
+    public function testGivesTheScreenOfTheAnswerAsAPage(): void
     {
-        ob_start();
-        try {
-            (new HtmlClient(new RequestUrl()))->send(new GatewayAnswer(VdtHelper::setPos(1, 1)->append(Vdt::text('Bonjour <3')), '{}'));
-        } finally {
-            $html = (string) ob_get_clean();
-        }
+        $response = (new HtmlClient())->response(
+            new GatewayRequest(GatewayRequest::FCTN_CONNECT, serviceUrl: 'http://services/Svc/index.php'),
+            new GatewayAnswer(VdtHelper::setPos(1, 1)->append(Vdt::text('Bonjour <3')), '{}'),
+        );
 
+        self::assertSame(200, $response->getStatusCode());
+        self::assertSame('text/html; charset=utf-8', $response->getHeaderLine('Content-Type'));
+        $html = (string) $response->getBody();
         self::assertStringStartsWith('<!doctype html>', $html);
-        self::assertStringContainsString('<title>http://example.org/Svc/?web=true</title>', $html);
+        self::assertStringContainsString('<title>http://services/Svc/index.php</title>', $html);
         self::assertStringContainsString('Bonjour <3', self::shownText($html));
     }
 
     /**
-     * @return iterable<string, array{string, string}>
+     * @return iterable<string, array{array<string, string>, string}>
      */
     public static function screens(): iterable
     {
-        yield 'the first screen' => ['web=true', 'HOME init'];
-        yield "a route's, at its initial state" => ['web=true&route=games', 'GAMES init'];
+        yield 'the first screen' => [['web' => 'true'], 'HOME init'];
+        yield "a route's, at its initial state" => [['web' => 'true', 'route' => 'games'], 'GAMES init'];
     }
 
+    /**
+     * @param array<string, string> $query
+     */
     #[DataProvider('screens')]
-    public function testRunsTheServiceForABrowser(string $query, string $shown): void
+    public function testRunsTheServiceForABrowser(array $query, string $shown): void
     {
-        $_SERVER['QUERY_STRING'] = $query;
-
-        self::assertStringContainsString($shown, self::shownText($this->runForBrowser(new MemoryLogger())));
+        self::assertStringContainsString($shown, self::shownText($this->runForBrowser($query, new MemoryLogger())));
     }
 
     public function testUnknownRouteShowsTheFirstScreenAsTheServiceDoes(): void
     {
-        $_SERVER['QUERY_STRING'] = 'web=true&route=nope';
         $logger = new MemoryLogger();
 
-        self::assertStringContainsString('HOME', self::shownText($this->runForBrowser($logger)));
+        self::assertStringContainsString('HOME', self::shownText($this->runForBrowser(['web' => 'true', 'route' => 'nope'], $logger)));
         self::assertSame([LogLevel::WARNING, 'Unknown route in the context, starting again at the default route', ['route' => 'nope']], $logger->records[0]);
     }
 
     /**
-     * Output of a service (home, games) run for a browser
+     * Page a service (home, games) gives a browser asking query
+     *
+     * @param array<string, string> $query
      */
-    private function runForBrowser(MemoryLogger $logger): string
+    private function runForBrowser(array $query, MemoryLogger $logger): string
     {
         $router = new Router();
         foreach (['home' => 'HOME', 'games' => 'GAMES'] as $route => $text) {
@@ -109,14 +109,7 @@ final class HtmlClientTest extends TestCase
         }
         $router->setDefaultRoute('home');
 
-        ob_start();
-        try {
-            (new ServiceRunner(new Service($router, Messages::defaults(), $logger), new HtmlClient(new RequestUrl())))->run();
-        } finally {
-            $html = (string) ob_get_clean();
-        }
-
-        return $html;
+        return (string) (new ServiceRunner(new Service($router, Messages::defaults(), $logger), new HtmlClient()))->handle(HttpRequests::to('Mozilla/5.0', $query))->getBody();
     }
 
     /**

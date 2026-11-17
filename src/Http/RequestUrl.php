@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Http;
 
+use Psr\Http\Message\ServerRequestInterface;
+
 /**
- * URLs of the service for the current request: the script, given to the gateway as the next
- * URL to call, and the URL asked for, to which the emulator sends browsers back.
+ * URLs of the service for a request: the script, given to the gateway as the next URL to call,
+ * and the URL asked for, to which the emulator sends browsers back. Computed from the request
+ * only (its server parameters and headers), once, by WithUrls.
  *
  * The scheme is https when the web server says the request came over TLS (HTTPS, port
  * 443). Behind a reverse proxy that terminates TLS, X-Forwarded-Proto is used too, but only
@@ -33,49 +36,50 @@ final readonly class RequestUrl
     }
 
     /**
-     * From the environment: SERVICE_URL and TRUSTED_PROXIES, both optional
-     */
-    public static function fromEnvironment(): self
-    {
-        return new self(getenv('SERVICE_URL') ?: null, getenv('TRUSTED_PROXIES') ?: '');
-    }
-
-    /**
      * URL of the script serving the request, without query: the next URL for the gateway
      */
-    public function script(): string
+    public function script(ServerRequestInterface $request): string
     {
-        return $this->requestOrigin() . ServerVariable::get('PHP_SELF');
+        return $this->requestOrigin($request) . self::server($request, 'PHP_SELF');
     }
 
     /**
      * URL asked for, with its query
      */
-    public function current(): string
+    public function current(ServerRequestInterface $request): string
     {
-        return $this->requestOrigin() . ServerVariable::get('REQUEST_URI');
+        return $this->requestOrigin($request) . self::server($request, 'REQUEST_URI');
     }
 
-    private function requestOrigin(): string
+    private function requestOrigin(ServerRequestInterface $request): string
     {
-        return $this->origin ?? $this->scheme() . '://' . ServerVariable::get('HTTP_HOST');
+        return $this->origin ?? $this->scheme($request) . '://' . self::server($request, 'HTTP_HOST');
     }
 
-    private function scheme(): string
+    private function scheme(ServerRequestInterface $request): string
     {
-        if (ServerVariable::isOn('HTTPS') || (int) ServerVariable::get('SERVER_PORT') === 443) {
+        $https = strtolower(self::server($request, 'HTTPS'));
+        if (!\in_array($https, ['', '0', 'off'], true) || (int) self::server($request, 'SERVER_PORT') === 443) {
             return 'https';
         }
-        if ($this->fromTrustedProxy() && strtolower(ServerVariable::get('HTTP_X_FORWARDED_PROTO')) === 'https') {
+        if ($this->fromTrustedProxy($request) && strtolower($request->getHeaderLine('X-Forwarded-Proto')) === 'https') {
             return 'https';
         }
 
         return 'http';
     }
 
-    private function fromTrustedProxy(): bool
+    // A server parameter (headers, host, URI...) as text, '' if missing
+    private static function server(ServerRequestInterface $request, string $name): string
     {
-        $remote = @inet_pton(ServerVariable::get('REMOTE_ADDR'));
+        $value = $request->getServerParams()[$name] ?? '';
+
+        return \is_string($value) ? $value : '';
+    }
+
+    private function fromTrustedProxy(ServerRequestInterface $request): bool
+    {
+        $remote = @inet_pton(self::server($request, 'REMOTE_ADDR'));
         if ($remote === false) {
             return false;
         }

@@ -4,22 +4,28 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Gateway;
 
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
+
 /**
- * What a service is run for: reads the request (receive()), and sends the answer (send()).
- * Implemented in Client\: MiniPaviClient talks to the MiniPavi gateway, HtmlClient shows a
- * browser the screen.
+ * Translates between HTTP and what the service handles: the HTTP request into a
+ * GatewayRequest, the GatewayAnswer into an HTTP response. Implemented in Client\:
+ * MiniPaviClient for the MiniPavi gateway, HtmlClient for a browser.
  */
 interface Client
 {
     /**
-     * The request to answer
+     * The request the HTTP request asks the service to answer
+     *
+     * @param string $serviceUrl URL of the service (Http\UrlAttribute::Service), kept in the
+     *                           GatewayRequest
      *
      * @throws \Exception if it can't be read
      */
-    public function receive(): GatewayRequest;
+    public function request(ServerRequestInterface $request, string $serviceUrl): GatewayRequest;
 
     /**
-     * Sends the answer to the request
+     * The HTTP response giving the answer to the request
      */
-    public function send(GatewayAnswer $answer): void;
+    public function response(GatewayRequest $request, GatewayAnswer $answer): ResponseInterface;
 }

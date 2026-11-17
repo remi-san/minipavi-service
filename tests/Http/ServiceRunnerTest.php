@@ -11,11 +11,12 @@ use MiniPaviService\Controller\Response;
 use MiniPaviService\Core\Router;
 use MiniPaviService\Core\Service;
 use MiniPaviService\Gateway\GatewayRequest;
-use MiniPaviService\Http\RequestUrl;
+use MiniPaviService\Http\EmptyHttpResponse;
 use MiniPaviService\Http\ServiceRunner;
 use MiniPaviService\Message\FrameworkMessage;
 use MiniPaviService\Message\Messages;
 use MiniPaviService\Tests\Support\CallbackController;
+use MiniPaviService\Tests\Support\HttpRequests;
 use MiniPaviService\Tests\Support\MemoryClient;
 use MiniPaviService\Tests\Support\MemoryLogger;
 use MiniPaviService\Vdt\Vdt;
@@ -39,63 +40,69 @@ final class ServiceRunnerTest extends TestCase
         $this->service = new Service($router, Messages::defaults(), $this->logger);
     }
 
-    public function testSendsTheAnswerToTheRequestOfTheClient(): void
+    public function testGivesTheResponseOfTheClientToTheAnswer(): void
     {
         $client = new MemoryClient(new GatewayRequest(GatewayRequest::FCTN_CONNECT));
 
-        (new ServiceRunner($this->service, $client))->run();
+        $response = (new ServiceRunner($this->service, $client))->handle(HttpRequests::to('MiniPAVI'));
 
-        self::assertCount(1, $client->sent);
-        self::assertEquals(new Vdt('home'), $client->sent[0]->vdt);
+        self::assertSame('home', (string) $response->getBody());
+        [[$request, $answer]] = $client->responded;
+        self::assertEquals(new Vdt('home'), $answer->vdt);
+        // The URL of the service, computed by WithUrls, is in the request
+        self::assertSame('http://services/Svc/index.php', $request->serviceUrl);
     }
 
     public function testAnswersARequestThatCantBeReadAsAnError(): void
     {
         $client = new MemoryClient(new \RuntimeException('Not JSON'));
 
-        (new ServiceRunner($this->service, $client))->run();
+        (new ServiceRunner($this->service, $client))->handle(HttpRequests::to('MiniPAVI'));
 
-        self::assertEquals(VdtHelper::writeLine0(Messages::defaults()->get(FrameworkMessage::Error)), $client->sent[0]->vdt);
+        [[$request, $answer]] = $client->responded;
+        self::assertEquals(VdtHelper::writeLine0(Messages::defaults()->get(FrameworkMessage::Error)), $answer->vdt);
+        self::assertSame('http://services/Svc/index.php', $request->serviceUrl);
         self::assertSame([LogLevel::ERROR, 'Error serving the request: Not JSON'], [$this->logger->records[0][0], $this->logger->records[0][1]]);
     }
 
-    public function testSendsNothingForADisconnection(): void
+    public function testNothingToAnswerToADisconnection(): void
     {
         $client = new MemoryClient(new GatewayRequest(GatewayRequest::FCTN_DISCONNECT));
 
-        (new ServiceRunner($this->service, $client))->run();
+        $response = (new ServiceRunner($this->service, $client))->handle(HttpRequests::to('MiniPAVI'));
 
-        self::assertSame([], $client->sent);
+        self::assertInstanceOf(EmptyHttpResponse::class, $response);
+        self::assertSame([], $client->responded);
     }
 
-    public function testLogsAnAnswerThatCantBeSent(): void
+    public function testLogsAnAnswerThatCantBeGiven(): void
     {
         $logger = new MemoryLogger();
         $client = new MemoryClient(new GatewayRequest(GatewayRequest::FCTN_CONNECT), new \RuntimeException('Connection reset'));
 
-        (new ServiceRunner($this->service, $client, $logger))->run();
+        $response = (new ServiceRunner($this->service, $client, $logger))->handle(HttpRequests::to('MiniPAVI'));
 
+        self::assertInstanceOf(EmptyHttpResponse::class, $response);
         self::assertSame([LogLevel::CRITICAL, 'Cannot send the answer: Connection reset'], [$logger->records[0][0], $logger->records[0][1]]);
     }
 
     /**
      * With the gateway's client. In a separate process: MiniPaviCli::start() reads the body of
-     * the request (empty here, so not JSON), and the answer is written to the output
+     * the request (empty here, so not JSON), and MiniPaviCli::send() writes the answer
      */
     #[RunInSeparateProcess]
     public function testAnswersAnUnreadableRequestOfTheGatewayAsAnError(): void
     {
         $_SERVER['HTTP_USER_AGENT'] = 'MiniPAVI';
-        $_SERVER['HTTP_HOST'] = 'services';
-        $_SERVER['PHP_SELF'] = '/Svc/index.php';
 
         ob_start();
         try {
-            (new ServiceRunner($this->service, new MiniPaviClient(new RequestUrl())))->run();
+            $response = (new ServiceRunner($this->service, new MiniPaviClient()))->handle(HttpRequests::to('MiniPAVI'));
         } finally {
             $output = (string) ob_get_clean();
         }
 
+        self::assertInstanceOf(EmptyHttpResponse::class, $response);
         $answer = json_decode($output, true);
         self::assertIsArray($answer);
         self::assertSame(base64_encode(VdtHelper::writeLine0(Messages::defaults()->get(FrameworkMessage::Error))->toString()), $answer['content'] ?? null);

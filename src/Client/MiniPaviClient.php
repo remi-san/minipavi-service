@@ -8,45 +8,37 @@ use MiniPavi\MiniPaviCli;
 use MiniPaviService\Gateway\Client;
 use MiniPaviService\Gateway\GatewayAnswer;
 use MiniPaviService\Gateway\GatewayRequest;
-use MiniPaviService\Http\RequestUrl;
+use MiniPaviService\Http\EmptyHttpResponse;
 use MiniPaviService\Minitel\Terminal;
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
 
 /**
- * Adapter between the static MiniPaviCli and the service: reads the request of the gateway as
- * a GatewayRequest (receive()), and sends it a GatewayAnswer (send()). With VdtHelper
- * (Videotex helpers) and InputCommand (input commands), the only classes calling MiniPaviCli.
+ * Client of the MiniPavi gateway, through the static MiniPaviCli, used unchanged: it reads the
+ * gateway's request itself (MiniPaviCli::start(), from the body of the HTTP request), and
+ * writes the answer itself (MiniPaviCli::send()), so the HTTP response is an
+ * EmptyHttpResponse, which the Kernel doesn't send. With VdtHelper (Videotex helpers) and
+ * InputCommand (input commands), the only classes calling MiniPaviCli.
  */
 final class MiniPaviClient implements Client
 {
-    private RequestUrl $url;
-
-    /**
-     * @param ?RequestUrl $url URLs of the service, by default from the environment
-     *                         (RequestUrl::fromEnvironment()): the next URL of answers
-     *                         without one
-     */
-    public function __construct(?RequestUrl $url = null)
-    {
-        $this->url = $url ?? RequestUrl::fromEnvironment();
-    }
-
     /**
      * Reads the request of the gateway (the body of the HTTP request)
      *
      * @throws \Exception if it is not valid JSON
      */
-    public function receive(): GatewayRequest
+    public function request(ServerRequestInterface $request, string $serviceUrl): GatewayRequest
     {
         MiniPaviCli::start();
 
-        return $this->request();
+        return $this->decoded($serviceUrl);
     }
 
     /**
-     * The request read by receive(), as MiniPaviCli decoded it: values that aren't text
+     * The request read by MiniPaviCli::start(), as it decoded it: values that aren't text
      * become empty
      */
-    public function request(): GatewayRequest
+    public function decoded(string $serviceUrl = ''): GatewayRequest
     {
         // As (array) would: no content is an empty list, a single value a list of one
         $content = MiniPaviCli::$content ?? [];
@@ -60,22 +52,26 @@ final class MiniPaviClient implements Client
                 self::textOrNull(MiniPaviCli::$typeSocket),
                 self::textOrNull(MiniPaviCli::$versionMinitel),
             ),
+            $serviceUrl,
         );
     }
 
     /**
-     * Sends the answer to the gateway (the body of the HTTP response)
+     * Writes the answer to the gateway (the body of the HTTP response): an answer without next
+     * URL calls the service again, at the URL of the request
      */
-    public function send(GatewayAnswer $answer): void
+    public function response(GatewayRequest $request, GatewayAnswer $answer): ResponseInterface
     {
         MiniPaviCli::send(
             $answer->vdt->toString(),
-            $answer->next ?? $this->url->script(),
+            $answer->next ?? $request->serviceUrl,
             $answer->context,
             $answer->echo,
             $answer->command,
             $answer->directCall->value ?? false,
         );
+
+        return new EmptyHttpResponse();
     }
 
     /**

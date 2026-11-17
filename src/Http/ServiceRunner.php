@@ -6,21 +6,25 @@ namespace MiniPaviService\Http;
 
 use MiniPaviService\Core\Service;
 use MiniPaviService\Gateway\Client;
+use MiniPaviService\Gateway\GatewayRequest;
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Server\RequestHandlerInterface;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 
 /**
- * Runs the service for a client: reads the request with it, has the service answer it, and
- * sends the answer with it. MiniPaviClient for the gateway, HtmlClient for a browser; the
- * Dispatcher decides which runner a request is for.
+ * Runs the service for an HTTP request, through a client translating between HTTP and the
+ * service's values (MiniPaviClient for the gateway, HtmlClient for a browser): the client
+ * reads the request, the service answers it, and the client gives the response. The URL of
+ * the service (UrlAttribute::Service, from WithUrls) goes to the client, in the GatewayRequest.
  */
-final class ServiceRunner implements Runner
+final readonly class ServiceRunner implements RequestHandlerInterface
 {
     private LoggerInterface $logger;
 
     /**
-     * @param Client $client reads the requests, sends the answers
-     * @param ?LoggerInterface $logger where answers that can't be sent are logged; none by
+     * @param ?LoggerInterface $logger where answers that can't be given are logged; none by
      *                                 default
      */
     public function __construct(
@@ -31,25 +35,27 @@ final class ServiceRunner implements Runner
         $this->logger = $logger ?? new NullLogger();
     }
 
-    /**
-     * Runs the service for the request of the client
-     */
-    public function run(): void
+    public function handle(ServerRequestInterface $request): ResponseInterface
     {
+        $serviceUrl = UrlAttribute::Service->of($request);
         try {
-            $answer = $this->service->handle($this->client->receive());
+            $gatewayRequest = $this->client->request($request, $serviceUrl);
+            $answer = $this->service->handle($gatewayRequest);
         } catch (\Throwable $e) {
-            // The request couldn't be read
+            // The request couldn't be read: all that is known of it is where it was sent
+            $gatewayRequest = new GatewayRequest('', serviceUrl: $serviceUrl);
             $answer = $this->service->error($e);
         }
         if ($answer === null) {
-            return;
+            return new EmptyHttpResponse();
         }
 
         try {
-            $this->client->send($answer);
+            return $this->client->response($gatewayRequest, $answer);
         } catch (\Throwable $e) {
             $this->logger->critical('Cannot send the answer: ' . $e->getMessage(), ['exception' => $e]);
+
+            return new EmptyHttpResponse();
         }
     }
 }

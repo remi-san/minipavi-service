@@ -34,18 +34,19 @@ class EmulatorConfig
     }
 
     /**
-     * From the environment, where set: EMULATOR_URL, GATEWAY_URL and SERVICES_INTERNAL_HOST
-     * (default "services" when EMULATOR_URL is set, as in the local stack of this repository).
-     * Otherwise, the minipavi.fr emulator and gateway, reaching the service at its public URL.
+     * From the values of the environment (EMULATOR_URL, GATEWAY_URL, SERVICES_INTERNAL_HOST),
+     * read by the service's container: with an emulator (the local stack), its gateway and the
+     * services' host on the gateway's side ("services" unless given); without one,
+     * minipavi.fr's emulator and gateway
      */
-    public static function init(): self
+    public static function fromValues(?string $emulatorUrl, ?string $gatewayUrl, ?string $servicesInternalHost): self
     {
-        $url = getenv('EMULATOR_URL') ?: null;
+        $emulatorUrl = $emulatorUrl === '' ? null : $emulatorUrl;
 
         return new self(
-            $url ?? self::PUBLIC_EMULATOR_URL,
-            getenv('GATEWAY_URL') ?: self::PUBLIC_GATEWAY,
-            getenv('SERVICES_INTERNAL_HOST') ?: ($url !== null ? self::LOCAL_SERVICES_HOST : null),
+            $emulatorUrl ?? self::PUBLIC_EMULATOR_URL,
+            $gatewayUrl === null || $gatewayUrl === '' ? self::PUBLIC_GATEWAY : $gatewayUrl,
+            $servicesInternalHost === null || $servicesInternalHost === '' ? ($emulatorUrl !== null ? self::LOCAL_SERVICES_HOST : null) : $servicesInternalHost,
         );
     }
 

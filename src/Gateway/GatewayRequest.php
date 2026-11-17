@@ -21,12 +21,16 @@ final readonly class GatewayRequest
      * @param string $key function key pressed (FunctionKey), or connection code (FCTN_*)
      * @param list<string> $content text typed, one string per line of the input field
      * @param string $context context sent with the previous answer ('' if none)
+     * @param string $serviceUrl URL of the service the request was sent to (Http\RequestUrl):
+     *                           the next URL of answers without one; '' for a request built
+     *                           in memory
      */
     public function __construct(
         public string $key,
         public array $content = [],
         public string $context = '',
         public Terminal $terminal = new Terminal(),
+        public string $serviceUrl = '',
     ) {}
 
     public function isConnecting(): bool

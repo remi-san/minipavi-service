@@ -7,49 +7,41 @@ namespace MiniPaviService\Client;
 use MiniPaviService\Gateway\Client;
 use MiniPaviService\Gateway\GatewayAnswer;
 use MiniPaviService\Gateway\GatewayRequest;
-use MiniPaviService\Http\RequestUrl;
-use MiniPaviService\Http\ServerVariable;
 use MiniPaviService\Vdt\HtmlRenderer;
+use Nyholm\Psr7\Response;
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
 
 /**
- * Client of a browser instead of the gateway: asks the service for a screen, and shows the
+ * Client of a browser instead of the gateway: asks the service for a screen, and gives the
  * answer drawn as an HTML page (HtmlRenderer). No interaction: a connection, or with the
- * query string's route (?route=games), a request on that route, its controller at its
- * initial state.
+ * query's route (?route=games), a request on that route, its controller at its initial state.
  */
 final class HtmlClient implements Client
 {
-    private RequestUrl $url;
-
     /**
-     * @param ?RequestUrl $url URLs of the service, by default from the environment: the
-     *                         title of the page
+     * A connection, or a request on the route of the query: the context of a user who just
+     * got there, without key nor input
      */
-    public function __construct(?RequestUrl $url = null)
+    public function request(ServerRequestInterface $request, string $serviceUrl): GatewayRequest
     {
-        $this->url = $url ?? RequestUrl::fromEnvironment();
-    }
-
-    /**
-     * A connection, or a request on the route of the query string: the context of a user who
-     * just got there, without key nor input
-     */
-    public function receive(): GatewayRequest
-    {
-        $route = ServerVariable::query('route');
-        if ($route === null || $route === '') {
-            return new GatewayRequest(GatewayRequest::FCTN_CONNECT);
+        $route = $request->getQueryParams()['route'] ?? null;
+        if (!\is_string($route) || $route === '') {
+            return new GatewayRequest(GatewayRequest::FCTN_CONNECT, serviceUrl: $serviceUrl);
         }
 
-        return new GatewayRequest('', [], (string) json_encode(['route' => $route]));
+        return new GatewayRequest('', [], (string) json_encode(['route' => $route]), serviceUrl: $serviceUrl);
     }
 
     /**
-     * Shows the screen of the answer, as an HTML page
+     * The screen of the answer, as an HTML page titled with the service's URL
      */
-    public function send(GatewayAnswer $answer): void
+    public function response(GatewayRequest $request, GatewayAnswer $answer): ResponseInterface
     {
-        header('Content-Type: text/html; charset=utf-8');
-        echo (new HtmlRenderer())->render($answer->vdt->screen(), $this->url->current());
+        return new Response(
+            200,
+            ['Content-Type' => 'text/html; charset=utf-8'],
+            (new HtmlRenderer())->render($answer->vdt->screen(), $request->serviceUrl),
+        );
     }
 }

@@ -7,30 +7,40 @@ namespace MiniPaviService\Tests\Support;
 use MiniPaviService\Gateway\Client;
 use MiniPaviService\Gateway\GatewayAnswer;
 use MiniPaviService\Gateway\GatewayRequest;
+use Nyholm\Psr7\Response;
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
 
 /**
- * Client giving a request (or failing to read it), and keeping the answers sent in $sent
+ * Client giving a request (or failing to read it), and answering with the Videotex of the
+ * answer; keeps the requests and answers it gave responses for in $responded
  */
 final class MemoryClient implements Client
 {
-    /** @var list<GatewayAnswer> */
-    public array $sent = [];
+    /** @var list<array{GatewayRequest, GatewayAnswer}> */
+    public array $responded = [];
 
     public function __construct(
         private GatewayRequest|\Throwable $request,
-        private ?\Throwable $sendFailure = null,
+        private ?\Throwable $responseFailure = null,
     ) {}
 
-    public function receive(): GatewayRequest
+    public function request(ServerRequestInterface $request, string $serviceUrl): GatewayRequest
     {
-        return $this->request instanceof \Throwable ? throw $this->request : $this->request;
+        if ($this->request instanceof \Throwable) {
+            throw $this->request;
+        }
+
+        return new GatewayRequest($this->request->key, $this->request->content, $this->request->context, $this->request->terminal, $serviceUrl);
     }
 
-    public function send(GatewayAnswer $answer): void
+    public function response(GatewayRequest $request, GatewayAnswer $answer): ResponseInterface
     {
-        if ($this->sendFailure !== null) {
-            throw $this->sendFailure;
+        if ($this->responseFailure !== null) {
+            throw $this->responseFailure;
         }
-        $this->sent[] = $answer;
+        $this->responded[] = [$request, $answer];
+
+        return new Response(200, [], $answer->vdt->toString());
     }
 }
