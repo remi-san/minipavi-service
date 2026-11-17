@@ -24,6 +24,7 @@ The code (namespace `MiniPaviService`, in `src/`) is organized by layer:
 | `Gateway\` | the MiniPavi gateway: its requests and answers (`GatewayRequest`, `GatewayAnswer`), and `MiniPaviClient`, which reads and sends them |
 | `Http\` | the entry point for the web server: `ServiceRunner`, `RequestUrl`, `EmulatorConfig`, `ServerVariable` |
 | `Log\` | `ErrorLogLogger` |
+| `Testing\` | `ServiceTester`, functional tests of a service (needs PHPUnit) |
 
 ## Installing
 
@@ -203,6 +204,37 @@ $logger = new ErrorLogLogger();
 - The `FCTN_*` constants of `GatewayRequest` name the connection codes of `Request::key()`
   (`CNX`, `DIRECTCNX`, `FIN`).
 
+## Testing a service
+
+`Testing\ServiceTester` scripts a session of a user against a `Service`, without the gateway,
+in a PHPUnit test (PHPUnit is suggested by the framework, not required: add it to the
+service's `require-dev`). It runs the service on requests built in memory, gives the context
+of each answer back with the next request, and plays every answer since the connection on a
+simulated `Screen`, as the Minitel keeps what isn't cleared:
+
+```php
+$tester = new ServiceTester(new Service($router));   // optionally, a Terminal
+
+$tester->connect()->assertRoute('home')->assertScreenContains('OCTOBLUE')
+    ->type('2')->press(FunctionKey::Send)->assertRoute('games')
+    ->press(FunctionKey::Summary)->assertRoute('home');
+```
+
+- `connect()` starts a new session (an empty screen, no context), `type(...$lines)` gives
+  the text of the input field for the next key (one string per line), `press(FunctionKey)`
+  sends a key, and `disconnect()` checks a disconnection isn't answered.
+- `assertScreenContains()`, `assertScreenNotContains()`, `assertLineContains($row, ...)` and
+  `assertLine0()` check the screen as text, accented characters included
+  (`Screen::text()`); `assertRoute()` the route the user's next key goes to, and
+  `assertConnectsTo($url)` a connection to another service (`Response::connectTo()`). A
+  failed assertion shows the screen.
+- `screen()`, `answer()` (the last `GatewayAnswer`) and `context()` give the rest, for
+  other assertions.
+
+To test the service as it is served, build its `Service` from the same wiring as its
+`public/index.php`: the services of this repository keep it in `config/container.php`, which
+both require (see their `tests/`).
+
 ## Page XML format
 
 A page file has a `<page>` root, read by `PageXmlParser`. Errors throw a `PageXmlException`
@@ -288,7 +320,9 @@ echo $moved->screen()->preview();      // the screen, as text
 - **`withoutClear()`**: the same content without its clear screens (FF), to draw it over
   other content.
 - **`screen()`**: the `Screen` drawn by the content: a `Cell` (character and attributes) or
-  `null` per row and column, and `preview()` to print it as text.
+  `null` per row and column. `preview()` prints it as text, with row numbers (G2 characters
+  as `?`), and `line($row)` and `text()` give the text of a row and of the screen, G2
+  characters decoded (`é`, `£`, `½`, `Œ`...; `Cell::text()`).
 - **`play($glyph, $other)`**: plays the content on the simulated screen, calling `$glyph`
   for each character, with its row, column, width and attributes, and `$other` for the
   other `Token`s.
