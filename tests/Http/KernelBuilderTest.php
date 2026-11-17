@@ -16,14 +16,18 @@ use MiniPaviService\Http\KernelBuilder;
 use MiniPaviService\Http\Url\RequestUrl;
 use MiniPaviService\Message\Messages;
 use MiniPaviService\Tests\Support\CallbackController;
-use MiniPaviService\Tests\Support\HttpRequests;
 use MiniPaviService\Tests\Support\MemoryLogger;
 use MiniPaviService\Tests\Support\RecordingHandler;
 use MiniPaviService\Vdt\Vdt;
 use MiniPaviService\Vdt\VdtHelper;
+use PHPUnit\Framework\Attributes\RunInSeparateProcess;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LogLevel;
 
+/**
+ * Runs the Kernel built, on requests set in the globals, and reads what it sends: in separate
+ * processes. From the command line, PHP keeps the status code, but sends no headers.
+ */
 final class KernelBuilderTest extends TestCase
 {
     private KernelBuilder $builder;
@@ -36,67 +40,88 @@ final class KernelBuilderTest extends TestCase
         $this->builder = KernelBuilder::for($router, Messages::defaults());
     }
 
-    public function testBuildsAKernel(): void
-    {
-        $this->expectNotToPerformAssertions();
-
-        $this->builder->withContextKey('secret')->build();
-    }
-
+    #[RunInSeparateProcess]
     public function testBrowsersAskingWebGetTheServiceWithASignedContext(): void
     {
-        $html = (string) $this->builder->withContextKey('secret')->handler()->handle(HttpRequests::to('Mozilla/5.0', ['web' => 'true']))->getBody();
+        $html = self::serve($this->builder->withContextKey('secret'), 'web=true');
 
         preg_match('#name="context" value="([^"]*)"#', $html, $context);
         self::assertSame('{"route":"home","states":{"home":"read-input"},"parameters":{"home":{}}}', (new HmacContextSigner('secret'))->verify(html_entity_decode($context[1] ?? '')));
+        // The page's title is the service's URL, from the request
+        self::assertStringContainsString('<title>http://example.org/Svc/index.php', $html);
     }
 
+    #[RunInSeparateProcess]
     public function testOtherBrowsersAreSentToTheEmulator(): void
     {
-        $default = $this->builder->handler()->handle(HttpRequests::to('Mozilla/5.0'));
-        $local = $this->builder->withEmulator(new EmulatorConfig('http://localhost:8081/', 'ws://localhost:8182/', 'services'))
-            ->handler()->handle(HttpRequests::to('Mozilla/5.0'));
+        $page = self::serve($this->builder->withEmulator(new EmulatorConfig('http://localhost:8081/', 'ws://localhost:8182/', 'services')), '');
 
-        self::assertSame(302, $default->getStatusCode());
-        self::assertStringStartsWith(EmulatorConfig::PUBLIC_EMULATOR_URL, $default->getHeaderLine('Location'));
-        self::assertStringStartsWith('http://localhost:8081/', $local->getHeaderLine('Location'));
+        self::assertSame(302, http_response_code());
+        self::assertSame('', $page);
     }
 
+    #[RunInSeparateProcess]
     public function testHandlersOfTheServiceAreTriedFirst(): void
     {
         $api = new RecordingHandler('api');
-        $handler = $this->builder->withHandler(new ConditionalRequestHandler('api', new QueryParameterEquals('web', 'true'), $api))->handler();
 
-        self::assertSame('api', (string) $handler->handle(HttpRequests::to('Mozilla/5.0', ['web' => 'true']))->getBody());
+        $page = self::serve($this->builder->withHandler(new ConditionalRequestHandler('api', new QueryParameterEquals('web', 'true'), $api)), 'web=true');
+
+        self::assertSame('api', $page);
         self::assertCount(1, $api->requests);
     }
 
+    #[RunInSeparateProcess]
     public function testComputesTheUrlsWithTheRequestUrl(): void
     {
-        $html = (string) $this->builder->withRequestUrl(new RequestUrl('https://minitel.example.org'))
-            ->handler()->handle(HttpRequests::to('Mozilla/5.0', ['web' => 'true']))->getBody();
+        $html = self::serve($this->builder->withRequestUrl(new RequestUrl('https://minitel.example.org')), 'web=true');
 
-        // The page's title is the service's URL
-        self::assertStringContainsString('<title>https://minitel.example.org', $html);
+        self::assertStringContainsString('<title>https://minitel.example.org/Svc/index.php', $html);
     }
 
+    #[RunInSeparateProcess]
     public function testLogsAndWarnsThatTheContextIsNotSignedWithoutKey(): void
     {
         $logger = new MemoryLogger();
 
-        $this->builder->withLogger($logger)->handler()->handle(HttpRequests::to('Mozilla/5.0', ['web' => 'true']));
+        self::serve($this->builder->withLogger($logger), 'web=true');
 
         self::assertSame([LogLevel::WARNING, 'No key signing the context: it is not signed, and can be forged'], [$logger->records[0][0], $logger->records[0][1]]);
-        // The service logs to it too
+        // Every part logs to it: the Dispatcher, the Service
         self::assertContains([LogLevel::INFO, 'Connection', ['fctn' => 'CNX']], $logger->records);
     }
 
-    public function testNoWarningWithAKey(): void
+    #[RunInSeparateProcess]
+    public function testDoesNotWarnWithAKey(): void
     {
         $logger = new MemoryLogger();
 
-        $this->builder->withLogger($logger)->withContextKey('secret')->handler();
+        self::serve($this->builder->withLogger($logger)->withContextKey('secret'), 'web=true');
 
-        self::assertSame([], $logger->records);
+        self::assertSame([], array_filter($logger->records, fn(array $record) => $record[0] === LogLevel::WARNING));
+    }
+
+    /**
+     * Output of the Kernel for a browser's GET of /Svc/ with this query
+     */
+    private static function serve(KernelBuilder $builder, string $query): string
+    {
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_SERVER['HTTP_USER_AGENT'] = 'Mozilla/5.0';
+        $_SERVER['HTTP_HOST'] = 'example.org';
+        $_SERVER['PHP_SELF'] = '/Svc/index.php';
+        $_SERVER['REQUEST_URI'] = '/Svc/' . ($query === '' ? '' : "?$query");
+        $_SERVER['QUERY_STRING'] = $query;
+        parse_str($query, $get);
+        $_GET = $get;
+
+        ob_start();
+        try {
+            $builder->build()->run();
+        } finally {
+            $output = (string) ob_get_clean();
+        }
+
+        return $output;
     }
 }

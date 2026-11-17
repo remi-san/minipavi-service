@@ -119,7 +119,7 @@ final readonly class KernelBuilder
      *
      * @throws MessagesException if the messages miss some of the framework's
      */
-    public function handler(): RequestHandlerInterface
+    private function handler(): RequestHandlerInterface
     {
         $service = new Service($this->router, $this->messages, $this->logger);
         $signer = $this->signer();

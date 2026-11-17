@@ -96,8 +96,7 @@ KernelBuilder::for($router, $messages)
   - `withHandler()`: a `ConditionalRequestHandler` of the service (e.g. an API, a health
     check), tried before the framework's, in the order they are added.
 
-  `handler()` gives what the `Kernel` has handle the request, e.g. to test it. A service
-  needing another wiring builds the `Kernel` itself, from the classes below.
+  A service needing another wiring builds the `Kernel` itself, from the classes below.
 
 - **Lazy controllers:** a service with many screens shouldn't build every controller, and parse
   every page, on each request. With a dependency injection container such as PHP-DI, define
