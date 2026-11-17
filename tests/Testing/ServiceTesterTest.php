@@ -13,6 +13,7 @@ use MiniPaviService\Core\FunctionKey;
 use MiniPaviService\Core\Router;
 use MiniPaviService\Core\Service;
 use MiniPaviService\Core\Terminal;
+use MiniPaviService\Message\Messages;
 use MiniPaviService\Testing\ServiceTester;
 use MiniPaviService\Tests\Support\CallbackController;
 use MiniPaviService\Vdt\VdtHelper;
@@ -41,7 +42,7 @@ final class ServiceTesterTest extends TestCase
             : Response::display(VdtHelper::clearScreen() . VdtHelper::setPos(1, 2) . VdtHelper::toG2('Annuaire'))));
         $router->setDefaultRoute('menu');
 
-        $this->tester = new ServiceTester(new Service($router), new Terminal('192.0.2.1', 'websocket', 'Cv5'));
+        $this->tester = new ServiceTester(new Service($router, Messages::defaults()), new Terminal('192.0.2.1', 'websocket', 'Cv5'));
     }
 
     public function testScriptsASessionKeepingTheContext(): void

@@ -32,20 +32,20 @@ final class Service
     private Messages $messages;
 
     /**
+     * @param Messages $messages the service's, for the message of a failed request
+     *                           (FrameworkMessage::Error), e.g. Messages::defaults()
      * @param ?LoggerInterface $logger where connections, disconnections and errors are logged;
      *                                 none by default
-     * @param ?Messages $messages the service's, for the message of a failed request
-     *                            (FrameworkMessage::Error); null: the framework's
      *
      * @throws MessagesException if the messages miss some of the framework's
      */
     public function __construct(
         private Router $router,
+        Messages $messages,
         ?LoggerInterface $logger = null,
-        ?Messages $messages = null,
     ) {
         $this->logger = $logger ?? new NullLogger();
-        $this->messages = ($messages ?? Messages::defaults())->check(FrameworkMessage::class);
+        $this->messages = $messages->check(FrameworkMessage::class);
     }
 
     /**

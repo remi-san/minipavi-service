@@ -12,6 +12,7 @@ use MiniPaviService\Controller\Response;
 use MiniPaviService\Core\FunctionKey;
 use MiniPaviService\Core\Router;
 use MiniPaviService\Core\Service;
+use MiniPaviService\Message\Messages;
 use MiniPaviService\Page;
 use MiniPaviService\Page\Parser\PageXmlParser;
 use MiniPaviService\Testing\ServiceTester;
@@ -68,10 +69,10 @@ final class PaginatedControllerTest extends TestCase
 
     public function testPageRedefinesTheEndMessages(): void
     {
-        $page = (new PageXmlParser())->parse(str_replace('<foreach', '<message name="page.last">Fin de la liste</message><foreach', self::PAGE), __DIR__);
+        $page = (new PageXmlParser(Messages::defaults()))->parse(str_replace('<foreach', '<message name="page.last">Fin de la liste</message><foreach', self::PAGE), __DIR__);
         $this->router->addRoute('list', new ListController($page, ['a', 'b', 'c']));
 
-        (new ServiceTester(new Service($this->router)))->connect()->press(FunctionKey::Send)
+        (new ServiceTester(new Service($this->router, Messages::defaults())))->connect()->press(FunctionKey::Send)
             ->press(FunctionKey::Next)->press(FunctionKey::Next)->assertLine0('Fin de la liste')
             ->press(FunctionKey::Previous)->press(FunctionKey::Previous)->assertLine0('Première page');
     }
@@ -119,11 +120,11 @@ final class PaginatedControllerTest extends TestCase
     {
         $this->router->addRoute('list', new ListController($this->page(), $items));
 
-        return (new ServiceTester(new Service($this->router)))->connect()->press(FunctionKey::Send);
+        return (new ServiceTester(new Service($this->router, Messages::defaults())))->connect()->press(FunctionKey::Send);
     }
 
     private function page(): Page
     {
-        return (new PageXmlParser())->parse(self::PAGE, __DIR__);
+        return (new PageXmlParser(Messages::defaults()))->parse(self::PAGE, __DIR__);
     }
 }

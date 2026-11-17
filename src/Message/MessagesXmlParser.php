@@ -12,9 +12,12 @@ namespace MiniPaviService\Message;
 final class MessagesXmlParser
 {
     /**
+     * @param Messages $base the messages the file redefines and adds to (new Messages() for
+     *                       none)
+     *
      * @throws MessagesException
      */
-    public function parseFile(string $file, Messages $base = new Messages()): Messages
+    public function parseFile(string $file, Messages $base): Messages
     {
         $xml = is_file($file) ? file_get_contents($file) : false;
         if ($xml === false) {
@@ -25,11 +28,13 @@ final class MessagesXmlParser
     }
 
     /**
+     * @param Messages $base the messages the file redefines and adds to (new Messages() for
+     *                       none)
      * @param string $name name of the file, in errors
      *
      * @throws MessagesException
      */
-    public function parse(string $xml, Messages $base = new Messages(), string $name = 'messages'): Messages
+    public function parse(string $xml, Messages $base, string $name = 'messages'): Messages
     {
         $previous = libxml_use_internal_errors(true);
         libxml_clear_errors();

@@ -140,7 +140,7 @@ final class ServiceTest extends TestCase
         $this->expectException(MessagesException::class);
         $this->expectExceptionMessage('No text for the messages: error, page.first, page.last, endkey, endkey.shift');
 
-        new Service($this->router, messages: new Messages(['other' => 'x']));
+        new Service($this->router, new Messages(['other' => 'x']));
     }
 
     public function testEndlessPageChangesAreStopped(): void
@@ -307,7 +307,7 @@ final class ServiceTest extends TestCase
     {
         $this->router->addRoute('answer', $this->controller('answer', PageParameters::class, fn(Request $request) => $response));
 
-        return (new Service($this->router, $this->logger))->serve(new Context($this->router, 'answer'), 'ENVOI', [], new Terminal());
+        return (new Service($this->router, Messages::defaults(), $this->logger))->serve(new Context($this->router, 'answer'), 'ENVOI', [], new Terminal());
     }
 
     /**
@@ -324,8 +324,8 @@ final class ServiceTest extends TestCase
     private function handle(GatewayRequest $request, ?string $errorMessage = null): ?GatewayAnswer
     {
         $service = $errorMessage === null
-            ? new Service($this->router, $this->logger)
-            : new Service($this->router, $this->logger, Messages::defaults()->with(['error' => $errorMessage]));
+            ? new Service($this->router, Messages::defaults(), $this->logger)
+            : new Service($this->router, Messages::defaults()->with(['error' => $errorMessage]), $this->logger);
 
         return $service->handle($request);
     }
@@ -349,6 +349,6 @@ final class ServiceTest extends TestCase
      */
     private function serve(Context $context, string $key, array $content): string
     {
-        return (new Service($this->router, $this->logger))->serve($context, $key, $content, new Terminal('192.0.2.1', 'websocket', 'Cv5'))->vdt;
+        return (new Service($this->router, Messages::defaults(), $this->logger))->serve($context, $key, $content, new Terminal('192.0.2.1', 'websocket', 'Cv5'))->vdt;
     }
 }

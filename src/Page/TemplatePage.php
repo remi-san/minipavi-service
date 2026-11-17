@@ -21,9 +21,9 @@ final readonly class TemplatePage implements Page
      */
     public function __construct(
         private array $nodes,
+        private Messages $messages,
         private ?Input $input = null,
         private Setup $setup = new Setup(),
-        private Messages $messages = new Messages(),
     ) {}
 
     /**

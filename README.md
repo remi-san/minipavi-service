@@ -50,17 +50,21 @@ use MiniPaviService\Core\{Router, Service};
 use MiniPaviService\Gateway\MiniPaviClient;
 use MiniPaviService\Http\ServiceRunner;
 use MiniPaviService\Log\ErrorLogLogger;
+use MiniPaviService\Message\Messages;
 use MiniPaviService\Page\Parser\PageXmlParser;
 
 require __DIR__.'/../vendor/autoload.php';
 
+// The framework's messages; a service usually reads its own over them (see Messages)
+$messages = Messages::defaults();
+
 $router = new Router();
-$router->addRoute(HomeController::NAME, new HomeController((new PageXmlParser())->parseFile(__DIR__.'/../config/pages/home.xml')));
+$router->addRoute(HomeController::NAME, new HomeController((new PageXmlParser($messages))->parseFile(__DIR__.'/../config/pages/home.xml')));
 $router->setDefaultRoute(HomeController::NAME);
 
 $logger = new ErrorLogLogger();
 
-(new ServiceRunner(new Service($router, $logger), new MiniPaviClient(), logger: $logger))->run();
+(new ServiceRunner(new Service($router, $messages, $logger), new MiniPaviClient(), logger: $logger))->run();
 ```
 
 - **Lazy controllers:** a service with many screens shouldn't build every controller, and parse
@@ -104,9 +108,8 @@ $logger = new ErrorLogLogger();
   default route.
   If serving a request fails (an exception or a PHP error, in a controller, a template, the
   context...), the error is logged, and the user gets a message on line 0
-  (`FrameworkMessage::Error`, from the `$messages` of the constructor, the framework's by
-  default; see [Messages](#messages)): their next function key starts again at the default
-  route.
+  (`FrameworkMessage::Error`, from the `$messages` of the constructor; see
+  [Messages](#messages)): their next function key starts again at the default route.
 - **`GatewayRequest`** is what the gateway sends: `key` (the function key, or a connection
   code), `content` (the text typed), `context` (given back from the previous answer) and
   `terminal`. **`GatewayAnswer`** is what is sent back: `vdt`, `context`, `next` (the URL the
@@ -120,7 +123,7 @@ $logger = new ErrorLogLogger();
   the framework's `ErrorLogLogger`, writing to PHP's error log) and
   log connections, disconnections and browsers sent to the emulator at info level, and errors
   at error level (with the exception):
-  `new Service($router, $logger)`, `new ServiceRunner($service, $client, logger: $logger)`.
+  `new Service($router, $messages, $logger)`, `new ServiceRunner($service, $client, logger: $logger)`.
   Without one, nothing is logged.
 - **A `Controller`** runs on a `Request` and returns a `Response`. The request gives:
   - `state()` and `parameters()`: what the controller's previous response asked to keep,
@@ -350,7 +353,7 @@ of each answer back with the next request, and plays every answer since the conn
 simulated `Screen`, as the Minitel keeps what isn't cleared:
 
 ```php
-$tester = new ServiceTester(new Service($router));   // optionally, a Terminal
+$tester = new ServiceTester(new Service($router, $messages));   // optionally, a Terminal
 
 $tester->connect()->assertRoute('home')->assertScreenContains('OCTOBLUE')
     ->type('2')->press(FunctionKey::Send)->assertRoute('games')
@@ -382,6 +385,8 @@ Text shown on the Minitel is not written in the code: it is read from messages f
 - **Texts** come from `config/messages.xml` in the framework (its defaults,
   `Messages::defaults()`), then the service's messages file over them, then a page's
   `<message>` over those, for that page. A text can have `{{placeholders}}`.
+- **Always given:** `Service`, `PageXmlParser` and the pages take the messages as a required
+  argument, never a hidden default: pass `Messages::defaults()` for the framework's only.
 
 ```xml
 <messages xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -404,7 +409,7 @@ $messages = (new MessagesXmlParser())
     ->parseFile("$config/messages.xml", Messages::defaults())
     ->check(FrameworkMessage::class, AccMessage::class);
 $parser = new PageXmlParser($messages);              // pages redefine them with <message>
-$service = new Service($router, $logger, $messages);  // for its error message
+$service = new Service($router, $messages, $logger);  // for its error message
 
 // In a controller: the page's text, its placeholders replaced
 VdtHelper::writeLine0($this->page->message(AccMessage::ConnectedFrom, ['remoteAddr' => $addr]));

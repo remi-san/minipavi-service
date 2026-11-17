@@ -31,7 +31,7 @@ final class PageXmlParserTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->parser = new PageXmlParser();
+        $this->parser = new PageXmlParser(Messages::defaults());
     }
 
     public function testStaticPageDrawsItsElements(): void

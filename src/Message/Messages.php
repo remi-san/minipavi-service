@@ -28,7 +28,7 @@ final readonly class Messages
     {
         static $defaults = null;
         if (!$defaults instanceof self) {
-            $defaults = (new MessagesXmlParser())->parseFile(self::DEFAULTS);
+            $defaults = (new MessagesXmlParser())->parseFile(self::DEFAULTS, new self());
         }
 
         return $defaults;

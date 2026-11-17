@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MiniPaviService\Tests\Page\Parser;
 
 use MiniPaviService\Core\FunctionKey;
+use MiniPaviService\Message\Messages;
 use MiniPaviService\Page\Display\Color;
 use MiniPaviService\Page\Display\Size;
 use MiniPaviService\Page\Parser\ElementFactory;
@@ -85,7 +86,7 @@ final class PageXsdTest extends TestCase
     #[DataProvider('validPages')]
     public function testPageReadByTheParserIsValid(string $xml): void
     {
-        (new PageXmlParser())->parse($xml, self::FIXTURES);
+        (new PageXmlParser(Messages::defaults()))->parse($xml, self::FIXTURES);
 
         self::assertSame([], self::errors($xml));
     }

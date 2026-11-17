@@ -19,9 +19,9 @@ final readonly class StaticPage implements Page
 {
     public function __construct(
         private Display $display,
+        private Messages $messages,
         private ?Input $input = null,
         private Setup $setup = new Setup(),
-        private Messages $messages = new Messages(),
     ) {}
 
     /**

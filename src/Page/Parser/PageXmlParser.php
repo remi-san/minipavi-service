@@ -22,16 +22,13 @@ final class PageXmlParser
 {
     private const TYPES = ['static','template'];
 
-    private Messages $messages;
-
     /**
-     * @param ?Messages $messages the service's messages, which a page's <message> redefine;
-     *                            null: the framework's (Messages::defaults())
+     * @param Messages $messages the service's messages (e.g. Messages::defaults() for the
+     *                           framework's only), which a page's <message> redefine
      */
-    public function __construct(?Messages $messages = null)
-    {
-        $this->messages = $messages ?? Messages::defaults();
-    }
+    public function __construct(
+        private Messages $messages,
+    ) {}
 
     /**
      * Page from a file; <background> and <image> files are read from the same folder
@@ -84,7 +81,7 @@ final class PageXmlParser
         $nodes = $this->nodes($root, $factory, $name, $type == 'template', false, $input);
 
         if ($type == 'template') {
-            return new TemplatePage($nodes, $input, $setup, $messages);
+            return new TemplatePage($nodes, $messages, $input, $setup);
         }
 
         // Static page: elements are built now, so that their errors are found now
@@ -96,7 +93,7 @@ final class PageXmlParser
         } catch (TemplateException $e) {
             throw new PageXmlException($e->getMessage(), 0, $e);
         }
-        return new StaticPage(new Display(...$elements), $input, $setup, $messages);
+        return new StaticPage(new Display(...$elements), $messages, $input, $setup);
     }
 
     /**

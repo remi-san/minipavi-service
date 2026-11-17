@@ -35,7 +35,7 @@ final class ServiceRunnerTest extends TestCase
         $_SERVER['REQUEST_URI'] = '/Svc/';
         $logger = new MemoryLogger();
         $runner = new ServiceRunner(
-            new Service(new Router()),
+            new Service(new Router(), Messages::defaults()),
             new MiniPaviClient(new RequestUrl()),
             new EmulatorConfig('http://emulator', 'ws://gateway'),
             new RequestUrl(),
@@ -65,7 +65,7 @@ final class ServiceRunnerTest extends TestCase
 
         ob_start();
         try {
-            (new ServiceRunner(new Service($router, $logger), new MiniPaviClient(new RequestUrl()), new EmulatorConfig('http://emulator', 'ws://gateway'), new RequestUrl()))->run();
+            (new ServiceRunner(new Service($router, Messages::defaults(), $logger), new MiniPaviClient(new RequestUrl()), new EmulatorConfig('http://emulator', 'ws://gateway'), new RequestUrl()))->run();
         } finally {
             $output = (string) ob_get_clean();
         }

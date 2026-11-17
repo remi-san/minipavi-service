@@ -96,7 +96,7 @@ final class MessagesTest extends TestCase
         $this->expectException(MessagesException::class);
         $this->expectExceptionMessage($message);
 
-        (new MessagesXmlParser())->parse($xml, name: 'm.xml');
+        (new MessagesXmlParser())->parse($xml, new Messages(), 'm.xml');
     }
 
     public function testMissingFileIsNamed(): void
@@ -104,7 +104,7 @@ final class MessagesTest extends TestCase
         $this->expectException(MessagesException::class);
         $this->expectExceptionMessage('/missing.xml: file not found');
 
-        (new MessagesXmlParser())->parseFile('/missing.xml');
+        (new MessagesXmlParser())->parseFile('/missing.xml', new Messages());
     }
 
     public function testFilesMatchTheirSchema(): void
