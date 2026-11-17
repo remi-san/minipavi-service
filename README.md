@@ -122,13 +122,15 @@ $logger = new ErrorLogLogger();
   `new Service($router, $logger)`, `new ServiceRunner($service, $client, logger: $logger)`.
   Without one, nothing is logged.
 - **A `Controller`** runs on a `Request` and returns a `Response`. The request gives:
-  - `state()` (`STATE_INIT`, `STATE_DISPLAY`, `STATE_INIT_INPUT`, `STATE_READ_INPUT`) and
-    `parameters()` / `parameter($name)`: what the controller's previous response asked to
-    keep, from one request of the gateway to the next (the context keeps them per route, and
-    goes to the gateway as JSON: parameters are text, numbers, booleans, null or arrays).
-    `int($name, $default)`, `string()`, `bool()` and `array()` read a parameter typed: they
-    coerce what is safe (`'12'` or `12.0` to `12`, a number to text, `1`/`0` and
-    `'true'`/`'false'` to a bool), and give the default for a missing or other value;
+  - the state and parameters the controller's previous response asked to keep, from one
+    request of the gateway to the next (the context keeps them per route, and goes to the
+    gateway as JSON), read typed only (see [Typed state and parameters](#typed-state)):
+    `stateAs($enum, $default)` gives the state as a case of a `State` enum (`ControllerState`:
+    `Init`, `Display`, `InitInput`, `ReadInput`, or the controller's own);
+    `parametersAs($class)` the parameters as a `Parameters` object; and `int($name,
+    $default)`, `string()`, `bool()` and `array()` one parameter, coercing what is safe
+    (`'12'` or `12.0` to `12`, a number to text, `1`/`0` and `'true'`/`'false'` to a bool)
+    and giving the default for a missing or other value;
   - `functionKey()`: the function key the user pressed, a `FunctionKey` (`Send`, `Next`,
     `Previous`, `Refresh`, `Summary`, `Guide`, `Cancel`, `Correction`), or null for a
     connection code; `key()` gives the name the gateway sent (`ENVOI`…, or `CNX`, `FIN`…);
@@ -141,15 +143,16 @@ $logger = new ErrorLogLogger();
 
   | Response | Effect | State kept by default |
   |---|---|---|
-  | `Response::display($vdt)` | sends Videotex content to the gateway; the next key comes back to this controller | `STATE_READ_INPUT` |
-  | `Response::readInput($vdt, $command)` | sends content and the command reading the page's input field (`Page::inputCommand()`) to the gateway | `STATE_READ_INPUT` |
-  | `Response::goTo($route, $parameters)` | switches to another controller, which runs at once: at `STATE_INIT`, with `$parameters`, without the user's input; this controller is reset | `STATE_INIT` |
-  | `Response::connectTo($url, $vdt)` | sends the user to another service, as a new connection (`CallMode::Connect`) | `STATE_INIT` |
+  | `Response::display($vdt)` | sends Videotex content to the gateway; the next key comes back to this controller | `ControllerState::ReadInput` |
+  | `Response::readInput($vdt, $command)` | sends content and the command reading the page's input field (`Page::inputCommand()`) to the gateway | `ControllerState::ReadInput` |
+  | `Response::goTo($route, $parameters)` | switches to another controller, which runs at once: at `ControllerState::Init`, with `$parameters` (a `Parameters` object, or none), without the user's input; this controller is reset | `ControllerState::Init` |
+  | `Response::connectTo($url, $vdt)` | sends the user to another service, as a new connection (`CallMode::Connect`) | `ControllerState::Init` |
 
   Every response but `goTo()` answers the gateway and ends the request. The state and
   parameters are what this controller keeps for its next run (for `connectTo()`, when the
-  user comes back to it); give others by name, e.g.
-  `Response::readInput($vdt, $command, parameters: ['page' => 2])`. The classes behind them
+  user comes back to it): a `State`, and a `Parameters` object (none by default). Give
+  others by name, e.g. `Response::readInput($vdt, $command, parameters: new
+  DirectoryParameters(2))`. The classes behind them
   (`DisplayPage`, `RunCommand`, `ChangePage`, `RunExternalService`) can also be built directly.
   They are readonly, and don't change the context. Once `Service` has kept a response's
   state and parameters, it calls `continueWith(Flow $flow): GatewayAnswer`, where the
@@ -163,7 +166,7 @@ $logger = new ErrorLogLogger();
   {
       public function __construct(private string $vdt)
       {
-          parent::__construct(Controller::STATE_READ_INPUT, []);
+          parent::__construct(ControllerState::ReadInput, null);
       }
 
       public function continueWith(Flow $flow): GatewayAnswer
@@ -202,11 +205,13 @@ $logger = new ErrorLogLogger();
   ```
 
   A state it doesn't know (e.g. kept by an older version of the service) starts it again.
-  To add states, override `run()` and call `parent::run()` for the others.
+  To add states, name them in an enum implementing `State`, override `run()` to read it with
+  `stateAs()`, and call `parent::run()` for the others.
 
-- **Typed state and parameters.** A controller can keep its parameters in an object
-  implementing `Parameters`, and name its states with a string-backed enum, so PHPStan checks
-  what it keeps:
+- <a id="typed-state"></a>**Typed state and parameters.** What a controller keeps is typed,
+  so PHPStan checks it: its parameters in an object implementing `Parameters`, and its
+  states in a string-backed enum implementing `State` (`ControllerState` for the built-in
+  ones):
 
   ```php
   final readonly class DirectoryParameters implements Parameters
@@ -225,9 +230,9 @@ $logger = new ErrorLogLogger();
       }
   }
 
-  enum SearchState: string
+  enum SearchState: string implements State
   {
-      case Init = Controller::STATE_INIT;
+      case Init = 'init';             // same value as ControllerState::Init
       case ReadQuery = 'read-query';
   }
 
@@ -237,8 +242,9 @@ $logger = new ErrorLogLogger();
   return Response::readInput($vdt, $command, SearchState::ReadQuery, new DirectoryParameters($page + 1));
   ```
 
-  Every response takes a `Parameters` object for `$parameters` (and `goTo()` for the target's)
-  and an enum case for `$state`, as well as an array and a string.
+  Responses only take a `State` for `$state`, and a `Parameters` object (or null) for
+  `$parameters` and `goTo()`'s target parameters: the arrays and strings the context keeps
+  are made from them (`toArray()`, the enum's value).
 
 - The `FCTN_*` constants of `GatewayRequest` name the connection codes of `Request::key()`
   (`CNX`, `DIRECTCNX`, `FIN`).
