@@ -13,6 +13,7 @@ use MiniPaviService\Minitel\Terminal;
 use MiniPaviService\Tests\Support\FromParameters;
 use MiniPaviService\Tests\Support\SearchController;
 use MiniPaviService\Tests\Support\SearchState;
+use MiniPaviService\Vdt\Vdt;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -52,7 +53,7 @@ final class RouteTest extends TestCase
     {
         $route = (new Route(new SearchController()))->restore('read-query', new Values(['page' => 3]));
 
-        self::assertEquals(Response::display('read-query 3', SearchState::ReadQuery), $route->run('ENVOI', [], new Terminal()));
+        self::assertEquals(Response::display(new Vdt('read-query 3'), SearchState::ReadQuery), $route->run('ENVOI', [], new Terminal()));
     }
 
     public function testKeepsAStateAndParameters(): void

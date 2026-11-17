@@ -15,6 +15,7 @@ use MiniPaviService\Gateway\CallMode;
 use MiniPaviService\Page\InputCommand;
 use MiniPaviService\Tests\Support\FromParameters;
 use MiniPaviService\Tests\Support\RecordingFlow;
+use MiniPaviService\Vdt\Vdt;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -25,10 +26,10 @@ final class ResponseTest extends TestCase
 {
     public function testDisplaySendsContentAndReadsTheNextKey(): void
     {
-        $response = Response::display('Hello');
+        $response = Response::display(new Vdt('Hello'));
 
         self::assertInstanceOf(DisplayPage::class, $response);
-        self::assertSame('Hello', $response->vdt);
+        self::assertSame('Hello', $response->vdt->toString());
         self::assertSame(ControllerState::ReadInput, $response->state());
         self::assertNull($response->parameters());
     }
@@ -36,10 +37,10 @@ final class ResponseTest extends TestCase
     public function testReadInputSendsTheCommand(): void
     {
         $command = new InputCommand(['COMMAND' => ['name' => 'InputTxt', 'param' => ['x' => 1]]]);
-        $response = Response::readInput('Code ?', $command, parameters: new PageParameters(2));
+        $response = Response::readInput(new Vdt('Code ?'), $command, parameters: new PageParameters(2));
 
         self::assertInstanceOf(RunCommand::class, $response);
-        self::assertSame('Code ?', $response->vdt);
+        self::assertSame('Code ?', $response->vdt->toString());
         self::assertSame($command, $response->command);
         self::assertSame(ControllerState::ReadInput, $response->state());
         self::assertEquals(new PageParameters(2), $response->parameters());
@@ -59,10 +60,10 @@ final class ResponseTest extends TestCase
 
     public function testConnectToSendsTheUserToAnotherService(): void
     {
-        $response = Response::connectTo('https://example.org/service', 'Cnx en cours');
+        $response = Response::connectTo('https://example.org/service', new Vdt('Cnx en cours'));
 
         self::assertInstanceOf(RunExternalService::class, $response);
-        self::assertSame('Cnx en cours', $response->vdt);
+        self::assertSame('Cnx en cours', $response->vdt->toString());
         self::assertSame('https://example.org/service', $response->url);
         self::assertSame(CallMode::Connect, $response->callMode);
         // null: the controller's initial state
@@ -71,9 +72,9 @@ final class ResponseTest extends TestCase
 
     public function testRunExternalServiceTakesACallMode(): void
     {
-        $direct = new RunExternalService(ControllerState::Init, null, '', 'https://example.org/', CallMode::Direct);
+        $direct = new RunExternalService(ControllerState::Init, null, new Vdt(), 'https://example.org/', CallMode::Direct);
         // The call mode can also be given by its value
-        $connect = new RunExternalService(ControllerState::Init, null, '', 'https://example.org/', 'yes-cnx');
+        $connect = new RunExternalService(ControllerState::Init, null, new Vdt(), 'https://example.org/', 'yes-cnx');
 
         self::assertSame(CallMode::Direct, $direct->callMode);
         self::assertSame(CallMode::Connect, $connect->callMode);
@@ -81,7 +82,7 @@ final class ResponseTest extends TestCase
 
     public function testStateAndParametersCanBeGiven(): void
     {
-        $response = Response::display('Hello', ControllerState::Display, new FromParameters('home'));
+        $response = Response::display(new Vdt('Hello'), ControllerState::Display, new FromParameters('home'));
 
         self::assertSame(ControllerState::Display, $response->state());
         self::assertEquals(new FromParameters('home'), $response->parameters());
@@ -89,16 +90,16 @@ final class ResponseTest extends TestCase
 
     public function testDisplayAnswersWithItsContent(): void
     {
-        self::assertSame([['answer', ['vdt' => 'Hello', 'command' => null, 'next' => null, 'directCall' => null]]], $this->callsOf(Response::display('Hello')));
+        self::assertSame([['answer', ['vdt' => 'Hello', 'command' => null, 'next' => null, 'directCall' => null]]], $this->callsOf(Response::display(new Vdt('Hello'))));
     }
 
     public function testReadInputAnswersWithTheCommand(): void
     {
         $command = new InputCommand(['COMMAND' => ['name' => 'InputTxt']]);
 
-        self::assertSame([['answer', ['vdt' => 'Code ?', 'command' => $command, 'next' => null, 'directCall' => null]]], $this->callsOf(Response::readInput('Code ?', $command)));
+        self::assertSame([['answer', ['vdt' => 'Code ?', 'command' => $command, 'next' => null, 'directCall' => null]]], $this->callsOf(Response::readInput(new Vdt('Code ?'), $command)));
         // Without content: none sent
-        self::assertSame([['answer', ['vdt' => '', 'command' => null, 'next' => null, 'directCall' => null]]], $this->callsOf(new RunCommand(ControllerState::ReadInput, null, null, null)));
+        self::assertSame([['answer', ['vdt' => '', 'command' => null, 'next' => null, 'directCall' => null]]], $this->callsOf(new RunCommand(ControllerState::ReadInput, null, new Vdt(), null)));
     }
 
     public function testGoToRunsTheTargetController(): void
@@ -112,7 +113,7 @@ final class ResponseTest extends TestCase
     {
         self::assertSame(
             [['answer', ['vdt' => 'Cnx en cours', 'command' => null, 'next' => 'https://example.org/service', 'directCall' => CallMode::Connect]]],
-            $this->callsOf(Response::connectTo('https://example.org/service', 'Cnx en cours')),
+            $this->callsOf(Response::connectTo('https://example.org/service', new Vdt('Cnx en cours'))),
         );
     }
 

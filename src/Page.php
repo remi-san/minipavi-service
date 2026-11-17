@@ -7,6 +7,7 @@ namespace MiniPaviService;
 use MiniPaviService\Message\Message;
 use MiniPaviService\Minitel\Terminal;
 use MiniPaviService\Page\InputCommand;
+use MiniPaviService\Vdt\Vdt;
 
 /**
  * A screen of the service: what it shows on the Minitel, and how it reads what
@@ -20,7 +21,7 @@ interface Page
      *
      * @param array<string, mixed> $data variables of a template
      */
-    public function display(Terminal $terminal, array $data = []): string;
+    public function display(Terminal $terminal, array $data = []): Vdt;
 
     /**
      * Command reading the page's input field, null if the page has none

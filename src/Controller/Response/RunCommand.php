@@ -10,6 +10,7 @@ use MiniPaviService\Controller\Response;
 use MiniPaviService\Controller\State;
 use MiniPaviService\Gateway\GatewayAnswer;
 use MiniPaviService\Page\InputCommand;
+use MiniPaviService\Vdt\Vdt;
 
 /**
  * Sends Videotex content and a command (e.g. reading an input field) to the gateway; what
@@ -18,13 +19,13 @@ use MiniPaviService\Page\InputCommand;
 final readonly class RunCommand extends Response
 {
     /**
-     * @param ?string $vdt Videotex content; null: none
+     * @param Vdt $vdt Videotex content (empty: none)
      * @param ?InputCommand $command from Page::inputCommand(); null: only the content is sent
      */
     public function __construct(
         ?State $state,
         ?Parameters $parameters,
-        public ?string $vdt,
+        public Vdt $vdt,
         public ?InputCommand $command,
     ) {
         parent::__construct($state, $parameters);
@@ -32,6 +33,6 @@ final readonly class RunCommand extends Response
 
     public function continueWith(Flow $flow): GatewayAnswer
     {
-        return $flow->answer($this->vdt ?? '', $this->command);
+        return $flow->answer($this->vdt, $this->command);
     }
 }

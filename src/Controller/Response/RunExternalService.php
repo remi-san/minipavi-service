@@ -10,6 +10,7 @@ use MiniPaviService\Controller\Response;
 use MiniPaviService\Controller\State;
 use MiniPaviService\Gateway\CallMode;
 use MiniPaviService\Gateway\GatewayAnswer;
+use MiniPaviService\Vdt\Vdt;
 
 /**
  * Sends the user to another service, at url, after showing vdt; state and parameters are kept
@@ -20,14 +21,14 @@ final readonly class RunExternalService extends Response
     public CallMode $callMode;
 
     /**
-     * @param string $vdt Videotex content shown before leaving (e.g. a message on line 0)
+     * @param Vdt $vdt Videotex content shown before leaving (e.g. a message on line 0)
      * @param string $url URL of the other service
      * @param CallMode|string $callMode a CallMode, or its value ('yes-cnx', 'yes')
      */
     public function __construct(
         ?State $state,
         ?Parameters $parameters,
-        public string $vdt,
+        public Vdt $vdt,
         public string $url,
         CallMode|string $callMode,
     ) {

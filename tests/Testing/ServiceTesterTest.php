@@ -16,6 +16,7 @@ use MiniPaviService\Minitel\FunctionKey;
 use MiniPaviService\Minitel\Terminal;
 use MiniPaviService\Testing\ServiceTester;
 use MiniPaviService\Tests\Support\CallbackController;
+use MiniPaviService\Vdt\Vdt;
 use MiniPaviService\Vdt\VdtHelper;
 use PHPUnit\Framework\AssertionFailedError;
 use PHPUnit\Framework\TestCase;
@@ -35,11 +36,11 @@ final class ServiceTesterTest extends TestCase
         $router->addRoute('menu', $this->controller(fn(Request $request) => match ($request->contentAsString()) {
             '2' => Response::goTo('directory'),
             'ext' => Response::connectTo('https://example.org/', VdtHelper::writeLine0('Connexion…')),
-            default => Response::display(VdtHelper::clearScreen() . VdtHelper::setPos(1, 1) . 'MENU'),
+            default => Response::display(Vdt::join(VdtHelper::clearScreen(), VdtHelper::setPos(1, 1), Vdt::text('MENU'))),
         }));
         $router->addRoute('directory', $this->controller(fn(Request $request) => $request->functionKey() === FunctionKey::Next
             ? Response::display(VdtHelper::writeLine0('Dernière page'))
-            : Response::display(VdtHelper::clearScreen() . VdtHelper::setPos(1, 2) . VdtHelper::toG2('Annuaire'))));
+            : Response::display(Vdt::join(VdtHelper::clearScreen(), VdtHelper::setPos(1, 2), Vdt::text('Annuaire')))));
         $router->setDefaultRoute('menu');
 
         $this->tester = new ServiceTester(new Service($router, Messages::defaults()), new Terminal('192.0.2.1', 'websocket', 'Cv5'));

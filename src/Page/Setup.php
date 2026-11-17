@@ -7,6 +7,7 @@ namespace MiniPaviService\Page;
 use MiniPaviService\Minitel\Keyboard;
 use MiniPaviService\Minitel\LocalEcho;
 use MiniPaviService\Minitel\Scroll;
+use MiniPaviService\Vdt\Vdt;
 
 /**
  * How a page sets up the Minitel, sent before its content (attributes keyboard, echo and
@@ -23,8 +24,8 @@ final readonly class Setup
     /**
      * Protocol sequences of the settings given, in this order: keyboard, echo, scroll
      */
-    public function toVdt(): string
+    public function toVdt(): Vdt
     {
-        return ($this->keyboard?->sequence() ?? '') . ($this->localEcho?->sequence() ?? '') . ($this->scroll?->sequence() ?? '');
+        return new Vdt(($this->keyboard?->sequence() ?? '') . ($this->localEcho?->sequence() ?? '') . ($this->scroll?->sequence() ?? ''));
     }
 }

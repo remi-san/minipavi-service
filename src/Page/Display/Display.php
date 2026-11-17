@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MiniPaviService\Page\Display;
 
 use MiniPaviService\Minitel\Terminal;
+use MiniPaviService\Vdt\Vdt;
 
 /**
  * Content of a screen, as a list of elements drawn in order, convertible to Videotex.
@@ -23,8 +24,8 @@ final readonly class Display
     /**
      * Videotex content drawing the elements, without clearing the screen first
      */
-    public function toVdt(Terminal $terminal): string
+    public function toVdt(Terminal $terminal): Vdt
     {
-        return implode('', array_map(fn(Element $element) => $element->getContent($terminal), $this->elements));
+        return new Vdt(implode('', array_map(fn(Element $element) => $element->getContent($terminal), $this->elements)));
     }
 }

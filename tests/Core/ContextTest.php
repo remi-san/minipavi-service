@@ -16,6 +16,7 @@ use MiniPaviService\Tests\Support\CallbackController;
 use MiniPaviService\Tests\Support\FromParameters;
 use MiniPaviService\Tests\Support\SearchController;
 use MiniPaviService\Tests\Support\SearchState;
+use MiniPaviService\Vdt\Vdt;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
@@ -28,10 +29,10 @@ final class ContextTest extends TestCase
         // home: built-in states, a page; search: states of its own, a page; menu: nothing;
         // origin: the route it was opened from
         $this->router = new Router();
-        $this->router->addRoute('home', new CallbackController(PageParameters::class, fn(Request $request) => Response::display('home ' . $request->state()->value . ' ' . $request->parameters()->page)));
+        $this->router->addRoute('home', new CallbackController(PageParameters::class, fn(Request $request) => Response::display(Vdt::text('home ' . $request->state()->value . ' ' . $request->parameters()->page))));
         $this->router->addRoute('search', new SearchController());
-        $this->router->addRoute('menu', new CallbackController(NoParameters::class, fn(Request $request) => Response::display('menu')));
-        $this->router->addRoute('origin', new CallbackController(FromParameters::class, fn(Request $request) => Response::display('from ' . $request->parameters()->from)));
+        $this->router->addRoute('menu', new CallbackController(NoParameters::class, fn(Request $request) => Response::display(new Vdt('menu'))));
+        $this->router->addRoute('origin', new CallbackController(FromParameters::class, fn(Request $request) => Response::display(Vdt::text('from ' . $request->parameters()->from))));
         $this->router->setDefaultRoute('home');
     }
 
@@ -49,7 +50,7 @@ final class ContextTest extends TestCase
         $context = new Context($this->router, 'home');
         $context->keep(ControllerState::ReadInput, new PageParameters(2));
 
-        self::assertEquals(Response::display('home read-input 2'), $context->run('ENVOI', ['abc'], new Terminal('192.0.2.1')));
+        self::assertEquals(Response::display(new Vdt('home read-input 2')), $context->run('ENVOI', ['abc'], new Terminal('192.0.2.1')));
     }
 
     public function testKeepsStateAndParametersPerRoute(): void

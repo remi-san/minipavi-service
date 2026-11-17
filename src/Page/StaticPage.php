@@ -9,6 +9,7 @@ use MiniPaviService\Message\Messages;
 use MiniPaviService\Minitel\Terminal;
 use MiniPaviService\Page;
 use MiniPaviService\Page\Display\Display;
+use MiniPaviService\Vdt\Vdt;
 use MiniPaviService\Vdt\VdtHelper;
 use MiniPaviService\Vdt\Videotex;
 
@@ -30,9 +31,9 @@ final readonly class StaticPage implements Page
      *
      * @param array<string, mixed> $data
      */
-    public function display(Terminal $terminal, array $data = []): string
+    public function display(Terminal $terminal, array $data = []): Vdt
     {
-        return $this->setup->toVdt() . VdtHelper::clearScreen() . Videotex::CURSOR_OFF . $this->display->toVdt($terminal);
+        return Vdt::join($this->setup->toVdt(), VdtHelper::clearScreen(), new Vdt(Videotex::CURSOR_OFF), $this->display->toVdt($terminal));
     }
 
     /**

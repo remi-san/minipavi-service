@@ -9,6 +9,7 @@ use MiniPaviService\Controller\Parameters\Parameters;
 use MiniPaviService\Controller\Response;
 use MiniPaviService\Controller\State;
 use MiniPaviService\Gateway\GatewayAnswer;
+use MiniPaviService\Vdt\Vdt;
 
 /**
  * Sends Videotex content to the gateway; the next key comes back to this controller
@@ -16,12 +17,12 @@ use MiniPaviService\Gateway\GatewayAnswer;
 final readonly class DisplayPage extends Response
 {
     /**
-     * @param string $vdt Videotex content
+     * @param Vdt $vdt Videotex content
      */
     public function __construct(
         ?State $state,
         ?Parameters $parameters,
-        public string $vdt,
+        public Vdt $vdt,
     ) {
         parent::__construct($state, $parameters);
     }

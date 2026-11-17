@@ -42,6 +42,6 @@ final readonly class Line implements Element
 
     public function getContent(Terminal $terminal): string
     {
-        return VdtHelper::setPos($this->col, $this->row) . $this->color->text() . VdtHelper::repeatChar($this->char, $this->length);
+        return VdtHelper::setPos($this->col, $this->row)->toString() . $this->color->text() . VdtHelper::repeatChar($this->char, $this->length)->toString();
     }
 }

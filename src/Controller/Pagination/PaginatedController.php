@@ -11,6 +11,7 @@ use MiniPaviService\Controller\Response;
 use MiniPaviService\Message\FrameworkMessage;
 use MiniPaviService\Minitel\FunctionKey;
 use MiniPaviService\Page;
+use MiniPaviService\Vdt\Vdt;
 use MiniPaviService\Vdt\VdtHelper;
 
 /**
@@ -105,7 +106,7 @@ abstract class PaginatedController extends AbstractController
     /**
      * Stays on a page: sends vdt (e.g. a message on line 0), and reads the next input on it
      */
-    final protected function stay(Paginator $paginator, string $vdt = ''): Response
+    final protected function stay(Paginator $paginator, Vdt $vdt = new Vdt()): Response
     {
         return Response::readInput($vdt, $this->page->inputCommand(), parameters: new PageParameters($paginator->index()));
     }

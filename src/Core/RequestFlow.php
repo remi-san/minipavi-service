@@ -10,6 +10,7 @@ use MiniPaviService\Gateway\CallMode;
 use MiniPaviService\Gateway\GatewayAnswer;
 use MiniPaviService\Minitel\Terminal;
 use MiniPaviService\Page\InputCommand;
+use MiniPaviService\Vdt\Vdt;
 
 /**
  * Flow of one request of the gateway, for Service: runs the controller of the context's
@@ -46,7 +47,7 @@ final class RequestFlow implements Flow
         return $response->continueWith($this);
     }
 
-    public function answer(string $vdt, ?InputCommand $command = null, ?string $next = null, ?CallMode $directCall = null): GatewayAnswer
+    public function answer(Vdt $vdt, ?InputCommand $command = null, ?string $next = null, ?CallMode $directCall = null): GatewayAnswer
     {
         return new GatewayAnswer($vdt, $this->context->serialize(), $next, $command?->toArray(), $directCall);
     }

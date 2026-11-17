@@ -46,11 +46,11 @@ final readonly class Text implements Element
             // Starts at column 1 and pads with spaces up to the text (the spaces having the
             // text's width): the background color only applies from a space onwards
             $pad = intdiv($col - 1, $charWidth);
-            $vdt = VdtHelper::setPos(1, $this->row) . $attr . str_repeat(' ', $pad) . VdtHelper::toG2($this->text);
+            $vdt = VdtHelper::setPos(1, $this->row)->toString() . $attr . str_repeat(' ', $pad) . VdtHelper::toG2($this->text)->toString();
         } elseif ($this->centered) {
-            $vdt = VdtHelper::setPos($col, $this->row) . $attr . VdtHelper::toG2($this->text);
+            $vdt = VdtHelper::setPos($col, $this->row)->toString() . $attr . VdtHelper::toG2($this->text)->toString();
         } else {
-            $vdt = VdtHelper::setPos($this->col, $this->row) . $attr . VdtHelper::toG2($this->text);
+            $vdt = VdtHelper::setPos($this->col, $this->row)->toString() . $attr . VdtHelper::toG2($this->text)->toString();
         }
         // Fills the rest of the row with the background color
         if ($this->fill) {

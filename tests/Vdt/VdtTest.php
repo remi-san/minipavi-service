@@ -13,6 +13,42 @@ final class VdtTest extends TestCase
 {
     private const FIXTURES = __DIR__ . '/../fixtures/vdt';
 
+    public function testTextEncodesItsAccents(): void
+    {
+        // é and à are G2: SS2, the accent, the letter
+        self::assertSame("D\x19\x42ej\x19\x41a vu", Vdt::text('Déjà vu')->toString());
+        // Control characters can't slip in as text
+        self::assertSame('a b', Vdt::text("a\x0Cb")->toString());
+    }
+
+    public function testJoinsContents(): void
+    {
+        $a = new Vdt("\x0C");
+
+        self::assertSame("\x0Cab", Vdt::join($a, Vdt::text('a'), Vdt::text('b'))->toString());
+        self::assertSame("\x0Cab", $a->append(Vdt::text('a'), Vdt::text('b'))->toString());
+        // Immutable
+        self::assertSame("\x0C", $a->toString());
+    }
+
+    public function testEmptyContentIsNothing(): void
+    {
+        self::assertTrue((new Vdt())->isEmpty());
+        self::assertTrue(Vdt::join()->isEmpty());
+        self::assertFalse(Vdt::text(' ')->isEmpty());
+        self::assertSame([], (new Vdt())->tokens());
+    }
+
+    public function testKeepsTheBytesAndReadsThemWhenNeeded(): void
+    {
+        $vdt = new Vdt("\x1F\x41\x41Hi");
+
+        self::assertSame("\x1F\x41\x41Hi", $vdt->toString());
+        self::assertCount(3, $vdt->tokens());
+        // Equal by its bytes, read or not
+        self::assertEquals(new Vdt("\x1F\x41\x41Hi"), $vdt);
+    }
+
     public function testOffsetMovesTextAndKeepsItsAttributes(): void
     {
         // HELLO on row 1, then four red A (the last three as a repetition) on row 2

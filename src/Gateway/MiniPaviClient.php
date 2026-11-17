@@ -66,7 +66,7 @@ final class MiniPaviClient
     public function send(GatewayAnswer $answer): void
     {
         MiniPaviCli::send(
-            $answer->vdt,
+            $answer->vdt->toString(),
             $answer->next ?? $this->url->script(),
             $answer->context,
             $answer->echo,

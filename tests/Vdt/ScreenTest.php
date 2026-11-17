@@ -35,9 +35,7 @@ final class ScreenTest extends TestCase
 
     public function testLineGivesTheTextOfARowWithItsAccents(): void
     {
-        $vdt = VdtHelper::setPos(1, 3) . VdtHelper::toG2('Dernière page, ça coûte 5£ ½ Œuvre') . VdtHelper::writeLine0('Accès refusé');
-
-        $screen = Vdt::fromString($vdt)->screen();
+        $screen = Vdt::join(VdtHelper::setPos(1, 3), Vdt::text('Dernière page, ça coûte 5£ ½ Œuvre'), VdtHelper::writeLine0('Accès refusé'))->screen();
 
         $text = 'Dernière page, ça coûte 5£ ½ Œuvre';
         self::assertSame($text . str_repeat(' ', 40 - mb_strlen($text)), $screen->line(3));
@@ -56,7 +54,7 @@ final class ScreenTest extends TestCase
 
     public function testTextGivesEveryRow(): void
     {
-        $text = Vdt::fromString(VdtHelper::setPos(1, 1) . 'Hello')->screen()->text();
+        $text = VdtHelper::setPos(1, 1)->append(Vdt::text('Hello'))->screen()->text();
 
         $lines = explode("\n", $text);
         self::assertCount(25, $lines);

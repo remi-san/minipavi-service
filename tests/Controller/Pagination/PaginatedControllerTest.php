@@ -18,6 +18,7 @@ use MiniPaviService\Page\Parser\PageXmlParser;
 use MiniPaviService\Testing\ServiceTester;
 use MiniPaviService\Tests\Support\CallbackController;
 use MiniPaviService\Tests\Support\ListController;
+use MiniPaviService\Vdt\Vdt;
 use MiniPaviService\Vdt\VdtHelper;
 use PHPUnit\Framework\TestCase;
 
@@ -38,7 +39,7 @@ final class PaginatedControllerTest extends TestCase
         $this->router = new Router();
         $this->router->addRoute('menu', new CallbackController(NoParameters::class, fn(Request $request) => $request->key() === 'ENVOI'
             ? Response::goTo('list')
-            : Response::display('MENU')));
+            : Response::display(new Vdt('MENU'))));
         $this->router->setDefaultRoute('menu');
     }
 
@@ -82,8 +83,8 @@ final class PaginatedControllerTest extends TestCase
         $tester = $this->tester(['a', 'b', 'c'])->press(FunctionKey::Next)->press(FunctionKey::Refresh);
 
         // The whole page again, from a clear screen
-        $clear = VdtHelper::clearScreen();
-        self::assertSame($clear, substr($tester->answer()->vdt, 0, \strlen($clear)));
+        $clear = VdtHelper::clearScreen()->toString();
+        self::assertSame($clear, substr($tester->answer()->vdt->toString(), 0, \strlen($clear)));
         $tester->assertScreenContains('Page 2/2')->assertLineContains(2, 'c');
         self::assertEquals(new PageParameters(1), $tester->context()->parameters());
     }

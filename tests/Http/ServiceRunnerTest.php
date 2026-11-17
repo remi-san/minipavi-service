@@ -17,6 +17,7 @@ use MiniPaviService\Message\FrameworkMessage;
 use MiniPaviService\Message\Messages;
 use MiniPaviService\Tests\Support\CallbackController;
 use MiniPaviService\Tests\Support\MemoryLogger;
+use MiniPaviService\Vdt\Vdt;
 use MiniPaviService\Vdt\VdtHelper;
 use PHPUnit\Framework\Attributes\RunInSeparateProcess;
 use PHPUnit\Framework\TestCase;
@@ -59,7 +60,7 @@ final class ServiceRunnerTest extends TestCase
         $_SERVER['HTTP_HOST'] = 'services';
         $_SERVER['PHP_SELF'] = '/Svc/index.php';
         $router = new Router();
-        $router->addRoute('home', new CallbackController(NoParameters::class, fn(Request $request) => Response::display('home')));
+        $router->addRoute('home', new CallbackController(NoParameters::class, fn(Request $request) => Response::display(new Vdt('home'))));
         $router->setDefaultRoute('home');
         $logger = new MemoryLogger();
 
@@ -72,7 +73,7 @@ final class ServiceRunnerTest extends TestCase
 
         $answer = json_decode($output, true);
         self::assertIsArray($answer);
-        self::assertSame(base64_encode(VdtHelper::writeLine0(Messages::defaults()->get(FrameworkMessage::Error))), $answer['content'] ?? null);
+        self::assertSame(base64_encode(VdtHelper::writeLine0(Messages::defaults()->get(FrameworkMessage::Error))->toString()), $answer['content'] ?? null);
         self::assertSame('{"route":"home","states":{},"parameters":{}}', $answer['context'] ?? null);
         self::assertSame('http://services/Svc/index.php', $answer['next'] ?? null);
         self::assertSame(LogLevel::ERROR, $logger->records[0][0] ?? null);

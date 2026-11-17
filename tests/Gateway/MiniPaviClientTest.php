@@ -11,6 +11,7 @@ use MiniPaviService\Gateway\GatewayRequest;
 use MiniPaviService\Gateway\MiniPaviClient;
 use MiniPaviService\Http\RequestUrl;
 use MiniPaviService\Minitel\Terminal;
+use MiniPaviService\Vdt\Vdt;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -83,7 +84,7 @@ final class MiniPaviClientTest extends TestCase
 
     public function testSendsTheAnswerToThisService(): void
     {
-        $answer = $this->sent(new GatewayAnswer('Hello', '{"route":"home"}'));
+        $answer = $this->sent(new GatewayAnswer(new Vdt('Hello'), '{"route":"home"}'));
 
         self::assertSame(base64_encode('Hello'), $answer['content']);
         self::assertSame('{"route":"home"}', $answer['context']);
@@ -95,15 +96,15 @@ final class MiniPaviClientTest extends TestCase
 
     public function testSendsTheCommandWithTheAnswer(): void
     {
-        $answer = $this->sent(new GatewayAnswer('Code ?', '{}', command: ['COMMAND' => ['name' => 'InputTxt', 'param' => ['x' => 1]]]));
+        $answer = $this->sent(new GatewayAnswer(new Vdt('Code ?'), '{}', command: ['COMMAND' => ['name' => 'InputTxt', 'param' => ['x' => 1]]]));
 
         self::assertSame(['name' => 'InputTxt', 'param' => ['x' => 1]], $answer['COMMAND']);
     }
 
     public function testSendsTheUserToAnotherService(): void
     {
-        $connect = $this->sent(new GatewayAnswer('', '{}', 'https://example.org/service', directCall: CallMode::Connect));
-        $direct = $this->sent(new GatewayAnswer('', '{}', 'https://example.org/service', directCall: CallMode::Direct, echo: false));
+        $connect = $this->sent(new GatewayAnswer(new Vdt(''), '{}', 'https://example.org/service', directCall: CallMode::Connect));
+        $direct = $this->sent(new GatewayAnswer(new Vdt(''), '{}', 'https://example.org/service', directCall: CallMode::Direct, echo: false));
 
         self::assertSame(['https://example.org/service', 'yes-cnx'], [$connect['next'], $connect['directcall']]);
         self::assertSame(['yes', 'off'], [$direct['directcall'], $direct['echo']]);

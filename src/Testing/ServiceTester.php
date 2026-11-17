@@ -31,7 +31,7 @@ use PHPUnit\Framework\Assert;
 final class ServiceTester
 {
     // Videotex the session received, since the connection: the screen is all of it, played
-    private string $vdt = '';
+    private Vdt $vdt;
 
     private ?GatewayAnswer $answer = null;
 
@@ -41,14 +41,16 @@ final class ServiceTester
     public function __construct(
         private Service $service,
         private Terminal $terminal = new Terminal(),
-    ) {}
+    ) {
+        $this->vdt = new Vdt();
+    }
 
     /**
      * Connects to the service, as a new session: an empty screen, no context
      */
     public function connect(): self
     {
-        $this->vdt = '';
+        $this->vdt = new Vdt();
         $this->answer = null;
 
         return $this->send(new GatewayRequest(GatewayRequest::FCTN_CONNECT, terminal: $this->terminal));
@@ -144,7 +146,7 @@ final class ServiceTester
      */
     public function screen(): Screen
     {
-        return Vdt::fromString($this->vdt)->screen();
+        return $this->vdt->screen();
     }
 
     /**
@@ -166,7 +168,7 @@ final class ServiceTester
     private function send(GatewayRequest $request): self
     {
         $this->answer = $this->service->handle($request) ?? throw new \LogicException('No answer to ' . $request->key);
-        $this->vdt .= $this->answer->vdt;
+        $this->vdt = $this->vdt->append($this->answer->vdt);
 
         return $this;
     }

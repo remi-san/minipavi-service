@@ -8,6 +8,7 @@ use MiniPaviService\Controller;
 use MiniPaviService\Controller\Pagination\PageParameters;
 use MiniPaviService\Controller\Request;
 use MiniPaviService\Controller\Response;
+use MiniPaviService\Vdt\Vdt;
 
 /**
  * Controller with states of its own (SearchState): shows its state and page
@@ -28,6 +29,6 @@ final class SearchController implements Controller
 
     public function run(Request $request): Response
     {
-        return Response::display($request->state()->value . ' ' . $request->parameters()->page, SearchState::ReadQuery);
+        return Response::display(Vdt::text($request->state()->value . ' ' . $request->parameters()->page), SearchState::ReadQuery);
     }
 }

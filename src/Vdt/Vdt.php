@@ -5,23 +5,30 @@ declare(strict_types=1);
 namespace MiniPaviService\Vdt;
 
 /**
- * Videotex content (e.g. a .vdt page made with a Videotex editor), that can be moved on
- * the screen. Videotex positions are mostly absolute, but text also flows from one cell
- * to the next and wraps at the end of the row, so the content is played on a simulated
- * screen (play()) rather than having its positions patched.
+ * Videotex content: what is sent to the Minitel. The framework and services carry it as this
+ * value, and only the gateway client turns it into bytes (toString()). Text is made with
+ * text(), which encodes its accents (G2); raw Videotex with new Vdt() or fromString().
+ *
+ * It keeps the bytes, and reads them (tokens()) only when needed: to play them on a simulated
+ * screen (play(), screen()), or move them (offset()). Videotex positions are mostly absolute,
+ * but text also flows from one cell to the next and wraps at the end of the row, so the
+ * content is played rather than having its positions patched.
  */
 final readonly class Vdt
 {
     /**
-     * @param Token[] $tokens
+     * @param string $bytes Videotex, as sent; '' for nothing
      */
-    private function __construct(
-        public array $tokens,
+    public function __construct(
+        private string $bytes = '',
     ) {}
 
-    public static function fromString(string $vdt): self
+    /**
+     * Raw Videotex
+     */
+    public static function fromString(string $bytes): self
     {
-        return new self((new Parser())->parse($vdt));
+        return new self($bytes);
     }
 
     public static function fromFile(string $file): self
@@ -30,15 +37,55 @@ final readonly class Vdt
         if ($vdt === false) {
             throw new \InvalidArgumentException("Videotex file not found: $file");
         }
-        return self::fromString($vdt);
+        return new self($vdt);
     }
 
     /**
-     * The content as read, if it wasn't transformed
+     * Text (UTF-8), its accented and special characters encoded in G2; control characters
+     * become spaces
+     */
+    public static function text(string $text): self
+    {
+        return new self(VdtHelper::toG2($text)->toString());
+    }
+
+    /**
+     * Contents one after the other
+     */
+    public static function join(self ...$parts): self
+    {
+        return new self(implode('', array_map(fn(self $part) => $part->bytes, $parts)));
+    }
+
+    /**
+     * This content, then others
+     */
+    public function append(self ...$parts): self
+    {
+        return self::join($this, ...$parts);
+    }
+
+    public function isEmpty(): bool
+    {
+        return $this->bytes === '';
+    }
+
+    /**
+     * The bytes sent to the Minitel
      */
     public function toString(): string
     {
-        return implode('', array_map(fn(Token $token) => $token->source, $this->tokens));
+        return $this->bytes;
+    }
+
+    /**
+     * The content read as tokens (characters, positions, attributes...)
+     *
+     * @return Token[]
+     */
+    public function tokens(): array
+    {
+        return (new Parser())->parse($this->bytes);
     }
 
     public function screen(): Screen
@@ -111,10 +158,10 @@ final readonly class Vdt
      */
     public function withoutClear(): self
     {
-        return new self(array_map(
-            fn(Token $token) => $token->type == TokenType::Clear ? new Token(TokenType::Home, "\x1E") : $token,
-            $this->tokens,
-        ));
+        return new self(implode('', array_map(
+            fn(Token $token) => $token->type == TokenType::Clear ? "\x1E" : $token->source,
+            $this->tokens(),
+        )));
     }
 
     /**
@@ -129,7 +176,7 @@ final readonly class Vdt
     {
         $cursor = new Cursor();
         $last = null;
-        foreach ($this->tokens as $token) {
+        foreach ($this->tokens() as $token) {
             switch ($token->type) {
                 case TokenType::Glyph:
                 case TokenType::Repeat:

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Gateway;
 
+use MiniPaviService\Vdt\Vdt;
+
 /**
  * Answer to a request of the MiniPavi gateway: the Videotex content to show, the context to
  * give back with the next request, and what the gateway does next
@@ -11,7 +13,7 @@ namespace MiniPaviService\Gateway;
 final readonly class GatewayAnswer
 {
     /**
-     * @param string $vdt Videotex content
+     * @param Vdt $vdt Videotex content, stringified by MiniPaviClient only
      * @param string $context serialized context (Context::serialize())
      * @param ?string $next URL the gateway calls next; null: this service's
      * @param ?array<string, mixed> $command command for the gateway (e.g. InputCommand::toArray())
@@ -19,7 +21,7 @@ final readonly class GatewayAnswer
      * @param bool $echo whether the gateway echoes what the user types
      */
     public function __construct(
-        public string $vdt,
+        public Vdt $vdt,
         public string $context,
         public ?string $next = null,
         public ?array $command = null,

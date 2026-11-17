@@ -65,7 +65,7 @@ final class PageXmlParserTest extends TestCase
         $before = "\x1F\x45\x41previous screen";
         $vdt = $this->parse('<page type="static"><text row="1">x</text></page>')->display(new Terminal());
 
-        self::assertSame([' 1|x' . str_repeat(' ', 39) . '|'], $this->drawnRows($before . $vdt));
+        self::assertSame([' 1|x' . str_repeat(' ', 39) . '|'], $this->drawnRows((new Vdt($before))->append($vdt)));
     }
 
     public function testDisplaySetsUpTheMinitelFirst(): void
@@ -73,22 +73,22 @@ final class PageXmlParserTest extends TestCase
         $page = $this->parse('<page type="static" keyboard="lowercase" echo="off" scroll="off"><text row="1">x</text></page>');
 
         self::assertStringStartsWith(
-            Keyboard::Lowercase->sequence() . LocalEcho::Off->sequence() . Scroll::Off->sequence() . VdtHelper::clearScreen(),
-            $page->display(new Terminal()),
+            Keyboard::Lowercase->sequence() . LocalEcho::Off->sequence() . Scroll::Off->sequence() . VdtHelper::clearScreen()->toString(),
+            $page->display(new Terminal())->toString(),
         );
         $template = $this->parse('<page type="template" keyboard="uppercase" echo="on" scroll="on"><text row="1">{{x}}</text></page>');
         self::assertStringStartsWith(
-            Keyboard::Uppercase->sequence() . LocalEcho::On->sequence() . Scroll::On->sequence() . VdtHelper::clearScreen(),
-            $template->display(new Terminal(), ['x' => 'y']),
+            Keyboard::Uppercase->sequence() . LocalEcho::On->sequence() . Scroll::On->sequence() . VdtHelper::clearScreen()->toString(),
+            $template->display(new Terminal(), ['x' => 'y'])->toString(),
         );
     }
 
     public function testWithoutSetupTheMinitelIsLeftAsItIs(): void
     {
-        $clear = VdtHelper::clearScreen();
-        self::assertSame($clear, substr($this->parse('<page type="static"/>')->display(new Terminal()), 0, \strlen($clear)));
+        $clear = VdtHelper::clearScreen()->toString();
+        self::assertSame($clear, substr($this->parse('<page type="static"/>')->display(new Terminal())->toString(), 0, \strlen($clear)));
         // Only what is given
-        self::assertStringStartsWith(Scroll::Off->sequence() . VdtHelper::clearScreen(), $this->parse('<page type="static" scroll="off"/>')->display(new Terminal()));
+        self::assertStringStartsWith(Scroll::Off->sequence() . VdtHelper::clearScreen()->toString(), $this->parse('<page type="static" scroll="off"/>')->display(new Terminal())->toString());
     }
 
     public function testPageRedefinesMessagesOfTheService(): void
@@ -105,8 +105,8 @@ final class PageXmlParserTest extends TestCase
         self::assertSame('Salut Léa', $page->message(TestMessage::Welcome, ['name' => 'Léa']));
         self::assertSame('Dernière page', $page->message(FrameworkMessage::LastPage));
         // Its elements too
-        self::assertStringContainsString(' Fin ', $page->display(new Terminal()));
-        self::assertStringNotContainsString('Connexion/fin', $page->display(new Terminal()));
+        self::assertStringContainsString(' Fin ', $page->display(new Terminal())->toString());
+        self::assertStringNotContainsString('Connexion/fin', $page->display(new Terminal())->toString());
     }
 
     public function testPageWithoutMessagesHasTheServices(): void
@@ -308,9 +308,9 @@ final class PageXmlParserTest extends TestCase
      *
      * @return list<string>
      */
-    private function drawnRows(string $vdt): array
+    private function drawnRows(Vdt $vdt): array
     {
-        $rows = explode("\n", rtrim(Vdt::fromString($vdt)->screen()->preview(), "\n"));
+        $rows = explode("\n", rtrim($vdt->screen()->preview(), "\n"));
 
         return array_values(array_filter($rows, fn(string $row) => trim(substr($row, 3), ' |') !== ''));
     }

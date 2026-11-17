@@ -10,6 +10,7 @@ use MiniPaviService\Controller\Pagination\PageParameters;
 use MiniPaviService\Controller\Parameters\NoParameters;
 use MiniPaviService\Controller\Request;
 use MiniPaviService\Controller\Response;
+use MiniPaviService\Vdt\Vdt;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
@@ -32,7 +33,7 @@ final class AbstractControllerTest extends TestCase
         $response = self::controller()->run(new Request($state, new NoParameters()));
 
         self::assertInstanceOf(Response\DisplayPage::class, $response);
-        self::assertSame($content, $response->vdt);
+        self::assertSame($content, $response->vdt->toString());
     }
 
     public function testStartsAtInit(): void
@@ -50,22 +51,22 @@ final class AbstractControllerTest extends TestCase
 
             protected function onInit(Request $request): Response
             {
-                return Response::display('first');
+                return Response::display(new Vdt('first'));
             }
 
             protected function onDisplay(Request $request): Response
             {
-                return Response::display('display');
+                return Response::display(new Vdt('display'));
             }
 
             protected function onInitInput(Request $request): Response
             {
-                return Response::display('input');
+                return Response::display(new Vdt('input'));
             }
 
             protected function onReadInput(Request $request): Response
             {
-                return Response::display('read');
+                return Response::display(new Vdt('read'));
             }
         };
 
@@ -83,12 +84,12 @@ final class AbstractControllerTest extends TestCase
 
             protected function onDisplay(Request $request): Response
             {
-                return Response::display('page ' . $request->parameters()->page);
+                return Response::display(Vdt::text('page ' . $request->parameters()->page));
             }
 
             protected function onReadInput(Request $request): Response
             {
-                return Response::display('read');
+                return Response::display(new Vdt('read'));
             }
         };
 
@@ -109,12 +110,12 @@ final class AbstractControllerTest extends TestCase
 
             protected function onDisplay(Request $request): Response
             {
-                return Response::display('display');
+                return Response::display(new Vdt('display'));
             }
 
             protected function onReadInput(Request $request): Response
             {
-                return Response::display('read');
+                return Response::display(new Vdt('read'));
             }
         };
     }
@@ -125,6 +126,6 @@ final class AbstractControllerTest extends TestCase
             self::fail('Not a DisplayPage: ' . $response::class);
         }
 
-        return $response->vdt;
+        return $response->vdt->toString();
     }
 }

@@ -29,7 +29,7 @@ final readonly class Key implements Element
 
     public function getContent(Terminal $terminal): string
     {
-        return VdtHelper::setPos($this->col, $this->row) . ($this->bg?->background() ?? '') . self::badge($this->label, $this->color);
+        return VdtHelper::setPos($this->col, $this->row)->toString() . ($this->bg?->background() ?? '') . self::badge($this->label, $this->color);
     }
 
     /**
@@ -37,6 +37,6 @@ final readonly class Key implements Element
      */
     public static function badge(string $label, Color $color): string
     {
-        return Color::White->text() . Videotex::UNDERLINE_ON . ' ' . $color->text() . Videotex::INVERSE_ON . VdtHelper::toG2(' ' . $label . ' ') . Color::White->text() . Videotex::INVERSE_OFF . Videotex::UNDERLINE_OFF . ' ';
+        return Color::White->text() . Videotex::UNDERLINE_ON . ' ' . $color->text() . Videotex::INVERSE_ON . VdtHelper::toG2(' ' . $label . ' ')->toString() . Color::White->text() . Videotex::INVERSE_OFF . Videotex::UNDERLINE_OFF . ' ';
     }
 }

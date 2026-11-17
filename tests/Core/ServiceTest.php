@@ -25,6 +25,7 @@ use MiniPaviService\Page\InputCommand;
 use MiniPaviService\Tests\Support\CallbackController;
 use MiniPaviService\Tests\Support\ClearAndShow;
 use MiniPaviService\Tests\Support\MemoryLogger;
+use MiniPaviService\Vdt\Vdt;
 use MiniPaviService\Vdt\VdtHelper;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
@@ -46,16 +47,16 @@ final class ServiceTest extends TestCase
         $this->router = new Router();
         $this->router->addRoute('menu', $this->controller('menu', NoParameters::class, fn(Request $request) => $request->key() === 'ENVOI'
             ? Response::goTo('directory', new PageParameters(1))
-            : Response::display('menu')));
+            : Response::display(new Vdt('menu'))));
         $this->router->addRoute('directory', $this->controller('directory', PageParameters::class, fn(Request $request) => $request->state() === ControllerState::ReadInput
-            ? Response::display('code ' . $request->contentAsString())
-            : Response::display('directory', parameters: new PageParameters(2))));
+            ? Response::display(Vdt::text('code ' . $request->contentAsString()))
+            : Response::display(new Vdt('directory'), parameters: new PageParameters(2))));
         $this->router->addRoute('broken', $this->controller('broken', NoParameters::class, fn(Request $request) => throw new \RuntimeException('Template data missing')));
         // Two controllers changing to each other
         $this->router->addRoute('ping', $this->controller('ping', NoParameters::class, fn(Request $request) => Response::goTo('pong')));
         $this->router->addRoute('pong', $this->controller('pong', NoParameters::class, fn(Request $request) => Response::goTo('ping')));
         // Keeps parameters of another class than it declares
-        $this->router->addRoute('mistyped', $this->controller('mistyped', NoParameters::class, fn(Request $request) => Response::display('x', parameters: new PageParameters(1))));
+        $this->router->addRoute('mistyped', $this->controller('mistyped', NoParameters::class, fn(Request $request) => Response::display(new Vdt('x'), parameters: new PageParameters(1))));
         $this->router->setDefaultRoute('menu');
     }
 
@@ -132,7 +133,7 @@ final class ServiceTest extends TestCase
     public function testErrorMessageCanBeChanged(): void
     {
 
-        self::assertSame(VdtHelper::writeLine0('Oops'), $this->contentOf($this->handle(new GatewayRequest('ENVOI', [], 'not a context'), 'Oops')));
+        self::assertSame(VdtHelper::writeLine0('Oops')->toString(), $this->contentOf($this->handle(new GatewayRequest('ENVOI', [], 'not a context'), 'Oops')));
     }
 
     public function testMessagesMustHaveTheFrameworks(): void
@@ -210,19 +211,19 @@ final class ServiceTest extends TestCase
 
     public function testDisplayIsAnsweredWithTheContextKeepingItsStateAndParameters(): void
     {
-        $answer = $this->answerTo(Response::display('Hello', ControllerState::Display, new PageParameters(2)));
+        $answer = $this->answerTo(Response::display(new Vdt('Hello'), ControllerState::Display, new PageParameters(2)));
 
         // To this service (next: null), waiting for the user
-        self::assertEquals(new GatewayAnswer('Hello', '{"route":"answer","states":{"answer":"display"},"parameters":{"answer":{"page":2}}}'), $answer);
+        self::assertEquals(new GatewayAnswer(new Vdt('Hello'), '{"route":"answer","states":{"answer":"display"},"parameters":{"answer":{"page":2}}}'), $answer);
     }
 
     public function testReadInputIsAnsweredWithTheCommand(): void
     {
         $command = new InputCommand(['COMMAND' => ['name' => 'InputTxt', 'param' => ['x' => 1]]]);
 
-        $answer = $this->answerTo(Response::readInput('Code ?', $command));
+        $answer = $this->answerTo(Response::readInput(new Vdt('Code ?'), $command));
 
-        self::assertSame('Code ?', $answer->vdt);
+        self::assertSame('Code ?', $answer->vdt->toString());
         self::assertSame(['COMMAND' => ['name' => 'InputTxt', 'param' => ['x' => 1]]], $answer->command);
         self::assertNull($answer->next);
         self::assertNull($answer->directCall);
@@ -232,17 +233,17 @@ final class ServiceTest extends TestCase
     public function testReadInputWithoutCommandOnlySendsTheContent(): void
     {
         // Page::inputCommand() gives null for a page without <input>
-        $answer = $this->answerTo(Response::readInput('Hello', null));
+        $answer = $this->answerTo(Response::readInput(new Vdt('Hello'), null));
 
-        self::assertSame('Hello', $answer->vdt);
+        self::assertSame('Hello', $answer->vdt->toString());
         self::assertNull($answer->command);
     }
 
     public function testConnectToIsAnsweredWithTheOtherService(): void
     {
-        $answer = $this->answerTo(Response::connectTo('https://example.org/service', 'Cnx en cours', parameters: new PageParameters(4)));
+        $answer = $this->answerTo(Response::connectTo('https://example.org/service', new Vdt('Cnx en cours'), parameters: new PageParameters(4)));
 
-        self::assertSame('Cnx en cours', $answer->vdt);
+        self::assertSame('Cnx en cours', $answer->vdt->toString());
         self::assertSame('https://example.org/service', $answer->next);
         self::assertSame(CallMode::Connect, $answer->directCall);
         // Kept for when the user comes back
@@ -253,7 +254,7 @@ final class ServiceTest extends TestCase
     {
         $answer = $this->answerTo(new ClearAndShow('Hello'));
 
-        self::assertSame(VdtHelper::clearScreen() . 'Hello', $answer->vdt);
+        self::assertEquals(VdtHelper::clearScreen()->append(Vdt::text('Hello')), $answer->vdt);
         // Its state and parameters are kept, as for any response
         self::assertSame('{"route":"answer","states":{"answer":"display"},"parameters":{"answer":{"page":1}}}', $answer->context);
     }
@@ -315,7 +316,7 @@ final class ServiceTest extends TestCase
      */
     private static function errorLine0(): string
     {
-        return VdtHelper::writeLine0(Messages::defaults()->get(FrameworkMessage::Error));
+        return VdtHelper::writeLine0(Messages::defaults()->get(FrameworkMessage::Error))->toString();
     }
 
     /**
@@ -339,7 +340,7 @@ final class ServiceTest extends TestCase
             self::fail('No answer');
         }
 
-        return $answer->vdt;
+        return $answer->vdt->toString();
     }
 
     /**
@@ -349,6 +350,6 @@ final class ServiceTest extends TestCase
      */
     private function serve(Context $context, string $key, array $content): string
     {
-        return (new Service($this->router, Messages::defaults(), $this->logger))->serve($context, $key, $content, new Terminal('192.0.2.1', 'websocket', 'Cv5'))->vdt;
+        return (new Service($this->router, Messages::defaults(), $this->logger))->serve($context, $key, $content, new Terminal('192.0.2.1', 'websocket', 'Cv5'))->vdt->toString();
     }
 }
