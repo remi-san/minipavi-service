@@ -25,7 +25,11 @@ final class LintCommand extends Command
 {
     protected function configure(): void
     {
-        $this->addArgument('paths', InputArgument::REQUIRED | InputArgument::IS_ARRAY, 'Page files, or folders of pages (with their subfolders)');
+        $this->addArgument(
+            'paths',
+            InputArgument::REQUIRED | InputArgument::IS_ARRAY,
+            'Page files, or folders of pages (with their subfolders)',
+        );
         MessagesOption::addTo($this);
     }
 
@@ -67,7 +71,9 @@ final class LintCommand extends Command
 
             return self::FAILURE;
         }
-        $output->writeln("$pages page" . ($pages === 1 ? '' : 's') . " checked, $errors error" . ($errors === 1 ? '' : 's'));
+        $output->writeln(
+            "$pages page" . ($pages === 1 ? '' : 's') . " checked, $errors error" . ($errors === 1 ? '' : 's'),
+        );
 
         return $errors === 0 ? self::SUCCESS : self::FAILURE;
     }
@@ -83,7 +89,10 @@ final class LintCommand extends Command
             return [$path];
         }
         $files = [];
-        $iterator = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($path, \FilesystemIterator::SKIP_DOTS));
+        $iterator = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator(
+            $path,
+            \FilesystemIterator::SKIP_DOTS,
+        ));
         foreach ($iterator as $file) {
             if ($file instanceof \SplFileInfo && $file->isFile() && strtolower($file->getExtension()) === 'xml') {
                 $files[] = $file->getPathname();

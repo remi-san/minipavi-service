@@ -78,9 +78,15 @@ final class Service
         $this->logger->error('Error serving the request: ' . $error->getMessage(), ['exception' => $error]);
         try {
             // The context keeps nothing: the default controller starts at its initial state
-            $flow = new RequestFlow(new Context($this->router, $this->router->defaultRoute()), new Terminal(), self::MAX_PAGE_CHANGES);
+            $flow = new RequestFlow(
+                new Context($this->router, $this->router->defaultRoute()),
+                new Terminal(),
+                self::MAX_PAGE_CHANGES,
+            );
 
-            return Response::display(VdtHelper::writeLine0($this->messages->get(FrameworkMessage::Error)))->continueWith($flow);
+            return Response::display(VdtHelper::writeLine0($this->messages->get(
+                FrameworkMessage::Error,
+            )))->continueWith($flow);
         } catch (\Throwable $e) {
             $this->logger->critical('Cannot answer the error: ' . $e->getMessage(), ['exception' => $e]);
 
@@ -103,7 +109,12 @@ final class Service
             $this->logger->info('Connection', ['fctn' => $request->key]);
 
             // A new session: without what was typed before
-            return $this->serve(new Context($this->router, $this->router->defaultRoute()), $request->key, [], $request->terminal);
+            return $this->serve(
+                new Context($this->router, $this->router->defaultRoute()),
+                $request->key,
+                [],
+                $request->terminal,
+            );
         }
 
         $context = $this->restore($request->context);
@@ -136,7 +147,9 @@ final class Service
         // A route this service doesn't have, e.g. removed in a new version: the input was for
         // a screen that doesn't exist any more
         if (!$this->router->has($context->route())) {
-            $this->logger->warning('Unknown route in the context, starting again at the default route', ['route' => $context->route()]);
+            $this->logger->warning('Unknown route in the context, starting again at the default route', [
+                'route' => $context->route(),
+            ]);
             $context->restart($this->router->defaultRoute());
             $key = '';
             $content = [];

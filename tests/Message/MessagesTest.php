@@ -26,7 +26,10 @@ final class MessagesTest extends TestCase
     {
         $messages = new Messages(['welcome' => 'Bonjour {{name}}, {{ count }} messages']);
 
-        self::assertSame('Bonjour Léa, 3 messages', $messages->get(TestMessage::Welcome, ['name' => 'Léa', 'count' => 3]));
+        self::assertSame('Bonjour Léa, 3 messages', $messages->get(TestMessage::Welcome, [
+            'name' => 'Léa',
+            'count' => 3,
+        ]));
     }
 
     public function testPlaceholderWithoutVariableIsAnError(): void
@@ -87,7 +90,10 @@ final class MessagesTest extends TestCase
         yield 'other root' => ['<texts/>', 'm.xml: root element must be <messages>, not <texts>'];
         yield 'other element' => ["<messages>\n<text/></messages>", 'm.xml line 2: <text>: unknown element'];
         yield 'no name' => ['<messages><message>x</message></messages>', 'm.xml line 1: <message>: name is missing'];
-        yield 'twice' => ["<messages><message name=\"a\">x</message>\n<message name=\"a\">y</message></messages>", 'm.xml line 2: <message>: name="a" is already in the file'];
+        yield 'twice' => [
+            "<messages><message name=\"a\">x</message>\n<message name=\"a\">y</message></messages>",
+            'm.xml line 2: <message>: name="a" is already in the file',
+        ];
     }
 
     #[DataProvider('invalidFiles')]

@@ -107,7 +107,7 @@ final readonly class Paginator
 
     public function isLast(): bool
     {
-        return $this->index === $this->pageCount() - 1;
+        return $this->index === ($this->pageCount() - 1);
     }
 
     /**

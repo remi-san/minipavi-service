@@ -42,8 +42,11 @@ abstract readonly class Response
     /**
      * Sends Videotex content to the gateway; the next key comes back to this controller
      */
-    public static function display(Vdt $vdt, State $state = ControllerState::ReadInput, ?Parameters $parameters = null): DisplayPage
-    {
+    public static function display(
+        Vdt $vdt,
+        State $state = ControllerState::ReadInput,
+        ?Parameters $parameters = null,
+    ): DisplayPage {
         return new DisplayPage($state, $parameters, $vdt);
     }
 
@@ -51,8 +54,12 @@ abstract readonly class Response
      * Sends Videotex content and an input command (Page::inputCommand(); null for a page
      * without input: only the content is sent); what is typed comes back to this controller
      */
-    public static function readInput(Vdt $vdt, ?InputCommand $command, State $state = ControllerState::ReadInput, ?Parameters $parameters = null): RunCommand
-    {
+    public static function readInput(
+        Vdt $vdt,
+        ?InputCommand $command,
+        State $state = ControllerState::ReadInput,
+        ?Parameters $parameters = null,
+    ): RunCommand {
         return new RunCommand($state, $parameters, $vdt, $command);
     }
 
@@ -73,8 +80,12 @@ abstract readonly class Response
      * line 0). state and parameters are kept for this controller, for when the user
      * comes back.
      */
-    public static function connectTo(string $url, Vdt $vdt = new Vdt(), ?State $state = null, ?Parameters $parameters = null): RunExternalService
-    {
+    public static function connectTo(
+        string $url,
+        Vdt $vdt = new Vdt(),
+        ?State $state = null,
+        ?Parameters $parameters = null,
+    ): RunExternalService {
         return new RunExternalService($state, $parameters, $vdt, $url, CallMode::Connect);
     }
 

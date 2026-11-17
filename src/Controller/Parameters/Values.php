@@ -27,7 +27,7 @@ final readonly class Values
     {
         $value = $this->values[$name] ?? null;
         // A float holds integers exactly up to 2^53
-        if (\is_float($value) && $value === floor($value) && abs($value) <= 2 ** 53) {
+        if (\is_float($value) && $value === floor($value) && abs($value) <= (2 ** 53)) {
             $value = (int) $value;
         }
         if (\is_string($value) && preg_match('/^-?[0-9]+$/', $value) === 1) {

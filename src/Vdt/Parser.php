@@ -39,7 +39,11 @@ final class Parser
                     $tokens[] = new Token(TokenType::Glyph, $byte, $byte);
                     break;
                 case 0x12: // REP
-                    $tokens[] = new Token(TokenType::Repeat, substr($vdt, $i, 2), count: ord($vdt[$i + 1] ?? "\x40") - 0x40);
+                    $tokens[] = new Token(
+                        TokenType::Repeat,
+                        substr($vdt, $i, 2),
+                        count: ord($vdt[$i + 1] ?? "\x40") - 0x40,
+                    );
                     $i++;
                     break;
                 case 0x0E:
@@ -50,10 +54,20 @@ final class Parser
                     $first = $vdt[$i + 1] ?? '';
                     if ($first !== '' && ctype_digit($first)) {
                         $digits = substr($vdt, $i + 1, 4);
-                        $tokens[] = new Token(TokenType::Position, "\x1F" . $digits, row: (int) substr($digits, 0, 2), col: (int) substr($digits, 2, 2));
+                        $tokens[] = new Token(
+                            TokenType::Position,
+                            "\x1F" . $digits,
+                            row: (int) substr($digits, 0, 2),
+                            col: (int) substr($digits, 2, 2),
+                        );
                         $i += 4;
                     } else {
-                        $tokens[] = new Token(TokenType::Position, substr($vdt, $i, 3), row: ord($first) - 0x40, col: ord($vdt[$i + 2] ?? "\x41") - 0x40);
+                        $tokens[] = new Token(
+                            TokenType::Position,
+                            substr($vdt, $i, 3),
+                            row: ord($first) - 0x40,
+                            col: ord($vdt[$i + 2] ?? "\x41") - 0x40,
+                        );
                         $i += 2;
                     }
                     break;
@@ -100,10 +114,10 @@ final class Parser
     {
         $next = ord($vdt[$start + 1] ?? "\0");
         $length = match (true) {
-            $next == 0x39 => 3,                     // PRO1 x
-            $next == 0x3A => 4,                     // PRO2 x y
-            $next == 0x3B => 5,                     // PRO3 x y z
-            $next == 0x23 => 4,                     // ESC # SP x: whole screen or row attributes
+            $next == 0x39 => 3, // PRO1 x
+            $next == 0x3A => 4, // PRO2 x y
+            $next == 0x3B => 5, // PRO3 x y z
+            $next == 0x23 => 4, // ESC # SP x: whole screen or row attributes
             $next >= 0x28 && $next <= 0x2B => ($vdt[$start + 2] ?? '') === ' ' ? 4 : 3, // charset designation
             $next == 0x5B => $this->csiLength($vdt, $start), // CSI ... final byte
             default => 2,

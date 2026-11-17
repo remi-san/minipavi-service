@@ -22,7 +22,12 @@ final readonly class MessagesOption
 
     public static function addTo(Command $command): void
     {
-        $command->addOption(self::NAME, null, InputOption::VALUE_REQUIRED, 'The service\'s messages file (messages.xml), over the framework\'s');
+        $command->addOption(
+            self::NAME,
+            null,
+            InputOption::VALUE_REQUIRED,
+            'The service\'s messages file (messages.xml), over the framework\'s',
+        );
     }
 
     /**
@@ -32,6 +37,8 @@ final readonly class MessagesOption
     {
         $file = $input->getOption(self::NAME);
 
-        return \is_string($file) ? (new MessagesXmlParser())->parseFile($file, Messages::defaults()) : Messages::defaults();
+        return \is_string($file)
+            ? (new MessagesXmlParser())->parseFile($file, Messages::defaults())
+            : Messages::defaults();
     }
 }

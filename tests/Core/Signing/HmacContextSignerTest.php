@@ -22,7 +22,10 @@ final class HmacContextSignerTest extends TestCase
 
     public function testSignsWithAnUnpaddedBase64UrlSignature(): void
     {
-        self::assertMatchesRegularExpression('/^[A-Za-z0-9_-]{43}\.\{"route"/', (new HmacContextSigner('secret'))->sign(self::CONTEXT));
+        self::assertMatchesRegularExpression(
+            '/^[A-Za-z0-9_-]{43}\.\{"route"/',
+            (new HmacContextSigner('secret'))->sign(self::CONTEXT),
+        );
     }
 
     public function testGivesBackAnEmptyContext(): void

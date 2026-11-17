@@ -45,7 +45,9 @@ final class MessagesXmlParser
 
         if ($root === false) {
             $error = $errors[0] ?? null;
-            throw new MessagesException($error !== null ? "$name line $error->line: " . trim($error->message) : "$name: invalid XML");
+            throw new MessagesException(
+                $error !== null ? "$name line $error->line: " . trim($error->message) : "$name: invalid XML",
+            );
         }
         if ($root->getName() !== 'messages') {
             throw new MessagesException("$name: root element must be <messages>, not <" . $root->getName() . '>');

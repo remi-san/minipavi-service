@@ -17,8 +17,9 @@ use MiniPaviService\Vdt\VdtHelper;
  */
 final readonly class ClearAndShow extends Response
 {
-    public function __construct(private string $vdt)
-    {
+    public function __construct(
+        private string $vdt,
+    ) {
         parent::__construct(ControllerState::Display, new PageParameters(1));
     }
 

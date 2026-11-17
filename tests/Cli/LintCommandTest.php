@@ -25,7 +25,10 @@ final class LintCommandTest extends TestCase
 
     protected function tearDown(): void
     {
-        $files = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($this->dir, \FilesystemIterator::SKIP_DOTS), \RecursiveIteratorIterator::CHILD_FIRST);
+        $files = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator($this->dir, \FilesystemIterator::SKIP_DOTS),
+            \RecursiveIteratorIterator::CHILD_FIRST,
+        );
         foreach ($files as $file) {
             if ($file instanceof \SplFileInfo) {
                 $file->isDir() ? rmdir($file->getPathname()) : unlink($file->getPathname());
@@ -58,7 +61,10 @@ final class LintCommandTest extends TestCase
         $errors = explode("\n", trim($this->tester->getErrorOutput()));
         self::assertCount(2, $errors);
         self::assertStringStartsWith('broken.xml line 2: ', $errors[0]);
-        self::assertSame("image.xml line 2: <image>: Videotex file not found: {$this->dir}/pages/missing.vdt", $errors[1]);
+        self::assertSame(
+            "image.xml line 2: <image>: Videotex file not found: {$this->dir}/pages/missing.vdt",
+            $errors[1],
+        );
     }
 
     public function testReadsThePagesWithTheMessagesOfTheService(): void
@@ -67,10 +73,17 @@ final class LintCommandTest extends TestCase
         $this->write('pages/home.xml', '<page type="static"><message name="greeting">Hi</message></page>');
 
         self::assertSame(Command::FAILURE, $this->lint([$this->dir . '/pages']));
-        self::assertStringContainsString('name="greeting" is not a message of the service', $this->tester->getErrorOutput());
+        self::assertStringContainsString(
+            'name="greeting" is not a message of the service',
+            $this->tester->getErrorOutput(),
+        );
 
         $this->tester = new CommandTester(new LintCommand());
-        self::assertSame(Command::SUCCESS, $this->lint(['--messages', $this->dir . '/messages.xml', $this->dir . '/pages/home.xml']));
+        self::assertSame(Command::SUCCESS, $this->lint([
+            '--messages',
+            $this->dir . '/messages.xml',
+            $this->dir . '/pages/home.xml',
+        ]));
         self::assertSame("1 page checked, 0 errors\n", $this->tester->getDisplay());
     }
 

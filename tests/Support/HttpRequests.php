@@ -18,8 +18,11 @@ final class HttpRequests
      *
      * @param array<string, string> $query
      */
-    public static function to(string $userAgent, array $query = [], string $serviceUrl = 'http://services/Svc/index.php'): ServerRequestInterface
-    {
+    public static function to(
+        string $userAgent,
+        array $query = [],
+        string $serviceUrl = 'http://services/Svc/index.php',
+    ): ServerRequestInterface {
         return self::posting($userAgent, $query, [], $serviceUrl);
     }
 
@@ -30,8 +33,12 @@ final class HttpRequests
      * @param array<string, string> $query
      * @param array<string, mixed> $form
      */
-    public static function posting(string $userAgent, array $query, array $form, string $serviceUrl = 'http://services/Svc/index.php'): ServerRequestInterface
-    {
+    public static function posting(
+        string $userAgent,
+        array $query,
+        array $form,
+        string $serviceUrl = 'http://services/Svc/index.php',
+    ): ServerRequestInterface {
         $current = 'http://services/Svc/' . ($query === [] ? '' : '?' . http_build_query($query));
 
         return (new ServerRequest($form === [] ? 'GET' : 'POST', $current, ['User-Agent' => $userAgent]))

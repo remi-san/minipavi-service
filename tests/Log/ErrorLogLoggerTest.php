@@ -40,7 +40,10 @@ final class ErrorLogLoggerTest extends TestCase
 
         $log = (string) file_get_contents($this->file);
         self::assertStringContainsString('[error] Error serving the request {"route":"directory"}', $log);
-        self::assertStringContainsString('RuntimeException: directory.xml line 2: Premature end of data in ' . __FILE__, $log);
+        self::assertStringContainsString(
+            'RuntimeException: directory.xml line 2: Premature end of data in ' . __FILE__,
+            $log,
+        );
         self::assertStringContainsString('#0 ', $log);
     }
 

@@ -75,7 +75,9 @@ final class PageXsdTest extends TestCase
               <input/>
             </page>
             XML];
-        yield 'messages' => ['<page type="static"><message name="page.last">Fin de l\'article</message><message name="endkey">Fin</message></page>'];
+        yield 'messages' => [
+            '<page type="static"><message name="page.last">Fin de l\'article</message><message name="endkey">Fin</message></page>',
+        ];
         yield 'Minitel setup' => ['<page type="static" keyboard="lowercase" echo="off" scroll="on"/>'];
         yield 'schema location' => [<<<'XML'
             <page type="static" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -114,7 +116,10 @@ final class PageXsdTest extends TestCase
         yield 'col 0' => ['<page type="static"><text col="0">x</text></page>', true];
         yield 'signed number' => ['<page type="static"><text row="+1">x</text></page>', true];
         yield 'input in an if' => ['<page type="template"><if test="a"><input/></if></page>', true];
-        yield 'endkey in an if in a loop' => ['<page type="template"><foreach items="a" as="b"><if test="c"><endkey/></if></foreach></page>', true];
+        yield 'endkey in an if in a loop' => [
+            '<page type="template"><foreach items="a" as="b"><if test="c"><endkey/></if></foreach></page>',
+            true,
+        ];
         yield 'foreach without items' => ['<page type="template"><foreach as="b"/></page>', true];
         yield 'line of two characters' => ['<page type="static"><line char="=="/></page>', true];
         yield 'empty validwith' => ['<page type="static"><input validwith=""/></page>', true];
@@ -123,7 +128,13 @@ final class PageXsdTest extends TestCase
     #[DataProvider('invalidPages')]
     public function testPageRefusedByTheParserIsInvalid(string $xml, bool $refusedBySchema): void
     {
-        self::assertSame($refusedBySchema, self::errors($xml) !== [], $refusedBySchema ? 'the schema should refuse it' : 'the schema can\'t refuse it: remove it from PARSER_ONLY');
+        self::assertSame(
+            $refusedBySchema,
+            self::errors($xml) !== [],
+            $refusedBySchema
+                ? 'the schema should refuse it'
+                : 'the schema can\'t refuse it: remove it from PARSER_ONLY',
+        );
     }
 
     public function testValuesAreThoseOfTheParser(): void
@@ -144,7 +155,9 @@ final class PageXsdTest extends TestCase
     {
         $xpath = self::schema();
         $names = [];
-        foreach ($xpath->query('//xs:group[@name="displayElement"]//xs:element/@name | //xs:element[@name="page"]//xs:element/@name') ?: [] as $name) {
+        foreach ($xpath->query(
+            '//xs:group[@name="displayElement"]//xs:element/@name | //xs:element[@name="page"]//xs:element/@name',
+        ) ?: [] as $name) {
             $names[] = $name->nodeValue;
         }
         $expected = [...ElementFactory::TAGS, 'input', 'foreach', 'if', 'message'];

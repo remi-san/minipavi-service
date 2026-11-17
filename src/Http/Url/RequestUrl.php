@@ -116,11 +116,17 @@ final readonly class RequestUrl
         $parts = parse_url($serviceUrl);
         $scheme = strtolower((string) ($parts['scheme'] ?? ''));
         if (
-            $parts === false || !\in_array($scheme, ['http', 'https'], true) || !isset($parts['host'])
+            $parts === false
+            || !\in_array($scheme, ['http', 'https'], true)
+            || !isset($parts['host'])
             || !\in_array($parts['path'] ?? '', ['', '/'], true)
-            || isset($parts['query']) || isset($parts['fragment']) || isset($parts['user'])
+            || isset($parts['query'])
+            || isset($parts['fragment'])
+            || isset($parts['user'])
         ) {
-            throw new \InvalidArgumentException("SERVICE_URL \"$serviceUrl\" must be the scheme and host of the service, e.g. https://minitel.example.org");
+            throw new \InvalidArgumentException(
+                "SERVICE_URL \"$serviceUrl\" must be the scheme and host of the service, e.g. https://minitel.example.org",
+            );
         }
 
         return $scheme . '://' . $parts['host'] . (isset($parts['port']) ? ':' . $parts['port'] : '');
@@ -142,7 +148,7 @@ final readonly class RequestUrl
             $prefix = $parts[1] ?? null;
             $address = @inet_pton($ip);
             $bits = $address === false ? 0 : \strlen($address) * 8;
-            if ($address === false || ($prefix !== null && (!ctype_digit($prefix) || (int) $prefix > $bits))) {
+            if ($address === false || $prefix !== null && (!ctype_digit($prefix) || (int) $prefix > $bits)) {
                 throw new \InvalidArgumentException("TRUSTED_PROXIES: \"$proxy\" is not an IP address or range");
             }
             $proxies[] = [$address, $prefix === null ? $bits : (int) $prefix];

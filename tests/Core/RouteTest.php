@@ -40,20 +40,38 @@ final class RouteTest extends TestCase
     public function testUnknownStateIsTheInitialOne(): void
     {
         // E.g. kept by an older version of the service
-        self::assertSame(SearchState::Init, (new Route(new SearchController()))->restore('removed', new Values())->state());
+        self::assertSame(
+            SearchState::Init,
+            (new Route(new SearchController()))
+                ->restore('removed', new Values())
+                ->state(),
+        );
     }
 
     public function testInvalidParametersGetTheirDefaults(): void
     {
-        self::assertEquals(new PageParameters(), (new Route(new SearchController()))->restore(null, new Values(['page' => -5]))->parameters());
-        self::assertEquals(new PageParameters(), (new Route(new SearchController()))->restore(null, new Values(['page' => 'abc']))->parameters());
+        self::assertEquals(
+            new PageParameters(),
+            (new Route(new SearchController()))
+                ->restore(null, new Values(['page' => -5]))
+                ->parameters(),
+        );
+        self::assertEquals(
+            new PageParameters(),
+            (new Route(new SearchController()))
+                ->restore(null, new Values(['page' => 'abc']))
+                ->parameters(),
+        );
     }
 
     public function testRunsTheControllerOnWhatItKeeps(): void
     {
         $route = (new Route(new SearchController()))->restore('read-query', new Values(['page' => 3]));
 
-        self::assertEquals(Response::display(new Vdt('read-query 3'), SearchState::ReadQuery), $route->run('ENVOI', [], new Terminal()));
+        self::assertEquals(
+            Response::display(new Vdt('read-query 3'), SearchState::ReadQuery),
+            $route->run('ENVOI', [], new Terminal()),
+        );
     }
 
     public function testKeepsAStateAndParameters(): void
@@ -81,7 +99,9 @@ final class RouteTest extends TestCase
         $route = (new Route(new SearchController()))->start();
 
         $this->expectException(\LogicException::class);
-        $this->expectExceptionMessage(SearchController::class . ' keeps states of ' . SearchState::class . ', not ' . ControllerState::class);
+        $this->expectExceptionMessage(
+            SearchController::class . ' keeps states of ' . SearchState::class . ', not ' . ControllerState::class,
+        );
 
         $route->keep(ControllerState::ReadInput, null);
     }
@@ -91,7 +111,13 @@ final class RouteTest extends TestCase
         $route = (new Route(new SearchController()))->start();
 
         $this->expectException(\LogicException::class);
-        $this->expectExceptionMessage(SearchController::class . ' keeps parameters of ' . PageParameters::class . ', not ' . FromParameters::class);
+        $this->expectExceptionMessage(
+            SearchController::class
+            . ' keeps parameters of '
+            . PageParameters::class
+            . ', not '
+            . FromParameters::class,
+        );
 
         $route->keep(null, new FromParameters('home'));
     }

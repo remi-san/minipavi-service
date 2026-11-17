@@ -72,7 +72,11 @@ final readonly class HtmlClient implements Client
             );
         }
 
-        return new GatewayRequest(GatewayRequest::FCTN_CONNECT, serviceUrl: $serviceUrl, clientState: $this->initialState());
+        return new GatewayRequest(
+            GatewayRequest::FCTN_CONNECT,
+            serviceUrl: $serviceUrl,
+            clientState: $this->initialState(),
+        );
     }
 
     /**
@@ -105,7 +109,8 @@ final readonly class HtmlClient implements Client
         }
         $screen = $screen->fromLastClear();
 
-        $hidden = self::hidden(self::CONTEXT, $context)
+        $hidden =
+            self::hidden(self::CONTEXT, $context)
             // In MiniPaviCli's structure, as the answer's, to be read back the same way
             . self::hidden(self::COMMAND, $command === null ? '' : (string) json_encode(['COMMAND' => $command]))
             . self::hidden(self::SCREEN, base64_encode($screen->toString()));
@@ -113,7 +118,12 @@ final readonly class HtmlClient implements Client
         return new Response(
             200,
             ['Content-Type' => 'text/html; charset=utf-8'],
-            $this->renderer->render($screen->screen(), $request->serviceUrl, self::fields($command), $hidden . $this->keys($command)),
+            $this->renderer->render(
+                $screen->screen(),
+                $request->serviceUrl,
+                self::fields($command),
+                $hidden . $this->keys($command),
+            ),
         );
     }
 
@@ -140,10 +150,20 @@ final readonly class HtmlClient implements Client
         $fields = '';
         for ($line = 0; $line < $lines; $line++) {
             $value = $prefill[$line] ?? '';
-            $fields .= '<input class="field" name="' . self::CONTENT . '[]" maxlength="' . $width . '"'
-                . ' value="' . HtmlRenderer::escape(\is_scalar($value) ? (string) $value : '') . '"'
-                . ' style="' . HtmlRenderer::at($col, $row + $line, $width) . '"'
-                . ($line === 0 ? ' autofocus' : '') . ' autocomplete="off">';
+            $fields .=
+                '<input class="field" name="'
+                . self::CONTENT
+                . '[]" maxlength="'
+                . $width
+                . '"'
+                . ' value="'
+                . HtmlRenderer::escape(\is_scalar($value) ? (string) $value : '')
+                . '"'
+                . ' style="'
+                . HtmlRenderer::at($col, $row + $line, $width)
+                . '"'
+                . ($line === 0 ? ' autofocus' : '')
+                . ' autocomplete="off">';
         }
 
         return $fields;
@@ -163,8 +183,18 @@ final readonly class HtmlClient implements Client
         $buttons = [];
         foreach ($keys as $position => $key) {
             $enabled = $validWith === null || ($validWith & $key->mask()) !== 0;
-            $button = '<button type="submit" name="' . self::KEY . '" value="' . $key->value . '" style="order: ' . $position . '"'
-                . ($enabled ? '' : ' disabled') . '>' . HtmlRenderer::escape($this->messages->get(FrameworkMessage::keyLabel($key))) . '</button>';
+            $button =
+                '<button type="submit" name="'
+                . self::KEY
+                . '" value="'
+                . $key->value
+                . '" style="order: '
+                . $position
+                . '"'
+                . ($enabled ? '' : ' disabled')
+                . '>'
+                . HtmlRenderer::escape($this->messages->get(FrameworkMessage::keyLabel($key)))
+                . '</button>';
             $buttons[$key === FunctionKey::Send ? 0 : $position + 1] = $button;
         }
         ksort($buttons);
@@ -180,8 +210,12 @@ final readonly class HtmlClient implements Client
      */
     private static function command(mixed $command): ?array
     {
-        $command = \is_array($command) ? ($command['COMMAND'] ?? null) : null;
-        if (!\is_array($command) || !\in_array($command['name'] ?? null, ['InputTxt', 'InputMsg'], true) || !\is_array($command['param'] ?? null)) {
+        $command = \is_array($command) ? $command['COMMAND'] ?? null : null;
+        if (
+            !\is_array($command)
+            || !\in_array($command['name'] ?? null, ['InputTxt', 'InputMsg'], true)
+            || !\is_array($command['param'] ?? null)
+        ) {
             return null;
         }
 

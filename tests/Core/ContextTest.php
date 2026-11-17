@@ -29,10 +29,16 @@ final class ContextTest extends TestCase
         // home: built-in states, a page; search: states of its own, a page; menu: nothing;
         // origin: the route it was opened from
         $this->router = new Router();
-        $this->router->addRoute('home', new CallbackController(PageParameters::class, fn(Request $request) => Response::display(Vdt::text('home ' . $request->state()->value . ' ' . $request->parameters()->page))));
+        $this->router->addRoute('home', new CallbackController(PageParameters::class, fn(
+            Request $request,
+        ) => Response::display(Vdt::text('home ' . $request->state()->value . ' ' . $request->parameters()->page))));
         $this->router->addRoute('search', new SearchController());
-        $this->router->addRoute('menu', new CallbackController(NoParameters::class, fn(Request $request) => Response::display(new Vdt('menu'))));
-        $this->router->addRoute('origin', new CallbackController(FromParameters::class, fn(Request $request) => Response::display(Vdt::text('from ' . $request->parameters()->from))));
+        $this->router->addRoute('menu', new CallbackController(NoParameters::class, fn(
+            Request $request,
+        ) => Response::display(new Vdt('menu'))));
+        $this->router->addRoute('origin', new CallbackController(FromParameters::class, fn(
+            Request $request,
+        ) => Response::display(Vdt::text('from ' . $request->parameters()->from))));
         $this->router->setDefaultRoute('home');
     }
 
@@ -50,7 +56,10 @@ final class ContextTest extends TestCase
         $context = new Context($this->router, 'home');
         $context->keep(ControllerState::ReadInput, new PageParameters(2));
 
-        self::assertEquals(Response::display(new Vdt('home read-input 2')), $context->run('ENVOI', ['abc'], new Terminal('192.0.2.1')));
+        self::assertEquals(
+            Response::display(new Vdt('home read-input 2')),
+            $context->run('ENVOI', ['abc'], new Terminal('192.0.2.1')),
+        );
     }
 
     public function testKeepsStateAndParametersPerRoute(): void
@@ -135,11 +144,24 @@ final class ContextTest extends TestCase
 
     public function testUnserializeTypesWhatWasKeptOrFallsBack(): void
     {
-        $context = Context::unserialize((string) json_encode([
-            'route' => 'home',
-            'states' => ['home' => 'read-input', 'search' => 'removed state', 3 => 'display', 'menu' => ['not a state'], 'removed' => 'display'],
-            'parameters' => ['home' => ['page' => '2', 0 => 'no name'], 'search' => ['page' => -1], 'menu' => 'not parameters'],
-        ]), $this->router);
+        $context = Context::unserialize(
+            (string) json_encode([
+                'route' => 'home',
+                'states' => [
+                    'home' => 'read-input',
+                    'search' => 'removed state',
+                    3 => 'display',
+                    'menu' => ['not a state'],
+                    'removed' => 'display',
+                ],
+                'parameters' => [
+                    'home' => ['page' => '2', 0 => 'no name'],
+                    'search' => ['page' => -1],
+                    'menu' => 'not parameters',
+                ],
+            ]),
+            $this->router,
+        );
 
         self::assertSame(ControllerState::ReadInput, $context->state());
         self::assertEquals(new PageParameters(2), $context->parameters());

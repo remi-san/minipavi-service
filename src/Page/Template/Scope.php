@@ -37,16 +37,20 @@ final readonly class Scope
      */
     public function substitute(string $text): string
     {
-        $result = preg_replace_callback(self::PLACEHOLDER, function ($m) {
-            $value = $this->value($m[1]);
-            if (is_bool($value)) {
-                return $value ? '1' : '';
-            }
-            if ($value === null || is_scalar($value) || $value instanceof \Stringable) {
-                return (string) $value;
-            }
-            throw new \InvalidArgumentException("{{{$m[1]}}} is not text (" . get_debug_type($value) . ')');
-        }, $text);
+        $result = preg_replace_callback(
+            self::PLACEHOLDER,
+            function ($m) {
+                $value = $this->value($m[1]);
+                if (is_bool($value)) {
+                    return $value ? '1' : '';
+                }
+                if ($value === null || is_scalar($value) || $value instanceof \Stringable) {
+                    return (string) $value;
+                }
+                throw new \InvalidArgumentException("{{{$m[1]}}} is not text (" . get_debug_type($value) . ')');
+            },
+            $text,
+        );
         if ($result === null) {
             throw new \InvalidArgumentException('cannot replace the placeholders: ' . preg_last_error_msg());
         }
@@ -73,7 +77,9 @@ final readonly class Scope
             } elseif (is_object($value) && (isset($value->$name) || property_exists($value, $name))) {
                 $value = $value->$name;
             } else {
-                throw new \InvalidArgumentException("unknown variable {{{$path}}}: no \"$name\" in " . get_debug_type($value));
+                throw new \InvalidArgumentException(
+                    "unknown variable {{{$path}}}: no \"$name\" in " . get_debug_type($value),
+                );
             }
         }
         return $value;

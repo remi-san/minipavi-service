@@ -67,7 +67,15 @@ final readonly class KernelBuilder
      */
     public function withLogger(LoggerInterface $logger): self
     {
-        return new self($this->router, $this->messages, $logger, $this->contextKey, $this->requestUrl, $this->emulator, $this->handlers);
+        return new self(
+            $this->router,
+            $this->messages,
+            $logger,
+            $this->contextKey,
+            $this->requestUrl,
+            $this->emulator,
+            $this->handlers,
+        );
     }
 
     /**
@@ -76,7 +84,15 @@ final readonly class KernelBuilder
      */
     public function withContextKey(#[\SensitiveParameter] string $key): self
     {
-        return new self($this->router, $this->messages, $this->logger, $key, $this->requestUrl, $this->emulator, $this->handlers);
+        return new self(
+            $this->router,
+            $this->messages,
+            $this->logger,
+            $key,
+            $this->requestUrl,
+            $this->emulator,
+            $this->handlers,
+        );
     }
 
     /**
@@ -84,7 +100,15 @@ final readonly class KernelBuilder
      */
     public function withRequestUrl(RequestUrl $requestUrl): self
     {
-        return new self($this->router, $this->messages, $this->logger, $this->contextKey, $requestUrl, $this->emulator, $this->handlers);
+        return new self(
+            $this->router,
+            $this->messages,
+            $this->logger,
+            $this->contextKey,
+            $requestUrl,
+            $this->emulator,
+            $this->handlers,
+        );
     }
 
     /**
@@ -92,7 +116,15 @@ final readonly class KernelBuilder
      */
     public function withEmulator(EmulatorConfig $emulator): self
     {
-        return new self($this->router, $this->messages, $this->logger, $this->contextKey, $this->requestUrl, $emulator, $this->handlers);
+        return new self(
+            $this->router,
+            $this->messages,
+            $this->logger,
+            $this->contextKey,
+            $this->requestUrl,
+            $emulator,
+            $this->handlers,
+        );
     }
 
     /**
@@ -101,7 +133,15 @@ final readonly class KernelBuilder
      */
     public function withHandler(ConditionalRequestHandler $handler): self
     {
-        return new self($this->router, $this->messages, $this->logger, $this->contextKey, $this->requestUrl, $this->emulator, [...$this->handlers, $handler]);
+        return new self(
+            $this->router,
+            $this->messages,
+            $this->logger,
+            $this->contextKey,
+            $this->requestUrl,
+            $this->emulator,
+            [...$this->handlers, $handler],
+        );
     }
 
     /**
@@ -111,7 +151,11 @@ final readonly class KernelBuilder
     {
         $psr17 = new Psr17Factory();
 
-        return new Kernel($this->handler(), new ServerRequestCreator($psr17, $psr17, $psr17, $psr17), new ResponseEmitter());
+        return new Kernel(
+            $this->handler(),
+            new ServerRequestCreator($psr17, $psr17, $psr17, $psr17),
+            new ResponseEmitter(),
+        );
     }
 
     /**
@@ -128,8 +172,21 @@ final readonly class KernelBuilder
             new Dispatcher(
                 [
                     ...$this->handlers,
-                    new ConditionalRequestHandler('gateway', new FromMiniPaviGateway(), new ServiceRunner($service, new MiniPaviClient(), $signer, $this->logger)),
-                    new ConditionalRequestHandler('web', new QueryParameterEquals('web', 'true'), new ServiceRunner($service, new HtmlClient(new HtmlRenderer(HtmlRenderer::MINITEL_FONT), $this->messages), $signer, $this->logger)),
+                    new ConditionalRequestHandler(
+                        'gateway',
+                        new FromMiniPaviGateway(),
+                        new ServiceRunner($service, new MiniPaviClient(), $signer, $this->logger),
+                    ),
+                    new ConditionalRequestHandler(
+                        'web',
+                        new QueryParameterEquals('web', 'true'),
+                        new ServiceRunner(
+                            $service,
+                            new HtmlClient(new HtmlRenderer(HtmlRenderer::MINITEL_FONT), $this->messages),
+                            $signer,
+                            $this->logger,
+                        ),
+                    ),
                 ],
                 new EmulatorRedirect($this->emulator, $this->logger),
                 $this->logger,

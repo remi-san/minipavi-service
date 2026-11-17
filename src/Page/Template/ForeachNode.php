@@ -34,7 +34,9 @@ final readonly class ForeachNode implements Node
             throw new TemplateException("$this->location: <foreach>: " . $e->getMessage(), 0, $e);
         }
         if (!is_iterable($items)) {
-            throw new TemplateException("$this->location: <foreach>: {{{$this->items}}} is not a list (" . get_debug_type($items) . ')');
+            throw new TemplateException(
+                "$this->location: <foreach>: {{{$this->items}}} is not a list (" . get_debug_type($items) . ')',
+            );
         }
         $items = is_array($items) ? array_values($items) : iterator_to_array($items, false);
 
@@ -42,10 +44,13 @@ final readonly class ForeachNode implements Node
         $count = count($items);
         $elements = [];
         foreach ($items as $i => $item) {
-            $itemScope = $scope->with([
-                $this->as => $item,
-                'loop' => ['index' => $i + 1, 'count' => $count, 'first' => $i == 0, 'last' => $i == $count - 1],
-            ], $start + $i * $this->step);
+            $itemScope = $scope->with(
+                [
+                    $this->as => $item,
+                    'loop' => ['index' => $i + 1, 'count' => $count, 'first' => $i == 0, 'last' => $i == ($count - 1)],
+                ],
+                $start + ($i * $this->step),
+            );
             foreach ($this->children as $child) {
                 array_push($elements, ...$child->elements($itemScope));
             }

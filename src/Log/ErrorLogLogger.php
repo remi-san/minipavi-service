@@ -22,7 +22,9 @@ final class ErrorLogLogger extends AbstractLogger
         unset($context['exception']);
         $line = '[' . (\is_scalar($level) ? $level : get_debug_type($level)) . '] ' . $message;
         if ($context !== []) {
-            $line .= ' ' . json_encode($context, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PARTIAL_OUTPUT_ON_ERROR);
+            $line .=
+                ' '
+                . json_encode($context, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PARTIAL_OUTPUT_ON_ERROR);
         }
         if ($exception instanceof \Throwable) {
             $line .= "\n" . $exception;

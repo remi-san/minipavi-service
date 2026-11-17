@@ -17,16 +17,16 @@ final class ParserTest extends TestCase
 
         self::assertSame(
             [
-                [TokenType::Clear, "\x0C"],
-                [TokenType::Position, "\x1F\x41\x42"],
-                [TokenType::Glyph, 'A'],
-                [TokenType::Glyph, 'B'],
-                [TokenType::Repeat, "\x12\x43"],
+                [TokenType::Clear,     "\x0C"],
+                [TokenType::Position,  "\x1F\x41\x42"],
+                [TokenType::Glyph,     'A'],
+                [TokenType::Glyph,     'B'],
+                [TokenType::Repeat,    "\x12\x43"],
                 [TokenType::Attribute, "\x1B\x41"],
-                [TokenType::Charset, "\x0E"],
+                [TokenType::Charset,   "\x0E"],
                 [TokenType::ClearLine, "\x18"],
-                [TokenType::Move, "\x08"],
-                [TokenType::Home, "\x1E"],
+                [TokenType::Move,      "\x08"],
+                [TokenType::Home,      "\x1E"],
             ],
             array_map(fn(Token $token) => [$token->type, $token->source], $tokens),
         );
@@ -57,7 +57,10 @@ final class ParserTest extends TestCase
         // PRO2 (ESC : x y) and PRO1 (ESC 9 x) are not attributes
         $tokens = (new Parser())->parse("\x1B\x3A\x69\x43\x1B\x39\x70A");
 
-        self::assertSame([TokenType::Raw, TokenType::Raw, TokenType::Glyph], array_map(fn(Token $token) => $token->type, $tokens));
+        self::assertSame(
+            [TokenType::Raw, TokenType::Raw, TokenType::Glyph],
+            array_map(fn(Token $token) => $token->type, $tokens),
+        );
         self::assertSame("\x1B\x3A\x69\x43", $tokens[0]->source);
         self::assertSame("\x1B\x39\x70", $tokens[1]->source);
     }

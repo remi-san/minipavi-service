@@ -18,7 +18,13 @@ final class RequestTest extends TestCase
     public function testCarriesTheUserInput(): void
     {
         $terminal = new Terminal('CALLFROM 0102030405', 'other', '???');
-        $request = new Request(ControllerState::ReadInput, new PageParameters(2), FunctionKey::Send->value, ['Hello ', 'world'], $terminal);
+        $request = new Request(
+            ControllerState::ReadInput,
+            new PageParameters(2),
+            FunctionKey::Send->value,
+            ['Hello ', 'world'],
+            $terminal,
+        );
 
         self::assertSame(ControllerState::ReadInput, $request->state());
         self::assertEquals(new PageParameters(2), $request->parameters());

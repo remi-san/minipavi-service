@@ -31,7 +31,7 @@ final readonly class Screen
             /** @param array<string, string> $attributes see Attributes */
             function (int $row, int $col, string $bytes, int $width, array $attributes) use (&$cells): void {
                 if ($row >= 0 && $row <= self::ROWS) {
-                    for ($i = 0; $i < $width && $col + $i <= self::COLS; $i++) {
+                    for ($i = 0; $i < $width && ($col + $i) <= self::COLS; $i++) {
                         $cells[$row][$col + $i] = new Cell($bytes, $attributes);
                     }
                 }

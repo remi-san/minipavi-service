@@ -134,7 +134,7 @@ final readonly class Vdt
                         return;
                     }
                 }
-                if ($col < 1 || $col + $width - 1 > Screen::COLS) {
+                if ($col < 1 || ($col + $width - 1) > Screen::COLS) {
                     return;
                 }
                 $out->glyph($row, $col, $bytes, $width, $attributes);
@@ -157,10 +157,10 @@ final readonly class Vdt
                         // stop before the columns that came from beyond the screen, so they
                         // are written as spaces instead
                         if ($x < 0) {
-                            for ($col = max(1, $cursor->col + $x); $col <= Screen::COLS + $x; $col++) {
+                            for ($col = max(1, $cursor->col + $x); $col <= (Screen::COLS + $x); $col++) {
                                 $out->glyph($row, $col, ' ', 1, $cursor->attributes);
                             }
-                        } elseif ($cursor->col + $x <= Screen::COLS) {
+                        } elseif (($cursor->col + $x) <= Screen::COLS) {
                             $out->clearLine($row, $cursor->col + $x, $cursor->attributes);
                         }
                         break;
@@ -179,10 +179,9 @@ final readonly class Vdt
      */
     public function withoutClear(): self
     {
-        return new self(implode('', array_map(
-            fn(Token $token) => $token->type == TokenType::Clear ? "\x1E" : $token->source,
-            $this->tokens(),
-        )));
+        return new self(implode('', array_map(fn(Token $token) => $token->type == TokenType::Clear
+            ? "\x1E"
+            : $token->source, $this->tokens())));
     }
 
     /**

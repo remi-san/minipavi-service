@@ -19,9 +19,16 @@ final class RecordingFlow implements Flow
     /** @var list<array{string, array<string, mixed>}> method and arguments of each call */
     public array $calls = [];
 
-    public function answer(Vdt $vdt, ?InputCommand $command = null, ?string $next = null, ?CallMode $directCall = null): GatewayResponse
-    {
-        $this->calls[] = ['answer', ['vdt' => $vdt->toString(), 'command' => $command, 'next' => $next, 'directCall' => $directCall]];
+    public function answer(
+        Vdt $vdt,
+        ?InputCommand $command = null,
+        ?string $next = null,
+        ?CallMode $directCall = null,
+    ): GatewayResponse {
+        $this->calls[] = [
+            'answer',
+            ['vdt' => $vdt->toString(), 'command' => $command, 'next' => $next, 'directCall' => $directCall],
+        ];
 
         return new GatewayResponse($vdt, '{}');
     }

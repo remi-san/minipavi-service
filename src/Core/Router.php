@@ -61,7 +61,9 @@ final class Router
             throw new \LogicException('No default route: call Router::setDefaultRoute()');
         }
         if (!$this->has($this->defaultRoute)) {
-            throw new \LogicException("Default route \"$this->defaultRoute\" is not a route (routes: {$this->names()})");
+            throw new \LogicException(
+                "Default route \"$this->defaultRoute\" is not a route (routes: {$this->names()})",
+            );
         }
 
         return $this->defaultRoute;

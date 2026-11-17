@@ -16,7 +16,11 @@ final class WithUrlsTest extends TestCase
     public function testGivesTheRequestWithItsUrls(): void
     {
         $handler = new RecordingHandler();
-        $request = new ServerRequest('GET', '/Svc/?web=true', [], null, '1.1', ['HTTP_HOST' => 'example.org', 'PHP_SELF' => '/Svc/index.php', 'REQUEST_URI' => '/Svc/?web=true']);
+        $request = new ServerRequest('GET', '/Svc/?web=true', [], null, '1.1', [
+            'HTTP_HOST' => 'example.org',
+            'PHP_SELF' => '/Svc/index.php',
+            'REQUEST_URI' => '/Svc/?web=true',
+        ]);
 
         (new WithUrls($handler, new RequestUrl()))->handle($request);
 

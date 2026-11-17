@@ -18,7 +18,10 @@ final class KeyTest extends TestCase
         $screen = Vdt::fromString((new Key('Envoi', 20, 30, Color::Red))->getContent(new Terminal()))->screen();
 
         // An underlined space, then " Envoi " in reverse video, red
-        self::assertSame('Envoi', implode('', array_map(fn(int $col) => $screen->cell(20, $col)?->bytes, range(32, 36))));
+        self::assertSame('Envoi', implode('', array_map(
+            fn(int $col) => $screen->cell(20, $col)?->bytes,
+            range(32, 36),
+        )));
         $cell = $screen->cell(20, 32);
         if ($cell === null) {
             self::fail('Nothing drawn at row 20, column 32');
@@ -29,7 +32,11 @@ final class KeyTest extends TestCase
 
     public function testEndKeyIsOnTheLastRowForAMinitel(): void
     {
-        $vdt = (new EndKey('Connexion/fin', '[Maj] +'))->getContent(new Terminal('CALLFROM 0102030405', 'other', '???'));
+        $vdt = (new EndKey('Connexion/fin', '[Maj] +'))->getContent(new Terminal(
+            'CALLFROM 0102030405',
+            'other',
+            '???',
+        ));
 
         self::assertStringNotContainsString('[Maj] +', $vdt);
         self::assertSame('Connexion/fin', self::text(Vdt::fromString($vdt), 24, 14, 13));
@@ -59,7 +66,11 @@ final class KeyTest extends TestCase
     public function testEndKeyOfAnEmulatorIsOnTheLastRow(): void
     {
         // An emulator is a websocket without a known Minitel
-        $vdt = (new EndKey('Connexion/fin', '[Maj] +', row: 22))->getContent(new Terminal('192.0.2.1', 'websocket', '???'));
+        $vdt = (new EndKey('Connexion/fin', '[Maj] +', row: 22))->getContent(new Terminal(
+            '192.0.2.1',
+            'websocket',
+            '???',
+        ));
 
         self::assertSame('Connexion/fin', self::text(Vdt::fromString($vdt), 22, 14, 13));
     }
@@ -68,6 +79,9 @@ final class KeyTest extends TestCase
     {
         $screen = $vdt->screen();
 
-        return implode('', array_map(fn(int $c) => $screen->cell($row, $c)->bytes ?? ' ', range($col, $col + $length - 1)));
+        return implode('', array_map(
+            fn(int $c) => $screen->cell($row, $c)->bytes ?? ' ',
+            range($col, $col + $length - 1),
+        ));
     }
 }

@@ -26,7 +26,12 @@ interface Flow
      * @param ?string $next URL the gateway calls next; null: this service's
      * @param ?CallMode $directCall calls next at once, without waiting for the user; null: waits
      */
-    public function answer(Vdt $vdt, ?InputCommand $command = null, ?string $next = null, ?CallMode $directCall = null): GatewayResponse;
+    public function answer(
+        Vdt $vdt,
+        ?InputCommand $command = null,
+        ?string $next = null,
+        ?CallMode $directCall = null,
+    ): GatewayResponse;
 
     /**
      * Runs the controller of route at once, at its initial state with parameters, and

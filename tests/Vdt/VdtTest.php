@@ -135,8 +135,11 @@ final class VdtTest extends TestCase
                 } else {
                     [$fromRow, $fromCol] = [$row - $y, $col - $x];
                     [$start, $width] = $glyphs[$fromRow][$fromCol] ?? [$fromCol, 1];
-                    $onScreen = $fromRow >= 1 && $fromRow <= Screen::ROWS
-                        && $start + $x >= 1 && $start + $x + $width - 1 <= Screen::COLS;
+                    $onScreen =
+                        $fromRow >= 1
+                        && $fromRow <= Screen::ROWS
+                        && ($start + $x) >= 1
+                        && ($start + $x + $width - 1) <= Screen::COLS;
                     $expected = $onScreen ? $before->cell($fromRow, $fromCol) : null;
                 }
                 self::assertEquals($expected, $after->cell($row, $col), "row $row, column $col");
@@ -168,7 +171,9 @@ final class VdtTest extends TestCase
     public function testOffsetMatchesTheGoldenFile(string $file, int $x, int $y): void
     {
         $golden = self::FIXTURES . "/$file.offset_{$x}_{$y}.vdt";
-        $vdt = Vdt::fromFile(self::FIXTURES . "/$file.vdt")->offset($x, $y)->toString();
+        $vdt = Vdt::fromFile(self::FIXTURES . "/$file.vdt")
+            ->offset($x, $y)
+            ->toString();
 
         if (getenv('UPDATE_GOLDEN') === '1') {
             file_put_contents($golden, $vdt);

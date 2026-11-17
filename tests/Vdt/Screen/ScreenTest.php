@@ -35,7 +35,11 @@ final class ScreenTest extends TestCase
 
     public function testLineGivesTheTextOfARowWithItsAccents(): void
     {
-        $screen = Vdt::join(VdtHelper::setPos(1, 3), Vdt::text('Dernière page, ça coûte 5£ ½ Œuvre'), VdtHelper::writeLine0('Accès refusé'))->screen();
+        $screen = Vdt::join(
+            VdtHelper::setPos(1, 3),
+            Vdt::text('Dernière page, ça coûte 5£ ½ Œuvre'),
+            VdtHelper::writeLine0('Accès refusé'),
+        )->screen();
 
         $text = 'Dernière page, ça coûte 5£ ½ Œuvre';
         self::assertSame($text . str_repeat(' ', 40 - mb_strlen($text)), $screen->line(3));

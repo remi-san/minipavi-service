@@ -17,10 +17,10 @@ final class Position
     public static function check(int $row, int $col): void
     {
         if ($row < 0 || $row > Screen::ROWS) {
-            throw new \InvalidArgumentException("Row $row is off the screen (0 to " . Screen::ROWS . ")");
+            throw new \InvalidArgumentException("Row $row is off the screen (0 to " . Screen::ROWS . ')');
         }
         if ($col < 1 || $col > Screen::COLS) {
-            throw new \InvalidArgumentException("Column $col is off the screen (1 to " . Screen::COLS . ")");
+            throw new \InvalidArgumentException("Column $col is off the screen (1 to " . Screen::COLS . ')');
         }
     }
 }

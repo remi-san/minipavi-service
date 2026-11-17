@@ -41,7 +41,12 @@ final readonly class EndKey implements Element
         if ($terminal->versionMinitel() != '???' && $terminal->typeSocket() == 'websocket') {
             $width += mb_strlen($this->shiftLabel);
 
-            return VdtHelper::setPos(self::centered($width), $this->row ?? Screen::ROWS - 1)->toString() . Color::White->text() . VdtHelper::toG2($this->shiftLabel)->toString() . $badge;
+            return (
+                VdtHelper::setPos(self::centered($width), $this->row ?? (Screen::ROWS - 1))->toString()
+                . Color::White->text()
+                . VdtHelper::toG2($this->shiftLabel)->toString()
+                . $badge
+            );
         }
 
         return VdtHelper::setPos(self::centered($width), $this->row ?? Screen::ROWS)->toString() . $badge;

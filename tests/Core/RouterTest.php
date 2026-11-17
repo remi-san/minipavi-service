@@ -21,12 +21,17 @@ final class RouterTest extends TestCase
     public function testGivesTheRouteOfItsController(): void
     {
         $router = new Router();
-        $router->addRoute('home', new CallbackController(PageParameters::class, fn(Request $request) => Response::display(Vdt::text('home ' . $request->parameters()->page))));
+        $router->addRoute('home', new CallbackController(PageParameters::class, fn(
+            Request $request,
+        ) => Response::display(Vdt::text('home ' . $request->parameters()->page))));
         $router->setDefaultRoute('home');
 
         $route = $router->route('home');
         self::assertSame(ControllerState::Init, $route->start()->state());
-        self::assertEquals(new PageParameters(3), $route->restore('read-input', new Values(['page' => 3]))->parameters());
+        self::assertEquals(
+            new PageParameters(3),
+            $route->restore('read-input', new Values(['page' => 3]))->parameters(),
+        );
         self::assertEquals(Response::display(new Vdt('home 0')), $route->start()->run('', [], new Terminal()));
         self::assertTrue($router->has('home'));
         self::assertFalse($router->has('menu'));
@@ -70,6 +75,9 @@ final class RouterTest extends TestCase
      */
     private static function controller(): CallbackController
     {
-        return new CallbackController(NoParameters::class, fn(Request $request) => throw new \LogicException('not run'));
+        return new CallbackController(
+            NoParameters::class,
+            fn(Request $request) => throw new \LogicException('not run'),
+        );
     }
 }

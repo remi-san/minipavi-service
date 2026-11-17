@@ -25,22 +25,38 @@ final class DispatcherTest extends TestCase
     {
         // The services' handlers
         $this->logger = new MemoryLogger();
-        $this->dispatcher = new Dispatcher([
-            new ConditionalRequestHandler('gateway', new FromMiniPaviGateway(), new RecordingHandler('gateway')),
-            new ConditionalRequestHandler('web', new QueryParameterEquals('web', 'true'), new RecordingHandler('web')),
-        ], new RecordingHandler('browser'), $this->logger);
+        $this->dispatcher = new Dispatcher(
+            [
+                new ConditionalRequestHandler('gateway', new FromMiniPaviGateway(), new RecordingHandler('gateway')),
+                new ConditionalRequestHandler(
+                    'web',
+                    new QueryParameterEquals('web', 'true'),
+                    new RecordingHandler('web'),
+                ),
+            ],
+            new RecordingHandler('browser'),
+            $this->logger,
+        );
     }
 
     public function testGivesTheRequestToTheFirstHandlerMatchingIt(): void
     {
         // The gateway's handler comes first, even with web=true
-        self::assertSame('gateway', (string) $this->dispatcher->handle(HttpRequests::to('MiniPAVI', ['web' => 'true']))->getBody());
+        self::assertSame(
+            'gateway',
+            (string) $this->dispatcher->handle(HttpRequests::to('MiniPAVI', ['web' => 'true']))->getBody(),
+        );
         self::assertSame([[LogLevel::DEBUG, 'Request dispatched', ['handler' => 'gateway']]], $this->logger->records);
     }
 
     public function testGivesABrowserAskingWebTrueToTheWebHandler(): void
     {
-        self::assertSame('web', (string) $this->dispatcher->handle(HttpRequests::to('Mozilla/5.0', ['web' => 'true', 'route' => 'games']))->getBody());
+        self::assertSame(
+            'web',
+            (string) $this->dispatcher
+                ->handle(HttpRequests::to('Mozilla/5.0', ['web' => 'true', 'route' => 'games']))
+                ->getBody(),
+        );
         self::assertSame([[LogLevel::DEBUG, 'Request dispatched', ['handler' => 'web']]], $this->logger->records);
     }
 
@@ -61,7 +77,10 @@ final class DispatcherTest extends TestCase
     #[DataProvider('otherQueries')]
     public function testGivesWhatNoHandlerMatchesToTheFallback(array $query): void
     {
-        self::assertSame('browser', (string) $this->dispatcher->handle(HttpRequests::to('Mozilla/5.0', $query))->getBody());
+        self::assertSame(
+            'browser',
+            (string) $this->dispatcher->handle(HttpRequests::to('Mozilla/5.0', $query))->getBody(),
+        );
         self::assertSame([[LogLevel::DEBUG, 'Request dispatched', ['handler' => 'fallback']]], $this->logger->records);
     }
 
@@ -69,16 +88,29 @@ final class DispatcherTest extends TestCase
     {
         // E.g. a health check, before the others
         $dispatcher = new Dispatcher([
-            new ConditionalRequestHandler('health', new QueryParameterEquals('health', '1'), new RecordingHandler('ok')),
+            new ConditionalRequestHandler(
+                'health',
+                new QueryParameterEquals('health', '1'),
+                new RecordingHandler('ok'),
+            ),
             new ConditionalRequestHandler('web', new QueryParameterEquals('web', 'true'), new RecordingHandler('web')),
         ], new RecordingHandler('browser'));
 
-        self::assertSame('ok', (string) $dispatcher->handle(HttpRequests::to('Mozilla/5.0', ['health' => '1', 'web' => 'true']))->getBody());
+        self::assertSame(
+            'ok',
+            (string) $dispatcher
+                ->handle(HttpRequests::to('Mozilla/5.0', ['health' => '1', 'web' => 'true']))
+                ->getBody(),
+        );
     }
 
     public function testAConditionalHandlerMatchesWhatItsMatcherMatchesAndDelegatesToItsHandler(): void
     {
-        $handler = new ConditionalRequestHandler('web', new QueryParameterEquals('web', 'true'), new RecordingHandler('web'));
+        $handler = new ConditionalRequestHandler(
+            'web',
+            new QueryParameterEquals('web', 'true'),
+            new RecordingHandler('web'),
+        );
 
         self::assertSame('web', $handler->name());
         self::assertTrue($handler->matches(HttpRequests::to('Mozilla/5.0', ['web' => 'true'])));
@@ -88,6 +120,11 @@ final class DispatcherTest extends TestCase
 
     public function testWithoutHandlersEverythingGoesToTheFallback(): void
     {
-        self::assertSame('browser', (string) (new Dispatcher([], new RecordingHandler('browser')))->handle(HttpRequests::to('MiniPAVI'))->getBody());
+        self::assertSame(
+            'browser',
+            (string) (new Dispatcher([], new RecordingHandler('browser')))
+                ->handle(HttpRequests::to('MiniPAVI'))
+                ->getBody(),
+        );
     }
 }

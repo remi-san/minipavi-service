@@ -26,6 +26,8 @@ enum UrlAttribute: string
     {
         $url = $request->getAttribute($this->value);
 
-        return \is_string($url) ? $url : throw new \LogicException("No {$this->value} attribute: the request must go through WithUrls");
+        return \is_string($url)
+            ? $url
+            : throw new \LogicException("No {$this->value} attribute: the request must go through WithUrls");
     }
 }

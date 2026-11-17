@@ -12,8 +12,13 @@ final class Attributes
 {
     public const DEFAULTS = [
         'charset' => "\x0F",
-        'fg' => "\x47", 'bg' => "\x50", 'size' => "\x4C", 'blink' => "\x49",
-        'mask' => "\x5F", 'underline' => "\x59", 'inverse' => "\x5C",
+        'fg' => "\x47",
+        'bg' => "\x50",
+        'size' => "\x4C",
+        'blink' => "\x49",
+        'mask' => "\x5F",
+        'underline' => "\x59",
+        'inverse' => "\x5C",
     ];
 
     public const TEXT = "\x0F";

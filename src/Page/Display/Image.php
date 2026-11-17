@@ -27,7 +27,10 @@ final readonly class Image implements Element
         if ($row < 1) {
             throw new \InvalidArgumentException('An image starts at row 1 at least');
         }
-        $this->vdt = $image->withoutClear()->offset($col - 1, $row - 1)->toString();
+        $this->vdt = $image
+            ->withoutClear()
+            ->offset($col - 1, $row - 1)
+            ->toString();
     }
 
     public function getContent(Terminal $terminal): string

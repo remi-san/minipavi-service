@@ -32,7 +32,12 @@ final readonly class TemplatePage implements Page
      */
     public function display(Terminal $terminal, array $data = []): Vdt
     {
-        return Vdt::join($this->setup->toVdt(), VdtHelper::clearScreen(), new Vdt(Videotex::CURSOR_OFF), $this->toDisplay($data)->toVdt($terminal));
+        return Vdt::join(
+            $this->setup->toVdt(),
+            VdtHelper::clearScreen(),
+            new Vdt(Videotex::CURSOR_OFF),
+            $this->toDisplay($data)->toVdt($terminal),
+        );
     }
 
     /**

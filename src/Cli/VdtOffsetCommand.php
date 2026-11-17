@@ -20,7 +20,10 @@ use Symfony\Component\Console\Style\SymfonyStyle;
  * file, or to the standard output; input "-" reads the standard input. With --preview, the
  * screen is printed as text instead, before and after.
  */
-#[AsCommand(name: 'vdt-offset', description: 'Moves a Videotex page x columns right and y rows down (negative: left, up)')]
+#[AsCommand(
+    name: 'vdt-offset',
+    description: 'Moves a Videotex page x columns right and y rows down (negative: left, up)',
+)]
 final class VdtOffsetCommand extends Command
 {
     protected function configure(): void
@@ -31,7 +34,9 @@ final class VdtOffsetCommand extends Command
             ->addArgument('y', InputArgument::REQUIRED, 'Rows to move down (negative: up)')
             ->addArgument('output', InputArgument::OPTIONAL, 'The file to write (default: the standard output)')
             ->addOption('preview', null, InputOption::VALUE_NONE, 'Prints the screen as text, before and after')
-            ->setHelp('Negative numbers are read as options: put <info>--</info> before the arguments, e.g. <info>vdt-offset -- background.vdt 8 -2</info>');
+            ->setHelp(
+                'Negative numbers are read as options: put <info>--</info> before the arguments, e.g. <info>vdt-offset -- background.vdt 8 -2</info>',
+            );
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -50,7 +55,11 @@ final class VdtOffsetCommand extends Command
         $moved = $vdt->offset($x, $y);
 
         if ($input->getOption('preview') === true) {
-            $output->write("Before:\n" . $vdt->screen()->preview() . "After ($x, $y):\n" . $moved->screen()->preview(), false, OutputInterface::OUTPUT_RAW);
+            $output->write(
+                "Before:\n" . $vdt->screen()->preview() . "After ($x, $y):\n" . $moved->screen()->preview(),
+                false,
+                OutputInterface::OUTPUT_RAW,
+            );
 
             return self::SUCCESS;
         }

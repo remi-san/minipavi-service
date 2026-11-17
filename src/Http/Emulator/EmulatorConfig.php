@@ -25,12 +25,11 @@ class EmulatorConfig
 
     public function getEmulatorUrl(string $serviceUrl): string
     {
-        return rtrim($this->url, '/')
+        return (
+            rtrim($this->url, '/')
             . '/index.php?gw='
-            . urlencode(
-                rtrim($this->gateway, '/')
-                . '/?url=' . urlencode($this->gatewayServiceUrl($serviceUrl)),
-            );
+            . urlencode(rtrim($this->gateway, '/') . '/?url=' . urlencode($this->gatewayServiceUrl($serviceUrl)))
+        );
     }
 
     /**
@@ -46,7 +45,9 @@ class EmulatorConfig
         return new self(
             $emulatorUrl ?? self::PUBLIC_EMULATOR_URL,
             $gatewayUrl === null || $gatewayUrl === '' ? self::PUBLIC_GATEWAY : $gatewayUrl,
-            $servicesInternalHost === null || $servicesInternalHost === '' ? ($emulatorUrl !== null ? self::LOCAL_SERVICES_HOST : null) : $servicesInternalHost,
+            $servicesInternalHost === null || $servicesInternalHost === ''
+                ? ($emulatorUrl !== null ? self::LOCAL_SERVICES_HOST : null)
+                : $servicesInternalHost,
         );
     }
 

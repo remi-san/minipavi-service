@@ -37,45 +37,73 @@ final class PaginatedControllerTest extends TestCase
     protected function setUp(): void
     {
         $this->router = new Router();
-        $this->router->addRoute('menu', new CallbackController(NoParameters::class, fn(Request $request) => $request->key() === 'ENVOI'
-            ? Response::goTo('list')
-            : Response::display(new Vdt('MENU'))));
+        $this->router->addRoute('menu', new CallbackController(NoParameters::class, fn(
+            Request $request,
+        ) => $request->key() === 'ENVOI' ? Response::goTo('list') : Response::display(new Vdt('MENU'))));
         $this->router->setDefaultRoute('menu');
     }
 
     public function testShowsTheFirstPageWithItsNumber(): void
     {
-        $this->tester(['a', 'b', 'c', 'd', 'e'])
-            ->assertRoute('list')->assertLineContains(2, 'a')->assertLineContains(3, 'b')->assertScreenContains('Page 1/3')
+        $this
+            ->tester(['a', 'b', 'c', 'd', 'e'])
+            ->assertRoute('list')
+            ->assertLineContains(2, 'a')
+            ->assertLineContains(3, 'b')
+            ->assertScreenContains('Page 1/3')
             ->assertLineContains(22, '1-2 of 5, 2 per page');
     }
 
     public function testSuiteAndRetourChangePage(): void
     {
-        $this->tester(['a', 'b', 'c', 'd', 'e'])
-            ->press(FunctionKey::Next)->assertLineContains(2, 'c')->assertScreenContains('Page 2/3')->assertScreenNotContains('a ')
-            ->press(FunctionKey::Next)->assertLineContains(2, 'e')->assertScreenContains('Page 3/3')
+        $this
+            ->tester(['a', 'b', 'c', 'd', 'e'])
+            ->press(FunctionKey::Next)
+            ->assertLineContains(2, 'c')
+            ->assertScreenContains('Page 2/3')
+            ->assertScreenNotContains('a ')
+            ->press(FunctionKey::Next)
+            ->assertLineContains(2, 'e')
+            ->assertScreenContains('Page 3/3')
             ->assertLineContains(22, '5-5 of 5, 2 per page')
-            ->press(FunctionKey::Previous)->assertLineContains(2, 'c')->assertScreenContains('Page 2/3');
+            ->press(FunctionKey::Previous)
+            ->assertLineContains(2, 'c')
+            ->assertScreenContains('Page 2/3');
     }
 
     public function testEndsStayWithAMessageOnLine0(): void
     {
-        $this->tester(['a', 'b', 'c'])
-            ->press(FunctionKey::Previous)->assertLine0('Première page')->assertScreenContains('Page 1/2')
-            ->press(FunctionKey::Next)->press(FunctionKey::Next)->assertLine0('Dernière page')->assertScreenContains('Page 2/2')
+        $this
+            ->tester(['a', 'b', 'c'])
+            ->press(FunctionKey::Previous)
+            ->assertLine0('Première page')
+            ->assertScreenContains('Page 1/2')
+            ->press(FunctionKey::Next)
+            ->press(FunctionKey::Next)
+            ->assertLine0('Dernière page')
+            ->assertScreenContains('Page 2/2')
             // Still on the last page
-            ->press(FunctionKey::Previous)->assertScreenContains('Page 1/2');
+            ->press(FunctionKey::Previous)
+            ->assertScreenContains('Page 1/2');
     }
 
     public function testPageRedefinesTheEndMessages(): void
     {
-        $page = (new PageXmlParser(Messages::defaults()))->parse(str_replace('<foreach', '<message name="page.last">Fin de la liste</message><foreach', self::PAGE), __DIR__);
+        $page = (new PageXmlParser(Messages::defaults()))->parse(
+            str_replace('<foreach', '<message name="page.last">Fin de la liste</message><foreach', self::PAGE),
+            __DIR__,
+        );
         $this->router->addRoute('list', new ListController($page, ['a', 'b', 'c']));
 
-        (new ServiceTester(new Service($this->router, Messages::defaults())))->connect()->press(FunctionKey::Send)
-            ->press(FunctionKey::Next)->press(FunctionKey::Next)->assertLine0('Fin de la liste')
-            ->press(FunctionKey::Previous)->press(FunctionKey::Previous)->assertLine0('Première page');
+        (new ServiceTester(new Service($this->router, Messages::defaults())))
+            ->connect()
+            ->press(FunctionKey::Send)
+            ->press(FunctionKey::Next)
+            ->press(FunctionKey::Next)
+            ->assertLine0('Fin de la liste')
+            ->press(FunctionKey::Previous)
+            ->press(FunctionKey::Previous)
+            ->assertLine0('Première page');
     }
 
     public function testRepetitionRedrawsTheCurrentPage(): void
@@ -91,9 +119,12 @@ final class PaginatedControllerTest extends TestCase
 
     public function testOtherKeysAreTheControllers(): void
     {
-        $this->tester(['a', 'b', 'c'])
-            ->press(FunctionKey::Send)->assertScreenContains('Page 2/2')
-            ->press(FunctionKey::Summary)->assertRoute('menu');
+        $this
+            ->tester(['a', 'b', 'c'])
+            ->press(FunctionKey::Send)
+            ->assertScreenContains('Page 2/2')
+            ->press(FunctionKey::Summary)
+            ->assertRoute('menu');
     }
 
     public function testPageKeptBeyondTheLastOneShowsTheLastOne(): void
@@ -108,8 +139,7 @@ final class PaginatedControllerTest extends TestCase
 
     public function testEmptyListHasOnePage(): void
     {
-        $this->tester([])->assertScreenContains('Page 1/1')
-            ->press(FunctionKey::Next)->assertLine0('Dernière page');
+        $this->tester([])->assertScreenContains('Page 1/1')->press(FunctionKey::Next)->assertLine0('Dernière page');
     }
 
     /**
@@ -121,7 +151,9 @@ final class PaginatedControllerTest extends TestCase
     {
         $this->router->addRoute('list', new ListController($this->page(), $items));
 
-        return (new ServiceTester(new Service($this->router, Messages::defaults())))->connect()->press(FunctionKey::Send);
+        return (new ServiceTester(new Service($this->router, Messages::defaults())))
+            ->connect()
+            ->press(FunctionKey::Send);
     }
 
     private function page(): Page

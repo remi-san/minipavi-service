@@ -108,7 +108,11 @@ abstract class PaginatedController extends AbstractController
      */
     final protected function stay(Paginator $paginator, Vdt $vdt = new Vdt()): Response
     {
-        return Response::readInput($vdt, $this->page->inputCommand(), parameters: new PageParameters($paginator->index()));
+        return Response::readInput(
+            $vdt,
+            $this->page->inputCommand(),
+            parameters: new PageParameters($paginator->index()),
+        );
     }
 
     /**

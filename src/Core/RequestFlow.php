@@ -47,15 +47,22 @@ final class RequestFlow implements Flow
         return $response->continueWith($this);
     }
 
-    public function answer(Vdt $vdt, ?InputCommand $command = null, ?string $next = null, ?CallMode $directCall = null): GatewayResponse
-    {
+    public function answer(
+        Vdt $vdt,
+        ?InputCommand $command = null,
+        ?string $next = null,
+        ?CallMode $directCall = null,
+    ): GatewayResponse {
         return new GatewayResponse($vdt, $this->context->serialize(), $next, $command?->toArray(), $directCall);
     }
 
     public function goTo(string $route, ?Parameters $parameters = null): GatewayResponse
     {
         if (\count($this->routes) > $this->maxPageChanges) {
-            throw new \LogicException('Too many page changes in one request (more than ' . $this->maxPageChanges . '): ' . implode(' → ', [...$this->routes, $route]));
+            throw new \LogicException(
+                'Too many page changes in one request (more than ' . $this->maxPageChanges . '): '
+                    . implode(' → ', [...$this->routes, $route]),
+            );
         }
 
         $this->context->changeRoute($route);

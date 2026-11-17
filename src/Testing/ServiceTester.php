@@ -83,7 +83,9 @@ final class ServiceTester
      */
     public function disconnect(): self
     {
-        $answer = $this->service->handle(new GatewayRequest(GatewayRequest::FCTN_DISCONNECT, [], $this->answer->context ?? '', $this->terminal));
+        $answer = $this->service->handle(
+            new GatewayRequest(GatewayRequest::FCTN_DISCONNECT, [], $this->answer->context ?? '', $this->terminal),
+        );
         Assert::assertNull($answer, 'A disconnection is answered');
 
         return $this;
@@ -91,14 +93,22 @@ final class ServiceTester
 
     public function assertScreenContains(string $text): self
     {
-        Assert::assertStringContainsString($text, $this->screen()->text(), $this->failure("The screen doesn't show \"$text\""));
+        Assert::assertStringContainsString(
+            $text,
+            $this->screen()->text(),
+            $this->failure("The screen doesn't show \"$text\""),
+        );
 
         return $this;
     }
 
     public function assertScreenNotContains(string $text): self
     {
-        Assert::assertStringNotContainsString($text, $this->screen()->text(), $this->failure("The screen shows \"$text\""));
+        Assert::assertStringNotContainsString(
+            $text,
+            $this->screen()->text(),
+            $this->failure("The screen shows \"$text\""),
+        );
 
         return $this;
     }
@@ -108,7 +118,11 @@ final class ServiceTester
      */
     public function assertLineContains(int $row, string $text): self
     {
-        Assert::assertStringContainsString($text, $this->screen()->line($row), $this->failure("Row $row doesn't show \"$text\""));
+        Assert::assertStringContainsString(
+            $text,
+            $this->screen()->line($row),
+            $this->failure("Row $row doesn't show \"$text\""),
+        );
 
         return $this;
     }
@@ -137,7 +151,11 @@ final class ServiceTester
     public function assertConnectsTo(string $url): self
     {
         Assert::assertSame($url, $this->answer()->next, $this->failure('Not sent to the expected service'));
-        Assert::assertSame(CallMode::Connect, $this->answer()->directCall, $this->failure('Not connected at once to the other service'));
+        Assert::assertSame(
+            CallMode::Connect,
+            $this->answer()->directCall,
+            $this->failure('Not connected at once to the other service'),
+        );
 
         return $this;
     }
@@ -184,6 +202,13 @@ final class ServiceTester
     {
         $lines = explode("\n", $this->screen()->text());
 
-        return "$message. Screen:\n" . implode("\n", array_map(fn(int $row, string $line) => sprintf('%2d|%s|', $row, $line), array_keys($lines), $lines));
+        return (
+            "$message. Screen:\n"
+            . implode("\n", array_map(
+                fn(int $row, string $line) => sprintf('%2d|%s|', $row, $line),
+                array_keys($lines),
+                $lines,
+            ))
+        );
     }
 }

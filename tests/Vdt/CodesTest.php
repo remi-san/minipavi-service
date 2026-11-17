@@ -26,31 +26,66 @@ final class CodesTest extends TestCase
 
     public function testVideotexCodes(): void
     {
-        self::assertSame(
-            [VDT_CLRLN, VDT_CUROFF, VDT_FDINV, VDT_FDNORM, VDT_STARTUNDERLINE, VDT_STOPUNDERLINE,
-                VDT_SZNORM, VDT_SZDBLH, VDT_SZDBLW, VDT_SZDBLHW, VDT_RESET_DRCS],
-            [Videotex::CLEAR_LINE, Videotex::CURSOR_OFF, Videotex::INVERSE_ON, Videotex::INVERSE_OFF, Videotex::UNDERLINE_ON,
-                Videotex::UNDERLINE_OFF, Videotex::SIZE_NORMAL, Videotex::SIZE_DOUBLE_HEIGHT, Videotex::SIZE_DOUBLE_WIDTH,
-                Videotex::SIZE_DOUBLE, Videotex::RESET_CHARSETS],
-        );
+        self::assertSame([
+            VDT_CLRLN,
+            VDT_CUROFF,
+            VDT_FDINV,
+            VDT_FDNORM,
+            VDT_STARTUNDERLINE,
+            VDT_STOPUNDERLINE,
+            VDT_SZNORM,
+            VDT_SZDBLH,
+            VDT_SZDBLW,
+            VDT_SZDBLHW,
+            VDT_RESET_DRCS,
+        ], [
+            Videotex::CLEAR_LINE,
+            Videotex::CURSOR_OFF,
+            Videotex::INVERSE_ON,
+            Videotex::INVERSE_OFF,
+            Videotex::UNDERLINE_ON,
+            Videotex::UNDERLINE_OFF,
+            Videotex::SIZE_NORMAL,
+            Videotex::SIZE_DOUBLE_HEIGHT,
+            Videotex::SIZE_DOUBLE_WIDTH,
+            Videotex::SIZE_DOUBLE,
+            Videotex::RESET_CHARSETS,
+        ]);
     }
 
     public function testProtocolSequences(): void
     {
-        self::assertSame(
-            [PRO_MIN, PRO_MAJ, PRO_LOCALECHO_OFF, PRO_LOCALECHO_ON, PRO_ROULEAU_OFF, PRO_ROULEAU_ON],
-            [Keyboard::Lowercase->sequence(), Keyboard::Uppercase->sequence(), LocalEcho::Off->sequence(),
-                LocalEcho::On->sequence(), Scroll::Off->sequence(), Scroll::On->sequence()],
-        );
+        self::assertSame([PRO_MIN, PRO_MAJ, PRO_LOCALECHO_OFF, PRO_LOCALECHO_ON, PRO_ROULEAU_OFF, PRO_ROULEAU_ON], [
+            Keyboard::Lowercase->sequence(),
+            Keyboard::Uppercase->sequence(),
+            LocalEcho::Off->sequence(),
+            LocalEcho::On->sequence(),
+            Scroll::Off->sequence(),
+            Scroll::On->sequence(),
+        ]);
     }
 
     public function testFunctionKeyMasks(): void
     {
-        self::assertSame(
-            [MSK_SOMMAIRE, MSK_ANNULATION, MSK_RETOUR, MSK_REPETITION, MSK_GUIDE, MSK_CORRECTION, MSK_SUITE, MSK_ENVOI],
-            [FunctionKey::Summary->mask(), FunctionKey::Cancel->mask(), FunctionKey::Previous->mask(), FunctionKey::Refresh->mask(),
-                FunctionKey::Guide->mask(), FunctionKey::Correction->mask(), FunctionKey::Next->mask(), FunctionKey::Send->mask()],
-        );
+        self::assertSame([
+            MSK_SOMMAIRE,
+            MSK_ANNULATION,
+            MSK_RETOUR,
+            MSK_REPETITION,
+            MSK_GUIDE,
+            MSK_CORRECTION,
+            MSK_SUITE,
+            MSK_ENVOI,
+        ], [
+            FunctionKey::Summary->mask(),
+            FunctionKey::Cancel->mask(),
+            FunctionKey::Previous->mask(),
+            FunctionKey::Refresh->mask(),
+            FunctionKey::Guide->mask(),
+            FunctionKey::Correction->mask(),
+            FunctionKey::Next->mask(),
+            FunctionKey::Send->mask(),
+        ]);
     }
 
     public function testPublicGateway(): void

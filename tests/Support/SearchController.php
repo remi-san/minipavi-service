@@ -29,6 +29,9 @@ final class SearchController implements Controller
 
     public function run(Request $request): Response
     {
-        return Response::display(Vdt::text($request->state()->value . ' ' . $request->parameters()->page), SearchState::ReadQuery);
+        return Response::display(
+            Vdt::text($request->state()->value . ' ' . $request->parameters()->page),
+            SearchState::ReadQuery,
+        );
     }
 }

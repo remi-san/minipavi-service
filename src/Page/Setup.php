@@ -26,6 +26,10 @@ final readonly class Setup
      */
     public function toVdt(): Vdt
     {
-        return new Vdt(($this->keyboard?->sequence() ?? '') . ($this->localEcho?->sequence() ?? '') . ($this->scroll?->sequence() ?? ''));
+        return new Vdt(
+            ($this->keyboard?->sequence() ?? '')
+            . ($this->localEcho?->sequence() ?? '')
+            . ($this->scroll?->sequence() ?? ''),
+        );
     }
 }

@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Page\Template;
 
-use MiniPaviService\Page\Parser\{ElementFactory, PageXmlException};
+use MiniPaviService\Page\Parser\ElementFactory;
+use MiniPaviService\Page\Parser\PageXmlException;
 
 /**
  * Display element of a template (<text>, <line>, <key>, <endkey>, <background>, <image>),

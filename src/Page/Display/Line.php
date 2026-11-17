@@ -34,14 +34,20 @@ final readonly class Line implements Element
         if (strlen($char) != 1) {
             throw new \InvalidArgumentException("A line is made of a single character, got '$char'");
         }
-        $this->length = $length ?? Screen::COLS + 1 - $col;
-        if ($this->length < 1 || $col + $this->length - 1 > Screen::COLS) {
-            throw new \InvalidArgumentException("Line of length $this->length from column $col goes past column " . Screen::COLS);
+        $this->length = $length ?? (Screen::COLS + 1 - $col);
+        if ($this->length < 1 || ($col + $this->length - 1) > Screen::COLS) {
+            throw new \InvalidArgumentException(
+                "Line of length $this->length from column $col goes past column " . Screen::COLS,
+            );
         }
     }
 
     public function getContent(Terminal $terminal): string
     {
-        return VdtHelper::setPos($this->col, $this->row)->toString() . $this->color->text() . VdtHelper::repeatChar($this->char, $this->length)->toString();
+        return (
+            VdtHelper::setPos($this->col, $this->row)->toString()
+            . $this->color->text()
+            . VdtHelper::repeatChar($this->char, $this->length)->toString()
+        );
     }
 }

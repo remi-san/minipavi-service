@@ -70,15 +70,21 @@ final class PageXmlParserTest extends TestCase
 
     public function testDisplaySetsUpTheMinitelFirst(): void
     {
-        $page = $this->parse('<page type="static" keyboard="lowercase" echo="off" scroll="off"><text row="1">x</text></page>');
+        $page = $this->parse(
+            '<page type="static" keyboard="lowercase" echo="off" scroll="off"><text row="1">x</text></page>',
+        );
 
         self::assertStringStartsWith(
-            Keyboard::Lowercase->sequence() . LocalEcho::Off->sequence() . Scroll::Off->sequence() . VdtHelper::clearScreen()->toString(),
+            Keyboard::Lowercase->sequence() . LocalEcho::Off->sequence() . Scroll::Off->sequence()
+                . VdtHelper::clearScreen()->toString(),
             $page->display(new Terminal())->toString(),
         );
-        $template = $this->parse('<page type="template" keyboard="uppercase" echo="on" scroll="on"><text row="1">{{x}}</text></page>');
+        $template = $this->parse(
+            '<page type="template" keyboard="uppercase" echo="on" scroll="on"><text row="1">{{x}}</text></page>',
+        );
         self::assertStringStartsWith(
-            Keyboard::Uppercase->sequence() . LocalEcho::On->sequence() . Scroll::On->sequence() . VdtHelper::clearScreen()->toString(),
+            Keyboard::Uppercase->sequence() . LocalEcho::On->sequence() . Scroll::On->sequence()
+                . VdtHelper::clearScreen()->toString(),
             $template->display(new Terminal(), ['x' => 'y'])->toString(),
         );
     }
@@ -86,9 +92,16 @@ final class PageXmlParserTest extends TestCase
     public function testWithoutSetupTheMinitelIsLeftAsItIs(): void
     {
         $clear = VdtHelper::clearScreen()->toString();
-        self::assertSame($clear, substr($this->parse('<page type="static"/>')->display(new Terminal())->toString(), 0, \strlen($clear)));
+        self::assertSame($clear, substr(
+            $this->parse('<page type="static"/>')->display(new Terminal())->toString(),
+            0,
+            \strlen($clear),
+        ));
         // Only what is given
-        self::assertStringStartsWith(Scroll::Off->sequence() . VdtHelper::clearScreen()->toString(), $this->parse('<page type="static" scroll="off"/>')->display(new Terminal())->toString());
+        self::assertStringStartsWith(
+            Scroll::Off->sequence() . VdtHelper::clearScreen()->toString(),
+            $this->parse('<page type="static" scroll="off"/>')->display(new Terminal())->toString(),
+        );
     }
 
     public function testPageRedefinesMessagesOfTheService(): void
@@ -111,7 +124,10 @@ final class PageXmlParserTest extends TestCase
 
     public function testPageWithoutMessagesHasTheServices(): void
     {
-        $page = (new PageXmlParser(Messages::defaults()->with(['welcome' => 'Bonjour'])))->parse('<page type="template"/>', self::FIXTURES);
+        $page = (new PageXmlParser(Messages::defaults()->with(['welcome' => 'Bonjour'])))->parse(
+            '<page type="template"/>',
+            self::FIXTURES,
+        );
 
         self::assertSame('Bonjour', $page->message(TestMessage::Welcome));
     }
@@ -121,14 +137,20 @@ final class PageXmlParserTest extends TestCase
         // 4 columns: 18 on the left, 18 on the right
         $page = $this->parse('<page type="static"><text row="1" align="center">Jeux</text></page>');
 
-        self::assertSame([' 1|' . str_repeat(' ', 18) . 'Jeux' . str_repeat(' ', 18) . '|'], $this->drawnRows($page->display(new Terminal())));
+        self::assertSame(
+            [' 1|' . str_repeat(' ', 18) . 'Jeux' . str_repeat(' ', 18) . '|'],
+            $this->drawnRows($page->display(new Terminal())),
+        );
     }
 
     public function testEndKeyDependsOnTheTerminal(): void
     {
         $page = $this->parse('<page type="static"><endkey/></page>');
 
-        self::assertSame(['24|             Connexion/fin              |'], $this->drawnRows($page->display(new Terminal())));
+        self::assertSame(
+            ['24|             Connexion/fin              |'],
+            $this->drawnRows($page->display(new Terminal())),
+        );
 
         // ESP32 / Minimit adapters: a websocket with a known Minitel, "[Maj] +" on row 23
         $adapter = new Terminal('192.0.2.1', 'websocket', 'Cv5');
@@ -159,7 +181,10 @@ final class PageXmlParserTest extends TestCase
             $this->drawnRows($page->display(new Terminal(), [
                 'title' => 'Games',
                 'games' => 2,
-                'items' => [['name' => 'Twin Pine Falls', 'new' => false], (object) ['name' => 'Alien Wipeout', 'new' => true]],
+                'items' => [
+                    ['name' => 'Twin Pine Falls', 'new' => false],
+                    (object) ['name' => 'Alien Wipeout', 'new' => true],
+                ],
             ])),
         );
     }
@@ -185,7 +210,9 @@ final class PageXmlParserTest extends TestCase
                 ' 5|B                                       |',
                 ' 6|  b1                                    |',
             ],
-            $this->drawnRows($page->display(new Terminal(), ['rows' => [['name' => 'A', 'cells' => ['a1', 'a2']], ['name' => 'B', 'cells' => ['b1']]]])),
+            $this->drawnRows($page->display(new Terminal(), [
+                'rows' => [['name' => 'A', 'cells' => ['a1', 'a2']], ['name' => 'B', 'cells' => ['b1']]],
+            ])),
         );
     }
 
@@ -193,7 +220,10 @@ final class PageXmlParserTest extends TestCase
     {
         $page = $this->parse('<page type="template"><image row="3">{{logo}}</image></page>');
 
-        self::assertSame([' 3|##                                      |', ' 4|ok                                      |'], $this->drawnRows($page->display(new Terminal(), ['logo' => 'images/logo.vdt'])));
+        self::assertSame(
+            [' 3|##                                      |', ' 4|ok                                      |'],
+            $this->drawnRows($page->display(new Terminal(), ['logo' => 'images/logo.vdt'])),
+        );
     }
 
     public function testTemplateErrorsGiveTheLine(): void
@@ -208,15 +238,41 @@ final class PageXmlParserTest extends TestCase
 
     public function testInputCommandReadsTheInputField(): void
     {
-        $oneLine = $this->parse('<page type="static"><input row="20" col="5" length="10" lines="1" validwith="envoi suite"/></page>');
+        $oneLine = $this->parse(
+            '<page type="static"><input row="20" col="5" length="10" lines="1" validwith="envoi suite"/></page>',
+        );
         $twoLines = $this->parse('<page type="static"><input/></page>');
 
         self::assertSame(
-            ['name' => 'InputTxt', 'param' => ['x' => 5, 'y' => 20, 'l' => 10, 'char' => '', 'spacechar' => '.', 'prefill' => 'abc', 'cursor' => 'on', 'validwith' => FunctionKey::masks(FunctionKey::Send, FunctionKey::Next)]],
+            [
+                'name' => 'InputTxt',
+                'param' => [
+                    'x' => 5,
+                    'y' => 20,
+                    'l' => 10,
+                    'char' => '',
+                    'spacechar' => '.',
+                    'prefill' => 'abc',
+                    'cursor' => 'on',
+                    'validwith' => FunctionKey::masks(FunctionKey::Send, FunctionKey::Next),
+                ],
+            ],
             $oneLine->inputCommand(['abc'])?->toArray()['COMMAND'] ?? null,
         );
         self::assertSame(
-            ['name' => 'InputMsg', 'param' => ['x' => 1, 'y' => 13, 'w' => 40, 'h' => 2, 'spacechar' => '.', 'prefill' => [], 'cursor' => 'on', 'validwith' => FunctionKey::Send->mask()]],
+            [
+                'name' => 'InputMsg',
+                'param' => [
+                    'x' => 1,
+                    'y' => 13,
+                    'w' => 40,
+                    'h' => 2,
+                    'spacechar' => '.',
+                    'prefill' => [],
+                    'cursor' => 'on',
+                    'validwith' => FunctionKey::Send->mask(),
+                ],
+            ],
             $twoLines->inputCommand()?->toArray()['COMMAND'] ?? null,
         );
         self::assertNull($this->parse('<page type="static"/>')->inputCommand());
@@ -226,15 +282,24 @@ final class PageXmlParserTest extends TestCase
     {
         $page = $this->parser->parseFile(self::FIXTURES . '/logo.xml');
 
-        self::assertSame([' 1|##                                      |', ' 2|ok                                      |'], $this->drawnRows($page->display(new Terminal())));
+        self::assertSame(
+            [' 1|##                                      |', ' 2|ok                                      |'],
+            $this->drawnRows($page->display(new Terminal())),
+        );
     }
 
     public function testMissingImageGivesThePageAndLine(): void
     {
         $this->expectException(PageXmlException::class);
-        $this->expectExceptionMessage('f.xml line 2: <image>: Videotex file not found: ' . self::FIXTURES . '/images/missing.vdt');
+        $this->expectExceptionMessage(
+            'f.xml line 2: <image>: Videotex file not found: ' . self::FIXTURES . '/images/missing.vdt',
+        );
 
-        $this->parser->parse("<page type=\"static\">\n<image>images/missing.vdt</image></page>", self::FIXTURES, 'f.xml');
+        $this->parser->parse(
+            "<page type=\"static\">\n<image>images/missing.vdt</image></page>",
+            self::FIXTURES,
+            'f.xml',
+        );
     }
 
     /**
@@ -242,10 +307,22 @@ final class PageXmlParserTest extends TestCase
      */
     public static function templateErrorsFoundWhenParsing(): iterable
     {
-        yield 'missing image' => ["<page type=\"template\">\n<image>images/missing.vdt</image></page>", 'f.xml line 2: <image>: Videotex file not found: ' . self::FIXTURES . '/images/missing.vdt'];
-        yield 'missing background, in an <if>' => ["<page type=\"template\">\n<if test=\"x\">\n<background>missing.vdt</background></if></page>", 'f.xml line 3: <background>: Videotex file not found: ' . self::FIXTURES . '/missing.vdt'];
-        yield 'missing image, in a <foreach>' => ["<page type=\"template\">\n<foreach items=\"xs\" as=\"x\">\n<image row=\"0\">images/missing.vdt</image></foreach></page>", 'f.xml line 3: <image>: Videotex file not found: ' . self::FIXTURES . '/images/missing.vdt'];
-        yield 'unknown color' => ["<page type=\"template\">\n<text color=\"purple\">x</text></page>", 'f.xml line 2: <text>: '];
+        yield 'missing image' => [
+            "<page type=\"template\">\n<image>images/missing.vdt</image></page>",
+            'f.xml line 2: <image>: Videotex file not found: ' . self::FIXTURES . '/images/missing.vdt',
+        ];
+        yield 'missing background, in an <if>' => [
+            "<page type=\"template\">\n<if test=\"x\">\n<background>missing.vdt</background></if></page>",
+            'f.xml line 3: <background>: Videotex file not found: ' . self::FIXTURES . '/missing.vdt',
+        ];
+        yield 'missing image, in a <foreach>' => [
+            "<page type=\"template\">\n<foreach items=\"xs\" as=\"x\">\n<image row=\"0\">images/missing.vdt</image></foreach></page>",
+            'f.xml line 3: <image>: Videotex file not found: ' . self::FIXTURES . '/images/missing.vdt',
+        ];
+        yield 'unknown color' => [
+            "<page type=\"template\">\n<text color=\"purple\">x</text></page>",
+            'f.xml line 2: <text>: ',
+        ];
     }
 
     /**
@@ -263,9 +340,16 @@ final class PageXmlParserTest extends TestCase
     public function testTemplateRowInAForeachIsCheckedWhenDisplayed(): void
     {
         // Relative to the item: row 0 is the item's first row
-        $page = $this->parser->parse('<page type="template"><foreach items="xs" as="x" row="5"><image row="0">images/logo.vdt</image></foreach></page>', self::FIXTURES, 'f.xml');
+        $page = $this->parser->parse(
+            '<page type="template"><foreach items="xs" as="x" row="5"><image row="0">images/logo.vdt</image></foreach></page>',
+            self::FIXTURES,
+            'f.xml',
+        );
 
-        self::assertSame([' 5|##                                      |', ' 6|ok                                      |'], $this->drawnRows($page->display(new Terminal(), ['xs' => [1]])));
+        self::assertSame(
+            [' 5|##                                      |', ' 6|ok                                      |'],
+            $this->drawnRows($page->display(new Terminal(), ['xs' => [1]])),
+        );
     }
 
     public function testParseFileThrowsWhenTheFileIsMissing(): void
@@ -285,29 +369,92 @@ final class PageXmlParserTest extends TestCase
         yield 'other root' => ['<pages/>', 'f.xml: root element must be <page>, not <pages>'];
         yield 'no type' => ['<page/>', 'f.xml: <page>: type is missing (type="static" or type="template")'];
         yield 'unknown type' => ['<page type="dynamic"/>', 'f.xml: <page>: type="dynamic" is unknown'];
-        yield 'message of no service' => ["<page type=\"static\">\n<message name=\"welcom\">x</message></page>", 'f.xml line 2: <message>: name="welcom" is not a message of the service'];
-        yield 'message without name' => ['<page type="static"><message>x</message></page>', 'f.xml line 1: <message>: name is missing'];
-        yield 'message twice' => ['<page type="static"><message name="page.last">x</message><message name="page.last">y</message></page>', 'name="page.last" is already in the page'];
-        yield 'message in a loop' => ['<page type="template"><foreach items="a" as="b"><message name="page.last">x</message></foreach></page>', '<message>: only at the top level of the page'];
-        yield 'unknown keyboard' => ["\n<page type=\"static\" keyboard=\"caps\"/>", 'f.xml line 2: <page>: keyboard="caps" is unknown (keyboard="uppercase" or keyboard="lowercase")'];
-        yield 'unknown echo' => ['<page type="static" echo="yes"/>', 'f.xml line 1: <page>: echo="yes" is unknown (echo="on" or echo="off")'];
-        yield 'unknown scroll' => ['<page type="static" scroll=""/>', 'f.xml line 1: <page>: scroll="" is unknown (scroll="on" or scroll="off")'];
-        yield 'unknown element' => ["<page type=\"static\">\n\n<bogus/></page>", 'f.xml line 3: <bogus>: unknown element'];
-        yield 'off the screen' => ['<page type="static"><text row="25">x</text></page>', 'f.xml line 1: <text>: Row 25 is off the screen (0 to 24)'];
-        yield 'not a number' => ['<page type="static"><text row="a">x</text></page>', 'f.xml line 1: <text>: row="a" is not a number'];
-        yield 'unknown color' => ['<page type="static"><text color="pink">x</text></page>', 'f.xml line 1: <text>: unknown color "pink"'];
-        yield 'line too long' => ['<page type="static"><line row="1" col="30" length="20"/></page>', 'goes past column 40'];
-        yield 'placeholder in a static page' => ['<page type="static"><text>{{x}}</text></page>', '{{placeholders}} only in a page of type="template"'];
-        yield 'foreach in a static page' => ['<page type="static"><foreach items="a" as="b"/></page>', '<foreach>: only in a page of type="template"'];
-        yield 'foreach as loop' => ['<page type="template"><foreach items="a" as="loop"/></page>', 'as="loop" must be a variable name, other than loop'];
+        yield 'message of no service' => [
+            "<page type=\"static\">\n<message name=\"welcom\">x</message></page>",
+            'f.xml line 2: <message>: name="welcom" is not a message of the service',
+        ];
+        yield 'message without name' => [
+            '<page type="static"><message>x</message></page>',
+            'f.xml line 1: <message>: name is missing',
+        ];
+        yield 'message twice' => [
+            '<page type="static"><message name="page.last">x</message><message name="page.last">y</message></page>',
+            'name="page.last" is already in the page',
+        ];
+        yield 'message in a loop' => [
+            '<page type="template"><foreach items="a" as="b"><message name="page.last">x</message></foreach></page>',
+            '<message>: only at the top level of the page',
+        ];
+        yield 'unknown keyboard' => [
+            "\n<page type=\"static\" keyboard=\"caps\"/>",
+            'f.xml line 2: <page>: keyboard="caps" is unknown (keyboard="uppercase" or keyboard="lowercase")',
+        ];
+        yield 'unknown echo' => [
+            '<page type="static" echo="yes"/>',
+            'f.xml line 1: <page>: echo="yes" is unknown (echo="on" or echo="off")',
+        ];
+        yield 'unknown scroll' => [
+            '<page type="static" scroll=""/>',
+            'f.xml line 1: <page>: scroll="" is unknown (scroll="on" or scroll="off")',
+        ];
+        yield 'unknown element' => [
+            "<page type=\"static\">\n\n<bogus/></page>",
+            'f.xml line 3: <bogus>: unknown element',
+        ];
+        yield 'off the screen' => [
+            '<page type="static"><text row="25">x</text></page>',
+            'f.xml line 1: <text>: Row 25 is off the screen (0 to 24)',
+        ];
+        yield 'not a number' => [
+            '<page type="static"><text row="a">x</text></page>',
+            'f.xml line 1: <text>: row="a" is not a number',
+        ];
+        yield 'unknown color' => [
+            '<page type="static"><text color="pink">x</text></page>',
+            'f.xml line 1: <text>: unknown color "pink"',
+        ];
+        yield 'line too long' => [
+            '<page type="static"><line row="1" col="30" length="20"/></page>',
+            'goes past column 40',
+        ];
+        yield 'placeholder in a static page' => [
+            '<page type="static"><text>{{x}}</text></page>',
+            '{{placeholders}} only in a page of type="template"',
+        ];
+        yield 'foreach in a static page' => [
+            '<page type="static"><foreach items="a" as="b"/></page>',
+            '<foreach>: only in a page of type="template"',
+        ];
+        yield 'foreach as loop' => [
+            '<page type="template"><foreach items="a" as="loop"/></page>',
+            'as="loop" must be a variable name, other than loop',
+        ];
         yield 'if without test' => ['<page type="template"><if test="!"/></page>', '<if>: test is missing'];
         yield 'two inputs' => ['<page type="static"><input/><input/></page>', '<input>: only one <input> per page'];
-        yield 'input in a loop' => ['<page type="template"><foreach items="a" as="b"><input/></foreach></page>', '<input>: only at the top level of the page'];
-        yield 'placeholder in an input' => ['<page type="template"><input row="{{r}}"/></page>', '<input>: no {{placeholders}} in <input>'];
-        yield 'unknown validwith key' => ['<page type="static"><input validwith="enter"/></page>', 'unknown validwith key "enter"'];
-        yield 'endkey in a loop' => ['<page type="template"><foreach items="a" as="b"><endkey/></foreach></page>', '<endkey>: not inside <foreach>'];
-        yield 'file outside the folder' => ['<page type="static"><image>../secret.vdt</image></page>', "../secret.vdt: only files from the page's folder or its subfolders"];
-        yield 'absolute file' => ['<page type="static"><background>/etc/passwd</background></page>', "/etc/passwd: only files from the page's folder or its subfolders"];
+        yield 'input in a loop' => [
+            '<page type="template"><foreach items="a" as="b"><input/></foreach></page>',
+            '<input>: only at the top level of the page',
+        ];
+        yield 'placeholder in an input' => [
+            '<page type="template"><input row="{{r}}"/></page>',
+            '<input>: no {{placeholders}} in <input>',
+        ];
+        yield 'unknown validwith key' => [
+            '<page type="static"><input validwith="enter"/></page>',
+            'unknown validwith key "enter"',
+        ];
+        yield 'endkey in a loop' => [
+            '<page type="template"><foreach items="a" as="b"><endkey/></foreach></page>',
+            '<endkey>: not inside <foreach>',
+        ];
+        yield 'file outside the folder' => [
+            '<page type="static"><image>../secret.vdt</image></page>',
+            "../secret.vdt: only files from the page's folder or its subfolders",
+        ];
+        yield 'absolute file' => [
+            '<page type="static"><background>/etc/passwd</background></page>',
+            "/etc/passwd: only files from the page's folder or its subfolders",
+        ];
     }
 
     #[DataProvider('invalidPages')]

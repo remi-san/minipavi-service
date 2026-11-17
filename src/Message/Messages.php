@@ -61,13 +61,17 @@ final readonly class Messages
         $name = (string) $message->value;
         $text = $this->texts[$name] ?? throw new \LogicException("No text for the message \"$name\"");
 
-        return (string) preg_replace_callback('/\{\{\s*(\w+)\s*\}\}/', function (array $match) use ($name, $variables): string {
-            if (!\array_key_exists($match[1], $variables)) {
-                throw new \LogicException("Message \"$name\" needs the variable \"$match[1]\"");
-            }
+        return (string) preg_replace_callback(
+            '/\{\{\s*(\w+)\s*\}\}/',
+            function (array $match) use ($name, $variables): string {
+                if (!\array_key_exists($match[1], $variables)) {
+                    throw new \LogicException("Message \"$name\" needs the variable \"$match[1]\"");
+                }
 
-            return (string) $variables[$match[1]];
-        }, $text);
+                return (string) $variables[$match[1]];
+            },
+            $text,
+        );
     }
 
     /**

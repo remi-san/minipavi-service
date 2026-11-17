@@ -20,7 +20,9 @@ final class RequestUrlTest extends TestCase
     private static function request(array $server = []): ServerRequestInterface
     {
         $server += ['HTTP_HOST' => 'example.org', 'PHP_SELF' => '/Svc/index.php', 'REQUEST_URI' => '/Svc/?code=1'];
-        $headers = isset($server['HTTP_X_FORWARDED_PROTO']) ? ['X-Forwarded-Proto' => $server['HTTP_X_FORWARDED_PROTO']] : [];
+        $headers = isset($server['HTTP_X_FORWARDED_PROTO'])
+            ? ['X-Forwarded-Proto' => $server['HTTP_X_FORWARDED_PROTO']]
+            : [];
 
         return new ServerRequest('GET', '/Svc/?code=1', $headers, null, '1.1', $server);
     }
@@ -76,7 +78,10 @@ final class RequestUrlTest extends TestCase
     {
         $request = self::request(['REMOTE_ADDR' => $remote, 'HTTP_X_FORWARDED_PROTO' => 'https']);
 
-        self::assertSame($scheme . '://example.org/Svc/index.php', (new RequestUrl(trustedProxies: $trusted))->script($request));
+        self::assertSame(
+            $scheme . '://example.org/Svc/index.php',
+            (new RequestUrl(trustedProxies: $trusted))->script($request),
+        );
     }
 
     public function testServiceUrlReplacesTheSchemeAndHost(): void

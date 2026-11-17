@@ -17,7 +17,7 @@
         "symfony/console": "^7.1"
     },
     "require-dev": {
-        "friendsofphp/php-cs-fixer": "^3.95",
+        "carthage-software/mago": "^1.60",
         "phpstan/phpstan": "^2.1",
         "phpunit/phpunit": "^11.5"
     },
@@ -33,14 +33,14 @@
     "scripts": {
         "test": "phpunit",
         "analyse": "phpstan analyse",
-        "cs": "php-cs-fixer check --diff",
-        "cs-fix": "php-cs-fixer fix"
+        "cs": "mago format --check",
+        "cs-fix": "mago format"
     },
     "scripts-descriptions": {
         "test": "Runs the tests",
         "analyse": "Runs the static analysis (PHPStan)",
-        "cs": "Checks the coding style, showing what would change",
-        "cs-fix": "Fixes the coding style"
+        "cs": "Checks the formatting (Mago)",
+        "cs-fix": "Formats the code (Mago)"
     },
     "config": {
         "platform": {

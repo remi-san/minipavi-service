@@ -37,6 +37,13 @@ final readonly class GatewayResponse
      */
     public function sign(ContextSigner $signer): self
     {
-        return new self($this->vdt, $signer->sign($this->context), $this->next, $this->command, $this->directCall, $this->echo);
+        return new self(
+            $this->vdt,
+            $signer->sign($this->context),
+            $this->next,
+            $this->command,
+            $this->directCall,
+            $this->echo,
+        );
     }
 }

@@ -13,7 +13,8 @@ final class EmulatorConfigTest extends TestCase
     public function testPublicEmulatorOpensTheServiceAtItsUrl(): void
     {
         self::assertSame(
-            'http://www.minipavi.fr/emulminitel/index.php?gw=' . urlencode('wss://go.minipavi.fr:8181/?url=' . urlencode('https://example.org/Svc/?a=1')),
+            'http://www.minipavi.fr/emulminitel/index.php?gw='
+                . urlencode('wss://go.minipavi.fr:8181/?url=' . urlencode('https://example.org/Svc/?a=1')),
             (new EmulatorConfig())->getEmulatorUrl('https://example.org/Svc/?a=1'),
         );
     }
@@ -23,7 +24,8 @@ final class EmulatorConfigTest extends TestCase
         $config = new EmulatorConfig('http://localhost:8081/', 'ws://localhost:8182/', 'services');
 
         self::assertSame(
-            'http://localhost:8081/index.php?gw=' . urlencode('ws://localhost:8182/?url=' . urlencode('http://services/Svc/index.php?a=1')),
+            'http://localhost:8081/index.php?gw='
+                . urlencode('ws://localhost:8182/?url=' . urlencode('http://services/Svc/index.php?a=1')),
             $config->getEmulatorUrl('https://localhost:8083/Svc/index.php?a=1'),
         );
     }
@@ -37,13 +39,27 @@ final class EmulatorConfigTest extends TestCase
     {
         yield 'none: minipavi.fr' => [null, null, null, new EmulatorConfig()];
         yield 'empty: minipavi.fr' => ['', '', '', new EmulatorConfig()];
-        yield 'a local emulator: the services host' => ['http://localhost:8081', 'ws://localhost:8182', null, new EmulatorConfig('http://localhost:8081', 'ws://localhost:8182', 'services')];
-        yield 'another services host' => ['http://localhost:8081', 'ws://localhost:8182', 'web', new EmulatorConfig('http://localhost:8081', 'ws://localhost:8182', 'web')];
+        yield 'a local emulator: the services host' => [
+            'http://localhost:8081',
+            'ws://localhost:8182',
+            null,
+            new EmulatorConfig('http://localhost:8081', 'ws://localhost:8182', 'services'),
+        ];
+        yield 'another services host' => [
+            'http://localhost:8081',
+            'ws://localhost:8182',
+            'web',
+            new EmulatorConfig('http://localhost:8081', 'ws://localhost:8182', 'web'),
+        ];
     }
 
     #[DataProvider('environments')]
-    public function testFromTheValuesOfTheEnvironment(?string $emulatorUrl, ?string $gatewayUrl, ?string $servicesHost, EmulatorConfig $config): void
-    {
+    public function testFromTheValuesOfTheEnvironment(
+        ?string $emulatorUrl,
+        ?string $gatewayUrl,
+        ?string $servicesHost,
+        EmulatorConfig $config,
+    ): void {
         self::assertEquals($config, EmulatorConfig::fromValues($emulatorUrl, $gatewayUrl, $servicesHost));
     }
 }

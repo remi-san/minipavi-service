@@ -47,12 +47,18 @@ final class PreviewCommandTest extends TestCase
 
     public function testPrintsATemplateWithItsData(): void
     {
-        $this->write('list.xml', '<page type="template"><foreach items="games" as="game" row="3"><text>{{game.name}}</text></foreach></page>');
+        $this->write(
+            'list.xml',
+            '<page type="template"><foreach items="games" as="game" row="3"><text>{{game.name}}</text></foreach></page>',
+        );
         $this->write('data.json', '{"games": [{"name": "Alien Wipeout"}, {"name": "Twin Pine Falls"}]}');
 
         self::assertSame(Command::SUCCESS, $this->preview([$this->dir . '/list.xml', $this->dir . '/data.json']));
         $rows = explode("\n", $this->tester->getDisplay());
-        self::assertSame([' 3|Alien Wipeout                           |', ' 4|Twin Pine Falls                         |'], [$rows[3], $rows[4]]);
+        self::assertSame([
+            ' 3|Alien Wipeout                           |',
+            ' 4|Twin Pine Falls                         |',
+        ], [$rows[3], $rows[4]]);
     }
 
     public function testReadsThePageWithTheMessagesOfTheService(): void
@@ -60,7 +66,11 @@ final class PreviewCommandTest extends TestCase
         $this->write('messages.xml', '<messages><message name="greeting">Hello</message></messages>');
         $this->write('page.xml', '<page type="static"><message name="greeting">Hi</message><text>x</text></page>');
 
-        self::assertSame(Command::SUCCESS, $this->preview(['--messages', $this->dir . '/messages.xml', $this->dir . '/page.xml']));
+        self::assertSame(Command::SUCCESS, $this->preview([
+            '--messages',
+            $this->dir . '/messages.xml',
+            $this->dir . '/page.xml',
+        ]));
     }
 
     /**
@@ -68,8 +78,16 @@ final class PreviewCommandTest extends TestCase
      */
     public static function failures(): iterable
     {
-        yield 'page error' => ["<page type=\"static\">\n<text color=\"purple\">x</text></page>", '{}', 'page.xml line 2: <text>: '];
-        yield 'missing variable' => ['<page type="template"><text>{{title}}</text></page>', '{}', 'page.xml line 1: <text>: unknown variable {{title}}'];
+        yield 'page error' => [
+            "<page type=\"static\">\n<text color=\"purple\">x</text></page>",
+            '{}',
+            'page.xml line 2: <text>: ',
+        ];
+        yield 'missing variable' => [
+            '<page type="template"><text>{{title}}</text></page>',
+            '{}',
+            'page.xml line 1: <text>: unknown variable {{title}}',
+        ];
         yield 'data not JSON' => ['<page type="static"/>', '{', 'data.json: Syntax error'];
         yield 'data not an object' => ['<page type="static"/>', '[1, 2]', 'data.json: not a JSON object'];
     }

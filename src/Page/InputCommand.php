@@ -24,9 +24,25 @@ final readonly class InputCommand
      *
      * @param int $validWith mask of the keys validating the field (FunctionKey::masks())
      */
-    public static function text(int $col, int $row, int $length, int $validWith, bool $cursor = true, string $spaceChar = '.', string $prefill = ''): self
-    {
-        return new self(MiniPaviCli::createInputTxtCmd($col, $row, $length, $validWith, $cursor, $spaceChar, '', $prefill));
+    public static function text(
+        int $col,
+        int $row,
+        int $length,
+        int $validWith,
+        bool $cursor = true,
+        string $spaceChar = '.',
+        string $prefill = '',
+    ): self {
+        return new self(MiniPaviCli::createInputTxtCmd(
+            $col,
+            $row,
+            $length,
+            $validWith,
+            $cursor,
+            $spaceChar,
+            '',
+            $prefill,
+        ));
     }
 
     /**
@@ -36,9 +52,26 @@ final readonly class InputCommand
      * @param int $validWith mask of the keys validating the field (FunctionKey::masks())
      * @param string[] $prefill text of the field, one string per line
      */
-    public static function message(int $col, int $row, int $width, int $height, int $validWith, bool $cursor = true, string $spaceChar = '.', array $prefill = []): self
-    {
-        return new self(MiniPaviCli::createInputMsgCmd($col, $row, $width, $height, $validWith, $cursor, $spaceChar, $prefill));
+    public static function message(
+        int $col,
+        int $row,
+        int $width,
+        int $height,
+        int $validWith,
+        bool $cursor = true,
+        string $spaceChar = '.',
+        array $prefill = [],
+    ): self {
+        return new self(MiniPaviCli::createInputMsgCmd(
+            $col,
+            $row,
+            $width,
+            $height,
+            $validWith,
+            $cursor,
+            $spaceChar,
+            $prefill,
+        ));
     }
 
     /**

@@ -21,8 +21,9 @@ final readonly class WithUrls implements RequestHandlerInterface
 
     public function handle(ServerRequestInterface $request): ResponseInterface
     {
-        return $this->handler->handle($request
-            ->withAttribute(UrlAttribute::Service->value, $this->url->script($request))
-            ->withAttribute(UrlAttribute::Current->value, $this->url->current($request)));
+        return $this->handler->handle($request->withAttribute(
+            UrlAttribute::Service->value,
+            $this->url->script($request),
+        )->withAttribute(UrlAttribute::Current->value, $this->url->current($request)));
     }
 }

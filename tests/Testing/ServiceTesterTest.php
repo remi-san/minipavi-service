@@ -36,21 +36,39 @@ final class ServiceTesterTest extends TestCase
         $router->addRoute('menu', $this->controller(fn(Request $request) => match ($request->contentAsString()) {
             '2' => Response::goTo('directory'),
             'ext' => Response::connectTo('https://example.org/', VdtHelper::writeLine0('Connexion…')),
-            default => Response::display(Vdt::join(VdtHelper::clearScreen(), VdtHelper::setPos(1, 1), Vdt::text('MENU'))),
+            default => Response::display(Vdt::join(
+                VdtHelper::clearScreen(),
+                VdtHelper::setPos(1, 1),
+                Vdt::text('MENU'),
+            )),
         }));
-        $router->addRoute('directory', $this->controller(fn(Request $request) => $request->functionKey() === FunctionKey::Next
-            ? Response::display(VdtHelper::writeLine0('Dernière page'))
-            : Response::display(Vdt::join(VdtHelper::clearScreen(), VdtHelper::setPos(1, 2), Vdt::text('Annuaire')))));
+        $router->addRoute('directory', $this->controller(fn(Request $request) => $request->functionKey()
+            === FunctionKey::Next
+                ? Response::display(VdtHelper::writeLine0('Dernière page'))
+                : Response::display(Vdt::join(
+                    VdtHelper::clearScreen(),
+                    VdtHelper::setPos(1, 2),
+                    Vdt::text('Annuaire'),
+                ))));
         $router->setDefaultRoute('menu');
 
-        $this->tester = new ServiceTester(new Service($router, Messages::defaults()), new Terminal('192.0.2.1', 'websocket', 'Cv5'));
+        $this->tester = new ServiceTester(
+            new Service($router, Messages::defaults()),
+            new Terminal('192.0.2.1', 'websocket', 'Cv5'),
+        );
     }
 
     public function testScriptsASessionKeepingTheContext(): void
     {
-        $this->tester->connect()->assertRoute('menu')->assertScreenContains('MENU')
-            ->type('2')->press(FunctionKey::Send)->assertRoute('directory')
-            ->assertScreenContains('Annuaire')->assertScreenNotContains('MENU')
+        $this->tester
+            ->connect()
+            ->assertRoute('menu')
+            ->assertScreenContains('MENU')
+            ->type('2')
+            ->press(FunctionKey::Send)
+            ->assertRoute('directory')
+            ->assertScreenContains('Annuaire')
+            ->assertScreenNotContains('MENU')
             ->assertLineContains(2, 'Annuaire');
 
         self::assertSame(['2'], $this->requests[1]->content());
@@ -59,8 +77,12 @@ final class ServiceTesterTest extends TestCase
 
     public function testScreenKeepsWhatAnswersDontClear(): void
     {
-        $this->tester->connect()->type('2')->press(FunctionKey::Send)
-            ->press(FunctionKey::Next)->assertLine0('Dernière page')
+        $this->tester
+            ->connect()
+            ->type('2')
+            ->press(FunctionKey::Send)
+            ->press(FunctionKey::Next)
+            ->assertLine0('Dernière page')
             // The page drawn before is still there
             ->assertScreenContains('Annuaire');
     }
@@ -75,8 +97,13 @@ final class ServiceTesterTest extends TestCase
 
     public function testConnectStartsANewSession(): void
     {
-        $this->tester->connect()->type('2')->press(FunctionKey::Send)
-            ->connect()->assertRoute('menu')->assertScreenNotContains('Annuaire');
+        $this->tester
+            ->connect()
+            ->type('2')
+            ->press(FunctionKey::Send)
+            ->connect()
+            ->assertRoute('menu')
+            ->assertScreenNotContains('Annuaire');
     }
 
     public function testAssertsTheUserIsSentToAnotherService(): void

@@ -36,7 +36,13 @@ final class MemoryClient implements Client
             throw $this->request;
         }
 
-        return new GatewayRequest($this->request->key, $this->request->content, $this->request->context, $this->request->terminal, $serviceUrl);
+        return new GatewayRequest(
+            $this->request->key,
+            $this->request->content,
+            $this->request->context,
+            $this->request->terminal,
+            $serviceUrl,
+        );
     }
 
     public function initialState(): NoClientState

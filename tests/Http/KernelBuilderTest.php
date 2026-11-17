@@ -35,7 +35,9 @@ final class KernelBuilderTest extends TestCase
     protected function setUp(): void
     {
         $router = new Router();
-        $router->addRoute('home', new CallbackController(NoParameters::class, fn(Request $request) => Response::display(VdtHelper::setPos(1, 1)->append(Vdt::text('HOME')))));
+        $router->addRoute('home', new CallbackController(NoParameters::class, fn(
+            Request $request,
+        ) => Response::display(VdtHelper::setPos(1, 1)->append(Vdt::text('HOME')))));
         $router->setDefaultRoute('home');
         $this->builder = KernelBuilder::for($router, Messages::defaults());
     }
@@ -46,7 +48,10 @@ final class KernelBuilderTest extends TestCase
         $html = self::serve($this->builder->withContextKey('secret'), 'web=true');
 
         preg_match('#name="context" value="([^"]*)"#', $html, $context);
-        self::assertSame('{"route":"home","states":{"home":"read-input"},"parameters":{"home":{}}}', (new HmacContextSigner('secret'))->verify(html_entity_decode($context[1] ?? '')));
+        self::assertSame(
+            '{"route":"home","states":{"home":"read-input"},"parameters":{"home":{}}}',
+            (new HmacContextSigner('secret'))->verify(html_entity_decode($context[1] ?? '')),
+        );
         // The page's title is the service's URL, from the request
         self::assertStringContainsString('<title>http://example.org/Svc/index.php', $html);
     }
@@ -54,7 +59,14 @@ final class KernelBuilderTest extends TestCase
     #[RunInSeparateProcess]
     public function testOtherBrowsersAreSentToTheEmulator(): void
     {
-        $page = self::serve($this->builder->withEmulator(new EmulatorConfig('http://localhost:8081/', 'ws://localhost:8182/', 'services')), '');
+        $page = self::serve(
+            $this->builder->withEmulator(new EmulatorConfig(
+                'http://localhost:8081/',
+                'ws://localhost:8182/',
+                'services',
+            )),
+            '',
+        );
 
         self::assertSame(302, http_response_code());
         self::assertSame('', $page);
@@ -65,7 +77,12 @@ final class KernelBuilderTest extends TestCase
     {
         $api = new RecordingHandler('api');
 
-        $page = self::serve($this->builder->withHandler(new ConditionalRequestHandler('api', new QueryParameterEquals('web', 'true'), $api)), 'web=true');
+        $page = self::serve(
+            $this->builder->withHandler(
+                new ConditionalRequestHandler('api', new QueryParameterEquals('web', 'true'), $api),
+            ),
+            'web=true',
+        );
 
         self::assertSame('api', $page);
         self::assertCount(1, $api->requests);
@@ -86,7 +103,10 @@ final class KernelBuilderTest extends TestCase
 
         self::serve($this->builder->withLogger($logger), 'web=true');
 
-        self::assertSame([LogLevel::WARNING, 'No key signing the context: it is not signed, and can be forged'], [$logger->records[0][0], $logger->records[0][1]]);
+        self::assertSame([LogLevel::WARNING, 'No key signing the context: it is not signed, and can be forged'], [
+            $logger->records[0][0],
+            $logger->records[0][1],
+        ]);
         // Every part logs to it: the Dispatcher, the Service
         self::assertContains([LogLevel::INFO, 'Connection', ['fctn' => 'CNX']], $logger->records);
     }

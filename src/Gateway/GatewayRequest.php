@@ -56,7 +56,14 @@ final readonly class GatewayRequest
             return $this;
         }
 
-        return new self($this->key, $this->content, $signer->verify($this->context), $this->terminal, $this->serviceUrl, $this->clientState);
+        return new self(
+            $this->key,
+            $this->content,
+            $signer->verify($this->context),
+            $this->terminal,
+            $this->serviceUrl,
+            $this->clientState,
+        );
     }
 
     public function isConnecting(): bool

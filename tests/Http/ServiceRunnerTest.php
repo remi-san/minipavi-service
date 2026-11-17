@@ -36,7 +36,9 @@ final class ServiceRunnerTest extends TestCase
     protected function setUp(): void
     {
         $router = new Router();
-        $router->addRoute('home', new CallbackController(NoParameters::class, fn(Request $request) => Response::display(new Vdt('home'))));
+        $router->addRoute('home', new CallbackController(NoParameters::class, fn(Request $request) => Response::display(
+            new Vdt('home'),
+        )));
         $router->setDefaultRoute('home');
         $this->logger = new MemoryLogger();
         $this->service = new Service($router, Messages::defaults(), $this->logger);
@@ -46,7 +48,9 @@ final class ServiceRunnerTest extends TestCase
     {
         $client = new MemoryClient(new GatewayRequest(GatewayRequest::FCTN_CONNECT));
 
-        $response = (new ServiceRunner($this->service, $client, new UnsignedContext()))->handle(HttpRequests::to('MiniPAVI'));
+        $response = (new ServiceRunner($this->service, $client, new UnsignedContext()))->handle(HttpRequests::to(
+            'MiniPAVI',
+        ));
 
         self::assertSame('home', (string) $response->getBody());
         [[$request, $answer]] = $client->responded;
@@ -64,19 +68,27 @@ final class ServiceRunnerTest extends TestCase
         [[$request, $answer]] = $client->responded;
         self::assertEquals(VdtHelper::writeLine0(Messages::defaults()->get(FrameworkMessage::Error)), $answer->vdt);
         self::assertSame('http://services/Svc/index.php', $request->serviceUrl);
-        self::assertSame([LogLevel::ERROR, 'Error serving the request: Not JSON'], [$this->logger->records[0][0], $this->logger->records[0][1]]);
+        self::assertSame([LogLevel::ERROR, 'Error serving the request: Not JSON'], [
+            $this->logger->records[0][0],
+            $this->logger->records[0][1],
+        ]);
     }
 
     public function testChecksTheContextOfTheRequestAndSignsTheOneOfTheAnswer(): void
     {
         $signer = new HmacContextSigner('secret');
-        $client = new MemoryClient(new GatewayRequest('ENVOI', [], $signer->sign('{"route":"home","states":{},"parameters":{}}')));
+        $client = new MemoryClient(
+            new GatewayRequest('ENVOI', [], $signer->sign('{"route":"home","states":{},"parameters":{}}')),
+        );
 
         (new ServiceRunner($this->service, $client, $signer))->handle(HttpRequests::to('MiniPAVI'));
 
         [[$request, $answer]] = $client->responded;
         self::assertEquals(new Vdt('home'), $answer->vdt);
-        self::assertSame('{"route":"home","states":{"home":"read-input"},"parameters":{"home":{}}}', $signer->verify($answer->context));
+        self::assertSame(
+            '{"route":"home","states":{"home":"read-input"},"parameters":{"home":{}}}',
+            $signer->verify($answer->context),
+        );
         // The client gets the request it read, its context still signed
         self::assertSame($signer->sign('{"route":"home","states":{},"parameters":{}}'), $request->context);
     }
@@ -98,7 +110,9 @@ final class ServiceRunnerTest extends TestCase
     {
         $client = new MemoryClient(new GatewayRequest(GatewayRequest::FCTN_DISCONNECT));
 
-        $response = (new ServiceRunner($this->service, $client, new UnsignedContext()))->handle(HttpRequests::to('MiniPAVI'));
+        $response = (new ServiceRunner($this->service, $client, new UnsignedContext()))->handle(HttpRequests::to(
+            'MiniPAVI',
+        ));
 
         self::assertSame(204, $response->getStatusCode());
         self::assertSame('', (string) $response->getBody());
@@ -108,12 +122,23 @@ final class ServiceRunnerTest extends TestCase
     public function testLogsAnAnswerThatCantBeGiven(): void
     {
         $logger = new MemoryLogger();
-        $client = new MemoryClient(new GatewayRequest(GatewayRequest::FCTN_CONNECT), new \RuntimeException('Connection reset'));
+        $client = new MemoryClient(
+            new GatewayRequest(GatewayRequest::FCTN_CONNECT),
+            new \RuntimeException('Connection reset'),
+        );
 
-        $response = (new ServiceRunner($this->service, $client, new UnsignedContext(), $logger))->handle(HttpRequests::to('MiniPAVI'));
+        $response = (new ServiceRunner(
+            $this->service,
+            $client,
+            new UnsignedContext(),
+            $logger,
+        ))->handle(HttpRequests::to('MiniPAVI'));
 
         self::assertSame(500, $response->getStatusCode());
-        self::assertSame([LogLevel::CRITICAL, 'Cannot send the answer: Connection reset'], [$logger->records[0][0], $logger->records[0][1]]);
+        self::assertSame([LogLevel::CRITICAL, 'Cannot send the answer: Connection reset'], [
+            $logger->records[0][0],
+            $logger->records[0][1],
+        ]);
     }
 
     /**
@@ -128,7 +153,11 @@ final class ServiceRunnerTest extends TestCase
 
         ob_start();
         try {
-            $response = (new ServiceRunner($this->service, new MiniPaviClient(), new UnsignedContext()))->handle(HttpRequests::to('MiniPAVI'));
+            $response = (new ServiceRunner(
+                $this->service,
+                new MiniPaviClient(),
+                new UnsignedContext(),
+            ))->handle(HttpRequests::to('MiniPAVI'));
         } finally {
             $output = (string) ob_get_clean();
         }
@@ -136,7 +165,10 @@ final class ServiceRunnerTest extends TestCase
         self::assertSame('', $output);
         $answer = json_decode((string) $response->getBody(), true);
         self::assertIsArray($answer);
-        self::assertSame(base64_encode(VdtHelper::writeLine0(Messages::defaults()->get(FrameworkMessage::Error))->toString()), $answer['content'] ?? null);
+        self::assertSame(
+            base64_encode(VdtHelper::writeLine0(Messages::defaults()->get(FrameworkMessage::Error))->toString()),
+            $answer['content'] ?? null,
+        );
         self::assertSame('{"route":"home","states":{},"parameters":{}}', $answer['context'] ?? null);
         self::assertSame('http://services/Svc/index.php', $answer['next'] ?? null);
         self::assertSame(LogLevel::ERROR, $this->logger->records[0][0] ?? null);

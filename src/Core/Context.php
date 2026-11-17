@@ -46,7 +46,9 @@ final class Context
         foreach (array_keys($states + $parameters) as $route) {
             if (\is_string($route) && $router->has($route)) {
                 $state = \is_string($states[$route] ?? null) ? $states[$route] : null;
-                $values = \is_array($parameters[$route] ?? null) ? array_filter($parameters[$route], \is_string(...), ARRAY_FILTER_USE_KEY) : [];
+                $values = \is_array($parameters[$route] ?? null)
+                    ? array_filter($parameters[$route], \is_string(...), ARRAY_FILTER_USE_KEY)
+                    : [];
                 $routes[$route] = $router->route($route)->restore($state, new Values($values));
             }
         }
@@ -65,11 +67,17 @@ final class Context
     public function serialize(): string
     {
         try {
-            return json_encode([
-                'route' => $this->route,
-                'states' => (object) array_map(fn(RouteContext $route) => $route->state()->value, $this->routes),
-                'parameters' => (object) array_map(fn(RouteContext $route) => (object) $route->parameters()->toArray(), $this->routes),
-            ], JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            return json_encode(
+                [
+                    'route' => $this->route,
+                    'states' => (object) array_map(fn(RouteContext $route) => $route->state()->value, $this->routes),
+                    'parameters' => (object) array_map(
+                        fn(RouteContext $route) => (object) $route->parameters()->toArray(),
+                        $this->routes,
+                    ),
+                ],
+                JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES,
+            );
         } catch (\JsonException $e) {
             throw new \RuntimeException('Cannot serialize context: ' . $e->getMessage(), 0, $e);
         }

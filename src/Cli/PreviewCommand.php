@@ -26,9 +26,11 @@ final class PreviewCommand extends Command
 {
     protected function configure(): void
     {
-        $this
-            ->addArgument('page', InputArgument::REQUIRED, 'The page file')
-            ->addArgument('data', InputArgument::OPTIONAL, 'The variables of a template: a JSON file, with an object');
+        $this->addArgument('page', InputArgument::REQUIRED, 'The page file')->addArgument(
+            'data',
+            InputArgument::OPTIONAL,
+            'The variables of a template: a JSON file, with an object',
+        );
         MessagesOption::addTo($this);
     }
 
@@ -38,9 +40,15 @@ final class PreviewCommand extends Command
             $data = $input->getArgument('data');
             $variables = \is_string($data) ? self::data($data) : [];
             $page = (new PageXmlParser(MessagesOption::messages($input)))->parseFile(Input::string($input, 'page'));
-            $output->write($page->display(new Terminal(), $variables)->screen()->preview(), false, OutputInterface::OUTPUT_RAW);
+            $output->write(
+                $page->display(new Terminal(), $variables)->screen()->preview(),
+                false,
+                OutputInterface::OUTPUT_RAW,
+            );
         } catch (MessagesException|PageXmlException|TemplateException|\UnexpectedValueException $e) {
-            (new SymfonyStyle($input, $output))->getErrorStyle()->writeln(Input::escape($e->getMessage()));
+            (new SymfonyStyle($input, $output))
+                ->getErrorStyle()
+                ->writeln(Input::escape($e->getMessage()));
 
             return self::FAILURE;
         }
@@ -66,7 +74,7 @@ final class PreviewCommand extends Command
         } catch (\JsonException $e) {
             throw new \UnexpectedValueException("$file: " . $e->getMessage(), 0, $e);
         }
-        if (!\is_array($data) || ($data !== [] && array_is_list($data))) {
+        if (!\is_array($data) || $data !== [] && array_is_list($data)) {
             throw new \UnexpectedValueException("$file: not a JSON object");
         }
 

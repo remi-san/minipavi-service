@@ -71,7 +71,10 @@ final class AbstractControllerTest extends TestCase
         };
 
         self::assertSame('first', self::vdt($controller->run(new Request(ControllerState::Init, new NoParameters()))));
-        self::assertSame('input', self::vdt($controller->run(new Request(ControllerState::InitInput, new NoParameters()))));
+        self::assertSame(
+            'input',
+            self::vdt($controller->run(new Request(ControllerState::InitInput, new NoParameters()))),
+        );
     }
 
     public function testGetsItsParametersTyped(): void
@@ -94,7 +97,10 @@ final class AbstractControllerTest extends TestCase
         };
 
         self::assertSame(PageParameters::class, $controller->parametersType());
-        self::assertSame('page 3', self::vdt($controller->run(new Request(ControllerState::Display, new PageParameters(3)))));
+        self::assertSame(
+            'page 3',
+            self::vdt($controller->run(new Request(ControllerState::Display, new PageParameters(3)))),
+        );
     }
 
     /**

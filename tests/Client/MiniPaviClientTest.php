@@ -42,7 +42,13 @@ final class MiniPaviClientTest extends TestCase
         MiniPaviCli::$versionMinitel = 'Cv5';
 
         self::assertEquals(
-            new GatewayRequest('ENVOI', ['ab', 'cd'], '{"route":"home"}', new Terminal('CALLFROM 0102030405', 'websocket', 'Cv5'), self::SERVICE_URL),
+            new GatewayRequest(
+                'ENVOI',
+                ['ab', 'cd'],
+                '{"route":"home"}',
+                new Terminal('CALLFROM 0102030405', 'websocket', 'Cv5'),
+                self::SERVICE_URL,
+            ),
             (new MiniPaviClient())->decoded(self::SERVICE_URL),
         );
     }
@@ -55,7 +61,10 @@ final class MiniPaviClientTest extends TestCase
         MiniPaviCli::$typeSocket = new \stdClass();
         MiniPaviCli::$versionMinitel = null;
 
-        self::assertEquals(new GatewayRequest('', [], '', new Terminal('', null, null)), (new MiniPaviClient())->decoded());
+        self::assertEquals(
+            new GatewayRequest('', [], '', new Terminal('', null, null)),
+            (new MiniPaviClient())->decoded(),
+        );
     }
 
     public function testContentIsAListOfTexts(): void
@@ -86,15 +95,27 @@ final class MiniPaviClientTest extends TestCase
 
     public function testSendsTheCommandWithTheAnswer(): void
     {
-        $answer = $this->sent(new GatewayResponse(new Vdt('Code ?'), '{}', command: ['COMMAND' => ['name' => 'InputTxt', 'param' => ['x' => 1]]]));
+        $answer = $this->sent(new GatewayResponse(new Vdt('Code ?'), '{}', command: [
+            'COMMAND' => ['name' => 'InputTxt', 'param' => ['x' => 1]],
+        ]));
 
         self::assertSame(['name' => 'InputTxt', 'param' => ['x' => 1]], $answer['COMMAND']);
     }
 
     public function testSendsTheUserToAnotherService(): void
     {
-        $connect = $this->sent(new GatewayResponse(new Vdt(''), '{}', 'https://example.org/service', directCall: CallMode::Connect));
-        $direct = $this->sent(new GatewayResponse(new Vdt(''), '{}', 'https://example.org/service', directCall: CallMode::Direct, echo: false));
+        $connect = $this->sent(
+            new GatewayResponse(new Vdt(''), '{}', 'https://example.org/service', directCall: CallMode::Connect),
+        );
+        $direct = $this->sent(
+            new GatewayResponse(
+                new Vdt(''),
+                '{}',
+                'https://example.org/service',
+                directCall: CallMode::Direct,
+                echo: false,
+            ),
+        );
 
         self::assertSame(['https://example.org/service', 'yes-cnx'], [$connect['next'], $connect['directcall']]);
         self::assertSame(['yes', 'off'], [$direct['directcall'], $direct['echo']]);
@@ -109,7 +130,10 @@ final class MiniPaviClientTest extends TestCase
     {
         ob_start();
         try {
-            $response = (new MiniPaviClient())->response(new GatewayRequest('ENVOI', serviceUrl: self::SERVICE_URL), $answer);
+            $response = (new MiniPaviClient())->response(
+                new GatewayRequest('ENVOI', serviceUrl: self::SERVICE_URL),
+                $answer,
+            );
         } finally {
             $output = (string) ob_get_clean();
         }

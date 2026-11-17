@@ -30,11 +30,13 @@ final readonly class Input
         public string $spaceChar = '.',
     ) {
         Position::check($row, $col);
-        $this->length = $length ?? Screen::COLS + 1 - $col;
-        if ($this->length < 1 || $col + $this->length - 1 > Screen::COLS) {
-            throw new \InvalidArgumentException("Input of length $this->length from column $col goes past column " . Screen::COLS);
+        $this->length = $length ?? (Screen::COLS + 1 - $col);
+        if ($this->length < 1 || ($col + $this->length - 1) > Screen::COLS) {
+            throw new \InvalidArgumentException(
+                "Input of length $this->length from column $col goes past column " . Screen::COLS,
+            );
         }
-        if ($lines < 1 || $row + $lines - 1 > Screen::ROWS) {
+        if ($lines < 1 || ($row + $lines - 1) > Screen::ROWS) {
             throw new \InvalidArgumentException("Input of $lines lines from row $row goes past row " . Screen::ROWS);
         }
     }
@@ -51,8 +53,25 @@ final readonly class Input
     public function toCommand(array $prefill = []): InputCommand
     {
         if ($this->lines == 1) {
-            return InputCommand::text($this->col, $this->row, $this->length, FunctionKey::masks(...$this->validWith), $this->cursor, $this->spaceChar, (string) ($prefill[0] ?? ''));
+            return InputCommand::text(
+                $this->col,
+                $this->row,
+                $this->length,
+                FunctionKey::masks(...$this->validWith),
+                $this->cursor,
+                $this->spaceChar,
+                (string) ($prefill[0] ?? ''),
+            );
         }
-        return InputCommand::message($this->col, $this->row, $this->length, $this->lines, FunctionKey::masks(...$this->validWith), $this->cursor, $this->spaceChar, $prefill);
+        return InputCommand::message(
+            $this->col,
+            $this->row,
+            $this->length,
+            $this->lines,
+            FunctionKey::masks(...$this->validWith),
+            $this->cursor,
+            $this->spaceChar,
+            $prefill,
+        );
     }
 }

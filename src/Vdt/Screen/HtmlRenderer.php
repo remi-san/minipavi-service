@@ -81,10 +81,22 @@ final readonly class HtmlRenderer
             }
         }
 
-        return '<!doctype html><html><head><meta charset="utf-8">'
+        return (
+            '<!doctype html><html><head><meta charset="utf-8">'
             . '<meta name="viewport" content="width=device-width, initial-scale=1">'
-            . '<title>' . self::escape($title) . '</title><style>' . $this->fontFace() . self::STYLE . '</style></head>'
-            . '<body><form method="post" class="page"><div class="minitel">' . $cells . $overlay . '</div>' . $controls . '</form></body></html>';
+            . '<title>'
+            . self::escape($title)
+            . '</title><style>'
+            . $this->fontFace()
+            . self::STYLE
+            . '</style></head>'
+            . '<body><form method="post" class="page"><div class="minitel">'
+            . $cells
+            . $overlay
+            . '</div>'
+            . $controls
+            . '</form></body></html>'
+        );
     }
 
     /**
@@ -141,9 +153,19 @@ final readonly class HtmlRenderer
             return '<span class="' . implode(' ', $classes) . '" style="' . $style . '"> </span>';
         }
 
-        return '<span class="' . implode(' ', $classes) . '" style="' . $style . '">'
-            . ($mosaic && self::isMosaic($cell->bytes) ? self::mosaic($cell->bytes, $underline) : self::escape($cell->text()))
-            . '</span>';
+        return (
+            '<span class="'
+            . implode(' ', $classes)
+            . '" style="'
+            . $style
+            . '">'
+            . (
+                $mosaic && self::isMosaic($cell->bytes)
+                    ? self::mosaic($cell->bytes, $underline)
+                    : self::escape($cell->text())
+            )
+            . '</span>'
+        );
     }
 
     /**
@@ -158,7 +180,11 @@ final readonly class HtmlRenderer
             throw new \RuntimeException("Font file not found: {$this->fontFile}");
         }
 
-        return '@font-face { font-family: Minitel; src: url(data:font/ttf;base64,' . base64_encode($font) . ') format("truetype"); }';
+        return (
+            '@font-face { font-family: Minitel; src: url(data:font/ttf;base64,'
+            . base64_encode($font)
+            . ') format("truetype"); }'
+        );
     }
 
     /**
@@ -186,5 +212,4 @@ final readonly class HtmlRenderer
     {
         return self::COLORS[\ord($code) - $base] ?? self::COLORS[0];
     }
-
 }

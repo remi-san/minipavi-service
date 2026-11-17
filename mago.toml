@@ -1,0 +1,8 @@
+# Mago (https://mago.carthage.software): formatter (composer cs, cs-fix), linter and static
+# analyzer of the framework. Run with vendor/bin/mago.
+php-version = "8.2.0"
+
+[source]
+paths = ["src", "tests", "bin/minipavi"]
+# Read for their types, not checked
+includes = ["vendor"]

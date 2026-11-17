@@ -72,7 +72,13 @@ final class ResponseTest extends TestCase
 
     public function testRunExternalServiceTakesACallMode(): void
     {
-        $direct = new RunExternalService(ControllerState::Init, null, new Vdt(), 'https://example.org/', CallMode::Direct);
+        $direct = new RunExternalService(
+            ControllerState::Init,
+            null,
+            new Vdt(),
+            'https://example.org/',
+            CallMode::Direct,
+        );
         // The call mode can also be given by its value
         $connect = new RunExternalService(ControllerState::Init, null, new Vdt(), 'https://example.org/', 'yes-cnx');
 
@@ -90,29 +96,49 @@ final class ResponseTest extends TestCase
 
     public function testDisplayAnswersWithItsContent(): void
     {
-        self::assertSame([['answer', ['vdt' => 'Hello', 'command' => null, 'next' => null, 'directCall' => null]]], $this->callsOf(Response::display(new Vdt('Hello'))));
+        self::assertSame(
+            [['answer', ['vdt' => 'Hello', 'command' => null, 'next' => null, 'directCall' => null]]],
+            $this->callsOf(Response::display(new Vdt('Hello'))),
+        );
     }
 
     public function testReadInputAnswersWithTheCommand(): void
     {
         $command = new InputCommand(['COMMAND' => ['name' => 'InputTxt']]);
 
-        self::assertSame([['answer', ['vdt' => 'Code ?', 'command' => $command, 'next' => null, 'directCall' => null]]], $this->callsOf(Response::readInput(new Vdt('Code ?'), $command)));
+        self::assertSame(
+            [['answer', ['vdt' => 'Code ?', 'command' => $command, 'next' => null, 'directCall' => null]]],
+            $this->callsOf(Response::readInput(new Vdt('Code ?'), $command)),
+        );
         // Without content: none sent
-        self::assertSame([['answer', ['vdt' => '', 'command' => null, 'next' => null, 'directCall' => null]]], $this->callsOf(new RunCommand(ControllerState::ReadInput, null, new Vdt(), null)));
+        self::assertSame(
+            [['answer', ['vdt' => '', 'command' => null, 'next' => null, 'directCall' => null]]],
+            $this->callsOf(new RunCommand(ControllerState::ReadInput, null, new Vdt(), null)),
+        );
     }
 
     public function testGoToRunsTheTargetController(): void
     {
         $from = new FromParameters('home');
 
-        self::assertSame([['goTo', ['route' => 'menu', 'parameters' => $from]]], $this->callsOf(Response::goTo('menu', $from)));
+        self::assertSame(
+            [['goTo', ['route' => 'menu', 'parameters' => $from]]],
+            $this->callsOf(Response::goTo('menu', $from)),
+        );
     }
 
     public function testConnectToAnswersWithTheOtherService(): void
     {
         self::assertSame(
-            [['answer', ['vdt' => 'Cnx en cours', 'command' => null, 'next' => 'https://example.org/service', 'directCall' => CallMode::Connect]]],
+            [[
+                'answer',
+                [
+                    'vdt' => 'Cnx en cours',
+                    'command' => null,
+                    'next' => 'https://example.org/service',
+                    'directCall' => CallMode::Connect,
+                ],
+            ]],
             $this->callsOf(Response::connectTo('https://example.org/service', new Vdt('Cnx en cours'))),
         );
     }

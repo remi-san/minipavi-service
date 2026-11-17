@@ -7,7 +7,15 @@ namespace MiniPaviService\Page\Parser;
 use MiniPaviService\Message\FrameworkMessage;
 use MiniPaviService\Message\Messages;
 use MiniPaviService\Minitel\FunctionKey;
-use MiniPaviService\Page\Display\{Background, Color, Element, EndKey, Image, Key, Line, Size, Text};
+use MiniPaviService\Page\Display\Background;
+use MiniPaviService\Page\Display\Color;
+use MiniPaviService\Page\Display\Element;
+use MiniPaviService\Page\Display\EndKey;
+use MiniPaviService\Page\Display\Image;
+use MiniPaviService\Page\Display\Key;
+use MiniPaviService\Page\Display\Line;
+use MiniPaviService\Page\Display\Size;
+use MiniPaviService\Page\Display\Text;
 use MiniPaviService\Page\Input;
 use MiniPaviService\Vdt\Vdt;
 
@@ -21,8 +29,7 @@ use MiniPaviService\Vdt\Vdt;
 final class ElementFactory
 {
     // Tags of the display elements
-    public const TAGS = ['background','image','text','line','key','endkey'];
-
+    public const TAGS = ['background', 'image', 'text', 'line', 'key', 'endkey'];
 
     private const LINE_CHARS = ['top' => Line::TOP, 'middle' => Line::MIDDLE, 'bottom' => Line::BOTTOM];
 
@@ -58,11 +65,11 @@ final class ElementFactory
                 $text,
                 row: $this->int($attributes, 'row', 1),
                 col: $this->int($attributes, 'col', 1),
-                centered: $this->choice($attributes, 'align', ['left' => false,'center' => true], false),
+                centered: $this->choice($attributes, 'align', ['left' => false, 'center' => true], false),
                 color: $this->color($attributes, 'color') ?? Color::White,
                 bg: $this->color($attributes, 'bg'),
                 size: $this->size($attributes),
-                fill: $this->choice($attributes, 'fill', ['yes' => true,'no' => false], false),
+                fill: $this->choice($attributes, 'fill', ['yes' => true, 'no' => false], false),
             ),
             'line' => new Line(
                 row: $this->int($attributes, 'row', 1),
@@ -126,8 +133,11 @@ final class ElementFactory
         // Keys for the validwith attribute of <input>, separated by spaces
         $validWith = [];
         foreach ($keys as $name) {
-            $validWith[] = FunctionKey::fromXmlName($name)
-                ?? throw new PageXmlException("unknown validwith key \"$name\" (" . implode(', ', array_map(fn(FunctionKey $key) => $key->xmlName(), FunctionKey::cases())) . ')');
+            $validWith[] = FunctionKey::fromXmlName($name) ?? throw new PageXmlException(
+                "unknown validwith key \"$name\" ("
+                . implode(', ', array_map(fn(FunctionKey $key) => $key->xmlName(), FunctionKey::cases()))
+                . ')',
+            );
         }
         return new Input(
             row: $this->int($attributes, 'row', 13),
@@ -182,8 +192,15 @@ final class ElementFactory
         if (!isset($attributes[$attr])) {
             return null;
         }
-        return Color::tryFrom($attributes[$attr])
-            ?? throw new PageXmlException("unknown $attr \"" . $attributes[$attr] . '" (' . implode(', ', array_column(Color::cases(), 'value')) . ')');
+        return (
+            Color::tryFrom($attributes[$attr]) ?? throw new PageXmlException(
+                "unknown $attr \""
+                . $attributes[$attr]
+                . '" ('
+                . implode(', ', array_column(Color::cases(), 'value'))
+                . ')',
+            )
+        );
     }
 
     /**
@@ -194,8 +211,15 @@ final class ElementFactory
         if (!isset($attributes['size'])) {
             return null;
         }
-        return Size::tryFrom($attributes['size'])
-            ?? throw new PageXmlException('unknown size "' . $attributes['size'] . '" (' . implode(', ', array_column(Size::cases(), 'value')) . ')');
+        return (
+            Size::tryFrom($attributes['size']) ?? throw new PageXmlException(
+                'unknown size "'
+                . $attributes['size']
+                . '" ('
+                . implode(', ', array_column(Size::cases(), 'value'))
+                . ')',
+            )
+        );
     }
 
     /**

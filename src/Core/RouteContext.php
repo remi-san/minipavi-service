@@ -62,10 +62,20 @@ final class RouteContext
         $type = $this->controller->parametersType();
 
         if ($state !== null && !$state instanceof $initialState) {
-            throw new \LogicException(\sprintf('%s keeps states of %s, not %s', $this->controller::class, $initialState::class, $state::class));
+            throw new \LogicException(\sprintf(
+                '%s keeps states of %s, not %s',
+                $this->controller::class,
+                $initialState::class,
+                $state::class,
+            ));
         }
         if ($parameters !== null && !$parameters instanceof $type) {
-            throw new \LogicException(\sprintf('%s keeps parameters of %s, not %s', $this->controller::class, $type, $parameters::class));
+            throw new \LogicException(\sprintf(
+                '%s keeps parameters of %s, not %s',
+                $this->controller::class,
+                $type,
+                $parameters::class,
+            ));
         }
 
         $this->state = $state ?? $initialState;

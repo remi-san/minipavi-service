@@ -15,10 +15,24 @@ final class GatewayResponseTest extends TestCase
     public function testSignKeepsAllButTheContext(): void
     {
         $signer = new HmacContextSigner('secret');
-        $answer = new GatewayResponse(new Vdt('x'), '{"route":"menu"}', 'https://example.org/', ['name' => 'InputTxt'], CallMode::Connect, false);
+        $answer = new GatewayResponse(
+            new Vdt('x'),
+            '{"route":"menu"}',
+            'https://example.org/',
+            ['name' => 'InputTxt'],
+            CallMode::Connect,
+            false,
+        );
 
         self::assertEquals(
-            new GatewayResponse(new Vdt('x'), $signer->sign('{"route":"menu"}'), 'https://example.org/', ['name' => 'InputTxt'], CallMode::Connect, false),
+            new GatewayResponse(
+                new Vdt('x'),
+                $signer->sign('{"route":"menu"}'),
+                'https://example.org/',
+                ['name' => 'InputTxt'],
+                CallMode::Connect,
+                false,
+            ),
             $answer->sign($signer),
         );
     }
