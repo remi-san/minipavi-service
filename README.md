@@ -210,6 +210,45 @@ $logger = new ErrorLogLogger();
   A state it doesn't know (e.g. kept by an older version of the service) starts it again.
   A controller with states of its own implements `Controller` with its own `State` enum.
 
+- **`PaginatedController`** shows a screen one page at a time: Suite and Retour change page,
+  with "Première page" / "Dernière page" on line 0 at the ends (`firstPageMessage()`,
+  `lastPageMessage()` to change them), Répétition redraws the page, and the page index is kept
+  in `PageParameters`. A controller gives the page count and the data of a page, and handles
+  its other keys, with `display($request, $page)`, `stay($page, $vdt)` (reads the next input on
+  the page, after `$vdt`) and `turn($request, 1)` (the next page, or the end message):
+
+  ```php
+  final class ArticleController extends PaginatedController
+  {
+      public function __construct(Page $page, private Article $article)
+      {
+          parent::__construct($page);
+      }
+
+      protected function pageCount(): int
+      {
+          return \count($this->article->pages);
+      }
+
+      // The template also gets {{page}} (from 1) and {{pageCount}}
+      protected function pageData(int $page): array
+      {
+          return ['title' => $this->article->title, 'lines' => $this->article->pages[$page]];
+      }
+
+      protected function onOtherKey(Request $request, int $page): Response
+      {
+          return match ($request->functionKey()) {
+              FunctionKey::Summary => Response::goTo('menu'),
+              FunctionKey::Send => $this->turn($request, 1),
+              default => $this->stay($page),
+          };
+      }
+  }
+  ```
+
+  A page index kept beyond the last page (the content got shorter) shows the last one.
+
 - <a id="typed-state"></a>**Typed state and parameters.** What a controller keeps is typed
   from end to end, and PHPStan checks it. A controller declares:
   - `initialState()`: a case of the string-backed enum of its states, implementing `State`
