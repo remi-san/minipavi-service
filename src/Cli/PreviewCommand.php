@@ -9,48 +9,43 @@ use MiniPaviService\Minitel\Terminal;
 use MiniPaviService\Page\Parser\PageXmlException;
 use MiniPaviService\Page\Parser\PageXmlParser;
 use MiniPaviService\Page\Template\TemplateException;
+use Symfony\Component\Console\Attribute\AsCommand;
+use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Input\InputArgument;
+use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Console\Style\SymfonyStyle;
 
 /**
  * Prints the screen a page draws, as text (Screen::preview()): a template with the data of a
  * JSON file (an object, its variables by name), for a Minitel without particular features
  * (Terminal's defaults)
  */
-final readonly class PreviewCommand implements Command
+#[AsCommand(name: 'preview', description: 'Prints the screen a page draws, a template with the data of a JSON file')]
+final class PreviewCommand extends Command
 {
-    public function name(): string
+    protected function configure(): void
     {
-        return 'preview';
+        $this
+            ->addArgument('page', InputArgument::REQUIRED, 'The page file')
+            ->addArgument('data', InputArgument::OPTIONAL, 'The variables of a template: a JSON file, with an object');
+        MessagesOption::addTo($this);
     }
 
-    public function usage(): string
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        return MessagesOption::USAGE . ' <page.xml> [<data.json>]';
-    }
-
-    public function description(): string
-    {
-        return 'Prints the screen a page draws, a template with the data of a JSON file';
-    }
-
-    public function run(array $arguments, Console $console): ExitCode
-    {
-        $arguments = Arguments::parse($arguments, options: [MessagesOption::NAME]);
-        $positional = $arguments->positional;
-        if (\count($positional) < 1 || \count($positional) > 2) {
-            throw new UsageException('expects a page, and optionally its data');
-        }
-
         try {
-            $data = isset($positional[1]) ? self::data($positional[1]) : [];
-            $page = (new PageXmlParser(MessagesOption::messages($arguments)))->parseFile($positional[0]);
-            $console->write($page->display(new Terminal(), $data)->screen()->preview());
+            $data = $input->getArgument('data');
+            $variables = \is_string($data) ? self::data($data) : [];
+            $page = (new PageXmlParser(MessagesOption::messages($input)))->parseFile(Input::string($input, 'page'));
+            $output->write($page->display(new Terminal(), $variables)->screen()->preview(), false, OutputInterface::OUTPUT_RAW);
         } catch (MessagesException|PageXmlException|TemplateException|\UnexpectedValueException $e) {
-            $console->error($e->getMessage() . "\n");
+            (new SymfonyStyle($input, $output))->getErrorStyle()->writeln(Input::escape($e->getMessage()));
 
-            return ExitCode::Failure;
+            return self::FAILURE;
         }
 
-        return ExitCode::Success;
+        return self::SUCCESS;
     }
 
     /**

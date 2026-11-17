@@ -7,6 +7,9 @@ namespace MiniPaviService\Cli;
 use MiniPaviService\Message\Messages;
 use MiniPaviService\Message\MessagesException;
 use MiniPaviService\Message\MessagesXmlParser;
+use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
 
 /**
  * The --messages option of the commands reading pages: the service's messages file over the
@@ -15,17 +18,20 @@ use MiniPaviService\Message\MessagesXmlParser;
  */
 final readonly class MessagesOption
 {
-    public const NAME = 'messages';
+    private const NAME = 'messages';
 
-    public const USAGE = '[--messages <messages.xml>]';
+    public static function addTo(Command $command): void
+    {
+        $command->addOption(self::NAME, null, InputOption::VALUE_REQUIRED, 'The service\'s messages file (messages.xml), over the framework\'s');
+    }
 
     /**
      * @throws MessagesException if the file can't be read
      */
-    public static function messages(Arguments $arguments): Messages
+    public static function messages(InputInterface $input): Messages
     {
-        $file = $arguments->value(self::NAME, '');
+        $file = $input->getOption(self::NAME);
 
-        return $file === '' ? Messages::defaults() : (new MessagesXmlParser())->parseFile($file, Messages::defaults());
+        return \is_string($file) ? (new MessagesXmlParser())->parseFile($file, Messages::defaults()) : Messages::defaults();
     }
 }

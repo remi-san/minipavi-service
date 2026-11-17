@@ -652,15 +652,16 @@ echo $moved->screen()->preview();      // the screen, as text
 
 ## Command line
 
-`bin/minipavi` is the framework's command line: Composer installs it in a service as
-`vendor/bin/minipavi` (`minipavi help` lists its commands). The commands reading pages take
+`bin/minipavi` is the framework's command line, built with `symfony/console`: Composer installs
+it in a service as `vendor/bin/minipavi` (`minipavi list` lists its commands, `minipavi help
+<command>` describes one). The commands reading pages take
 the service's messages with `--messages`, as the service reads them (a page's `<message>`
 must be one of them); without it, the framework's only.
 
 ```sh
 vendor/bin/minipavi lint --messages config/messages.xml config         # every page, for CI
 vendor/bin/minipavi preview config/pages/games.xml games.json          # the screen of a page
-vendor/bin/minipavi vdt-offset --preview images/background.vdt 8 -2    # move a Videotex page
+vendor/bin/minipavi vdt-offset --preview -- images/background.vdt 8 -2 # move a Videotex page
 ```
 
 - **`lint [--messages <messages.xml>] <path>...`** parses every page (XML file whose root is
@@ -674,11 +675,12 @@ vendor/bin/minipavi vdt-offset --preview images/background.vdt 8 -2    # move a 
 - **`vdt-offset [--preview] <input.vdt> <x> <y> [<output.vdt>]`** moves the content of a
   Videotex page by `x` columns and `y` rows (negative: left, up), with `Vdt::offset()` (see
   [Videotex content](#videotex-content)): to the output file, or the standard output; input `-`
-  reads the standard input. `--preview` prints the screen as text, before and after.
+  reads the standard input. `--preview` prints the screen as text, before and after. A
+  negative number would be read as an option: put `--` before the arguments
+  (`vdt-offset -- background.vdt 8 -2`).
 
 Exit codes: 0 on success, 1 when the command fails (an error in a page, a file it can't read
-or write), 2 for a wrong command line (`Cli\ExitCode`). A command is a `Cli\Command`, run by
-`Cli\Application` with a `Cli\Console`.
+or write, a wrong command line). The commands are Symfony `Command`s, in `Cli\`.
 
 ## Developing the framework
 

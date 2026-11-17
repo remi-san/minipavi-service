@@ -4,29 +4,29 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Tests\Cli;
 
-use MiniPaviService\Cli\ExitCode;
-use MiniPaviService\Cli\UsageException;
 use MiniPaviService\Cli\VdtOffsetCommand;
-use MiniPaviService\Tests\Support\MemoryConsole;
 use MiniPaviService\Vdt\Vdt;
-use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Exception\InvalidArgumentException;
+use Symfony\Component\Console\Exception\RuntimeException;
+use Symfony\Component\Console\Tester\CommandTester;
 
 final class VdtOffsetCommandTest extends TestCase
 {
     private const FIXTURES = __DIR__ . '/../fixtures/vdt';
 
-    private MemoryConsole $console;
+    private CommandTester $tester;
 
     protected function setUp(): void
     {
-        $this->console = new MemoryConsole();
+        $this->tester = new CommandTester(new VdtOffsetCommand());
     }
 
     public function testWritesTheMovedPage(): void
     {
-        self::assertSame(ExitCode::Success, (new VdtOffsetCommand())->run([self::FIXTURES . '/background.vdt', '8', '-2'], $this->console->console));
-        self::assertSame((string) file_get_contents(self::FIXTURES . '/background.offset_8_-2.vdt'), $this->console->output());
+        self::assertSame(Command::SUCCESS, $this->tester->execute(['input' => self::FIXTURES . '/background.vdt', 'x' => '8', 'y' => '-2']));
+        self::assertSame((string) file_get_contents(self::FIXTURES . '/background.offset_8_-2.vdt'), $this->tester->getDisplay());
     }
 
     public function testWritesTheMovedPageToTheOutputFile(): void
@@ -34,9 +34,9 @@ final class VdtOffsetCommandTest extends TestCase
         $output = tempnam(sys_get_temp_dir(), 'vdt');
         self::assertIsString($output);
         try {
-            self::assertSame(ExitCode::Success, (new VdtOffsetCommand())->run([self::FIXTURES . '/background.vdt', '8', '-2', $output], $this->console->console));
+            self::assertSame(Command::SUCCESS, $this->tester->execute(['input' => self::FIXTURES . '/background.vdt', 'x' => '8', 'y' => '-2', 'output' => $output]));
             self::assertFileEquals(self::FIXTURES . '/background.offset_8_-2.vdt', $output);
-            self::assertSame('', $this->console->output());
+            self::assertSame('', $this->tester->getDisplay());
         } finally {
             unlink($output);
         }
@@ -46,34 +46,28 @@ final class VdtOffsetCommandTest extends TestCase
     {
         $vdt = Vdt::fromFile(self::FIXTURES . '/background.vdt');
 
-        self::assertSame(ExitCode::Success, (new VdtOffsetCommand())->run(['--preview', self::FIXTURES . '/background.vdt', '8', '-2'], $this->console->console));
-        self::assertSame("Before:\n" . $vdt->screen()->preview() . "After (8, -2):\n" . $vdt->offset(8, -2)->screen()->preview(), $this->console->output());
+        self::assertSame(Command::SUCCESS, $this->tester->execute(['input' => self::FIXTURES . '/background.vdt', 'x' => '8', 'y' => '-2', '--preview' => true]));
+        self::assertSame("Before:\n" . $vdt->screen()->preview() . "After (8, -2):\n" . $vdt->offset(8, -2)->screen()->preview(), $this->tester->getDisplay());
     }
 
     public function testFailsOnAFileItCannotRead(): void
     {
-        self::assertSame(ExitCode::Failure, (new VdtOffsetCommand())->run([self::FIXTURES . '/missing.vdt', '1', '1'], $this->console->console));
-        self::assertSame('cannot read ' . self::FIXTURES . "/missing.vdt\n", $this->console->errors());
+        self::assertSame(Command::FAILURE, $this->tester->execute(['input' => self::FIXTURES . '/missing.vdt', 'x' => '1', 'y' => '1'], ['capture_stderr_separately' => true]));
+        self::assertSame('cannot read ' . self::FIXTURES . "/missing.vdt\n", $this->tester->getErrorOutput());
     }
 
-    /**
-     * @return iterable<string, array{list<string>}>
-     */
-    public static function wrongCommandLines(): iterable
+    public function testNeedsXAndY(): void
     {
-        yield 'no y' => [['a.vdt', '1']];
-        yield 'too many' => [['a.vdt', '1', '1', 'b.vdt', 'c.vdt']];
-        yield 'x not an integer' => [['a.vdt', 'one', '1']];
+        $this->expectException(RuntimeException::class);
+
+        $this->tester->execute(['input' => 'a.vdt', 'x' => '1']);
     }
 
-    /**
-     * @param list<string> $arguments
-     */
-    #[DataProvider('wrongCommandLines')]
-    public function testRefusesAWrongCommandLine(array $arguments): void
+    public function testRefusesAnOffsetThatIsNotAnInteger(): void
     {
-        $this->expectException(UsageException::class);
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('x must be an integer, not one');
 
-        (new VdtOffsetCommand())->run($arguments, $this->console->console);
+        $this->tester->execute(['input' => 'a.vdt', 'x' => 'one', 'y' => '1']);
     }
 }

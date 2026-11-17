@@ -7,6 +7,12 @@ namespace MiniPaviService\Cli;
 use MiniPaviService\Message\MessagesException;
 use MiniPaviService\Page\Parser\PageXmlException;
 use MiniPaviService\Page\Parser\PageXmlParser;
+use Symfony\Component\Console\Attribute\AsCommand;
+use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Input\InputArgument;
+use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Console\Style\SymfonyStyle;
 
 /**
  * Checks pages, for CI: parses every page (XML file whose root is <page>) of the paths given,
@@ -14,42 +20,31 @@ use MiniPaviService\Page\Parser\PageXmlParser;
  * XML, unknown element, missing .vdt file...) are found before the screen is shown. Other XML
  * files (e.g. messages.xml) are skipped. Fails if a page has an error, or if there is no page.
  */
-final readonly class LintCommand implements Command
+#[AsCommand(name: 'lint', description: 'Checks the pages of the files and folders given; fails on an error')]
+final class LintCommand extends Command
 {
-    public function name(): string
+    protected function configure(): void
     {
-        return 'lint';
+        $this->addArgument('paths', InputArgument::REQUIRED | InputArgument::IS_ARRAY, 'Page files, or folders of pages (with their subfolders)');
+        MessagesOption::addTo($this);
     }
 
-    public function usage(): string
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        return MessagesOption::USAGE . ' <path>...';
-    }
-
-    public function description(): string
-    {
-        return 'Checks the pages of the files and folders given, with the service\'s messages; fails on an error';
-    }
-
-    public function run(array $arguments, Console $console): ExitCode
-    {
-        $arguments = Arguments::parse($arguments, options: [MessagesOption::NAME]);
-        if ($arguments->positional === []) {
-            throw new UsageException('expects files or folders');
-        }
+        $errorOutput = (new SymfonyStyle($input, $output))->getErrorStyle();
         try {
-            $parser = new PageXmlParser(MessagesOption::messages($arguments));
+            $parser = new PageXmlParser(MessagesOption::messages($input));
         } catch (MessagesException $e) {
-            $console->error($e->getMessage() . "\n");
+            $errorOutput->writeln(Input::escape($e->getMessage()));
 
-            return ExitCode::Failure;
+            return self::FAILURE;
         }
 
         $pages = 0;
         $errors = 0;
-        foreach ($arguments->positional as $path) {
+        foreach (Input::strings($input, 'paths') as $path) {
             if (!file_exists($path)) {
-                $console->error("$path: not found\n");
+                $errorOutput->writeln(Input::escape("$path: not found"));
                 $errors++;
                 continue;
             }
@@ -61,20 +56,20 @@ final readonly class LintCommand implements Command
                 try {
                     $parser->parseFile($file);
                 } catch (PageXmlException $e) {
-                    $console->error($e->getMessage() . "\n");
+                    $errorOutput->writeln(Input::escape($e->getMessage()));
                     $errors++;
                 }
             }
         }
 
         if ($pages === 0 && $errors === 0) {
-            $console->error("No page found\n");
+            $errorOutput->writeln('No page found');
 
-            return ExitCode::Failure;
+            return self::FAILURE;
         }
-        $console->write("$pages page" . ($pages === 1 ? '' : 's') . " checked, $errors error" . ($errors === 1 ? '' : 's') . "\n");
+        $output->writeln("$pages page" . ($pages === 1 ? '' : 's') . " checked, $errors error" . ($errors === 1 ? '' : 's'));
 
-        return $errors === 0 ? ExitCode::Success : ExitCode::Failure;
+        return $errors === 0 ? self::SUCCESS : self::FAILURE;
     }
 
     /**

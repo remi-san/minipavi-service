@@ -3,22 +3,17 @@
 
 declare(strict_types=1);
 
-// Command line of the framework (see `minipavi help`): installed by Composer as
-// vendor/bin/minipavi in a service, or run from the framework (bin/minipavi)
+// Command line of the framework (see `minipavi list`), with symfony/console: installed by
+// Composer as vendor/bin/minipavi in a service, or run from the framework (bin/minipavi)
 
-use MiniPaviService\Cli\Application;
-use MiniPaviService\Cli\Console;
 use MiniPaviService\Cli\LintCommand;
 use MiniPaviService\Cli\PreviewCommand;
 use MiniPaviService\Cli\VdtOffsetCommand;
+use Symfony\Component\Console\Application;
 
 // Composer's proxy in vendor/bin gives its autoloader; from the framework, its own
 require $GLOBALS['_composer_autoload_path'] ?? __DIR__ . '/../vendor/autoload.php';
 
-$application = new Application(
-    new LintCommand(),
-    new PreviewCommand(),
-    new VdtOffsetCommand(),
-);
-
-exit($application->run(array_slice($argv ?? [], 1), Console::standard())->value);
+$application = new Application('minipavi');
+$application->addCommands([new LintCommand(), new PreviewCommand(), new VdtOffsetCommand()]);
+$application->run();
