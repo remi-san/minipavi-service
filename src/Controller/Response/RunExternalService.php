@@ -7,7 +7,7 @@ namespace MiniPaviService\Controller\Response;
 use MiniPaviService\Controller\CallMode;
 use MiniPaviService\Controller\Response;
 use MiniPaviService\Core\Context;
-use MiniPaviService\Gateway\MiniPaviClient;
+use MiniPaviService\Gateway\GatewayAnswer;
 
 final readonly class RunExternalService extends Response
 {
@@ -28,13 +28,8 @@ final readonly class RunExternalService extends Response
         $this->callMode = \is_string($callMode) ? CallMode::from($callMode) : $callMode;
     }
 
-    public function execute(MiniPaviClient $client, Context $context): void
+    public function execute(Context $context): GatewayAnswer
     {
-        $client->send($this->vdt, $this->url, $context, true, null, $this->callMode->value);
-    }
-
-    public function interrupts(): bool
-    {
-        return true;
+        return new GatewayAnswer($this->vdt, $context->serialize(), $this->url, directCall: $this->callMode);
     }
 }

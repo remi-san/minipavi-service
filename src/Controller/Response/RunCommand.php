@@ -6,7 +6,7 @@ namespace MiniPaviService\Controller\Response;
 
 use MiniPaviService\Controller\Response;
 use MiniPaviService\Core\Context;
-use MiniPaviService\Gateway\MiniPaviClient;
+use MiniPaviService\Gateway\GatewayAnswer;
 use MiniPaviService\Page\InputCommand;
 
 final readonly class RunCommand extends Response
@@ -24,13 +24,8 @@ final readonly class RunCommand extends Response
         parent::__construct($state, $parameters);
     }
 
-    public function execute(MiniPaviClient $client, Context $context): void
+    public function execute(Context $context): GatewayAnswer
     {
-        $client->send($this->vdt ?? '', null, $context, true, $this->cmd?->toArray(), false);
-    }
-
-    public function interrupts(): bool
-    {
-        return true;
+        return new GatewayAnswer($this->vdt ?? '', $context->serialize(), command: $this->cmd?->toArray());
     }
 }

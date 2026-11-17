@@ -8,7 +8,7 @@ use MiniPaviService\Controller;
 use MiniPaviService\Controller\Request;
 use MiniPaviService\Core\FunctionKey;
 use MiniPaviService\Core\Terminal;
-use MiniPaviService\Gateway\MiniPaviClient;
+use MiniPaviService\Gateway\GatewayRequest;
 use PHPUnit\Framework\TestCase;
 
 final class RequestTest extends TestCase
@@ -29,7 +29,7 @@ final class RequestTest extends TestCase
     public function testFunctionKeyIsNullForConnectionCodes(): void
     {
         self::assertSame(FunctionKey::Guide, (new Request(key: 'GUIDE'))->functionKey());
-        self::assertNull((new Request(key: MiniPaviClient::FCTN_CONNECT))->functionKey());
+        self::assertNull((new Request(key: GatewayRequest::FCTN_CONNECT))->functionKey());
         self::assertNull((new Request())->functionKey());
     }
 

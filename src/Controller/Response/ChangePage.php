@@ -7,7 +7,7 @@ namespace MiniPaviService\Controller\Response;
 use MiniPaviService\Controller;
 use MiniPaviService\Controller\Response;
 use MiniPaviService\Core\Context;
-use MiniPaviService\Gateway\MiniPaviClient;
+use MiniPaviService\Gateway\GatewayAnswer;
 
 /**
  * Switches to the controller of another route, which runs at once: it starts at STATE_INIT,
@@ -26,15 +26,12 @@ final readonly class ChangePage extends Response
         parent::__construct(Controller::STATE_INIT, []);
     }
 
-    public function execute(MiniPaviClient $client, Context $context): void
+    public function execute(Context $context): ?GatewayAnswer
     {
         $context->changeRoute($this->route);
         $context->resetState();
         $context->updateParameters($this->targetParameters);
-    }
 
-    public function interrupts(): bool
-    {
-        return false;
+        return null;
     }
 }

@@ -5,14 +5,16 @@ declare(strict_types=1);
 namespace MiniPaviService\Core;
 
 use MiniPaviService\Controller\Response;
-use MiniPaviService\Gateway\MiniPaviClient;
+use MiniPaviService\Gateway\GatewayAnswer;
+use MiniPaviService\Gateway\GatewayRequest;
 use MiniPaviService\Vdt\VdtHelper;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 
 /**
- * Serves a request of the gateway: restores the context, and runs the controller of its route
- * until a response answers the gateway
+ * Answers a request of the gateway: restores the context, and runs the controller of its route
+ * until a response answers the gateway. Without I/O: reading the request and sending the answer
+ * are the gateway client's (MiniPaviClient), run by ServiceRunner.
  */
 final class Service
 {
@@ -31,7 +33,6 @@ final class Service
      * @param string $errorMessage shown on line 0 when a request fails
      */
     public function __construct(
-        private MiniPaviClient $client,
         private Router $router,
         ?LoggerInterface $logger = null,
         private string $errorMessage = self::ERROR_MESSAGE,
@@ -39,64 +40,58 @@ final class Service
         $this->logger = $logger ?? new NullLogger();
     }
 
-    public function run(): void
+    /**
+     * Answer to a request of the gateway, null for a disconnection (nothing to answer). An
+     * error (exception or PHP error) is logged and answered: see error()
+     */
+    public function handle(GatewayRequest $request): ?GatewayAnswer
     {
         try {
-            $this->client->start();
+            return $this->answer($request);
         } catch (\Throwable $e) {
-            $this->fail($e);
-
-            return;
+            return $this->error($e);
         }
-        $this->handle();
     }
 
     /**
-     * Serves the request of the gateway read by MiniPaviClient::start(). An error (exception
-     * or PHP error) is logged and answered: see fail()
+     * Answer to a request that failed, e.g. that couldn't be read: the error is logged, and
+     * the error message shown on line 0, with a new context at the default route, whose
+     * controller the user's next function key runs. It is not run now: if it is the one
+     * failing, the user would get the same error again at once.
+     *
+     * Null if even that answer fails (e.g. no default route): logged as critical.
      */
-    public function handle(): void
-    {
-        try {
-            $this->handleRequest();
-        } catch (\Throwable $e) {
-            $this->fail($e);
-        }
-    }
-
-    private function handleRequest(): void
-    {
-        // Nothing to answer, nor to do with the context, which may be missing
-        if ($this->client->isDisconnecting()) {
-            $this->logger->info('Disconnection');
-            return;
-        }
-
-        if ($this->client->isConnecting()) {
-            $context = new Context($this->router->defaultRoute());
-            $this->client->clearContent();
-            $this->logger->info('Connection', ['fctn' => $this->client->fctn()]);
-        } else {
-            $context = Context::unserialize($this->client->context(), $this->router->defaultRoute());
-        }
-
-        $this->serve($context, $this->client->fctn(), $this->client->content(), $this->client->terminal());
-    }
-
-    /**
-     * Answers a request that failed: the error message on line 0, with a new context at the
-     * default route, whose controller the user's next function key runs. It is not run now:
-     * if it is the one failing, the user would get the same error again at once.
-     */
-    private function fail(\Throwable $error): void
+    public function error(\Throwable $error): ?GatewayAnswer
     {
         $this->logger->error('Error serving the request: ' . $error->getMessage(), ['exception' => $error]);
         try {
-            Response::display(VdtHelper::writeLine0($this->errorMessage))
-                ->execute($this->client, new Context($this->router->defaultRoute()));
+            return Response::display(VdtHelper::writeLine0($this->errorMessage))
+                ->execute(new Context($this->router->defaultRoute()));
         } catch (\Throwable $e) {
             $this->logger->critical('Cannot answer the error: ' . $e->getMessage(), ['exception' => $e]);
+
+            return null;
         }
+    }
+
+    private function answer(GatewayRequest $request): ?GatewayAnswer
+    {
+        // Nothing to answer, nor to do with the context, which may be missing
+        if ($request->isDisconnecting()) {
+            $this->logger->info('Disconnection');
+            return null;
+        }
+
+        if ($request->isConnecting()) {
+            $this->logger->info('Connection', ['fctn' => $request->key]);
+
+            // A new session: without what was typed before
+            return $this->serve(new Context($this->router->defaultRoute()), $request->key, [], $request->terminal);
+        }
+
+        $context = Context::unserialize($request->context, $this->router->defaultRoute());
+
+        return $this->serve($context, $request->key, $request->content, $request->terminal);
     }
 
     /**
@@ -108,7 +103,7 @@ final class Service
      *
      * @param list<string> $content
      */
-    public function serve(Context $context, string $key, array $content, Terminal $terminal): void
+    public function serve(Context $context, string $key, array $content, Terminal $terminal): GatewayAnswer
     {
         // A route this service doesn't have, e.g. removed in a new version: the input was for
         // a screen that doesn't exist any more
@@ -126,10 +121,9 @@ final class Service
 
             $context->update($response);
 
-            $response->execute($this->client, $context);
-
-            if ($response->interrupts()) {
-                return;
+            $answer = $response->execute($context);
+            if ($answer !== null) {
+                return $answer;
             }
             // The next controller didn't get the input: it was for this one
             $key = '';

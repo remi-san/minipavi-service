@@ -5,18 +5,34 @@ declare(strict_types=1);
 namespace MiniPaviService\Tests\Gateway;
 
 use MiniPavi\MiniPaviCli;
+use MiniPaviService\Controller\CallMode;
 use MiniPaviService\Core\Terminal;
+use MiniPaviService\Gateway\GatewayAnswer;
+use MiniPaviService\Gateway\GatewayRequest;
 use MiniPaviService\Gateway\MiniPaviClient;
+use MiniPaviService\Http\RequestUrl;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Reading the gateway's request: MiniPaviCli::start() puts the decoded JSON in its static
- * properties, set here directly
+ * The gateway's request: MiniPaviCli::start() puts the decoded JSON in its static properties,
+ * set here directly. The answer: what MiniPaviCli::send() writes.
  */
 final class MiniPaviClientTest extends TestCase
 {
+    /** @var array<mixed> */
+    private array $server;
+
+    protected function setUp(): void
+    {
+        // The service's URL, sent to the gateway as the next one to call
+        $this->server = $_SERVER;
+        $_SERVER['HTTP_HOST'] = 'services';
+        $_SERVER['PHP_SELF'] = '/Svc/index.php';
+    }
+
     protected function tearDown(): void
     {
+        $_SERVER = $this->server;
         MiniPaviCli::$fctn = '';
         MiniPaviCli::$content = [];
         MiniPaviCli::$context = '';
@@ -29,60 +45,85 @@ final class MiniPaviClientTest extends TestCase
     {
         MiniPaviCli::$fctn = 'ENVOI';
         MiniPaviCli::$content = ['ab', 'cd'];
-        MiniPaviCli::$context = 'a:0:{}';
+        MiniPaviCli::$context = '{"route":"home"}';
         MiniPaviCli::$remoteAddr = 'CALLFROM 0102030405';
         MiniPaviCli::$typeSocket = 'websocket';
         MiniPaviCli::$versionMinitel = 'Cv5';
-        $client = new MiniPaviClient();
 
-        self::assertSame('ENVOI', $client->fctn());
-        self::assertSame(['ab', 'cd'], $client->content());
-        self::assertSame('abcd', $client->contentAsString());
-        self::assertSame('a:0:{}', $client->context());
-        self::assertSame('CALLFROM 0102030405', $client->remoteAddr());
-        self::assertSame('websocket', $client->typeSocket());
-        self::assertSame('Cv5', $client->versionMinitel());
-        self::assertEquals(new Terminal('CALLFROM 0102030405', 'websocket', 'Cv5'), $client->terminal());
-    }
-
-    public function testRecognizesConnectionsAndDisconnections(): void
-    {
-        $client = new MiniPaviClient();
-
-        foreach (['CNX' => [true, false], 'DIRECTCNX' => [true, false], 'FIN' => [false, true], 'ENVOI' => [false, false]] as $fctn => $expected) {
-            MiniPaviCli::$fctn = $fctn;
-            self::assertSame($expected, [$client->isConnecting(), $client->isDisconnecting()], $fctn);
-        }
+        self::assertEquals(
+            new GatewayRequest('ENVOI', ['ab', 'cd'], '{"route":"home"}', new Terminal('CALLFROM 0102030405', 'websocket', 'Cv5')),
+            (new MiniPaviClient(new RequestUrl()))->request(),
+        );
     }
 
     public function testValuesThatAreNotTextBecomeEmpty(): void
     {
         MiniPaviCli::$fctn = null;
         MiniPaviCli::$context = ['not', 'text'];
+        MiniPaviCli::$remoteAddr = null;
         MiniPaviCli::$typeSocket = new \stdClass();
         MiniPaviCli::$versionMinitel = null;
-        $client = new MiniPaviClient();
 
-        self::assertSame('', $client->fctn());
-        self::assertSame('', $client->context());
-        self::assertNull($client->typeSocket());
-        self::assertNull($client->versionMinitel());
+        self::assertEquals(new GatewayRequest('', [], '', new Terminal('', null, null)), (new MiniPaviClient(new RequestUrl()))->request());
     }
 
     public function testContentIsAListOfTexts(): void
     {
-        $client = new MiniPaviClient();
+        $client = new MiniPaviClient(new RequestUrl());
 
         MiniPaviCli::$content = 'one line';
-        self::assertSame(['one line'], $client->content());
+        self::assertSame(['one line'], $client->request()->content);
 
         MiniPaviCli::$content = [2 => 'a', 5 => 12, 7 => null, 9 => ['x']];
-        self::assertSame(['a', '12', '', ''], $client->content());
+        self::assertSame(['a', '12', '', ''], $client->request()->content);
 
         MiniPaviCli::$content = null;
-        self::assertSame([], $client->content());
+        self::assertSame([], $client->request()->content);
+    }
 
-        $client->clearContent();
-        self::assertSame([], $client->content());
+    public function testSendsTheAnswerToThisService(): void
+    {
+        $answer = $this->sent(new GatewayAnswer('Hello', '{"route":"home"}'));
+
+        self::assertSame(base64_encode('Hello'), $answer['content']);
+        self::assertSame('{"route":"home"}', $answer['context']);
+        self::assertSame('http://services/Svc/index.php', $answer['next']);
+        self::assertSame('no', $answer['directcall']);
+        self::assertSame('on', $answer['echo']);
+        self::assertArrayNotHasKey('COMMAND', $answer);
+    }
+
+    public function testSendsTheCommandWithTheAnswer(): void
+    {
+        $answer = $this->sent(new GatewayAnswer('Code ?', '{}', command: ['COMMAND' => ['name' => 'InputTxt', 'param' => ['x' => 1]]]));
+
+        self::assertSame(['name' => 'InputTxt', 'param' => ['x' => 1]], $answer['COMMAND']);
+    }
+
+    public function testSendsTheUserToAnotherService(): void
+    {
+        $connect = $this->sent(new GatewayAnswer('', '{}', 'https://example.org/service', directCall: CallMode::Connect));
+        $direct = $this->sent(new GatewayAnswer('', '{}', 'https://example.org/service', directCall: CallMode::Direct, echo: false));
+
+        self::assertSame(['https://example.org/service', 'yes-cnx'], [$connect['next'], $connect['directcall']]);
+        self::assertSame(['yes', 'off'], [$direct['directcall'], $direct['echo']]);
+    }
+
+    /**
+     * What the client writes for the answer, decoded
+     *
+     * @return array<mixed>
+     */
+    private function sent(GatewayAnswer $answer): array
+    {
+        ob_start();
+        try {
+            (new MiniPaviClient(new RequestUrl()))->send($answer);
+        } finally {
+            $output = (string) ob_get_clean();
+        }
+        $sent = json_decode($output, true);
+
+        return \is_array($sent) ? $sent : self::fail("Not an answer: $output");
     }
 }

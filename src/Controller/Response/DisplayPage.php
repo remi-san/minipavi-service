@@ -6,7 +6,7 @@ namespace MiniPaviService\Controller\Response;
 
 use MiniPaviService\Controller\Response;
 use MiniPaviService\Core\Context;
-use MiniPaviService\Gateway\MiniPaviClient;
+use MiniPaviService\Gateway\GatewayAnswer;
 
 final readonly class DisplayPage extends Response
 {
@@ -21,13 +21,8 @@ final readonly class DisplayPage extends Response
         parent::__construct($state, $parameters);
     }
 
-    public function execute(MiniPaviClient $client, Context $context): void
+    public function execute(Context $context): GatewayAnswer
     {
-        $client->send($this->vdt, null, $context, true, null, false);
-    }
-
-    public function interrupts(): bool
-    {
-        return true;
+        return new GatewayAnswer($this->vdt, $context->serialize());
     }
 }

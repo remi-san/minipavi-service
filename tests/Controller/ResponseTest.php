@@ -12,41 +12,23 @@ use MiniPaviService\Controller\Response\DisplayPage;
 use MiniPaviService\Controller\Response\RunCommand;
 use MiniPaviService\Controller\Response\RunExternalService;
 use MiniPaviService\Core\Context;
-use MiniPaviService\Gateway\MiniPaviClient;
+use MiniPaviService\Gateway\GatewayAnswer;
 use MiniPaviService\Page\InputCommand;
 use PHPUnit\Framework\TestCase;
 
 final class ResponseTest extends TestCase
 {
-    /** @var array<mixed> */
-    private array $server;
-
-    protected function setUp(): void
-    {
-        // The service's URL, sent to the gateway as the next one to call
-        $this->server = $_SERVER;
-        $_SERVER['HTTP_HOST'] = 'services';
-        $_SERVER['PHP_SELF'] = '/Svc/index.php';
-    }
-
-    protected function tearDown(): void
-    {
-        $_SERVER = $this->server;
-    }
-
     public function testDisplaySendsContentAndReadsTheNextKey(): void
     {
         $response = Response::display('Hello');
+        $context = new Context('home');
+        $context->update($response);
 
         self::assertInstanceOf(DisplayPage::class, $response);
         self::assertSame(Controller::STATE_READ_INPUT, $response->state());
         self::assertSame([], $response->parameters());
-        self::assertTrue($response->interrupts());
-        $answer = $this->answer($response);
-        self::assertSame('Hello', self::content($answer));
-        self::assertSame('http://services/Svc/index.php', $answer['next']);
-        self::assertSame('no', $answer['directcall']);
-        self::assertArrayNotHasKey('COMMAND', $answer);
+        // To this service (next: null), waiting for the user, with the context
+        self::assertEquals(new GatewayAnswer('Hello', $context->serialize()), $response->execute($context));
     }
 
     public function testReadInputSendsTheCommand(): void
@@ -58,8 +40,10 @@ final class ResponseTest extends TestCase
         self::assertSame(Controller::STATE_READ_INPUT, $response->state());
         self::assertSame(['page' => 2], $response->parameters());
         $answer = $this->answer($response);
-        self::assertSame('Code ?', self::content($answer));
-        self::assertSame(['name' => 'InputTxt', 'param' => ['x' => 1]], $answer['COMMAND']);
+        self::assertSame('Code ?', $answer->vdt);
+        self::assertSame(['COMMAND' => ['name' => 'InputTxt', 'param' => ['x' => 1]]], $answer->command);
+        self::assertNull($answer->next);
+        self::assertNull($answer->directCall);
     }
 
     public function testReadInputWithoutCommandOnlySendsTheContent(): void
@@ -67,8 +51,8 @@ final class ResponseTest extends TestCase
         // Page::inputCommand() gives null for a page without <input>
         $answer = $this->answer(Response::readInput('Hello', null));
 
-        self::assertSame('Hello', self::content($answer));
-        self::assertArrayNotHasKey('COMMAND', $answer);
+        self::assertSame('Hello', $answer->vdt);
+        self::assertNull($answer->command);
     }
 
     public function testGoToChangesTheRouteWithoutAnsweringTheGateway(): void
@@ -78,8 +62,7 @@ final class ResponseTest extends TestCase
 
         self::assertInstanceOf(ChangePage::class, $response);
         self::assertSame(Controller::STATE_INIT, $response->state());
-        self::assertFalse($response->interrupts());
-        self::assertSame('', $this->executedOutput($response, $context));
+        self::assertNull($response->execute($context));
         self::assertSame('menu', $context->route());
     }
 
@@ -90,9 +73,9 @@ final class ResponseTest extends TestCase
         self::assertInstanceOf(RunExternalService::class, $response);
         self::assertSame(Controller::STATE_INIT, $response->state());
         $answer = $this->answer($response);
-        self::assertSame('Cnx en cours', self::content($answer));
-        self::assertSame('https://example.org/service', $answer['next']);
-        self::assertSame(CallMode::Connect->value, $answer['directcall']);
+        self::assertSame('Cnx en cours', $answer->vdt);
+        self::assertSame('https://example.org/service', $answer->next);
+        self::assertSame(CallMode::Connect, $answer->directCall);
     }
 
     public function testRunExternalServiceTakesACallMode(): void
@@ -101,9 +84,9 @@ final class ResponseTest extends TestCase
         // The call mode can also be given by its value
         $connect = new RunExternalService(Controller::STATE_INIT, [], '', 'https://example.org/', 'yes-cnx');
 
-        self::assertSame('yes', $this->answer($direct)['directcall']);
+        self::assertSame(CallMode::Direct, $this->answer($direct)->directCall);
         self::assertSame(CallMode::Connect, $connect->callMode);
-        self::assertSame('yes-cnx', $this->answer($connect)['directcall']);
+        self::assertSame(CallMode::Connect, $this->answer($connect)->directCall);
     }
 
     public function testStateAndParametersCanBeGiven(): void
@@ -120,7 +103,7 @@ final class ResponseTest extends TestCase
         $response = Response::goTo('menu', ['from' => 'home']);
 
         $context->update($response);
-        $response->execute(new MiniPaviClient(), $context);
+        $response->execute($context);
 
         self::assertSame('menu', $context->route());
         self::assertSame(Controller::STATE_INIT, $context->state());
@@ -131,44 +114,14 @@ final class ResponseTest extends TestCase
     }
 
     /**
-     * Answer sent to the gateway (JSON)
-     *
-     * @return array<mixed>
+     * Answer of a response to the gateway, whose context it gives back
      */
-    private function answer(Response $response): array
+    private function answer(Response $response): GatewayAnswer
     {
-        $answer = json_decode($this->executedOutput($response, new Context('home')), true);
-        if (!\is_array($answer)) {
-            self::fail('The answer is not a JSON object');
-        }
+        $context = new Context('home');
+        $answer = $response->execute($context) ?? self::fail('No answer to the gateway');
+        self::assertSame($context->serialize(), $answer->context);
 
         return $answer;
-    }
-
-    /**
-     * Videotex content of an answer, sent in base64
-     *
-     * @param array<mixed> $answer
-     */
-    private static function content(array $answer): string
-    {
-        $content = $answer['content'] ?? null;
-        if (!\is_string($content)) {
-            self::fail('The answer has no content');
-        }
-
-        return base64_decode($content);
-    }
-
-    private function executedOutput(Response $response, Context $context): string
-    {
-        ob_start();
-        try {
-            $response->execute(new MiniPaviClient(), $context);
-        } finally {
-            $output = (string) ob_get_clean();
-        }
-
-        return $output;
     }
 }

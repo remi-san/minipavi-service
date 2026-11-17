@@ -10,7 +10,7 @@ use MiniPaviService\Controller\Response\DisplayPage;
 use MiniPaviService\Controller\Response\RunCommand;
 use MiniPaviService\Controller\Response\RunExternalService;
 use MiniPaviService\Core\Context;
-use MiniPaviService\Gateway\MiniPaviClient;
+use MiniPaviService\Gateway\GatewayAnswer;
 use MiniPaviService\Page\InputCommand;
 
 /**
@@ -75,12 +75,12 @@ abstract readonly class Response
         return new RunExternalService($state, $parameters, $vdt, $url, CallMode::Connect);
     }
 
-    abstract public function execute(MiniPaviClient $client, Context $context): void;
-
     /**
-     * Whether the response answers the gateway, ending the request
+     * Does what the response says, once the context has the state and parameters it keeps
+     * (Context::update()): the answer to the gateway, ending the request, or null to go on
+     * (e.g. ChangePage, which runs another controller)
      */
-    abstract public function interrupts(): bool;
+    abstract public function execute(Context $context): ?GatewayAnswer;
 
     public function state(): string
     {

@@ -17,7 +17,7 @@ readonly class Request
     /**
      * @param array<string, mixed> $parameters
      * @param string $key function key pressed (FunctionKey), or connection code
-     *                    (MiniPaviClient::FCTN_*)
+     *                    (GatewayRequest::FCTN_*)
      * @param list<string> $content text typed, one string per line of the input field
      */
     public function __construct(
@@ -48,7 +48,7 @@ readonly class Request
 
     /**
      * Name of the function key pressed (FunctionKey), or connection code
-     * (MiniPaviClient::FCTN_*); see functionKey()
+     * (GatewayRequest::FCTN_*); see functionKey()
      */
     public function key(): string
     {
@@ -56,7 +56,7 @@ readonly class Request
     }
 
     /**
-     * Function key pressed, null for a connection code (MiniPaviClient::FCTN_*)
+     * Function key pressed, null for a connection code (GatewayRequest::FCTN_*)
      */
     public function functionKey(): ?FunctionKey
     {
