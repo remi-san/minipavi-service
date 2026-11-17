@@ -11,8 +11,10 @@ use MiniPaviService\Cli\PreviewCommand;
 use MiniPaviService\Cli\VdtOffsetCommand;
 use Symfony\Component\Console\Application;
 
-// Composer's proxy in vendor/bin gives its autoloader; from the framework, its own
-require $GLOBALS['_composer_autoload_path'] ?? __DIR__ . '/../vendor/autoload.php';
+// Composer's proxy in vendor/bin, which includes this file, gives its autoloader; from the
+// framework, its own
+$autoload = $_composer_autoload_path ?? __DIR__ . '/../vendor/autoload.php';
+require \is_string($autoload) ? $autoload : __DIR__ . '/../vendor/autoload.php';
 
 $application = new Application('minipavi');
 $application->addCommands([new LintCommand(), new PreviewCommand(), new VdtOffsetCommand()]);

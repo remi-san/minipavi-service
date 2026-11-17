@@ -59,13 +59,13 @@ final readonly class Messages
     public function get(Message $message, array $variables = []): string
     {
         $name = (string) $message->value;
-        $text = $this->texts[$name] ?? throw new \LogicException("No text for the message \"$name\"");
+        $text = $this->texts[$name] ?? throw new \LogicException("No text for the message \"{$name}\"");
 
         return (string) preg_replace_callback(
             '/\{\{\s*(\w+)\s*\}\}/',
-            function (array $match) use ($name, $variables): string {
+            static function (array $match) use ($name, $variables): string {
                 if (!\array_key_exists($match[1], $variables)) {
-                    throw new \LogicException("Message \"$name\" needs the variable \"$match[1]\"");
+                    throw new \LogicException("Message \"{$name}\" needs the variable \"{$match[1]}\"");
                 }
 
                 return (string) $variables[$match[1]];
@@ -86,9 +86,11 @@ final readonly class Messages
         $missing = [];
         foreach ($enums as $enum) {
             foreach ($enum::cases() as $message) {
-                if (!$this->has((string) $message->value)) {
-                    $missing[] = (string) $message->value;
+                if ($this->has((string) $message->value)) {
+                    continue;
                 }
+
+                $missing[] = (string) $message->value;
             }
         }
         if ($missing !== []) {

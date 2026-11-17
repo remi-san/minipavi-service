@@ -116,7 +116,7 @@ final class ElementFactory
             throw new PageXmlException('the file is missing');
         }
         if (str_starts_with($path, '/') || in_array('..', explode('/', str_replace('\\', '/', $path)), true)) {
-            throw new PageXmlException("$path: only files from the page's folder or its subfolders");
+            throw new PageXmlException("{$path}: only files from the page's folder or its subfolders");
         }
         return $this->baseDir . '/' . $path;
     }
@@ -134,8 +134,8 @@ final class ElementFactory
         $validWith = [];
         foreach ($keys as $name) {
             $validWith[] = FunctionKey::fromXmlName($name) ?? throw new PageXmlException(
-                "unknown validwith key \"$name\" ("
-                . implode(', ', array_map(fn(FunctionKey $key) => $key->xmlName(), FunctionKey::cases()))
+                "unknown validwith key \"{$name}\" ("
+                . implode(', ', array_map(static fn(FunctionKey $key) => $key->xmlName(), FunctionKey::cases()))
                 . ')',
             );
         }
@@ -160,7 +160,7 @@ final class ElementFactory
         }
         $value = trim($attributes[$attr]);
         if (!preg_match('/^\d+$/', $value)) {
-            throw new PageXmlException("$attr=\"$value\" is not a number");
+            throw new PageXmlException("{$attr}=\"{$value}\" is not a number");
         }
         return (int) $value;
     }
@@ -179,7 +179,7 @@ final class ElementFactory
         }
         $value = $attributes[$attr];
         if (!array_key_exists($value, $values)) {
-            throw new PageXmlException("$attr=\"$value\" must be " . implode(' or ', array_keys($values)));
+            throw new PageXmlException("{$attr}=\"{$value}\" must be " . implode(' or ', array_keys($values)));
         }
         return $values[$value];
     }
@@ -194,7 +194,7 @@ final class ElementFactory
         }
         return (
             Color::tryFrom($attributes[$attr]) ?? throw new PageXmlException(
-                "unknown $attr \""
+                "unknown {$attr} \""
                 . $attributes[$attr]
                 . '" ('
                 . implode(', ', array_column(Color::cases(), 'value'))

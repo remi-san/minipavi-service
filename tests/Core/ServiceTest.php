@@ -49,38 +49,38 @@ final class ServiceTest extends TestCase
         $this->router->addRoute('menu', $this->controller(
             'menu',
             NoParameters::class,
-            fn(Request $request) => $request->key() === 'ENVOI'
+            static fn(Request $request) => $request->key() === 'ENVOI'
                 ? Response::goTo('directory', new PageParameters(1))
                 : Response::display(new Vdt('menu')),
         ));
         $this->router->addRoute('directory', $this->controller(
             'directory',
             PageParameters::class,
-            fn(Request $request) => $request->state() === ControllerState::ReadInput
+            static fn(Request $request) => $request->state() === ControllerState::ReadInput
                 ? Response::display(Vdt::text('code ' . $request->contentAsString()))
                 : Response::display(new Vdt('directory'), parameters: new PageParameters(2)),
         ));
         $this->router->addRoute('broken', $this->controller(
             'broken',
             NoParameters::class,
-            fn(Request $request) => throw new \RuntimeException('Template data missing'),
+            static fn(Request $request) => throw new \RuntimeException('Template data missing'),
         ));
         // Two controllers changing to each other
         $this->router->addRoute('ping', $this->controller(
             'ping',
             NoParameters::class,
-            fn(Request $request) => Response::goTo('pong'),
+            static fn(Request $request) => Response::goTo('pong'),
         ));
         $this->router->addRoute('pong', $this->controller(
             'pong',
             NoParameters::class,
-            fn(Request $request) => Response::goTo('ping'),
+            static fn(Request $request) => Response::goTo('ping'),
         ));
         // Keeps parameters of another class than it declares
         $this->router->addRoute('mistyped', $this->controller(
             'mistyped',
             NoParameters::class,
-            fn(Request $request) => Response::display(new Vdt('x'), parameters: new PageParameters(1)),
+            static fn(Request $request) => Response::display(new Vdt('x'), parameters: new PageParameters(1)),
         ));
         $this->router->setDefaultRoute('menu');
     }
@@ -372,11 +372,15 @@ final class ServiceTest extends TestCase
      */
     private function controller(string $route, string $parametersType, \Closure $run): CallbackController
     {
-        return new CallbackController($parametersType, function (Request $request) use ($route, $run): Response {
-            $this->requests[$route][] = $request;
+        return new CallbackController(
+            $parametersType,
+            /** @param Request<ControllerState, TParameters> $request */
+            function (Request $request) use ($route, $run): Response {
+                $this->requests[$route][] = $request;
 
-            return $run($request);
-        });
+                return $run($request);
+            },
+        );
     }
 
     /**
@@ -395,7 +399,7 @@ final class ServiceTest extends TestCase
         $this->router->addRoute('answer', $this->controller(
             'answer',
             PageParameters::class,
-            fn(Request $request) => $response,
+            static fn(Request $request) => $response,
         ));
 
         return (new Service($this->router, Messages::defaults(), $this->logger))->serve(

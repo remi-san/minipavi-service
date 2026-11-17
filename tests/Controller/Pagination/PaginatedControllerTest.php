@@ -37,7 +37,7 @@ final class PaginatedControllerTest extends TestCase
     protected function setUp(): void
     {
         $this->router = new Router();
-        $this->router->addRoute('menu', new CallbackController(NoParameters::class, fn(
+        $this->router->addRoute('menu', new CallbackController(NoParameters::class, static fn(
             Request $request,
         ) => $request->key() === 'ENVOI' ? Response::goTo('list') : Response::display(new Vdt('MENU'))));
         $this->router->setDefaultRoute('menu');

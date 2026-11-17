@@ -28,10 +28,10 @@ final readonly class Paginator
         int $index = 0,
     ) {
         if ($itemCount < 0) {
-            throw new \InvalidArgumentException("Item count must not be negative, $itemCount given");
+            throw new \InvalidArgumentException("Item count must not be negative, {$itemCount} given");
         }
         if ($perPage < 1) {
-            throw new \InvalidArgumentException("At least one item per page, $perPage given");
+            throw new \InvalidArgumentException("At least one item per page, {$perPage} given");
         }
         $this->index = max(0, min($index, $this->pageCount() - 1));
     }

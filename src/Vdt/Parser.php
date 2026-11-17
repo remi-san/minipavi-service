@@ -12,7 +12,7 @@ use MiniPaviService\Vdt\Screen\Attributes;
 final class Parser
 {
     /**
-     * @return Token[]
+     * @return list<Token>
      */
     public function parse(string $vdt): array
     {
@@ -94,7 +94,7 @@ final class Parser
                     break;
                 case 0x1B:
                     $sequence = $this->escapeSequence($vdt, $i);
-                    $group = strlen($sequence) == 2 ? Attributes::group($sequence[1]) : null;
+                    $group = strlen($sequence) === 2 ? Attributes::group($sequence[1]) : null;
                     $tokens[] = $group !== null
                         ? new Token(TokenType::Attribute, $sequence, $sequence[1], group: $group)
                         : new Token(TokenType::Raw, $sequence, $sequence);
@@ -114,12 +114,12 @@ final class Parser
     {
         $next = ord($vdt[$start + 1] ?? "\0");
         $length = match (true) {
-            $next == 0x39 => 3, // PRO1 x
-            $next == 0x3A => 4, // PRO2 x y
-            $next == 0x3B => 5, // PRO3 x y z
-            $next == 0x23 => 4, // ESC # SP x: whole screen or row attributes
+            $next === 0x39 => 3, // PRO1 x
+            // PRO2 x y, or ESC # SP x: whole screen or row attributes
+            $next === 0x3A, $next === 0x23 => 4,
+            $next === 0x3B => 5, // PRO3 x y z
             $next >= 0x28 && $next <= 0x2B => ($vdt[$start + 2] ?? '') === ' ' ? 4 : 3, // charset designation
-            $next == 0x5B => $this->csiLength($vdt, $start), // CSI ... final byte
+            $next === 0x5B => $this->csiLength($vdt, $start), // CSI ... final byte
             default => 2,
         };
         return substr($vdt, $start, $length);
@@ -128,7 +128,7 @@ final class Parser
     private function csiLength(string $vdt, int $start): int
     {
         $i = $start + 2;
-        while (isset($vdt[$i]) && ord($vdt[$i]) >= 0x30 && ord($vdt[$i]) <= 0x3F) {
+        while ($i < \strlen($vdt) && ord($vdt[$i]) >= 0x30 && ord($vdt[$i]) <= 0x3F) {
             $i++;
         }
         return $i - $start + 1;

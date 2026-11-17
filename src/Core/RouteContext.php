@@ -16,8 +16,8 @@ use MiniPaviService\Minitel\Terminal;
  * State and parameters a route keeps in the context, typed as its controller declares them,
  * and the controller to run on them (Route::start(), restore())
  *
- * @template TState of State
- * @template TParameters of Parameters
+ * @template-covariant TState of State
+ * @template-covariant TParameters of Parameters
  */
 final class RouteContext
 {

@@ -29,16 +29,28 @@ final class ContextTest extends TestCase
         // home: built-in states, a page; search: states of its own, a page; menu: nothing;
         // origin: the route it was opened from
         $this->router = new Router();
-        $this->router->addRoute('home', new CallbackController(PageParameters::class, fn(
-            Request $request,
-        ) => Response::display(Vdt::text('home ' . $request->state()->value . ' ' . $request->parameters()->page))));
+        $this->router->addRoute(
+            'home',
+            new CallbackController(
+                PageParameters::class,
+                /** @param Request<ControllerState, PageParameters> $request */
+                static fn(Request $request) => Response::display(Vdt::text(
+                    'home ' . $request->state()->value . ' ' . $request->parameters()->page,
+                )),
+            ),
+        );
         $this->router->addRoute('search', new SearchController());
-        $this->router->addRoute('menu', new CallbackController(NoParameters::class, fn(
+        $this->router->addRoute('menu', new CallbackController(NoParameters::class, static fn(
             Request $request,
         ) => Response::display(new Vdt('menu'))));
-        $this->router->addRoute('origin', new CallbackController(FromParameters::class, fn(
-            Request $request,
-        ) => Response::display(Vdt::text('from ' . $request->parameters()->from))));
+        $this->router->addRoute(
+            'origin',
+            new CallbackController(
+                FromParameters::class,
+                /** @param Request<ControllerState, FromParameters> $request */
+                static fn(Request $request) => Response::display(Vdt::text('from ' . $request->parameters()->from)),
+            ),
+        );
         $this->router->setDefaultRoute('home');
     }
 

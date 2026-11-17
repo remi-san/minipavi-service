@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Message;
 
+use MiniPaviService\Xml\XmlElements;
+
 /**
  * Reads a messages file (root element <messages>, a <message name="...">text</message> per
  * message, format documented in the framework's README.md) over base messages, e.g. a
@@ -21,7 +23,7 @@ final class MessagesXmlParser
     {
         $xml = is_file($file) ? file_get_contents($file) : false;
         if ($xml === false) {
-            throw new MessagesException("$file: file not found");
+            throw new MessagesException("{$file}: file not found");
         }
 
         return $this->parse($xml, $base, $file);
@@ -46,11 +48,11 @@ final class MessagesXmlParser
         if ($root === false) {
             $error = $errors[0] ?? null;
             throw new MessagesException(
-                $error !== null ? "$name line $error->line: " . trim($error->message) : "$name: invalid XML",
+                $error !== null ? "{$name} line {$error->line}: " . trim($error->message) : "{$name}: invalid XML",
             );
         }
         if ($root->getName() !== 'messages') {
-            throw new MessagesException("$name: root element must be <messages>, not <" . $root->getName() . '>');
+            throw new MessagesException("{$name}: root element must be <messages>, not <" . $root->getName() . '>');
         }
 
         return $base->with(self::texts($root, $name));
@@ -66,18 +68,18 @@ final class MessagesXmlParser
     private static function texts(\SimpleXMLElement $parent, string $name): array
     {
         $texts = [];
-        foreach ($parent->children() as $tag => $element) {
+        foreach (XmlElements::children($parent) as $tag => $element) {
             $at = $name . ' line ' . dom_import_simplexml($element)->getLineNo();
             if ($tag !== 'message') {
-                throw new MessagesException("$at: <$tag>: unknown element");
+                throw new MessagesException("{$at}: <{$tag}>: unknown element");
             }
             $at .= ': <message>';
             $messageName = trim((string) $element['name']);
             if ($messageName === '') {
-                throw new MessagesException("$at: name is missing");
+                throw new MessagesException("{$at}: name is missing");
             }
             if (isset($texts[$messageName])) {
-                throw new MessagesException("$at: name=\"$messageName\" is already in the file");
+                throw new MessagesException("{$at}: name=\"{$messageName}\" is already in the file");
             }
             $texts[$messageName] = trim((string) $element);
         }

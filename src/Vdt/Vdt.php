@@ -39,7 +39,7 @@ final readonly class Vdt
     {
         $vdt = @file_get_contents($file);
         if ($vdt === false) {
-            throw new \InvalidArgumentException("Videotex file not found: $file");
+            throw new \InvalidArgumentException("Videotex file not found: {$file}");
         }
         return new self($vdt);
     }
@@ -58,7 +58,7 @@ final readonly class Vdt
      */
     public static function join(self ...$parts): self
     {
-        return new self(implode('', array_map(fn(self $part) => $part->bytes, $parts)));
+        return new self(implode('', array_map(static fn(self $part) => $part->bytes, $parts)));
     }
 
     /**
@@ -83,12 +83,17 @@ final readonly class Vdt
         $tokens = $this->tokens();
         $start = 0;
         foreach ($tokens as $i => $token) {
-            if ($token->type === TokenType::Clear) {
-                $start = $i;
+            if ($token->type !== TokenType::Clear) {
+                continue;
             }
+
+            $start = $i;
         }
 
-        return new self(implode('', array_map(fn(Token $token) => $token->source, \array_slice($tokens, $start))));
+        return new self(implode('', array_map(
+            static fn(Token $token) => $token->source,
+            \array_slice($tokens, $start),
+        )));
     }
 
     /**
@@ -102,7 +107,7 @@ final readonly class Vdt
     /**
      * The content read as tokens (characters, positions, attributes...)
      *
-     * @return Token[]
+     * @return list<Token>
      */
     public function tokens(): array
     {
@@ -125,9 +130,13 @@ final readonly class Vdt
         $out = new Writer();
         $this->play(
             /** @param array<string, string> $attributes see Attributes */
-            function (int $row, int $col, string $bytes, int $width, array $attributes) use ($out, $x, $y): void {
+            static function (int $row, int $col, string $bytes, int $width, array $attributes) use (
+                $out,
+                $x,
+                $y,
+            ): void {
                 // Row 0 stays where it is; the other rows stay within rows 1 to ROWS
-                if ($row != 0) {
+                if ($row !== 0) {
                     $row += $y;
                     $col += $x;
                     if ($row < 1 || $row > Screen::ROWS) {
@@ -139,13 +148,13 @@ final readonly class Vdt
                 }
                 $out->glyph($row, $col, $bytes, $width, $attributes);
             },
-            function (Token $token, Cursor $cursor) use ($out, $x, $y): void {
+            static function (Token $token, Cursor $cursor) use ($out, $x, $y): void {
                 switch ($token->type) {
                     case TokenType::Clear:
                         $out->clear();
                         break;
                     case TokenType::ClearLine:
-                        if ($cursor->row == 0) {
+                        if ($cursor->row === 0) {
                             $out->clearLine(0, $cursor->col, $cursor->attributes);
                             break;
                         }
@@ -179,7 +188,7 @@ final readonly class Vdt
      */
     public function withoutClear(): self
     {
-        return new self(implode('', array_map(fn(Token $token) => $token->type == TokenType::Clear
+        return new self(implode('', array_map(static fn(Token $token) => $token->type === TokenType::Clear
             ? "\x1E"
             : $token->source, $this->tokens())));
     }
@@ -200,7 +209,7 @@ final readonly class Vdt
             switch ($token->type) {
                 case TokenType::Glyph:
                 case TokenType::Repeat:
-                    $repeat = $token->type == TokenType::Repeat;
+                    $repeat = $token->type === TokenType::Repeat;
                     $bytes = $repeat ? $last : $token->bytes;
                     if ($bytes === null) {
                         break;
@@ -213,7 +222,8 @@ final readonly class Vdt
                     $last = $bytes;
                     continue 2;
                 case TokenType::Attribute:
-                    $cursor->attributes[$token->group] = $token->bytes;
+                    $cursor->attributes[$token->group ?? throw new \LogicException('Attribute without group')] =
+                        $token->bytes;
                     break;
                 case TokenType::Charset:
                     $cursor->attributes['charset'] = $token->bytes;

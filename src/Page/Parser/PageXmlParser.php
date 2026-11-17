@@ -20,6 +20,7 @@ use MiniPaviService\Page\Template\Node;
 use MiniPaviService\Page\Template\Scope;
 use MiniPaviService\Page\Template\TemplateException;
 use MiniPaviService\Page\TemplatePage;
+use MiniPaviService\Xml\XmlElements;
 
 /**
  * Reads a page XML file (root element <page>, format documented in the framework's README.md)
@@ -47,7 +48,7 @@ final class PageXmlParser
     {
         $xml = @file_get_contents($file);
         if ($xml === false) {
-            throw new PageXmlException("$file: file not found");
+            throw new PageXmlException("{$file}: file not found");
         }
         return $this->parse($xml, dirname($file), basename($file));
     }
@@ -70,17 +71,17 @@ final class PageXmlParser
         if ($root === false) {
             $error = $errors[0] ?? null;
             throw new PageXmlException(
-                $error ? "$name line $error->line: " . trim($error->message) : "$name: invalid XML",
+                $error ? "{$name} line {$error->line}: " . trim($error->message) : "{$name}: invalid XML",
             );
         }
-        if ($root->getName() != 'page') {
-            throw new PageXmlException("$name: root element must be <page>, not <" . $root->getName() . '>');
+        if ($root->getName() !== 'page') {
+            throw new PageXmlException("{$name}: root element must be <page>, not <" . $root->getName() . '>');
         }
         $type = trim((string) $root['type']);
-        if (!in_array($type, self::TYPES)) {
+        if (!in_array($type, self::TYPES, true)) {
             throw new PageXmlException(
-                "$name: <page>: "
-                . ($type === '' ? 'type is missing' : "type=\"$type\" is unknown")
+                "{$name}: <page>: "
+                . ($type === '' ? 'type is missing' : "type=\"{$type}\" is unknown")
                 . ' (type="'
                 . implode('" or type="', self::TYPES)
                 . '")',
@@ -96,9 +97,9 @@ final class PageXmlParser
         $messages = $this->messages->with($this->messageTexts($root, $name));
         $factory = new ElementFactory($baseDir, $messages);
         $input = null;
-        $nodes = $this->nodes($root, $factory, $name, $type == 'template', false, $input);
+        $nodes = $this->nodes($root, $factory, $name, $type === 'template', false, $input);
 
-        if ($type == 'template') {
+        if ($type === 'template') {
             return new TemplatePage($nodes, $messages, $input, $setup);
         }
 
@@ -132,10 +133,10 @@ final class PageXmlParser
         string $enum,
         string $name,
     ): ?\BackedEnum {
-        if (!isset($root[$attribute])) {
+        $value = XmlElements::attributes($root)[$attribute] ?? null;
+        if ($value === null) {
             return null;
         }
-        $value = (string) $root[$attribute];
 
         return (
             $enum::tryFrom($value) ?? throw new PageXmlException(\sprintf(
@@ -144,7 +145,10 @@ final class PageXmlParser
                 dom_import_simplexml($root)->getLineNo(),
                 $attribute,
                 $value,
-                implode(' or ', array_map(fn(\BackedEnum $case) => "$attribute=\"$case->value\"", $enum::cases())),
+                implode(' or ', array_map(
+                    static fn(\BackedEnum $case) => "{$attribute}=\"{$case->value}\"",
+                    $enum::cases(),
+                )),
             ))
         );
     }
@@ -167,31 +171,28 @@ final class PageXmlParser
         ?Input &$input,
     ): array {
         $nodes = [];
-        foreach ($parent->children() as $tag => $elem) {
+        foreach (XmlElements::children($parent) as $tag => $elem) {
             $at = $name . ' line ' . dom_import_simplexml($elem)->getLineNo();
-            $attributes = [];
-            foreach ($elem->attributes() as $attr => $value) {
-                $attributes[$attr] = (string) $value;
-            }
+            $attributes = XmlElements::attributes($elem);
             $hasPlaceholder = (bool) preg_match(Scope::PLACEHOLDER, implode("\n", $attributes) . "\n" . (string) $elem);
 
             switch ($tag) {
                 case 'message':
                     // Read by messageTexts()
-                    if ($parent->getName() != 'page') {
-                        throw new PageXmlException("$at: <message>: only at the top level of the page");
+                    if ($parent->getName() !== 'page') {
+                        throw new PageXmlException("{$at}: <message>: only at the top level of the page");
                     }
                     break;
 
                 case 'input':
-                    $input = $this->check($at, $tag, function () use (
+                    $input = $this->check($at, $tag, static function () use (
                         $parent,
                         $input,
                         $hasPlaceholder,
                         $factory,
                         $attributes,
                     ) {
-                        if ($parent->getName() != 'page') {
+                        if ($parent->getName() !== 'page') {
                             throw new PageXmlException('only at the top level of the page');
                         }
                         if ($input !== null) {
@@ -205,7 +206,7 @@ final class PageXmlParser
                     break;
 
                 case 'foreach':
-                    [$row, $step] = $this->check($at, $tag, function () use (
+                    [$row, $step] = $this->check($at, $tag, static function () use (
                         $attributes,
                         $factory,
                         $inLoop,
@@ -216,10 +217,10 @@ final class PageXmlParser
                         }
                         foreach (['items', 'as'] as $required) {
                             if (trim($attributes[$required] ?? '') === '') {
-                                throw new PageXmlException("$required is missing");
+                                throw new PageXmlException("{$required} is missing");
                             }
                         }
-                        if (!preg_match('/^[A-Za-z_]\w*$/', $attributes['as']) || $attributes['as'] == 'loop') {
+                        if (!preg_match('/^[A-Za-z_]\w*$/', $attributes['as']) || $attributes['as'] === 'loop') {
                             throw new PageXmlException(
                                 "as=\"{$attributes['as']}\" must be a variable name, other than loop",
                             );
@@ -243,7 +244,7 @@ final class PageXmlParser
 
                 case 'if':
                     $test = trim($attributes['test'] ?? '');
-                    $this->check($at, $tag, function () use ($test, $template) {
+                    $this->check($at, $tag, static function () use ($test, $template) {
                         if (!$template) {
                             throw new PageXmlException('only in a page of type="template"');
                         }
@@ -252,11 +253,11 @@ final class PageXmlParser
                         }
                     });
                     $children = $this->nodes($elem, $factory, $name, $template, $inLoop, $input);
-                    $nodes[] = new IfNode(ltrim($test, '!'), $test[0] == '!', $children, $at);
+                    $nodes[] = new IfNode(ltrim($test, '!'), $test[0] === '!', $children, $at);
                     break;
 
                 default:
-                    $this->check($at, $tag, function () use (
+                    $this->check($at, $tag, static function () use (
                         $tag,
                         $inLoop,
                         $template,
@@ -265,10 +266,10 @@ final class PageXmlParser
                         $attributes,
                         $elem,
                     ) {
-                        if (!in_array($tag, ElementFactory::TAGS)) {
+                        if (!in_array($tag, ElementFactory::TAGS, true)) {
                             throw new PageXmlException('unknown element');
                         }
-                        if ($tag == 'endkey' && $inLoop) {
+                        if ($tag === 'endkey' && $inLoop) {
                             throw new PageXmlException('not inside <foreach>');
                         }
                         if ($hasPlaceholder && !$template) {
@@ -302,20 +303,20 @@ final class PageXmlParser
     private function messageTexts(\SimpleXMLElement $root, string $name): array
     {
         $texts = [];
-        foreach ($root->children() as $tag => $element) {
+        foreach (XmlElements::children($root) as $tag => $element) {
             if ($tag !== 'message') {
                 continue;
             }
             $at = $name . ' line ' . dom_import_simplexml($element)->getLineNo() . ': <message>';
             $messageName = trim((string) $element['name']);
             if ($messageName === '') {
-                throw new PageXmlException("$at: name is missing");
+                throw new PageXmlException("{$at}: name is missing");
             }
             if (!$this->messages->has($messageName)) {
-                throw new PageXmlException("$at: name=\"$messageName\" is not a message of the service");
+                throw new PageXmlException("{$at}: name=\"{$messageName}\" is not a message of the service");
             }
             if (isset($texts[$messageName])) {
-                throw new PageXmlException("$at: name=\"$messageName\" is already in the page");
+                throw new PageXmlException("{$at}: name=\"{$messageName}\" is already in the page");
             }
             $texts[$messageName] = trim((string) $element);
         }
@@ -335,7 +336,7 @@ final class PageXmlParser
         try {
             return $check();
         } catch (PageXmlException|\InvalidArgumentException $e) {
-            throw new PageXmlException("$at: <$tag>: " . $e->getMessage(), 0, $e);
+            throw new PageXmlException("{$at}: <{$tag}>: " . $e->getMessage(), 0, $e);
         }
     }
 }

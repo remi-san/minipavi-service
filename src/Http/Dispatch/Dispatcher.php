@@ -38,11 +38,13 @@ final readonly class Dispatcher implements RequestHandlerInterface
     public function handle(ServerRequestInterface $request): ResponseInterface
     {
         foreach ($this->handlers as $handler) {
-            if ($handler->matches($request)) {
-                $this->logger->debug('Request dispatched', ['handler' => $handler->name()]);
-
-                return $handler->handle($request);
+            if (!$handler->matches($request)) {
+                continue;
             }
+
+            $this->logger->debug('Request dispatched', ['handler' => $handler->name()]);
+
+            return $handler->handle($request);
         }
 
         $this->logger->debug('Request dispatched', ['handler' => 'fallback']);

@@ -37,10 +37,12 @@ final class Writer
             $this->vdt .= $bytes;
             $this->pending = $bytes;
         }
-        $this->col += $width;
+        // At col since moveTo()
+        $this->col = $col + $width;
         if ($this->col > Screen::COLS) {
             // The screen wraps there, but the next character may be elsewhere
-            $this->row = $this->col = null;
+            $this->row = null;
+            $this->col = null;
         }
     }
 
@@ -57,7 +59,8 @@ final class Writer
     public function clear(): void
     {
         $this->send("\x0C");
-        $this->row = $this->col = 1;
+        $this->row = 1;
+        $this->col = 1;
         $this->attributes = Attributes::DEFAULTS;
     }
 
@@ -96,9 +99,11 @@ final class Writer
             $codes .= $attributes['charset'];
         }
         foreach ($attributes as $group => $value) {
-            if ($group != 'charset' && $value !== $this->attributes[$group]) {
-                $codes .= "\x1B" . $value;
+            if ($group === 'charset' || $value === $this->attributes[$group]) {
+                continue;
             }
+
+            $codes .= "\x1B" . $value;
         }
         $this->attributes = $attributes;
         if ($codes === '') {

@@ -114,7 +114,7 @@ final readonly class RequestUrl
     private static function origin(string $serviceUrl): string
     {
         $parts = parse_url($serviceUrl);
-        $scheme = strtolower((string) ($parts['scheme'] ?? ''));
+        $scheme = strtolower($parts['scheme'] ?? '');
         if (
             $parts === false
             || !\in_array($scheme, ['http', 'https'], true)
@@ -125,7 +125,7 @@ final readonly class RequestUrl
             || isset($parts['user'])
         ) {
             throw new \InvalidArgumentException(
-                "SERVICE_URL \"$serviceUrl\" must be the scheme and host of the service, e.g. https://minitel.example.org",
+                "SERVICE_URL \"{$serviceUrl}\" must be the scheme and host of the service, e.g. https://minitel.example.org",
             );
         }
 
@@ -149,7 +149,7 @@ final readonly class RequestUrl
             $address = @inet_pton($ip);
             $bits = $address === false ? 0 : \strlen($address) * 8;
             if ($address === false || $prefix !== null && (!ctype_digit($prefix) || (int) $prefix > $bits)) {
-                throw new \InvalidArgumentException("TRUSTED_PROXIES: \"$proxy\" is not an IP address or range");
+                throw new \InvalidArgumentException("TRUSTED_PROXIES: \"{$proxy}\" is not an IP address or range");
             }
             $proxies[] = [$address, $prefix === null ? $bits : (int) $prefix];
         }

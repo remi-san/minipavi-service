@@ -96,7 +96,7 @@ final class ServiceTester
         Assert::assertStringContainsString(
             $text,
             $this->screen()->text(),
-            $this->failure("The screen doesn't show \"$text\""),
+            $this->failure("The screen doesn't show \"{$text}\""),
         );
 
         return $this;
@@ -107,7 +107,7 @@ final class ServiceTester
         Assert::assertStringNotContainsString(
             $text,
             $this->screen()->text(),
-            $this->failure("The screen shows \"$text\""),
+            $this->failure("The screen shows \"{$text}\""),
         );
 
         return $this;
@@ -121,7 +121,7 @@ final class ServiceTester
         Assert::assertStringContainsString(
             $text,
             $this->screen()->line($row),
-            $this->failure("Row $row doesn't show \"$text\""),
+            $this->failure("Row {$row} doesn't show \"{$text}\""),
         );
 
         return $this;
@@ -203,9 +203,9 @@ final class ServiceTester
         $lines = explode("\n", $this->screen()->text());
 
         return (
-            "$message. Screen:\n"
+            "{$message}. Screen:\n"
             . implode("\n", array_map(
-                fn(int $row, string $line) => sprintf('%2d|%s|', $row, $line),
+                static fn(int $row, string $line) => sprintf('%2d|%s|', $row, $line),
                 array_keys($lines),
                 $lines,
             ))

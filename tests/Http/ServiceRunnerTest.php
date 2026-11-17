@@ -36,9 +36,9 @@ final class ServiceRunnerTest extends TestCase
     protected function setUp(): void
     {
         $router = new Router();
-        $router->addRoute('home', new CallbackController(NoParameters::class, fn(Request $request) => Response::display(
-            new Vdt('home'),
-        )));
+        $router->addRoute('home', new CallbackController(NoParameters::class, static fn(
+            Request $request,
+        ) => Response::display(new Vdt('home'))));
         $router->setDefaultRoute('home');
         $this->logger = new MemoryLogger();
         $this->service = new Service($router, Messages::defaults(), $this->logger);

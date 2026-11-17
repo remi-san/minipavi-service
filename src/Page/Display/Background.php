@@ -28,7 +28,7 @@ final readonly class Background implements Element
     {
         $vdt = @file_get_contents($file);
         if ($vdt === false) {
-            throw new \InvalidArgumentException("Videotex file not found: $file");
+            throw new \InvalidArgumentException("Videotex file not found: {$file}");
         }
         return new self($vdt);
     }

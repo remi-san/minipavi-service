@@ -65,7 +65,7 @@ final readonly class HtmlClient implements Client
 
             return new GatewayRequest(
                 $key->value,
-                array_values(array_map(fn(mixed $line) => \is_string($line) ? $line : '', $content)),
+                array_values(array_map(static fn(mixed $line) => \is_string($line) ? $line : '', $content)),
                 self::text($form, self::CONTEXT),
                 serviceUrl: $serviceUrl,
                 clientState: $state,
@@ -221,12 +221,14 @@ final readonly class HtmlClient implements Client
 
         $param = [];
         foreach ($command['param'] as $name => $value) {
-            if (\is_string($name)) {
-                $param[$name] = $value;
+            if (!\is_string($name)) {
+                continue;
             }
+
+            $param[$name] = $value;
         }
 
-        return ['name' => (string) $command['name'], 'param' => $param];
+        return ['name' => $command['name'], 'param' => $param];
     }
 
     /**

@@ -13,8 +13,8 @@ use MiniPaviService\Controller\State;
  * A controller of the Router, with the types of what it keeps (Controller::initialState(),
  * parametersType()) bound to it: it makes the RouteContext keeping them typed for a request.
  *
- * @template TState of State
- * @template TParameters of Parameters
+ * @template-covariant TState of State
+ * @template-covariant TParameters of Parameters
  */
 final readonly class Route
 {

@@ -48,7 +48,7 @@ final class LintCommand extends Command
         $errors = 0;
         foreach (Input::strings($input, 'paths') as $path) {
             if (!file_exists($path)) {
-                $errorOutput->writeln(Input::escape("$path: not found"));
+                $errorOutput->writeln(Input::escape("{$path}: not found"));
                 $errors++;
                 continue;
             }
@@ -72,7 +72,7 @@ final class LintCommand extends Command
             return self::FAILURE;
         }
         $output->writeln(
-            "$pages page" . ($pages === 1 ? '' : 's') . " checked, $errors error" . ($errors === 1 ? '' : 's'),
+            "{$pages} page" . ($pages === 1 ? '' : 's') . " checked, {$errors} error" . ($errors === 1 ? '' : 's'),
         );
 
         return $errors === 0 ? self::SUCCESS : self::FAILURE;
@@ -94,9 +94,11 @@ final class LintCommand extends Command
             \FilesystemIterator::SKIP_DOTS,
         ));
         foreach ($iterator as $file) {
-            if ($file instanceof \SplFileInfo && $file->isFile() && strtolower($file->getExtension()) === 'xml') {
-                $files[] = $file->getPathname();
+            if (!($file instanceof \SplFileInfo && $file->isFile() && strtolower($file->getExtension()) === 'xml')) {
+                continue;
             }
+
+            $files[] = $file->getPathname();
         }
         sort($files);
 

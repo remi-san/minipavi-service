@@ -42,7 +42,7 @@ final class ScreenTest extends TestCase
         )->screen();
 
         $text = 'Dernière page, ça coûte 5£ ½ Œuvre';
-        self::assertSame($text . str_repeat(' ', 40 - mb_strlen($text)), $screen->line(3));
+        self::assertSame($text . str_repeat(' ', max(0, 40 - mb_strlen($text))), $screen->line(3));
         self::assertStringStartsWith('Accès refusé', ltrim($screen->line(0)));
         self::assertSame(str_repeat(' ', 40), $screen->line(4));
         self::assertSame('', $screen->line(99));

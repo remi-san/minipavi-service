@@ -29,20 +29,20 @@ final readonly class Screen
         $cells = array_fill(0, self::ROWS + 1, array_fill(1, self::COLS, null));
         $vdt->play(
             /** @param array<string, string> $attributes see Attributes */
-            function (int $row, int $col, string $bytes, int $width, array $attributes) use (&$cells): void {
+            static function (int $row, int $col, string $bytes, int $width, array $attributes) use (&$cells): void {
                 if ($row >= 0 && $row <= self::ROWS) {
                     for ($i = 0; $i < $width && ($col + $i) <= self::COLS; $i++) {
                         $cells[$row][$col + $i] = new Cell($bytes, $attributes);
                     }
                 }
             },
-            function (Token $token, Cursor $cursor) use (&$cells): void {
-                if ($token->type == TokenType::Clear) {
+            static function (Token $token, Cursor $cursor) use (&$cells): void {
+                if ($token->type === TokenType::Clear) {
                     for ($row = 1; $row <= self::ROWS; $row++) {
                         $cells[$row] = array_fill(1, self::COLS, null);
                     }
                 }
-                if ($token->type == TokenType::ClearLine && $cursor->row >= 0 && $cursor->row <= self::ROWS) {
+                if ($token->type === TokenType::ClearLine && $cursor->row >= 0 && $cursor->row <= self::ROWS) {
                     for ($col = $cursor->col; $col <= self::COLS; $col++) {
                         $cells[$cursor->row][$col] = new Cell(' ', $cursor->attributes);
                     }
@@ -67,7 +67,7 @@ final readonly class Screen
             return '';
         }
 
-        return implode('', array_map(fn(?Cell $cell) => $cell?->text() ?? ' ', $this->cells[$row]));
+        return implode('', array_map(static fn(?Cell $cell) => $cell?->text() ?? ' ', $this->cells[$row]));
     }
 
     /**

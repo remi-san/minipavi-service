@@ -41,12 +41,14 @@ class EmulatorConfig
     public static function fromValues(?string $emulatorUrl, ?string $gatewayUrl, ?string $servicesInternalHost): self
     {
         $emulatorUrl = $emulatorUrl === '' ? null : $emulatorUrl;
+        // With a local emulator, its gateway reaches the services at the local stack's host
+        $defaultServicesHost = $emulatorUrl !== null ? self::LOCAL_SERVICES_HOST : null;
 
         return new self(
             $emulatorUrl ?? self::PUBLIC_EMULATOR_URL,
             $gatewayUrl === null || $gatewayUrl === '' ? self::PUBLIC_GATEWAY : $gatewayUrl,
             $servicesInternalHost === null || $servicesInternalHost === ''
-                ? ($emulatorUrl !== null ? self::LOCAL_SERVICES_HOST : null)
+                ? $defaultServicesHost
                 : $servicesInternalHost,
         );
     }
@@ -58,9 +60,15 @@ class EmulatorConfig
             return $serviceUrl;
         }
 
-        $path = parse_url($serviceUrl, PHP_URL_PATH) ?? '/';
+        // false for a URL it can't parse: its path is then /
+        $path = parse_url($serviceUrl, PHP_URL_PATH);
         $query = parse_url($serviceUrl, PHP_URL_QUERY);
 
-        return 'http://' . $this->serviceHost . $path . ($query !== null ? '?' . $query : '');
+        return (
+            'http://'
+            . $this->serviceHost
+            . (\is_string($path) ? $path : '/')
+            . (\is_string($query) ? '?' . $query : '')
+        );
     }
 }

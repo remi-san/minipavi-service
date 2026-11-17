@@ -20,14 +20,17 @@ final class ErrorLogLogger extends AbstractLogger
     {
         $exception = $context['exception'] ?? null;
         unset($context['exception']);
-        $line = '[' . (\is_scalar($level) ? $level : get_debug_type($level)) . '] ' . $message;
+        $line = '[' . (\is_string($level) ? $level : get_debug_type($level)) . '] ' . (string) $message;
         if ($context !== []) {
             $line .=
                 ' '
-                . json_encode($context, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PARTIAL_OUTPUT_ON_ERROR);
+                . (string) json_encode(
+                    $context,
+                    JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PARTIAL_OUTPUT_ON_ERROR,
+                );
         }
         if ($exception instanceof \Throwable) {
-            $line .= "\n" . $exception;
+            $line .= "\n" . (string) $exception;
         }
         error_log($line);
     }

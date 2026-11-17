@@ -36,10 +36,10 @@ final class Attributes
             $code >= 0x40 && $code <= 0x47 => 'fg',
             $code >= 0x50 && $code <= 0x57 => 'bg',
             $code >= 0x4C && $code <= 0x4F => 'size',
-            $code == 0x48 || $code == 0x49 => 'blink',
-            $code == 0x58 || $code == 0x5F => 'mask',
-            $code == 0x59 || $code == 0x5A => 'underline',
-            $code == 0x5C || $code == 0x5D => 'inverse',
+            $code === 0x48 || $code === 0x49 => 'blink',
+            $code === 0x58 || $code === 0x5F => 'mask',
+            $code === 0x59 || $code === 0x5A => 'underline',
+            $code === 0x5C || $code === 0x5D => 'inverse',
             default => null,
         };
     }

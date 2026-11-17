@@ -147,7 +147,7 @@ final readonly class HtmlRenderer
             $classes[] = 'u';
         }
 
-        $style = "color:$foreground;background:$background";
+        $style = "color:{$foreground};background:{$background}";
         if ($attributes['mask'] === "\x58") {
             // Masked: hidden until revealed
             return '<span class="' . implode(' ', $classes) . '" style="' . $style . '"> </span>';

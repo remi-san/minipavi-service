@@ -28,7 +28,7 @@ final class ParserTest extends TestCase
                 [TokenType::Move,      "\x08"],
                 [TokenType::Home,      "\x1E"],
             ],
-            array_map(fn(Token $token) => [$token->type, $token->source], $tokens),
+            array_map(static fn(Token $token) => [$token->type, $token->source], $tokens),
         );
         self::assertSame([1, 2], [$tokens[1]->row, $tokens[1]->col]);
         self::assertSame(3, $tokens[4]->count);
@@ -59,7 +59,7 @@ final class ParserTest extends TestCase
 
         self::assertSame(
             [TokenType::Raw, TokenType::Raw, TokenType::Glyph],
-            array_map(fn(Token $token) => $token->type, $tokens),
+            array_map(static fn(Token $token) => $token->type, $tokens),
         );
         self::assertSame("\x1B\x3A\x69\x43", $tokens[0]->source);
         self::assertSame("\x1B\x39\x70", $tokens[1]->source);

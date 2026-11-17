@@ -21,7 +21,7 @@ final class CodesTest extends TestCase
     public static function setUpBeforeClass(): void
     {
         // Its constants are defined in its class file
-        class_exists(MiniPaviCli::class);
+        self::assertTrue(class_exists(MiniPaviCli::class));
     }
 
     public function testVideotexCodes(): void

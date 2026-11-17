@@ -21,9 +21,14 @@ final class RouterTest extends TestCase
     public function testGivesTheRouteOfItsController(): void
     {
         $router = new Router();
-        $router->addRoute('home', new CallbackController(PageParameters::class, fn(
-            Request $request,
-        ) => Response::display(Vdt::text('home ' . $request->parameters()->page))));
+        $router->addRoute(
+            'home',
+            new CallbackController(
+                PageParameters::class,
+                /** @param Request<ControllerState, PageParameters> $request */
+                static fn(Request $request) => Response::display(Vdt::text('home ' . $request->parameters()->page)),
+            ),
+        );
         $router->setDefaultRoute('home');
 
         $route = $router->route('home');
@@ -77,7 +82,8 @@ final class RouterTest extends TestCase
     {
         return new CallbackController(
             NoParameters::class,
-            fn(Request $request) => throw new \LogicException('not run'),
+            /** @param Request<ControllerState, NoParameters> $request */
+            static fn(Request $request) => throw new \LogicException('not run'),
         );
     }
 }

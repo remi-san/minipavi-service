@@ -10,7 +10,7 @@ use MiniPaviService\Controller\State;
 
 final class Router
 {
-    /** @var array<string, Route<*, *>> */
+    /** @var array<string, Route<State, Parameters>> */
     private array $routes = [];
 
     public function __construct(
@@ -41,13 +41,15 @@ final class Router
     }
 
     /**
-     * @return Route<*, *>
+     * @return Route<State, Parameters>
      *
      * @throws \LogicException if there is no such route
      */
     public function route(string $name): Route
     {
-        return $this->routes[$name] ?? throw new \LogicException("Unknown route \"$name\" (routes: {$this->names()})");
+        return (
+            $this->routes[$name] ?? throw new \LogicException("Unknown route \"{$name}\" (routes: {$this->names()})")
+        );
     }
 
     /**
@@ -57,16 +59,15 @@ final class Router
      */
     public function defaultRoute(): string
     {
-        if ($this->defaultRoute === null) {
+        $route = $this->defaultRoute;
+        if ($route === null) {
             throw new \LogicException('No default route: call Router::setDefaultRoute()');
         }
-        if (!$this->has($this->defaultRoute)) {
-            throw new \LogicException(
-                "Default route \"$this->defaultRoute\" is not a route (routes: {$this->names()})",
-            );
+        if (!$this->has($route)) {
+            throw new \LogicException("Default route \"{$route}\" is not a route (routes: {$this->names()})");
         }
 
-        return $this->defaultRoute;
+        return $route;
     }
 
     private function names(): string

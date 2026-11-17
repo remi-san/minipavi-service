@@ -38,7 +38,7 @@ final readonly class EndKey implements Element
         // The badge is the label with two cells on each side
         $width = mb_strlen($this->label) + 4;
 
-        if ($terminal->versionMinitel() != '???' && $terminal->typeSocket() == 'websocket') {
+        if ($terminal->versionMinitel() !== '???' && $terminal->typeSocket() === 'websocket') {
             $width += mb_strlen($this->shiftLabel);
 
             return (

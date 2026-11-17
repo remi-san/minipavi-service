@@ -95,7 +95,8 @@ final class PageXsdTest extends TestCase
 
     public function testFixturePagesAreValid(): void
     {
-        $files = glob(self::FIXTURES . '/*.xml') ?: [];
+        $files = glob(self::FIXTURES . '/*.xml');
+        $files = $files === false ? [] : $files;
         self::assertNotEmpty($files);
         foreach ($files as $file) {
             self::assertSame([], self::errors((string) file_get_contents($file)), $file);
@@ -108,9 +109,11 @@ final class PageXsdTest extends TestCase
     public static function invalidPages(): iterable
     {
         foreach (PageXmlParserTest::invalidPages() as $name => [$xml]) {
-            if ($name !== 'invalid XML') {
-                yield $name => [$xml, !\in_array($name, self::PARSER_ONLY, true)];
+            if ($name === 'invalid XML') {
+                continue;
             }
+
+            yield $name => [$xml, !\in_array($name, self::PARSER_ONLY, true)];
         }
         yield 'unknown attribute' => ['<page type="static"><text bold="yes">x</text></page>', true];
         yield 'col 0' => ['<page type="static"><text col="0">x</text></page>', true];
@@ -144,7 +147,7 @@ final class PageXsdTest extends TestCase
         self::assertSame(array_column(Keyboard::cases(), 'value'), self::enumeration('keyboard'));
         self::assertSame(array_column(LocalEcho::cases(), 'value'), self::enumeration('onOff'));
         self::assertSame(array_column(Scroll::cases(), 'value'), self::enumeration('onOff'));
-        $keys = array_map(fn(FunctionKey $key) => $key->xmlName(), FunctionKey::cases());
+        $keys = array_map(static fn(FunctionKey $key) => $key->xmlName(), FunctionKey::cases());
         sort($keys);
         $schemaKeys = self::enumeration('functionKey');
         sort($schemaKeys);
@@ -155,9 +158,10 @@ final class PageXsdTest extends TestCase
     {
         $xpath = self::schema();
         $names = [];
-        foreach ($xpath->query(
+        $nodes = $xpath->query(
             '//xs:group[@name="displayElement"]//xs:element/@name | //xs:element[@name="page"]//xs:element/@name',
-        ) ?: [] as $name) {
+        );
+        foreach ($nodes === false ? [] : $nodes as $name) {
             $names[] = $name->nodeValue;
         }
         $expected = [...ElementFactory::TAGS, 'input', 'foreach', 'if', 'message'];
@@ -180,7 +184,7 @@ final class PageXsdTest extends TestCase
         if ($document->loadXML($xml)) {
             $document->schemaValidate(self::SCHEMA);
         }
-        $errors = array_map(fn(\LibXMLError $error) => trim($error->message), libxml_get_errors());
+        $errors = array_map(static fn(\LibXMLError $error) => trim($error->message), libxml_get_errors());
         libxml_clear_errors();
         libxml_use_internal_errors($previous);
 
@@ -206,7 +210,8 @@ final class PageXsdTest extends TestCase
     private static function enumeration(string $type): array
     {
         $values = [];
-        foreach (self::schema()->query("//xs:simpleType[@name=\"$type\"]//xs:enumeration/@value") ?: [] as $value) {
+        $nodes = self::schema()->query("//xs:simpleType[@name=\"{$type}\"]//xs:enumeration/@value");
+        foreach ($nodes === false ? [] : $nodes as $value) {
             $values[] = (string) $value->nodeValue;
         }
 

@@ -31,11 +31,11 @@ final readonly class ForeachNode implements Node
         try {
             $items = $scope->value($this->items);
         } catch (\InvalidArgumentException $e) {
-            throw new TemplateException("$this->location: <foreach>: " . $e->getMessage(), 0, $e);
+            throw new TemplateException("{$this->location}: <foreach>: " . $e->getMessage(), 0, $e);
         }
         if (!is_iterable($items)) {
             throw new TemplateException(
-                "$this->location: <foreach>: {{{$this->items}}} is not a list (" . get_debug_type($items) . ')',
+                "{$this->location}: <foreach>: {{{$this->items}}} is not a list (" . get_debug_type($items) . ')',
             );
         }
         $items = is_array($items) ? array_values($items) : iterator_to_array($items, false);
@@ -47,7 +47,12 @@ final readonly class ForeachNode implements Node
             $itemScope = $scope->with(
                 [
                     $this->as => $item,
-                    'loop' => ['index' => $i + 1, 'count' => $count, 'first' => $i == 0, 'last' => $i == ($count - 1)],
+                    'loop' => [
+                        'index' => $i + 1,
+                        'count' => $count,
+                        'first' => $i === 0,
+                        'last' => $i === ($count - 1),
+                    ],
                 ],
                 $start + ($i * $this->step),
             );

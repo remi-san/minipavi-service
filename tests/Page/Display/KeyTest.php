@@ -19,7 +19,7 @@ final class KeyTest extends TestCase
 
         // An underlined space, then " Envoi " in reverse video, red
         self::assertSame('Envoi', implode('', array_map(
-            fn(int $col) => $screen->cell(20, $col)?->bytes,
+            static fn(int $col) => $screen->cell(20, $col)?->bytes,
             range(32, 36),
         )));
         $cell = $screen->cell(20, 32);
@@ -80,7 +80,7 @@ final class KeyTest extends TestCase
         $screen = $vdt->screen();
 
         return implode('', array_map(
-            fn(int $c) => $screen->cell($row, $c)->bytes ?? ' ',
+            static fn(int $c) => $screen->cell($row, $c)->bytes ?? ' ',
             range($col, $col + $length - 1),
         ));
     }

@@ -19,7 +19,7 @@ use MiniPaviService\Minitel\Terminal;
 final class Context
 {
     /**
-     * @param array<string, RouteContext<*, *>> $routes what each route keeps
+     * @param array<string, RouteContext<State, Parameters>> $routes what each route keeps
      */
     public function __construct(
         private Router $router,
@@ -44,13 +44,15 @@ final class Context
 
         $routes = [];
         foreach (array_keys($states + $parameters) as $route) {
-            if (\is_string($route) && $router->has($route)) {
-                $state = \is_string($states[$route] ?? null) ? $states[$route] : null;
-                $values = \is_array($parameters[$route] ?? null)
-                    ? array_filter($parameters[$route], \is_string(...), ARRAY_FILTER_USE_KEY)
-                    : [];
-                $routes[$route] = $router->route($route)->restore($state, new Values($values));
+            if (!(\is_string($route) && $router->has($route))) {
+                continue;
             }
+
+            $state = \is_string($states[$route] ?? null) ? $states[$route] : null;
+            $routes[$route] = $router->route($route)->restore(
+                $state,
+                new Values(self::values($parameters[$route] ?? null)),
+            );
         }
 
         return new self(
@@ -70,9 +72,12 @@ final class Context
             return json_encode(
                 [
                     'route' => $this->route,
-                    'states' => (object) array_map(fn(RouteContext $route) => $route->state()->value, $this->routes),
+                    'states' => (object) array_map(
+                        static fn(RouteContext $route) => $route->state()->value,
+                        $this->routes,
+                    ),
                     'parameters' => (object) array_map(
-                        fn(RouteContext $route) => (object) $route->parameters()->toArray(),
+                        static fn(RouteContext $route) => (object) $route->parameters()->toArray(),
                         $this->routes,
                     ),
                 ],
@@ -145,11 +150,30 @@ final class Context
     }
 
     /**
-     * @return RouteContext<*, *>
+     * @return RouteContext<State, Parameters>
      */
     private function current(): RouteContext
     {
         return $this->routes[$this->route] ?? $this->router->route($this->route)->start();
+    }
+
+    /**
+     * Values of the parameters of a route: those with a name
+     *
+     * @return array<string, mixed>
+     */
+    private static function values(mixed $parameters): array
+    {
+        $values = [];
+        foreach (\is_array($parameters) ? $parameters : [] as $name => $value) {
+            if (!\is_string($name)) {
+                continue;
+            }
+
+            $values[$name] = $value;
+        }
+
+        return $values;
     }
 
     /**

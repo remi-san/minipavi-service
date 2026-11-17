@@ -3,13 +3,42 @@
 namespace MiniPavi;
 
 /**
- * Types of the MiniPaviCli methods the framework calls, which the library doesn't declare
- * (ludosevilla/minipavi-cli 1.1). They build Videotex content and MiniPavi commands from
- * their arguments, so these types always hold. Its static properties, which hold the
- * gateway's request, are left untyped: MiniPaviClient checks them.
+ * Types of the MiniPaviCli members the framework uses, which the library doesn't declare
+ * (ludosevilla/minipavi-cli 1.1): Mago patches the library's class with them (patches in
+ * mago.toml). Its methods build Videotex content
+ * and MiniPavi commands from their arguments, so these types always hold. Its static
+ * properties, which hold the gateway's request, are left untyped: MiniPaviClient checks them.
  */
 class MiniPaviCli
 {
+    public static $remoteAddr = '';
+    public static $content = [];
+    public static $fctn = '';
+    public static $context = '';
+    public static $typeSocket;
+    public static $versionMinitel;
+
+    /**
+     * Reads the gateway's request into the static properties
+     *
+     * @param bool $ignoreWMState
+     * @return void
+     */
+    public static function start($ignoreWMState = true) {}
+
+    /**
+     * Writes the answer to the gateway
+     *
+     * @param string $content
+     * @param string $next
+     * @param string $context
+     * @param bool $echo
+     * @param ?array<string, mixed> $cmd
+     * @param bool|string $directCall
+     * @return void
+     */
+    public static function send($content, $next, $context = '', $echo = true, $cmd = null, $directCall = false) {}
+
     /**
      * @param int $col
      * @param int $line

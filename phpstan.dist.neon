@@ -6,4 +6,4 @@ parameters:
         - bin/minipavi
     # Return types of the MiniPaviCli methods, which the library doesn't declare
     stubFiles:
-        - stubs/MiniPaviCli.stub
+        - stubs/MiniPaviCli.php

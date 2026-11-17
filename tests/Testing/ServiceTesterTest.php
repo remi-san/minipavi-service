@@ -33,7 +33,7 @@ final class ServiceTesterTest extends TestCase
         // menu: a code, Envoi goes to the directory ("2") or to another service ("ext");
         // directory: Suite on its only page shows a message on line 0
         $router = new Router();
-        $router->addRoute('menu', $this->controller(fn(Request $request) => match ($request->contentAsString()) {
+        $router->addRoute('menu', $this->controller(static fn(Request $request) => match ($request->contentAsString()) {
             '2' => Response::goTo('directory'),
             'ext' => Response::connectTo('https://example.org/', VdtHelper::writeLine0('Connexion…')),
             default => Response::display(Vdt::join(
@@ -42,7 +42,7 @@ final class ServiceTesterTest extends TestCase
                 Vdt::text('MENU'),
             )),
         }));
-        $router->addRoute('directory', $this->controller(fn(Request $request) => $request->functionKey()
+        $router->addRoute('directory', $this->controller(static fn(Request $request) => $request->functionKey()
             === FunctionKey::Next
                 ? Response::display(VdtHelper::writeLine0('Dernière page'))
                 : Response::display(Vdt::join(
@@ -155,10 +155,14 @@ final class ServiceTesterTest extends TestCase
      */
     private function controller(\Closure $run): CallbackController
     {
-        return new CallbackController(NoParameters::class, function (Request $request) use ($run): Response {
-            $this->requests[] = $request;
+        return new CallbackController(
+            NoParameters::class,
+            /** @param Request<ControllerState, NoParameters> $request */
+            function (Request $request) use ($run): Response {
+                $this->requests[] = $request;
 
-            return $run($request);
-        });
+                return $run($request);
+            },
+        );
     }
 }

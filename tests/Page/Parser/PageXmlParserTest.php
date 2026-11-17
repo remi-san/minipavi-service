@@ -303,7 +303,7 @@ final class PageXmlParserTest extends TestCase
     }
 
     /**
-     * @return iterable<string, array{string}>
+     * @return iterable<string, array{string, string}>
      */
     public static function templateErrorsFoundWhenParsing(): iterable
     {
@@ -490,6 +490,6 @@ final class PageXmlParserTest extends TestCase
     {
         $rows = explode("\n", rtrim($vdt->screen()->preview(), "\n"));
 
-        return array_values(array_filter($rows, fn(string $row) => trim(substr($row, 3), ' |') !== ''));
+        return array_values(array_filter($rows, static fn(string $row) => trim(substr($row, 3), ' |') !== ''));
     }
 }

@@ -67,15 +67,15 @@ final class PreviewCommand extends Command
     {
         $json = @file_get_contents($file);
         if ($json === false) {
-            throw new \UnexpectedValueException("$file: file not found");
+            throw new \UnexpectedValueException("{$file}: file not found");
         }
         try {
             $data = json_decode($json, true, 512, JSON_THROW_ON_ERROR);
         } catch (\JsonException $e) {
-            throw new \UnexpectedValueException("$file: " . $e->getMessage(), 0, $e);
+            throw new \UnexpectedValueException("{$file}: " . $e->getMessage(), 0, $e);
         }
         if (!\is_array($data) || $data !== [] && array_is_list($data)) {
-            throw new \UnexpectedValueException("$file: not a JSON object");
+            throw new \UnexpectedValueException("{$file}: not a JSON object");
         }
 
         $variables = [];

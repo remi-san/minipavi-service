@@ -21,8 +21,8 @@ final class GatewayRequestTest extends TestCase
             'ENVOI' => [false, false],
             '' => [false, false],
         ] as $key => $expected) {
-            $request = new GatewayRequest((string) $key);
-            self::assertSame($expected, [$request->isConnecting(), $request->isDisconnecting()], (string) $key);
+            $request = new GatewayRequest($key);
+            self::assertSame($expected, [$request->isConnecting(), $request->isDisconnecting()], $key);
         }
     }
 

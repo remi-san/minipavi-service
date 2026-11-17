@@ -26,7 +26,7 @@ final readonly class Display
      */
     public function toVdt(Terminal $terminal): Vdt
     {
-        return new Vdt(implode('', array_map(fn(Element $element) => $element->getContent(
+        return new Vdt(implode('', array_map(static fn(Element $element) => $element->getContent(
             $terminal,
         ), $this->elements)));
     }

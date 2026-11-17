@@ -143,6 +143,6 @@ final class MiniPaviClientTest extends TestCase
         $body = (string) $response->getBody();
         $sent = json_decode($body, true);
 
-        return \is_array($sent) ? $sent : self::fail("Not an answer: $body");
+        return \is_array($sent) ? $sent : self::fail("Not an answer: {$body}");
     }
 }

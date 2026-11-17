@@ -273,12 +273,12 @@ final class HtmlClientTest extends TestCase
     public function testNavigatesTheService(): void
     {
         $router = new Router();
-        $router->addRoute('home', new CallbackController(NoParameters::class, fn(
+        $router->addRoute('home', new CallbackController(NoParameters::class, static fn(
             Request $request,
         ) => $request->functionKey() === FunctionKey::Send
             ? Response::goTo('games')
             : Response::display(VdtHelper::clearScreen()->append(VdtHelper::setPos(1, 1), Vdt::text('HOME')))));
-        $router->addRoute('games', new CallbackController(NoParameters::class, fn(
+        $router->addRoute('games', new CallbackController(NoParameters::class, static fn(
             Request $request,
         ) => Response::display(VdtHelper::clearScreen()->append(
             VdtHelper::setPos(1, 1),
@@ -295,6 +295,8 @@ final class HtmlClientTest extends TestCase
         self::assertStringContainsString('HOME', self::shownText($home));
 
         // Envoi on the home page, with its context and screen
+        $context = [];
+        $screen = [];
         preg_match('#name="context" value="([^"]*)"#', $home, $context);
         preg_match('#name="screen" value="([^"]*)"#', $home, $screen);
         $games = (string) $runner
@@ -340,10 +342,14 @@ final class HtmlClientTest extends TestCase
      */
     private static function hiddenValues(string $html): array
     {
+        $matches = [];
         preg_match_all('#<input type="hidden" name="(\w+)" value="([^"]*)">#', $html, $matches, PREG_SET_ORDER);
 
         return array_column(
-            array_map(fn(array $match) => [$match[1], html_entity_decode($match[2], ENT_QUOTES | ENT_HTML5)], $matches),
+            array_map(static fn(array $match) => [
+                $match[1],
+                html_entity_decode($match[2], ENT_QUOTES | ENT_HTML5),
+            ], $matches),
             1,
             0,
         );

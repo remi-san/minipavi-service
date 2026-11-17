@@ -26,12 +26,12 @@ final class Cursor
     {
         $this->col += $columns;
         if ($this->col > Screen::COLS) {
-            if ($this->row == 0) {
+            if ($this->row === 0) {
                 $this->col = Screen::COLS;
                 return;
             }
             $this->col = 1;
-            $this->row = $this->row == Screen::ROWS ? 1 : $this->row + 1;
+            $this->row = $this->row === Screen::ROWS ? 1 : $this->row + 1;
         }
     }
 

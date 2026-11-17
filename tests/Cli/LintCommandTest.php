@@ -30,9 +30,11 @@ final class LintCommandTest extends TestCase
             \RecursiveIteratorIterator::CHILD_FIRST,
         );
         foreach ($files as $file) {
-            if ($file instanceof \SplFileInfo) {
-                $file->isDir() ? rmdir($file->getPathname()) : unlink($file->getPathname());
+            if (!$file instanceof \SplFileInfo) {
+                continue;
             }
+
+            $file->isDir() ? rmdir($file->getPathname()) : unlink($file->getPathname());
         }
         rmdir($this->dir);
     }
@@ -138,6 +140,6 @@ final class LintCommandTest extends TestCase
 
     private function write(string $file, string $content): void
     {
-        file_put_contents("{$this->dir}/$file", $content);
+        file_put_contents("{$this->dir}/{$file}", $content);
     }
 }

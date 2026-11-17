@@ -39,7 +39,7 @@ enum FunctionKey: string
      */
     public static function masks(self ...$keys): int
     {
-        return array_reduce($keys, fn(int $mask, self $key) => $mask | $key->mask(), 0);
+        return array_reduce($keys, static fn(int $mask, self $key) => $mask | $key->mask(), 0);
     }
 
     /**

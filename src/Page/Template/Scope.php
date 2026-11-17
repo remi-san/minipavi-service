@@ -78,7 +78,7 @@ final readonly class Scope
                 $value = $value->$name;
             } else {
                 throw new \InvalidArgumentException(
-                    "unknown variable {{{$path}}}: no \"$name\" in " . get_debug_type($value),
+                    "unknown variable {{{$path}}}: no \"{$name}\" in " . get_debug_type($value),
                 );
             }
         }

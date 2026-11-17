@@ -21,15 +21,17 @@ final class ResponseEmitter
      */
     public function emit(ResponseInterface $response): void
     {
+        $file = '';
+        $line = 0;
         if (headers_sent($file, $line)) {
-            throw new \LogicException("Cannot send the response: output already started at $file:$line");
+            throw new \LogicException("Cannot send the response: output already started at {$file}:{$line}");
         }
 
         http_response_code($response->getStatusCode());
         foreach ($response->getHeaders() as $name => $values) {
             foreach ($values as $i => $value) {
                 // Each value of a header on its own line (e.g. Set-Cookie)
-                header("$name: $value", $i === 0);
+                header("{$name}: {$value}", $i === 0);
             }
         }
 

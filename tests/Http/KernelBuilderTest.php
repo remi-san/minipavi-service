@@ -35,7 +35,7 @@ final class KernelBuilderTest extends TestCase
     protected function setUp(): void
     {
         $router = new Router();
-        $router->addRoute('home', new CallbackController(NoParameters::class, fn(
+        $router->addRoute('home', new CallbackController(NoParameters::class, static fn(
             Request $request,
         ) => Response::display(VdtHelper::setPos(1, 1)->append(Vdt::text('HOME')))));
         $router->setDefaultRoute('home');
@@ -47,6 +47,7 @@ final class KernelBuilderTest extends TestCase
     {
         $html = self::serve($this->builder->withContextKey('secret'), 'web=true');
 
+        $context = [];
         preg_match('#name="context" value="([^"]*)"#', $html, $context);
         self::assertSame(
             '{"route":"home","states":{"home":"read-input"},"parameters":{"home":{}}}',
@@ -118,7 +119,10 @@ final class KernelBuilderTest extends TestCase
 
         self::serve($this->builder->withLogger($logger)->withContextKey('secret'), 'web=true');
 
-        self::assertSame([], array_filter($logger->records, fn(array $record) => $record[0] === LogLevel::WARNING));
+        self::assertSame(
+            [],
+            array_filter($logger->records, static fn(array $record) => $record[0] === LogLevel::WARNING),
+        );
     }
 
     /**
@@ -130,8 +134,9 @@ final class KernelBuilderTest extends TestCase
         $_SERVER['HTTP_USER_AGENT'] = 'Mozilla/5.0';
         $_SERVER['HTTP_HOST'] = 'example.org';
         $_SERVER['PHP_SELF'] = '/Svc/index.php';
-        $_SERVER['REQUEST_URI'] = '/Svc/' . ($query === '' ? '' : "?$query");
+        $_SERVER['REQUEST_URI'] = '/Svc/' . ($query === '' ? '' : "?{$query}");
         $_SERVER['QUERY_STRING'] = $query;
+        $get = [];
         parse_str($query, $get);
         $_GET = $get;
 

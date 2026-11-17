@@ -31,7 +31,8 @@ final class PreviewCommandTest extends TestCase
 
     protected function tearDown(): void
     {
-        foreach (glob($this->dir . '/*') ?: [] as $file) {
+        $files = glob($this->dir . '/*');
+        foreach ($files === false ? [] : $files as $file) {
             unlink($file);
         }
         rmdir($this->dir);
@@ -127,9 +128,11 @@ final class PreviewCommandTest extends TestCase
             $arguments = \array_slice($arguments, 2);
         }
         foreach (['page', 'data'] as $i => $name) {
-            if (isset($arguments[$i])) {
-                $input[$name] = $arguments[$i];
+            if (!isset($arguments[$i])) {
+                continue;
             }
+
+            $input[$name] = $arguments[$i];
         }
 
         return $this->tester->execute($input, ['capture_stderr_separately' => true]);
@@ -137,6 +140,6 @@ final class PreviewCommandTest extends TestCase
 
     private function write(string $file, string $content): void
     {
-        file_put_contents("{$this->dir}/$file", $content);
+        file_put_contents("{$this->dir}/{$file}", $content);
     }
 }

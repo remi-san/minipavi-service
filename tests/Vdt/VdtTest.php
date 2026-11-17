@@ -87,8 +87,16 @@ final class VdtTest extends TestCase
         $text = Vdt::fromString("\x1F\x41\x41\x1B\x4EAB")->screen();
         $mosaic = Vdt::fromString("\x1F\x41\x41\x0E\x1B\x4E\x21\x22")->screen();
 
-        self::assertSame(['A', 'A', 'B', 'B'], array_map(fn(int $col) => $text->cell(1, $col)?->bytes, [1, 2, 3, 4]));
-        self::assertSame(["\x21", "\x22", null], array_map(fn(int $col) => $mosaic->cell(1, $col)?->bytes, [1, 2, 3]));
+        self::assertSame(['A', 'A', 'B', 'B'], array_map(static fn(int $col) => $text->cell(1, $col)?->bytes, [
+            1,
+            2,
+            3,
+            4,
+        ]));
+        self::assertSame(
+            ["\x21", "\x22", null],
+            array_map(static fn(int $col) => $mosaic->cell(1, $col)?->bytes, [1, 2, 3]),
+        );
     }
 
     public function testWithoutClearTurnsClearScreensIntoHome(): void
@@ -106,11 +114,11 @@ final class VdtTest extends TestCase
     public static function offsets(): iterable
     {
         foreach (['background', 'features'] as $file) {
-            yield "$file, none" => [$file, 0, 0];
-            yield "$file, right and up" => [$file, 8, -2];
-            yield "$file, left and down" => [$file, -5, 3];
-            yield "$file, mostly off the screen" => [$file, 30, 20];
-            yield "$file, one column left" => [$file, -1, 0];
+            yield "{$file}, none" => [$file, 0, 0];
+            yield "{$file}, right and up" => [$file, 8, -2];
+            yield "{$file}, left and down" => [$file, -5, 3];
+            yield "{$file}, mostly off the screen" => [$file, 30, 20];
+            yield "{$file}, one column left" => [$file, -1, 0];
         }
     }
 
@@ -123,7 +131,7 @@ final class VdtTest extends TestCase
     #[DataProvider('offsets')]
     public function testOffsetDrawsTheSameScreenMoved(string $file, int $x, int $y): void
     {
-        $original = Vdt::fromFile(self::FIXTURES . "/$file.vdt");
+        $original = Vdt::fromFile(self::FIXTURES . "/{$file}.vdt");
         $before = $original->screen();
         $after = $original->offset($x, $y)->screen();
         $glyphs = self::glyphColumns($original);
@@ -142,7 +150,7 @@ final class VdtTest extends TestCase
                         && ($start + $x + $width - 1) <= Screen::COLS;
                     $expected = $onScreen ? $before->cell($fromRow, $fromCol) : null;
                 }
-                self::assertEquals($expected, $after->cell($row, $col), "row $row, column $col");
+                self::assertEquals($expected, $after->cell($row, $col), "row {$row}, column {$col}");
             }
         }
     }
@@ -155,7 +163,7 @@ final class VdtTest extends TestCase
     private static function glyphColumns(Vdt $vdt): array
     {
         $columns = [];
-        $vdt->play(function (int $row, int $col, string $bytes, int $width) use (&$columns): void {
+        $vdt->play(static function (int $row, int $col, string $bytes, int $width) use (&$columns): void {
             for ($i = 0; $i < $width; $i++) {
                 $columns[$row][$col + $i] = [$col, $width];
             }
@@ -170,8 +178,8 @@ final class VdtTest extends TestCase
     #[DataProvider('offsets')]
     public function testOffsetMatchesTheGoldenFile(string $file, int $x, int $y): void
     {
-        $golden = self::FIXTURES . "/$file.offset_{$x}_{$y}.vdt";
-        $vdt = Vdt::fromFile(self::FIXTURES . "/$file.vdt")
+        $golden = self::FIXTURES . "/{$file}.offset_{$x}_{$y}.vdt";
+        $vdt = Vdt::fromFile(self::FIXTURES . "/{$file}.vdt")
             ->offset($x, $y)
             ->toString();
 

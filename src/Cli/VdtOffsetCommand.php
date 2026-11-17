@@ -48,7 +48,7 @@ final class VdtOffsetCommand extends Command
         try {
             $vdt = Vdt::fromFile($file === '-' ? 'php://stdin' : $file);
         } catch (\InvalidArgumentException) {
-            $errors->writeln(Input::escape("cannot read $file"));
+            $errors->writeln(Input::escape("cannot read {$file}"));
 
             return self::FAILURE;
         }
@@ -56,7 +56,7 @@ final class VdtOffsetCommand extends Command
 
         if ($input->getOption('preview') === true) {
             $output->write(
-                "Before:\n" . $vdt->screen()->preview() . "After ($x, $y):\n" . $moved->screen()->preview(),
+                "Before:\n" . $vdt->screen()->preview() . "After ({$x}, {$y}):\n" . $moved->screen()->preview(),
                 false,
                 OutputInterface::OUTPUT_RAW,
             );
@@ -70,7 +70,7 @@ final class VdtOffsetCommand extends Command
             return self::SUCCESS;
         }
         if (@file_put_contents($target, $moved->toString()) === false) {
-            $errors->writeln(Input::escape("cannot write $target"));
+            $errors->writeln(Input::escape("cannot write {$target}"));
 
             return self::FAILURE;
         }
@@ -85,7 +85,7 @@ final class VdtOffsetCommand extends Command
     {
         $value = Input::string($input, $name);
         if (!preg_match('/^-?\d+$/', $value)) {
-            throw new InvalidArgumentException("$name must be an integer, not $value");
+            throw new InvalidArgumentException("{$name} must be an integer, not {$value}");
         }
 
         return (int) $value;

@@ -33,11 +33,13 @@ final readonly class Input
         $this->length = $length ?? (Screen::COLS + 1 - $col);
         if ($this->length < 1 || ($col + $this->length - 1) > Screen::COLS) {
             throw new \InvalidArgumentException(
-                "Input of length $this->length from column $col goes past column " . Screen::COLS,
+                "Input of length {$this->length} from column {$col} goes past column " . Screen::COLS,
             );
         }
         if ($lines < 1 || ($row + $lines - 1) > Screen::ROWS) {
-            throw new \InvalidArgumentException("Input of $lines lines from row $row goes past row " . Screen::ROWS);
+            throw new \InvalidArgumentException(
+                "Input of {$lines} lines from row {$row} goes past row " . Screen::ROWS,
+            );
         }
     }
 
@@ -52,7 +54,7 @@ final readonly class Input
      */
     public function toCommand(array $prefill = []): InputCommand
     {
-        if ($this->lines == 1) {
+        if ($this->lines === 1) {
             return InputCommand::text(
                 $this->col,
                 $this->row,
@@ -60,7 +62,7 @@ final readonly class Input
                 FunctionKey::masks(...$this->validWith),
                 $this->cursor,
                 $this->spaceChar,
-                (string) ($prefill[0] ?? ''),
+                $prefill[0] ?? '',
             );
         }
         return InputCommand::message(
