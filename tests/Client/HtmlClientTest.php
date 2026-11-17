@@ -17,6 +17,7 @@ use MiniPaviService\Message\Messages;
 use MiniPaviService\Tests\Support\CallbackController;
 use MiniPaviService\Tests\Support\HttpRequests;
 use MiniPaviService\Tests\Support\MemoryLogger;
+use MiniPaviService\Vdt\HtmlRenderer;
 use MiniPaviService\Vdt\Vdt;
 use MiniPaviService\Vdt\VdtHelper;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -42,7 +43,7 @@ final class HtmlClientTest extends TestCase
     {
         self::assertEquals(
             new GatewayRequest(GatewayRequest::FCTN_CONNECT, serviceUrl: 'http://services/Svc/index.php'),
-            (new HtmlClient())->request(HttpRequests::to('Mozilla/5.0', $query), 'http://services/Svc/index.php'),
+            (new HtmlClient(new HtmlRenderer(HtmlRenderer::MINITEL_FONT)))->request(HttpRequests::to('Mozilla/5.0', $query), 'http://services/Svc/index.php'),
         );
     }
 
@@ -51,13 +52,13 @@ final class HtmlClientTest extends TestCase
         // A user who just got there: no key, no input
         self::assertEquals(
             new GatewayRequest('', [], '{"route":"games"}', serviceUrl: 'http://services/Svc/index.php'),
-            (new HtmlClient())->request(HttpRequests::to('Mozilla/5.0', ['web' => 'true', 'route' => 'games']), 'http://services/Svc/index.php'),
+            (new HtmlClient(new HtmlRenderer(HtmlRenderer::MINITEL_FONT)))->request(HttpRequests::to('Mozilla/5.0', ['web' => 'true', 'route' => 'games']), 'http://services/Svc/index.php'),
         );
     }
 
     public function testGivesTheScreenOfTheAnswerAsAPage(): void
     {
-        $response = (new HtmlClient())->response(
+        $response = (new HtmlClient(new HtmlRenderer(HtmlRenderer::MINITEL_FONT)))->response(
             new GatewayRequest(GatewayRequest::FCTN_CONNECT, serviceUrl: 'http://services/Svc/index.php'),
             new GatewayAnswer(VdtHelper::setPos(1, 1)->append(Vdt::text('Bonjour <3')), '{}'),
         );
@@ -109,7 +110,7 @@ final class HtmlClientTest extends TestCase
         }
         $router->setDefaultRoute('home');
 
-        return (string) (new ServiceRunner(new Service($router, Messages::defaults(), $logger), new HtmlClient()))->handle(HttpRequests::to('Mozilla/5.0', $query))->getBody();
+        return (string) (new ServiceRunner(new Service($router, Messages::defaults(), $logger), new HtmlClient(new HtmlRenderer(HtmlRenderer::MINITEL_FONT))))->handle(HttpRequests::to('Mozilla/5.0', $query))->getBody();
     }
 
     /**

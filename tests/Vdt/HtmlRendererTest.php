@@ -16,7 +16,7 @@ final class HtmlRendererTest extends TestCase
 {
     public function testDrawsEveryCellOfEveryRowInAPage(): void
     {
-        $html = (new HtmlRenderer())->render((new Vdt())->screen(), 'Service <test>');
+        $html = (new HtmlRenderer(HtmlRenderer::MINITEL_FONT))->render((new Vdt())->screen(), 'Service <test>');
 
         self::assertStringStartsWith('<!doctype html>', $html);
         self::assertStringContainsString('<title>Service &lt;test&gt;</title>', $html);
@@ -26,19 +26,35 @@ final class HtmlRendererTest extends TestCase
         self::assertStringNotContainsString('<script', $html);
     }
 
+    public function testEmbedsTheMinitelFont(): void
+    {
+        $html = (new HtmlRenderer(HtmlRenderer::MINITEL_FONT))->render((new Vdt())->screen(), 'test');
+
+        self::assertStringContainsString('@font-face { font-family: Minitel; src: url(data:font/ttf;base64,' . base64_encode((string) file_get_contents(HtmlRenderer::MINITEL_FONT)) . ') format("truetype"); }', $html);
+        self::assertStringContainsString('font: var(--w)/var(--h) Minitel,', $html);
+    }
+
+    public function testMissingFontIsAnError(): void
+    {
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('Font file not found: /missing.ttf');
+
+        (new HtmlRenderer('/missing.ttf'))->render((new Vdt())->screen(), 'test');
+    }
+
     public function testDrawsTextInItsColoursWithItsAccents(): void
     {
         $html = $this->render(Vdt::join(VdtHelper::setPos(1, 1), new Vdt("\x1B\x41"), Vdt::text('é<')));
 
-        self::assertStringContainsString('style="color:#ff0000;background:#000000"><b class="g">é</b></span>', $html);
-        self::assertStringContainsString('>&lt;</b></span>', $html);
+        self::assertStringContainsString('style="color:#ff0000;background:#000000">é</span>', $html);
+        self::assertStringContainsString('>&lt;</span>', $html);
     }
 
     public function testInverseVideoSwapsTheColours(): void
     {
         $html = $this->renderCell(new Cell('x', ['fg' => "\x44", 'bg' => "\x57", 'inverse' => "\x5D"] + Attributes::DEFAULTS));
 
-        self::assertStringContainsString('style="color:#ffffff;background:#0000ff"><b class="g">x</b></span>', $html);
+        self::assertStringContainsString('style="color:#ffffff;background:#0000ff">x</span>', $html);
     }
 
     public function testDoubleWidthTakesTwoColumns(): void
@@ -83,12 +99,12 @@ final class HtmlRendererTest extends TestCase
     {
         $html = $this->render(VdtHelper::writeLine0('Bonjour'));
 
-        self::assertStringContainsString('<span class="c status" style="color:#ffffff;background:#000000"><b class="g">B</b></span>', $html);
+        self::assertStringContainsString('<span class="c status" style="color:#ffffff;background:#000000">B</span>', $html);
     }
 
     private function render(Vdt $vdt): string
     {
-        return (new HtmlRenderer())->render($vdt->screen(), 'test');
+        return (new HtmlRenderer(HtmlRenderer::MINITEL_FONT))->render($vdt->screen(), 'test');
     }
 
     /**
@@ -99,6 +115,6 @@ final class HtmlRendererTest extends TestCase
         $cells = array_fill(0, Screen::ROWS + 1, array_fill(1, Screen::COLS, null));
         $cells[1][1] = $cell;
 
-        return (new HtmlRenderer())->render(new Screen($cells), 'test');
+        return (new HtmlRenderer(HtmlRenderer::MINITEL_FONT))->render(new Screen($cells), 'test');
     }
 }

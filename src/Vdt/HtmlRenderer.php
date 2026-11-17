@@ -7,12 +7,16 @@ namespace MiniPaviService\Vdt;
 /**
  * Draws a Screen as an HTML page, as the Minitel would show it (checked against MiniPavi's
  * emulator): row 0 (the status line) and the ROWS × COLS cells, in the Minitel's colours,
- * with their sizes, inverse video, underlining and blinking. Text glyphs are stretched to fill
- * their cell. Mosaic cells are drawn as their 2 × 3 pixels (separated when underlined),
- * without depending on a font. Self-contained: inline CSS, no JavaScript.
+ * with their sizes, inverse video, underlining and blinking. Text is drawn with a Minitel
+ * font (MINITEL_FONT: Minitel-Canvas's, whose glyphs fill the cells), embedded in the page.
+ * Mosaic cells are drawn as their 2 × 3 pixels (separated when underlined), without depending
+ * on a font. Self-contained: inline CSS and font, no JavaScript.
  */
-final class HtmlRenderer
+final readonly class HtmlRenderer
 {
+    // Minitel-Canvas's Minitel font (resources/fonts, CC0)
+    public const MINITEL_FONT = __DIR__ . '/../../resources/fonts/Minitel.ttf';
+
     // Colours of the Minitel, by their index in attribute codes (ESC 0x40 + index for the
     // character, 0x50 + index for the background)
     private const COLORS = ['#000000', '#ff0000', '#00ff00', '#ffff00', '#0000ff', '#ff00ff', '#00ffff', '#ffffff'];
@@ -24,10 +28,9 @@ final class HtmlRenderer
         :root { color-scheme: dark; }
         body { margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center; background: #1c1c1c; }
         .minitel { --w: 16px; --h: 20px; display: grid; grid-template-columns: repeat(40, var(--w)); grid-auto-rows: var(--h);
-            padding: 12px; background: #000; font: 18px/var(--h) "DejaVu Sans Mono", Menlo, Consolas, monospace; }
+            padding: 12px; background: #000; font: var(--w)/var(--h) Minitel, "DejaVu Sans Mono", Menlo, Consolas, monospace; }
         .status { border-bottom: 1px solid #444; }
         .c { position: relative; white-space: pre; text-align: center; overflow: visible; }
-        .g { display: inline-block; transform: scaleX(1.4); }
         .w2 { grid-column: span 2; transform: scaleX(2); transform-origin: left; width: var(--w); }
         .h2 { transform: scaleY(2); transform-origin: bottom; z-index: 1; }
         .w2.h2 { transform: scale(2); transform-origin: bottom left; }
@@ -39,6 +42,14 @@ final class HtmlRenderer
         .m i.on { background: currentColor; }
         .m.sep i.on { margin: 0 2px 2px 0; }
         CSS;
+
+    /**
+     * @param string $fontFile TrueType font of the text, embedded in the page (e.g.
+     *                         MINITEL_FONT): its glyphs 1 em wide, 1.25 em high
+     */
+    public function __construct(
+        private string $fontFile,
+    ) {}
 
     /**
      * The page showing the screen
@@ -60,7 +71,7 @@ final class HtmlRenderer
 
         return '<!doctype html><html><head><meta charset="utf-8">'
             . '<meta name="viewport" content="width=device-width, initial-scale=1">'
-            . '<title>' . self::escape($title) . '</title><style>' . self::STYLE . '</style></head>'
+            . '<title>' . self::escape($title) . '</title><style>' . $this->fontFace() . self::STYLE . '</style></head>'
             . '<body><div class="minitel">' . $cells . '</div></body></html>';
     }
 
@@ -100,8 +111,23 @@ final class HtmlRenderer
         }
 
         return '<span class="' . implode(' ', $classes) . '" style="' . $style . '">'
-            . ($mosaic && self::isMosaic($cell->bytes) ? self::mosaic($cell->bytes, $underline) : '<b class="g">' . self::escape($cell->text()) . '</b>')
+            . ($mosaic && self::isMosaic($cell->bytes) ? self::mosaic($cell->bytes, $underline) : self::escape($cell->text()))
             . '</span>';
+    }
+
+    /**
+     * The font of the text, embedded
+     *
+     * @throws \RuntimeException if the font file can't be read
+     */
+    private function fontFace(): string
+    {
+        $font = @file_get_contents($this->fontFile);
+        if ($font === false) {
+            throw new \RuntimeException("Font file not found: {$this->fontFile}");
+        }
+
+        return '@font-face { font-family: Minitel; src: url(data:font/ttf;base64,' . base64_encode($font) . ') format("truetype"); }';
     }
 
     /**

@@ -17,8 +17,12 @@ use Psr\Http\Message\ServerRequestInterface;
  * answer drawn as an HTML page (HtmlRenderer). No interaction: a connection, or with the
  * query's route (?route=games), a request on that route, its controller at its initial state.
  */
-final class HtmlClient implements Client
+final readonly class HtmlClient implements Client
 {
+    public function __construct(
+        private HtmlRenderer $renderer,
+    ) {}
+
     /**
      * A connection, or a request on the route of the query: the context of a user who just
      * got there, without key nor input
@@ -41,7 +45,7 @@ final class HtmlClient implements Client
         return new Response(
             200,
             ['Content-Type' => 'text/html; charset=utf-8'],
-            (new HtmlRenderer())->render($answer->vdt->screen(), $request->serviceUrl),
+            $this->renderer->render($answer->vdt->screen(), $request->serviceUrl),
         );
     }
 }

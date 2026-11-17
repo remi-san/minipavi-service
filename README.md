@@ -66,6 +66,7 @@ use Symfony\Bridge\PsrHttpMessage\Factory\PsrHttpFactory;
 use MiniPaviService\Log\ErrorLogLogger;
 use MiniPaviService\Message\Messages;
 use MiniPaviService\Page\Parser\PageXmlParser;
+use MiniPaviService\Vdt\HtmlRenderer;
 
 require __DIR__.'/../vendor/autoload.php';
 
@@ -91,7 +92,7 @@ $psr17 = new Psr17Factory();
 (new Kernel(new WithUrls(
     new Dispatcher(
         new ServiceRunner($service, new MiniPaviClient(), $logger),
-        new ServiceRunner($service, new HtmlClient(), $logger),
+        new ServiceRunner($service, new HtmlClient(new HtmlRenderer(HtmlRenderer::MINITEL_FONT)), $logger),
         new EmulatorRedirect($emulator, $logger),
         $logger,
     ),
@@ -151,7 +152,9 @@ $psr17 = new Psr17Factory();
     context), and gives the answer as an HTML page (`Vdt\HtmlRenderer`). No interaction, no
     gateway: just the Videotex interpreted, in the Minitel's colours, with double sizes, inverse
     video, underlining, blinking and mosaic pixels, drawn as MiniPavi's emulator does, in
-    self-contained HTML (inline CSS, no JavaScript).
+    self-contained HTML (inline CSS, no JavaScript). The text is drawn with the Minitel font of
+    [Minitel-Canvas](https://github.com/Zigazou/Minitel-Canvas) (CC0, in `resources/fonts`),
+    embedded in the page (`HtmlRenderer::MINITEL_FONT`).
 - **`EmulatorRedirect`** sends other browsers to an emulator that opens the service
   (`EmulatorConfig`): with an emulator configured (`EMULATOR_URL`, the local stack), that
   emulator and the gateway `GATEWAY_URL`, which reaches the service at
