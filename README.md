@@ -644,7 +644,7 @@ echo $moved->screen()->preview();      // the screen, as text
   for each character, with its row, column, width and attributes, and `$other` for the
   other `Token`s.
 
-`tool/vdt-offset` (at the root of the repository) does the same from the command line.
+`bin/minipavi vdt-offset` does the same from the command line (see [Command line](#command-line)).
 
 ## Developing the framework
 

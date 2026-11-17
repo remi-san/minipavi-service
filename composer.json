@@ -3,6 +3,7 @@
     "description": "Framework for Minitel services on MiniPavi: XML pages and templates, controllers, routing",
     "license": "GPL-3.0-or-later",
     "type": "library",
+    "bin": ["bin/minipavi"],
     "require": {
         "php": ">=8.2",
         "ext-mbstring": "*",

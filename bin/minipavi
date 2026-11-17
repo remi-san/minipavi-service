@@ -1,0 +1,20 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+// Command line of the framework (see `minipavi help`): installed by Composer as
+// vendor/bin/minipavi in a service, or run from the framework (bin/minipavi)
+
+use MiniPaviService\Cli\Application;
+use MiniPaviService\Cli\Console;
+use MiniPaviService\Cli\VdtOffsetCommand;
+
+// Composer's proxy in vendor/bin gives its autoloader; from the framework, its own
+require $GLOBALS['_composer_autoload_path'] ?? __DIR__ . '/../vendor/autoload.php';
+
+$application = new Application(
+    new VdtOffsetCommand(),
+);
+
+exit($application->run(array_slice($argv ?? [], 1), Console::standard())->value);
