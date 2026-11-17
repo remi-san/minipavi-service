@@ -9,17 +9,20 @@ use MiniPaviService\Controller\Response\ChangePage;
 use MiniPaviService\Controller\Response\DisplayPage;
 use MiniPaviService\Controller\Response\RunCommand;
 use MiniPaviService\Controller\Response\RunExternalService;
-use MiniPaviService\Core\Context;
-use MiniPaviService\Gateway\GatewayAnswer;
 use MiniPaviService\Page\InputCommand;
 
 /**
- * What a controller returns: what to do now (execute()), and the state and parameters it
- * keeps for its next run, in the context.
+ * What a controller returns, as plain data: what to do now (the subclass), and the state
+ * and parameters it keeps for its next run, in the context. Service interprets it.
+ *
+ * The subclasses are a closed set, the ones Service knows: DisplayPage, RunCommand,
+ * ChangePage and RunExternalService.
  *
  * The named constructors give each response the state it usually keeps: read the next
  * input after showing something, start again after leaving. Pass $state or $parameters
  * (by name) to keep others.
+ *
+ * @phpstan-sealed DisplayPage|RunCommand|ChangePage|RunExternalService
  */
 abstract readonly class Response
 {
@@ -74,13 +77,6 @@ abstract readonly class Response
     {
         return new RunExternalService($state, $parameters, $vdt, $url, CallMode::Connect);
     }
-
-    /**
-     * Does what the response says, once the context has the state and parameters it keeps
-     * (Context::update()): the answer to the gateway, ending the request, or null to go on
-     * (e.g. ChangePage, which runs another controller)
-     */
-    abstract public function execute(Context $context): ?GatewayAnswer;
 
     public function state(): string
     {

@@ -5,6 +5,10 @@ declare(strict_types=1);
 namespace MiniPaviService\Core;
 
 use MiniPaviService\Controller\Response;
+use MiniPaviService\Controller\Response\ChangePage;
+use MiniPaviService\Controller\Response\DisplayPage;
+use MiniPaviService\Controller\Response\RunCommand;
+use MiniPaviService\Controller\Response\RunExternalService;
 use MiniPaviService\Gateway\GatewayAnswer;
 use MiniPaviService\Gateway\GatewayRequest;
 use MiniPaviService\Vdt\VdtHelper;
@@ -13,7 +17,8 @@ use Psr\Log\NullLogger;
 
 /**
  * Answers a request of the gateway: restores the context, and runs the controller of its route
- * until a response answers the gateway. Without I/O: reading the request and sending the answer
+ * until a response answers the gateway. It interprets the responses (plain data): it keeps
+ * their state and parameters, changes routes, and builds the answer. Without I/O: reading the request and sending the answer
  * are the gateway client's (MiniPaviClient), run by ServiceRunner.
  */
 final class Service
@@ -65,8 +70,11 @@ final class Service
     {
         $this->logger->error('Error serving the request: ' . $error->getMessage(), ['exception' => $error]);
         try {
-            return Response::display(VdtHelper::writeLine0($this->errorMessage))
-                ->execute(new Context($this->router->defaultRoute()));
+            // The context keeps nothing: the default controller starts at STATE_INIT
+            return $this->gatewayAnswer(
+                Response::display(VdtHelper::writeLine0($this->errorMessage)),
+                new Context($this->router->defaultRoute()),
+            );
         } catch (\Throwable $e) {
             $this->logger->critical('Cannot answer the error: ' . $e->getMessage(), ['exception' => $e]);
 
@@ -119,13 +127,19 @@ final class Service
             $controller = $this->router->route($context->route());
             $response = $controller->run($context->getRequest($key, $content, $terminal));
 
-            $context->update($response);
+            // What this controller keeps for its next run (reset when it changes page)
+            $context->updateState($response->state());
+            $context->updateParameters($response->parameters());
 
-            $answer = $response->execute($context);
-            if ($answer !== null) {
-                return $answer;
+            if (!$response instanceof ChangePage) {
+                return $this->gatewayAnswer($response, $context);
             }
-            // The next controller didn't get the input: it was for this one
+
+            // The target controller starts at STATE_INIT, with its parameters, and without the
+            // input: it was for this one
+            $context->changeRoute($response->route);
+            $context->resetState();
+            $context->updateParameters($response->targetParameters);
             $key = '';
             $content = [];
 
@@ -134,5 +148,21 @@ final class Service
                 throw new \LogicException('Too many page changes in one request (more than ' . self::MAX_PAGE_CHANGES . '): ' . implode(' → ', $routes));
             }
         }
+    }
+
+    /**
+     * Answer to the gateway for a response that ends the request, with the context as it is
+     * (the response's state and parameters are not applied here)
+     *
+     * @throws \LogicException for a ChangePage, which runs another controller instead
+     */
+    private function gatewayAnswer(Response $response, Context $context): GatewayAnswer
+    {
+        return match (true) {
+            $response instanceof ChangePage => throw new \LogicException('A page change does not answer the gateway'),
+            $response instanceof DisplayPage => new GatewayAnswer($response->vdt, $context->serialize()),
+            $response instanceof RunCommand => new GatewayAnswer($response->vdt ?? '', $context->serialize(), command: $response->command?->toArray()),
+            $response instanceof RunExternalService => new GatewayAnswer($response->vdt, $context->serialize(), $response->url, directCall: $response->callMode),
+        };
     }
 }

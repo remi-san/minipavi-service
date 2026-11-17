@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MiniPaviService\Tests\Core;
 
 use MiniPaviService\Controller;
+use MiniPaviService\Controller\CallMode;
 use MiniPaviService\Controller\Request;
 use MiniPaviService\Controller\Response;
 use MiniPaviService\Core\Context;
@@ -13,6 +14,7 @@ use MiniPaviService\Core\Service;
 use MiniPaviService\Core\Terminal;
 use MiniPaviService\Gateway\GatewayAnswer;
 use MiniPaviService\Gateway\GatewayRequest;
+use MiniPaviService\Page\InputCommand;
 use MiniPaviService\Tests\Support\MemoryLogger;
 use MiniPaviService\Vdt\VdtHelper;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -187,6 +189,47 @@ final class ServiceTest extends TestCase
         self::assertSame([[LogLevel::WARNING, 'Unknown route in the context, starting again at the default route', ['route' => 'removed']]], $this->logger->records);
     }
 
+    public function testDisplayIsAnsweredWithTheContextKeepingItsStateAndParameters(): void
+    {
+        $answer = $this->answerTo(Response::display('Hello', Controller::STATE_DISPLAY, ['page' => 2]));
+
+        // To this service (next: null), waiting for the user
+        self::assertEquals(new GatewayAnswer('Hello', '{"route":"answer","states":{"answer":"display"},"parameters":{"answer":{"page":2}}}'), $answer);
+    }
+
+    public function testReadInputIsAnsweredWithTheCommand(): void
+    {
+        $command = new InputCommand(['COMMAND' => ['name' => 'InputTxt', 'param' => ['x' => 1]]]);
+
+        $answer = $this->answerTo(Response::readInput('Code ?', $command));
+
+        self::assertSame('Code ?', $answer->vdt);
+        self::assertSame(['COMMAND' => ['name' => 'InputTxt', 'param' => ['x' => 1]]], $answer->command);
+        self::assertNull($answer->next);
+        self::assertNull($answer->directCall);
+        self::assertSame('{"route":"answer","states":{"answer":"read-input"},"parameters":{"answer":{}}}', $answer->context);
+    }
+
+    public function testReadInputWithoutCommandOnlySendsTheContent(): void
+    {
+        // Page::inputCommand() gives null for a page without <input>
+        $answer = $this->answerTo(Response::readInput('Hello', null));
+
+        self::assertSame('Hello', $answer->vdt);
+        self::assertNull($answer->command);
+    }
+
+    public function testConnectToIsAnsweredWithTheOtherService(): void
+    {
+        $answer = $this->answerTo(Response::connectTo('https://example.org/service', 'Cnx en cours', parameters: ['back' => true]));
+
+        self::assertSame('Cnx en cours', $answer->vdt);
+        self::assertSame('https://example.org/service', $answer->next);
+        self::assertSame(CallMode::Connect, $answer->directCall);
+        // Kept for when the user comes back
+        self::assertSame('{"route":"answer","states":{"answer":"init"},"parameters":{"answer":{"back":true}}}', $answer->context);
+    }
+
     public function testInputGoesToTheControllerOfTheCurrentRoute(): void
     {
         $context = new Context('directory', ['directory' => Controller::STATE_READ_INPUT]);
@@ -216,6 +259,16 @@ final class ServiceTest extends TestCase
                 return ($this->run)($request);
             }
         };
+    }
+
+    /**
+     * Answer of the service when the controller of its route returns response
+     */
+    private function answerTo(Response $response): GatewayAnswer
+    {
+        $this->router->addRoute('answer', $this->controller('answer', fn(Request $request) => $response));
+
+        return (new Service($this->router, $this->logger))->serve(new Context('answer'), 'ENVOI', [], new Terminal());
     }
 
     /**

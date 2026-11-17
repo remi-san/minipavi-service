@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace MiniPaviService\Tests\Core;
 
 use MiniPaviService\Controller;
-use MiniPaviService\Controller\Response\RunCommand;
 use MiniPaviService\Core\Context;
 use MiniPaviService\Core\Terminal;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -37,7 +36,8 @@ final class ContextTest extends TestCase
     public function testKeepsStateAndParametersPerRoute(): void
     {
         $context = new Context('home');
-        $context->update(new RunCommand(Controller::STATE_READ_INPUT, ['page' => 2], null, null));
+        $context->updateState(Controller::STATE_READ_INPUT);
+        $context->updateParameters(['page' => 2]);
         $context->changeRoute('directory');
 
         self::assertSame(Controller::STATE_INIT, $context->state());

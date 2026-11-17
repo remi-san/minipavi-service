@@ -6,7 +6,6 @@ namespace MiniPaviService\Core;
 
 use MiniPaviService\Controller;
 use MiniPaviService\Controller\Request;
-use MiniPaviService\Controller\Response;
 
 /**
  * User context, sent to the gateway with each answer and given back with the next request:
@@ -144,12 +143,6 @@ final class Context
             $content,
             $terminal,
         );
-    }
-
-    public function update(Response $response): void
-    {
-        $this->updateState($response->state());
-        $this->updateParameters($response->parameters());
     }
 
     public function state(): string

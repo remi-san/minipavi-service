@@ -11,24 +11,22 @@ use MiniPaviService\Controller\Response\ChangePage;
 use MiniPaviService\Controller\Response\DisplayPage;
 use MiniPaviService\Controller\Response\RunCommand;
 use MiniPaviService\Controller\Response\RunExternalService;
-use MiniPaviService\Core\Context;
-use MiniPaviService\Gateway\GatewayAnswer;
 use MiniPaviService\Page\InputCommand;
 use PHPUnit\Framework\TestCase;
 
+/**
+ * Responses are plain data: what they do is Service's (ServiceTest)
+ */
 final class ResponseTest extends TestCase
 {
     public function testDisplaySendsContentAndReadsTheNextKey(): void
     {
         $response = Response::display('Hello');
-        $context = new Context('home');
-        $context->update($response);
 
         self::assertInstanceOf(DisplayPage::class, $response);
+        self::assertSame('Hello', $response->vdt);
         self::assertSame(Controller::STATE_READ_INPUT, $response->state());
         self::assertSame([], $response->parameters());
-        // To this service (next: null), waiting for the user, with the context
-        self::assertEquals(new GatewayAnswer('Hello', $context->serialize()), $response->execute($context));
     }
 
     public function testReadInputSendsTheCommand(): void
@@ -37,33 +35,21 @@ final class ResponseTest extends TestCase
         $response = Response::readInput('Code ?', $command, parameters: ['page' => 2]);
 
         self::assertInstanceOf(RunCommand::class, $response);
+        self::assertSame('Code ?', $response->vdt);
+        self::assertSame($command, $response->command);
         self::assertSame(Controller::STATE_READ_INPUT, $response->state());
         self::assertSame(['page' => 2], $response->parameters());
-        $answer = $this->answer($response);
-        self::assertSame('Code ?', $answer->vdt);
-        self::assertSame(['COMMAND' => ['name' => 'InputTxt', 'param' => ['x' => 1]]], $answer->command);
-        self::assertNull($answer->next);
-        self::assertNull($answer->directCall);
     }
 
-    public function testReadInputWithoutCommandOnlySendsTheContent(): void
+    public function testGoToResetsThisControllerAndGivesTheTargetItsParameters(): void
     {
-        // Page::inputCommand() gives null for a page without <input>
-        $answer = $this->answer(Response::readInput('Hello', null));
-
-        self::assertSame('Hello', $answer->vdt);
-        self::assertNull($answer->command);
-    }
-
-    public function testGoToChangesTheRouteWithoutAnsweringTheGateway(): void
-    {
-        $response = Response::goTo('menu');
-        $context = new Context('home');
+        $response = Response::goTo('menu', ['from' => 'home']);
 
         self::assertInstanceOf(ChangePage::class, $response);
+        self::assertSame('menu', $response->route);
+        self::assertSame(['from' => 'home'], $response->targetParameters);
         self::assertSame(Controller::STATE_INIT, $response->state());
-        self::assertNull($response->execute($context));
-        self::assertSame('menu', $context->route());
+        self::assertSame([], $response->parameters());
     }
 
     public function testConnectToSendsTheUserToAnotherService(): void
@@ -71,11 +57,10 @@ final class ResponseTest extends TestCase
         $response = Response::connectTo('https://example.org/service', 'Cnx en cours');
 
         self::assertInstanceOf(RunExternalService::class, $response);
+        self::assertSame('Cnx en cours', $response->vdt);
+        self::assertSame('https://example.org/service', $response->url);
+        self::assertSame(CallMode::Connect, $response->callMode);
         self::assertSame(Controller::STATE_INIT, $response->state());
-        $answer = $this->answer($response);
-        self::assertSame('Cnx en cours', $answer->vdt);
-        self::assertSame('https://example.org/service', $answer->next);
-        self::assertSame(CallMode::Connect, $answer->directCall);
     }
 
     public function testRunExternalServiceTakesACallMode(): void
@@ -84,9 +69,8 @@ final class ResponseTest extends TestCase
         // The call mode can also be given by its value
         $connect = new RunExternalService(Controller::STATE_INIT, [], '', 'https://example.org/', 'yes-cnx');
 
-        self::assertSame(CallMode::Direct, $this->answer($direct)->directCall);
+        self::assertSame(CallMode::Direct, $direct->callMode);
         self::assertSame(CallMode::Connect, $connect->callMode);
-        self::assertSame(CallMode::Connect, $this->answer($connect)->directCall);
     }
 
     public function testStateAndParametersCanBeGiven(): void
@@ -95,33 +79,5 @@ final class ResponseTest extends TestCase
 
         self::assertSame(Controller::STATE_DISPLAY, $response->state());
         self::assertSame(['from' => 'home'], $response->parameters());
-    }
-
-    public function testGoToStartsTheTargetWithItsParametersAndResetsThisController(): void
-    {
-        $context = new Context('home', ['home' => Controller::STATE_READ_INPUT, 'menu' => Controller::STATE_READ_INPUT], ['home' => ['page' => 2], 'menu' => ['page' => 5]]);
-        $response = Response::goTo('menu', ['from' => 'home']);
-
-        $context->update($response);
-        $response->execute($context);
-
-        self::assertSame('menu', $context->route());
-        self::assertSame(Controller::STATE_INIT, $context->state());
-        self::assertSame(['from' => 'home'], $context->parameters());
-        $context->changeRoute('home');
-        self::assertSame(Controller::STATE_INIT, $context->state());
-        self::assertSame([], $context->parameters());
-    }
-
-    /**
-     * Answer of a response to the gateway, whose context it gives back
-     */
-    private function answer(Response $response): GatewayAnswer
-    {
-        $context = new Context('home');
-        $answer = $response->execute($context) ?? self::fail('No answer to the gateway');
-        self::assertSame($context->serialize(), $answer->context);
-
-        return $answer;
     }
 }
