@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Page\Parser;
 
+use MiniPaviService\Io\Files;
 use MiniPaviService\Message\Messages;
 use MiniPaviService\Minitel\Keyboard;
 use MiniPaviService\Minitel\LocalEcho;
@@ -46,8 +47,8 @@ final class PageXmlParser
      */
     public function parseFile(string $file): Page
     {
-        $xml = @file_get_contents($file);
-        if ($xml === false) {
+        $xml = Files::read($file);
+        if ($xml === null) {
             throw new PageXmlException("{$file}: file not found");
         }
         return $this->parse($xml, dirname($file), basename($file));

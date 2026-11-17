@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Page\Display;
 
+use MiniPaviService\Io\Files;
 use MiniPaviService\Minitel\Terminal;
 
 /**
@@ -26,8 +27,8 @@ final readonly class Background implements Element
      */
     public static function fromFile(string $file): self
     {
-        $vdt = @file_get_contents($file);
-        if ($vdt === false) {
+        $vdt = Files::read($file);
+        if ($vdt === null) {
             throw new \InvalidArgumentException("Videotex file not found: {$file}");
         }
         return new self($vdt);

@@ -22,7 +22,9 @@ final class ErrorLogLoggerTest extends TestCase
     protected function tearDown(): void
     {
         ini_set('error_log', (string) $this->previous);
-        @unlink($this->file);
+        if (is_file($this->file)) {
+            unlink($this->file);
+        }
     }
 
     public function testWritesTheLevelMessageAndContext(): void

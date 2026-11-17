@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Vdt;
 
+use MiniPaviService\Io\Files;
 use MiniPaviService\Vdt\Screen\Attributes;
 use MiniPaviService\Vdt\Screen\Cursor;
 use MiniPaviService\Vdt\Screen\Screen;
@@ -37,8 +38,8 @@ final readonly class Vdt
 
     public static function fromFile(string $file): self
     {
-        $vdt = @file_get_contents($file);
-        if ($vdt === false) {
+        $vdt = Files::read($file);
+        if ($vdt === null) {
             throw new \InvalidArgumentException("Videotex file not found: {$file}");
         }
         return new self($vdt);

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Cli;
 
+use MiniPaviService\Io\Files;
 use MiniPaviService\Message\MessagesException;
 use MiniPaviService\Minitel\Terminal;
 use MiniPaviService\Page\Parser\PageXmlException;
@@ -65,8 +66,8 @@ final class PreviewCommand extends Command
      */
     private static function data(string $file): array
     {
-        $json = @file_get_contents($file);
-        if ($json === false) {
+        $json = Files::read($file);
+        if ($json === null) {
             throw new \UnexpectedValueException("{$file}: file not found");
         }
         try {

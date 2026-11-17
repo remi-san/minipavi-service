@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Cli;
 
+use MiniPaviService\Io\Files;
 use MiniPaviService\Vdt\Vdt;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -69,7 +70,7 @@ final class VdtOffsetCommand extends Command
 
             return self::SUCCESS;
         }
-        if (@file_put_contents($target, $moved->toString()) === false) {
+        if (!Files::write($target, $moved->toString())) {
             $errors->writeln(Input::escape("cannot write {$target}"));
 
             return self::FAILURE;

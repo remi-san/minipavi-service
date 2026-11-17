@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Vdt\Screen;
 
+use MiniPaviService\Io\Files;
+
 /**
  * Draws a Screen as an HTML page, as the Minitel would show it (checked against MiniPavi's
  * emulator): row 0 (the status line) and the ROWS × COLS cells, in the Minitel's colours,
@@ -175,8 +177,8 @@ final readonly class HtmlRenderer
      */
     private function fontFace(): string
     {
-        $font = @file_get_contents($this->fontFile);
-        if ($font === false) {
+        $font = Files::read($this->fontFile);
+        if ($font === null) {
             throw new \RuntimeException("Font file not found: {$this->fontFile}");
         }
 

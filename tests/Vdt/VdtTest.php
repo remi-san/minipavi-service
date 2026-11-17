@@ -196,6 +196,6 @@ final class VdtTest extends TestCase
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Videotex file not found');
 
-        @Vdt::fromFile(self::FIXTURES . '/missing.vdt');
+        Vdt::fromFile(self::FIXTURES . '/missing.vdt');
     }
 }
