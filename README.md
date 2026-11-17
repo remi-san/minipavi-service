@@ -525,7 +525,11 @@ messages file that can't be read is a `MessagesException` with the file and line
 ## Page XML format
 
 A page file has a `<page>` root, read by `PageXmlParser`. Errors throw a `PageXmlException`
-giving the file and line. The screen is 40 columns × 24 rows (row 0 is the status line), and
+giving the file and line. They are found when the page is parsed (`minipavi lint` parses every
+page, see [Command line](#command-line)): the elements of a static page, and those of a
+template without placeholders, are built then (a missing `.vdt` file, an unknown color...).
+Only a template's elements with placeholders are built when displayed, and their errors throw
+a `TemplateException`, with the file and line too; in a `<foreach>`, so is an element's `row`. The screen is 40 columns × 24 rows (row 0 is the status line), and
 elements are drawn in order:
 
 | Element | Draws |
@@ -645,6 +649,36 @@ echo $moved->screen()->preview();      // the screen, as text
   other `Token`s.
 
 `bin/minipavi vdt-offset` does the same from the command line (see [Command line](#command-line)).
+
+## Command line
+
+`bin/minipavi` is the framework's command line: Composer installs it in a service as
+`vendor/bin/minipavi` (`minipavi help` lists its commands). The commands reading pages take
+the service's messages with `--messages`, as the service reads them (a page's `<message>`
+must be one of them); without it, the framework's only.
+
+```sh
+vendor/bin/minipavi lint --messages config/messages.xml config         # every page, for CI
+vendor/bin/minipavi preview config/pages/games.xml games.json          # the screen of a page
+vendor/bin/minipavi vdt-offset --preview images/background.vdt 8 -2    # move a Videotex page
+```
+
+- **`lint [--messages <messages.xml>] <path>...`** parses every page (XML file whose root is
+  `<page>`) of the files and folders given, with their subfolders, as the service does: other
+  XML files are skipped. Each error is printed with its file and line, and the command exits
+  with 1 on an error, or if it found no page. The services of this repository run it with
+  `composer lint`, in CI.
+- **`preview [--messages <messages.xml>] <page.xml> [<data.json>]`** prints the screen a page
+  draws, as text (`Screen::preview()`): a template with the variables of a JSON object (e.g.
+  `{"games": [{"name": "Alien Wipeout"}]}`).
+- **`vdt-offset [--preview] <input.vdt> <x> <y> [<output.vdt>]`** moves the content of a
+  Videotex page by `x` columns and `y` rows (negative: left, up), with `Vdt::offset()` (see
+  [Videotex content](#videotex-content)): to the output file, or the standard output; input `-`
+  reads the standard input. `--preview` prints the screen as text, before and after.
+
+Exit codes: 0 on success, 1 when the command fails (an error in a page, a file it can't read
+or write), 2 for a wrong command line (`Cli\ExitCode`). A command is a `Cli\Command`, run by
+`Cli\Application` with a `Cli\Console`.
 
 ## Developing the framework
 
