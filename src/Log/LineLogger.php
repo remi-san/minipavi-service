@@ -7,12 +7,15 @@ namespace MiniPaviService\Log;
 use Psr\Log\AbstractLogger;
 
 /**
- * PSR-3 logger writing to PHP's error log (error_log()): the web server's or PHP-FPM's log,
- * e.g. docker compose logs services. A line per record: "[level] message {context}", then
- * the exception of the context, with its trace.
+ * PSR-3 logger writing a line per record to its LogLines (e.g. PhpErrorLog, PHP's error log):
+ * "[level] message {context}", then the exception of the context, with its trace.
  */
-final class ErrorLogLogger extends AbstractLogger
+final class LineLogger extends AbstractLogger
 {
+    public function __construct(
+        private readonly LogLines $lines,
+    ) {}
+
     /**
      * @param array<mixed> $context
      */
@@ -32,6 +35,6 @@ final class ErrorLogLogger extends AbstractLogger
         if ($exception instanceof \Throwable) {
             $line .= "\n" . (string) $exception;
         }
-        error_log($line);
+        $this->lines->write($line);
     }
 }
