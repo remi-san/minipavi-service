@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Tests\Support;
 
-use MiniPaviService\Controller\Parameters;
-use MiniPaviService\Controller\Values;
+use MiniPaviService\Controller\Parameters\Parameters;
+use MiniPaviService\Controller\Parameters\Values;
 
 /**
  * Parameters of a screen opened from another: the route it was opened from

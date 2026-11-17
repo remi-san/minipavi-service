@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Page\Display;
 
-use MiniPaviService\Core\Terminal;
+use MiniPaviService\Minitel\Terminal;
 
 /**
  * Videotex content sent as is, e.g. a page made with a Videotex editor

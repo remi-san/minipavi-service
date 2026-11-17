@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace MiniPaviService\Core;
 
 use MiniPaviService\Controller;
-use MiniPaviService\Controller\Parameters;
+use MiniPaviService\Controller\Parameters\Parameters;
 use MiniPaviService\Controller\State;
 
 final class Router

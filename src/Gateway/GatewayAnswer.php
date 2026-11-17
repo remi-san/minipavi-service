@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Gateway;
 
-use MiniPaviService\Controller\CallMode;
-
 /**
  * Answer to a request of the MiniPavi gateway: the Videotex content to show, the context to
  * give back with the next request, and what the gateway does next

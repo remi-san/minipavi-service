@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace MiniPaviService\Tests\Core;
+namespace MiniPaviService\Tests\Minitel;
 
-use MiniPaviService\Core\FunctionKey;
+use MiniPaviService\Minitel\FunctionKey;
 use PHPUnit\Framework\TestCase;
 
 final class FunctionKeyTest extends TestCase

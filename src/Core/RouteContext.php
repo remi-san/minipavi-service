@@ -5,11 +5,12 @@ declare(strict_types=1);
 namespace MiniPaviService\Core;
 
 use MiniPaviService\Controller;
-use MiniPaviService\Controller\Parameters;
+use MiniPaviService\Controller\Parameters\Parameters;
+use MiniPaviService\Controller\Parameters\Values;
 use MiniPaviService\Controller\Request;
 use MiniPaviService\Controller\Response;
 use MiniPaviService\Controller\State;
-use MiniPaviService\Controller\Values;
+use MiniPaviService\Minitel\Terminal;
 
 /**
  * State and parameters a route keeps in the context, typed as its controller declares them,

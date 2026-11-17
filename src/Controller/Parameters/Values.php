@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace MiniPaviService\Controller;
+namespace MiniPaviService\Controller\Parameters;
 
 /**
  * Raw parameters of a controller, as the context keeps them (JSON, from a previous request,

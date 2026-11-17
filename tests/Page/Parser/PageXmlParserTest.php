@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Tests\Page\Parser;
 
-use MiniPaviService\Core\FunctionKey;
-use MiniPaviService\Core\Terminal;
 use MiniPaviService\Message\FrameworkMessage;
 use MiniPaviService\Message\Messages;
+use MiniPaviService\Minitel\FunctionKey;
+use MiniPaviService\Minitel\Keyboard;
+use MiniPaviService\Minitel\LocalEcho;
+use MiniPaviService\Minitel\Scroll;
+use MiniPaviService\Minitel\Terminal;
 use MiniPaviService\Page;
 use MiniPaviService\Page\Parser\PageXmlException;
 use MiniPaviService\Page\Parser\PageXmlParser;
@@ -15,9 +18,6 @@ use MiniPaviService\Page\StaticPage;
 use MiniPaviService\Page\Template\TemplateException;
 use MiniPaviService\Page\TemplatePage;
 use MiniPaviService\Tests\Support\TestMessage;
-use MiniPaviService\Vdt\Keyboard;
-use MiniPaviService\Vdt\LocalEcho;
-use MiniPaviService\Vdt\Scroll;
 use MiniPaviService\Vdt\Vdt;
 use MiniPaviService\Vdt\VdtHelper;
 use PHPUnit\Framework\Attributes\DataProvider;

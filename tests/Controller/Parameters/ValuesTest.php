@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace MiniPaviService\Tests\Controller;
+namespace MiniPaviService\Tests\Controller\Parameters;
 
-use MiniPaviService\Controller\Values;
+use MiniPaviService\Controller\Parameters\Values;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 

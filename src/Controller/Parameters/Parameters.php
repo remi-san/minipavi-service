@@ -2,7 +2,10 @@
 
 declare(strict_types=1);
 
-namespace MiniPaviService\Controller;
+namespace MiniPaviService\Controller\Parameters;
+
+use MiniPaviService\Controller\Request;
+use MiniPaviService\Controller\Response;
 
 /**
  * Parameters of a controller, as an object (e.g. a readonly class with a property per

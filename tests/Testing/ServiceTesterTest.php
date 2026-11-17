@@ -4,16 +4,16 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Tests\Testing;
 
-use MiniPaviService\Controller\CallMode;
 use MiniPaviService\Controller\ControllerState;
-use MiniPaviService\Controller\NoParameters;
+use MiniPaviService\Controller\Parameters\NoParameters;
 use MiniPaviService\Controller\Request;
 use MiniPaviService\Controller\Response;
-use MiniPaviService\Core\FunctionKey;
 use MiniPaviService\Core\Router;
 use MiniPaviService\Core\Service;
-use MiniPaviService\Core\Terminal;
+use MiniPaviService\Gateway\CallMode;
 use MiniPaviService\Message\Messages;
+use MiniPaviService\Minitel\FunctionKey;
+use MiniPaviService\Minitel\Terminal;
 use MiniPaviService\Testing\ServiceTester;
 use MiniPaviService\Tests\Support\CallbackController;
 use MiniPaviService\Vdt\VdtHelper;

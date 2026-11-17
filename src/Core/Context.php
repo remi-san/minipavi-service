@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Core;
 
-use MiniPaviService\Controller\Parameters;
+use MiniPaviService\Controller\Parameters\Parameters;
+use MiniPaviService\Controller\Parameters\Values;
 use MiniPaviService\Controller\Response;
 use MiniPaviService\Controller\State;
-use MiniPaviService\Controller\Values;
+use MiniPaviService\Minitel\Terminal;
 
 /**
  * User context, sent to the gateway with each answer and given back with the next request:

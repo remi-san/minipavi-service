@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace MiniPaviService\Vdt;
+namespace MiniPaviService\Minitel;
 
 /**
  * Whether the screen scrolls up past the last row (PRO2 sequence), by its name in the page XML

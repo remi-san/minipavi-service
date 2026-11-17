@@ -6,8 +6,8 @@ namespace MiniPaviService\Tests\Controller;
 
 use MiniPaviService\Controller\AbstractController;
 use MiniPaviService\Controller\ControllerState;
-use MiniPaviService\Controller\NoParameters;
-use MiniPaviService\Controller\PageParameters;
+use MiniPaviService\Controller\Pagination\PageParameters;
+use MiniPaviService\Controller\Parameters\NoParameters;
 use MiniPaviService\Controller\Request;
 use MiniPaviService\Controller\Response;
 use PHPUnit\Framework\Attributes\DataProvider;

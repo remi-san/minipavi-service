@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Controller;
 
-use MiniPaviService\Core\FunctionKey;
-use MiniPaviService\Core\Terminal;
+use MiniPaviService\Controller\Parameters\NoParameters;
+use MiniPaviService\Controller\Parameters\Parameters;
+use MiniPaviService\Minitel\FunctionKey;
+use MiniPaviService\Minitel\Terminal;
 
 /**
  * What a controller runs on: its state and parameters, kept in the context from the previous

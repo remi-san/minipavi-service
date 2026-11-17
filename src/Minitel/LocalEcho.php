@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace MiniPaviService\Vdt;
+namespace MiniPaviService\Minitel;
 
 /**
  * Whether the Minitel shows what is typed itself (PRO3 sequence), by its name in the page XML

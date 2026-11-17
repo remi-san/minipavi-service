@@ -2,17 +2,17 @@
 
 declare(strict_types=1);
 
-namespace MiniPaviService\Tests\Controller;
+namespace MiniPaviService\Tests\Controller\Pagination;
 
 use MiniPaviService\Controller\ControllerState;
-use MiniPaviService\Controller\NoParameters;
-use MiniPaviService\Controller\PageParameters;
+use MiniPaviService\Controller\Pagination\PageParameters;
+use MiniPaviService\Controller\Parameters\NoParameters;
 use MiniPaviService\Controller\Request;
 use MiniPaviService\Controller\Response;
-use MiniPaviService\Core\FunctionKey;
 use MiniPaviService\Core\Router;
 use MiniPaviService\Core\Service;
 use MiniPaviService\Message\Messages;
+use MiniPaviService\Minitel\FunctionKey;
 use MiniPaviService\Page;
 use MiniPaviService\Page\Parser\PageXmlParser;
 use MiniPaviService\Testing\ServiceTester;

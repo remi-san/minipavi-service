@@ -5,22 +5,22 @@ declare(strict_types=1);
 namespace MiniPaviService\Tests\Core;
 
 use MiniPaviService\Controller;
-use MiniPaviService\Controller\CallMode;
 use MiniPaviService\Controller\ControllerState;
-use MiniPaviService\Controller\NoParameters;
-use MiniPaviService\Controller\PageParameters;
-use MiniPaviService\Controller\Parameters;
+use MiniPaviService\Controller\Pagination\PageParameters;
+use MiniPaviService\Controller\Parameters\NoParameters;
+use MiniPaviService\Controller\Parameters\Parameters;
 use MiniPaviService\Controller\Request;
 use MiniPaviService\Controller\Response;
 use MiniPaviService\Core\Context;
 use MiniPaviService\Core\Router;
 use MiniPaviService\Core\Service;
-use MiniPaviService\Core\Terminal;
+use MiniPaviService\Gateway\CallMode;
 use MiniPaviService\Gateway\GatewayAnswer;
 use MiniPaviService\Gateway\GatewayRequest;
 use MiniPaviService\Message\FrameworkMessage;
 use MiniPaviService\Message\Messages;
 use MiniPaviService\Message\MessagesException;
+use MiniPaviService\Minitel\Terminal;
 use MiniPaviService\Page\InputCommand;
 use MiniPaviService\Tests\Support\CallbackController;
 use MiniPaviService\Tests\Support\ClearAndShow;
@@ -263,7 +263,7 @@ final class ServiceTest extends TestCase
         $answer = $this->handle(new GatewayRequest('ENVOI', [], '{"route":"mistyped","states":{},"parameters":{}}'));
 
         self::assertSame(self::errorLine0(), $this->contentOf($answer));
-        self::assertStringContainsString('keeps parameters of MiniPaviService\\Controller\\NoParameters, not MiniPaviService\\Controller\\PageParameters', $this->logger->records[0][1] ?? '');
+        self::assertStringContainsString('keeps parameters of MiniPaviService\\Controller\\Parameters\\NoParameters, not MiniPaviService\\Controller\\Pagination\\PageParameters', $this->logger->records[0][1] ?? '');
     }
 
     public function testInputGoesToTheControllerOfTheCurrentRoute(): void

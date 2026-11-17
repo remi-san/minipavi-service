@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace MiniPaviService\Controller;
+namespace MiniPaviService\Controller\Pagination;
 
 /**
  * A page of items shown perPage at a time: which items it holds (offset(), limit(), slice()),

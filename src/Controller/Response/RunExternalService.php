@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Controller\Response;
 
-use MiniPaviService\Controller\CallMode;
 use MiniPaviService\Controller\Flow;
-use MiniPaviService\Controller\Parameters;
+use MiniPaviService\Controller\Parameters\Parameters;
 use MiniPaviService\Controller\Response;
 use MiniPaviService\Controller\State;
+use MiniPaviService\Gateway\CallMode;
 use MiniPaviService\Gateway\GatewayAnswer;
 
 /**

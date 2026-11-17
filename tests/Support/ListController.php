@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Tests\Support;
 
-use MiniPaviService\Controller\PaginatedController;
-use MiniPaviService\Controller\Paginator;
+use MiniPaviService\Controller\Pagination\PaginatedController;
+use MiniPaviService\Controller\Pagination\Paginator;
 use MiniPaviService\Controller\Request;
 use MiniPaviService\Controller\Response;
-use MiniPaviService\Core\FunctionKey;
+use MiniPaviService\Minitel\FunctionKey;
 use MiniPaviService\Page;
 
 /**

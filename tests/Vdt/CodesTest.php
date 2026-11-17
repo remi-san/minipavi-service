@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace MiniPaviService\Tests\Vdt;
 
 use MiniPavi\MiniPaviCli;
-use MiniPaviService\Core\FunctionKey;
 use MiniPaviService\Http\EmulatorConfig;
-use MiniPaviService\Vdt\Keyboard;
-use MiniPaviService\Vdt\LocalEcho;
-use MiniPaviService\Vdt\Scroll;
+use MiniPaviService\Minitel\FunctionKey;
+use MiniPaviService\Minitel\Keyboard;
+use MiniPaviService\Minitel\LocalEcho;
+use MiniPaviService\Minitel\Scroll;
 use MiniPaviService\Vdt\Videotex;
 use PHPUnit\Framework\TestCase;
 

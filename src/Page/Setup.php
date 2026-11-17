@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Page;
 
-use MiniPaviService\Vdt\Keyboard;
-use MiniPaviService\Vdt\LocalEcho;
-use MiniPaviService\Vdt\Scroll;
+use MiniPaviService\Minitel\Keyboard;
+use MiniPaviService\Minitel\LocalEcho;
+use MiniPaviService\Minitel\Scroll;
 
 /**
  * How a page sets up the Minitel, sent before its content (attributes keyboard, echo and

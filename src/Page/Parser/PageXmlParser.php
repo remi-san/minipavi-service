@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace MiniPaviService\Page\Parser;
 
 use MiniPaviService\Message\Messages;
+use MiniPaviService\Minitel\{Keyboard, LocalEcho, Scroll};
 use MiniPaviService\Page;
 use MiniPaviService\Page\Display\Display;
 use MiniPaviService\Page\{Input, Setup, StaticPage, TemplatePage};
 use MiniPaviService\Page\Template\{ElementNode, ForeachNode, IfNode, Node, Scope, TemplateException};
-use MiniPaviService\Vdt\{Keyboard, LocalEcho, Scroll};
 
 /**
  * Reads a page XML file (root element <page>, format documented in the framework's README.md)

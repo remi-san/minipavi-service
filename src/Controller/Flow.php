@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Controller;
 
+use MiniPaviService\Controller\Parameters\Parameters;
+use MiniPaviService\Gateway\CallMode;
 use MiniPaviService\Gateway\GatewayAnswer;
 use MiniPaviService\Page\InputCommand;
 

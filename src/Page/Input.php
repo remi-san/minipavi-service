@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Page;
 
-use MiniPaviService\Core\FunctionKey;
+use MiniPaviService\Minitel\FunctionKey;
 use MiniPaviService\Page\Display\Position;
 use MiniPaviService\Vdt\Screen;
 

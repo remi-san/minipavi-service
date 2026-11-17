@@ -12,16 +12,23 @@ official [`ludosevilla/minipavi-cli`](https://packagist.org/packages/ludosevilla
 
 Requires PHP 8.2.
 
-The code (namespace `MiniPaviService`, in `src/`) is organized by layer:
+The code (namespace `MiniPaviService`, in `src/`) is organized by layer. The runtime uses the
+controllers, which use the pages, and none uses those above it: `Core\` → `Controller\` →
+`Page\` → `Message\`, `Minitel\`, `Vdt\` (`Core\` and `Controller\` also use the
+gateway's requests and answers, in `Gateway\`):
 
 | Namespace | Holds |
 |---|---|
 | `MiniPaviService` | the `Controller` and `Page` interfaces |
-| `Core\` | the runtime: `Service`, `Context`, `Router`, and the values `Terminal` and `FunctionKey` |
-| `Controller\` | `AbstractController`, `Request`, `Response` and the response types |
+| `Core\` | the runtime: `Service`, `Router` and its `Route`s, `Context` and its `RouteContext`s, `RequestFlow` |
+| `Controller\` | `AbstractController`, `Request`, `Response` and the response types, `Flow`, the states (`State`, `ControllerState`) |
+| `Controller\Parameters\` | what a controller keeps: `Parameters`, `NoParameters`, and the raw `Values` they are read from |
+| `Controller\Pagination\` | `PaginatedController`, `Paginator`, `PageParameters` |
 | `Page\` | static and template pages, their display elements, and the page XML parser |
-| `Vdt\` | Videotex codes, reading and moving Videotex content |
-| `Gateway\` | the MiniPavi gateway: its requests and answers (`GatewayRequest`, `GatewayAnswer`), and `MiniPaviClient`, which reads and sends them |
+| `Message\` | the messages shown on screen: `Message`, `FrameworkMessage`, `Messages` and their XML parser |
+| `Minitel\` | the user's terminal: `Terminal`, its `FunctionKey`s, and its settings (`Keyboard`, `LocalEcho`, `Scroll`) |
+| `Vdt\` | Videotex: codes, reading, moving and playing Videotex content (`Screen`) |
+| `Gateway\` | the MiniPavi gateway: its requests and answers (`GatewayRequest`, `GatewayAnswer`, `CallMode`), and `MiniPaviClient`, which reads and sends them |
 | `Http\` | the entry point for the web server: `ServiceRunner`, `RequestUrl`, `EmulatorConfig`, `ServerVariable` |
 | `Log\` | `ErrorLogLogger` |
 | `Testing\` | `ServiceTester`, functional tests of a service (needs PHPUnit) |
@@ -487,8 +494,8 @@ format changes, change `page.xsd` with the parser.
 ## Videotex content
 
 Codes to send as they are have names: `Vdt\Videotex` for Videotex (`CLEAR_LINE`,
-`CURSOR_OFF`, `INVERSE_ON`, sizes, `RESET_CHARSETS`...), and the `Vdt\Keyboard`,
-`Vdt\LocalEcho` and `Vdt\Scroll` enums for the sequences configuring the Minitel
+`CURSOR_OFF`, `INVERSE_ON`, sizes, `RESET_CHARSETS`...), and the `Minitel\Keyboard`,
+`Minitel\LocalEcho` and `Minitel\Scroll` enums for the sequences configuring the Minitel
 (`Keyboard::Lowercase->sequence()`...). A page sends them itself, from the attributes of
 `<page>` (see [Page XML format](#page-xml-format)); `Page\Setup` sends them for other content.
 

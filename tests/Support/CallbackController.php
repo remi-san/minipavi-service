@@ -6,7 +6,7 @@ namespace MiniPaviService\Tests\Support;
 
 use MiniPaviService\Controller;
 use MiniPaviService\Controller\ControllerState;
-use MiniPaviService\Controller\Parameters;
+use MiniPaviService\Controller\Parameters\Parameters;
 use MiniPaviService\Controller\Request;
 use MiniPaviService\Controller\Response;
 

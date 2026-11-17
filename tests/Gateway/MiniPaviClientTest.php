@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace MiniPaviService\Tests\Gateway;
 
 use MiniPavi\MiniPaviCli;
-use MiniPaviService\Controller\CallMode;
-use MiniPaviService\Core\Terminal;
+use MiniPaviService\Gateway\CallMode;
 use MiniPaviService\Gateway\GatewayAnswer;
 use MiniPaviService\Gateway\GatewayRequest;
 use MiniPaviService\Gateway\MiniPaviClient;
 use MiniPaviService\Http\RequestUrl;
+use MiniPaviService\Minitel\Terminal;
 use PHPUnit\Framework\TestCase;
 
 /**

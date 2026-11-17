@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace MiniPaviService\Controller;
 
 use MiniPaviService\Controller;
+use MiniPaviService\Controller\Parameters\NoParameters;
+use MiniPaviService\Controller\Parameters\Parameters;
 
 /**
  * Controller running the method of its state (ControllerState): onDisplay() to show its

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace MiniPaviService\Controller;
+namespace MiniPaviService\Gateway;
 
 /**
  * How the gateway calls another service, right away (RunExternalService)

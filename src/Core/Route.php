@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace MiniPaviService\Core;
 
 use MiniPaviService\Controller;
-use MiniPaviService\Controller\Parameters;
+use MiniPaviService\Controller\Parameters\Parameters;
+use MiniPaviService\Controller\Parameters\Values;
 use MiniPaviService\Controller\State;
-use MiniPaviService\Controller\Values;
 
 /**
  * A controller of the Router, with the types of what it keeps (Controller::initialState(),

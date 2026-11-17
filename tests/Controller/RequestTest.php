@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace MiniPaviService\Tests\Controller;
 
 use MiniPaviService\Controller\ControllerState;
-use MiniPaviService\Controller\NoParameters;
-use MiniPaviService\Controller\PageParameters;
+use MiniPaviService\Controller\Pagination\PageParameters;
+use MiniPaviService\Controller\Parameters\NoParameters;
 use MiniPaviService\Controller\Request;
-use MiniPaviService\Core\FunctionKey;
-use MiniPaviService\Core\Terminal;
 use MiniPaviService\Gateway\GatewayRequest;
+use MiniPaviService\Minitel\FunctionKey;
+use MiniPaviService\Minitel\Terminal;
 use PHPUnit\Framework\TestCase;
 
 final class RequestTest extends TestCase

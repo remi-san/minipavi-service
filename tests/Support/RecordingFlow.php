@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Tests\Support;
 
-use MiniPaviService\Controller\CallMode;
 use MiniPaviService\Controller\Flow;
-use MiniPaviService\Controller\Parameters;
+use MiniPaviService\Controller\Parameters\Parameters;
+use MiniPaviService\Gateway\CallMode;
 use MiniPaviService\Gateway\GatewayAnswer;
 use MiniPaviService\Page\InputCommand;
 

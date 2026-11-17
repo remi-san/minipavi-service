@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace MiniPaviService\Gateway;
 
 use MiniPavi\MiniPaviCli;
-use MiniPaviService\Core\Terminal;
 use MiniPaviService\Http\RequestUrl;
+use MiniPaviService\Minitel\Terminal;
 
 /**
  * Adapter between the static MiniPaviCli and the service: reads the request of the gateway as

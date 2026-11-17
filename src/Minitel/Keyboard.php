@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace MiniPaviService\Vdt;
+namespace MiniPaviService\Minitel;
 
 /**
  * Case of the letters typed on the Minitel (PRO2 sequence), by its name in the page XML

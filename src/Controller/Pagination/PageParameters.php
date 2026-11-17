@@ -2,7 +2,10 @@
 
 declare(strict_types=1);
 
-namespace MiniPaviService\Controller;
+namespace MiniPaviService\Controller\Pagination;
+
+use MiniPaviService\Controller\Parameters\Parameters;
+use MiniPaviService\Controller\Parameters\Values;
 
 /**
  * Parameters of a PaginatedController: the page shown, from 0

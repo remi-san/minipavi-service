@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Core;
 
-use MiniPaviService\Controller\CallMode;
 use MiniPaviService\Controller\Flow;
-use MiniPaviService\Controller\Parameters;
+use MiniPaviService\Controller\Parameters\Parameters;
+use MiniPaviService\Gateway\CallMode;
 use MiniPaviService\Gateway\GatewayAnswer;
+use MiniPaviService\Minitel\Terminal;
 use MiniPaviService\Page\InputCommand;
 
 /**

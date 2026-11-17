@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Testing;
 
-use MiniPaviService\Controller\CallMode;
 use MiniPaviService\Core\Context;
-use MiniPaviService\Core\FunctionKey;
 use MiniPaviService\Core\Service;
-use MiniPaviService\Core\Terminal;
+use MiniPaviService\Gateway\CallMode;
 use MiniPaviService\Gateway\GatewayAnswer;
 use MiniPaviService\Gateway\GatewayRequest;
+use MiniPaviService\Minitel\FunctionKey;
+use MiniPaviService\Minitel\Terminal;
 use MiniPaviService\Vdt\Screen;
 use MiniPaviService\Vdt\Vdt;
 use PHPUnit\Framework\Assert;

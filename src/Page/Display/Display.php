@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Page\Display;
 
-use MiniPaviService\Core\Terminal;
+use MiniPaviService\Minitel\Terminal;
 
 /**
  * Content of a screen, as a list of elements drawn in order, convertible to Videotex.

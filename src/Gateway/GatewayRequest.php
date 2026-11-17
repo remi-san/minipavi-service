@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Gateway;
 
-use MiniPaviService\Core\Terminal;
+use MiniPaviService\Minitel\Terminal;
 
 /**
  * Request of the MiniPavi gateway: what the user did (the key pressed, the text typed), the

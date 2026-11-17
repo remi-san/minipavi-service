@@ -10,6 +10,7 @@ use MiniPaviService\Gateway\GatewayRequest;
 use MiniPaviService\Message\FrameworkMessage;
 use MiniPaviService\Message\Messages;
 use MiniPaviService\Message\MessagesException;
+use MiniPaviService\Minitel\Terminal;
 use MiniPaviService\Vdt\VdtHelper;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;

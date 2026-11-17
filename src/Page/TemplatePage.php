@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Page;
 
-use MiniPaviService\Core\Terminal;
 use MiniPaviService\Message\Message;
 use MiniPaviService\Message\Messages;
+use MiniPaviService\Minitel\Terminal;
 use MiniPaviService\Page;
 use MiniPaviService\Page\Display\Display;
 use MiniPaviService\Page\Template\Node;

@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace MiniPaviService\Tests\Controller;
+namespace MiniPaviService\Tests\Controller\Pagination;
 
-use MiniPaviService\Controller\Paginator;
+use MiniPaviService\Controller\Pagination\Paginator;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 

@@ -2,10 +2,14 @@
 
 declare(strict_types=1);
 
-namespace MiniPaviService\Controller;
+namespace MiniPaviService\Controller\Pagination;
 
-use MiniPaviService\Core\FunctionKey;
+use MiniPaviService\Controller\AbstractController;
+use MiniPaviService\Controller\ControllerState;
+use MiniPaviService\Controller\Request;
+use MiniPaviService\Controller\Response;
 use MiniPaviService\Message\FrameworkMessage;
+use MiniPaviService\Minitel\FunctionKey;
 use MiniPaviService\Page;
 use MiniPaviService\Vdt\VdtHelper;
 
