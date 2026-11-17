@@ -6,13 +6,16 @@ namespace MiniPaviService\Tests\Http;
 
 use MiniPaviService\Http\EmptyHttpResponse;
 use MiniPaviService\Http\Kernel;
+use MiniPaviService\Http\ResponseEmitter;
 use MiniPaviService\Tests\Support\RecordingHandler;
+use Nyholm\Psr7\Factory\Psr17Factory;
 use Nyholm\Psr7\Response;
 use PHPUnit\Framework\Attributes\RunInSeparateProcess;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
+use Symfony\Bridge\PsrHttpMessage\Factory\PsrHttpFactory;
 
 /**
  * The only place reading the globals and writing the response: in separate processes
@@ -32,7 +35,7 @@ final class KernelTest extends TestCase
 
         ob_start();
         try {
-            (new Kernel($handler))->run();
+            self::kernel($handler)->run();
         } finally {
             $output = (string) ob_get_clean();
         }
@@ -60,11 +63,18 @@ final class KernelTest extends TestCase
 
         ob_start();
         try {
-            (new Kernel($handler))->run();
+            self::kernel($handler)->run();
         } finally {
             $output = (string) ob_get_clean();
         }
 
         self::assertSame('written', $output);
+    }
+
+    private static function kernel(RequestHandlerInterface $handler): Kernel
+    {
+        $psr17 = new Psr17Factory();
+
+        return new Kernel($handler, new PsrHttpFactory($psr17, $psr17, $psr17, $psr17), new ResponseEmitter());
     }
 }

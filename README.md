@@ -31,7 +31,7 @@ which depend on nothing above them):
 | `Vdt\` | Videotex: codes, reading, moving and playing Videotex content (`Screen`) |
 | `Gateway\` | the requests and answers the service handles (`GatewayRequest`, `GatewayAnswer`, `CallMode`), and the `Client` interface reading and sending them |
 | `Client\` | the clients: `MiniPaviClient` for the MiniPavi gateway, `HtmlClient` for a browser (`?web=true`) |
-| `Http\` | the entry point for the web server, on PSR-7 / PSR-15: `Kernel`, `WithUrls`, `Dispatcher`, `ServiceRunner`, `EmulatorRedirect`, `EmptyHttpResponse`, the request's URLs (`RequestUrl`, `UrlAttribute`) and `EmulatorConfig` |
+| `Http\` | the entry point for the web server, on PSR-7 / PSR-15: `Kernel`, `ResponseEmitter`, `WithUrls`, `Dispatcher`, `ServiceRunner`, `EmulatorRedirect`, `EmptyHttpResponse`, the request's URLs (`RequestUrl`, `UrlAttribute`) and `EmulatorConfig` |
 | `Log\` | `ErrorLogLogger` |
 | `Testing\` | `ServiceTester`, functional tests of a service (needs PHPUnit) |
 
@@ -58,7 +58,9 @@ In Docker, the framework and the service keep the repository's layout (`/app/fra
 use MiniPaviService\Core\{Router, Service};
 use MiniPaviService\Client\MiniPaviClient;
 use MiniPaviService\Client\HtmlClient;
-use MiniPaviService\Http\{Dispatcher, EmulatorConfig, EmulatorRedirect, Kernel, RequestUrl, ServiceRunner, WithUrls};
+use MiniPaviService\Http\{Dispatcher, EmulatorConfig, EmulatorRedirect, Kernel, RequestUrl, ResponseEmitter, ServiceRunner, WithUrls};
+use Nyholm\Psr7\Factory\Psr17Factory;
+use Symfony\Bridge\PsrHttpMessage\Factory\PsrHttpFactory;
 use MiniPaviService\Log\ErrorLogLogger;
 use MiniPaviService\Message\Messages;
 use MiniPaviService\Page\Parser\PageXmlParser;
@@ -80,6 +82,9 @@ $service = new Service($router, $messages, $logger);
 $url = new RequestUrl(getenv('SERVICE_URL') ?: null, getenv('TRUSTED_PROXIES') ?: '');
 $emulator = EmulatorConfig::fromValues(getenv('EMULATOR_URL') ?: null, getenv('GATEWAY_URL') ?: null, getenv('SERVICES_INTERNAL_HOST') ?: null);
 
+// The request is converted to PSR-7 with Nyholm's factories (a PSR-17 implementation)
+$psr17 = new Psr17Factory();
+
 // The gateway's requests, browsers asking ?web=true, and the others (sent to the emulator)
 (new Kernel(new WithUrls(
     new Dispatcher(
@@ -89,7 +94,7 @@ $emulator = EmulatorConfig::fromValues(getenv('EMULATOR_URL') ?: null, getenv('G
         $logger,
     ),
     $url,
-)))->run();
+), new PsrHttpFactory($psr17, $psr17, $psr17, $psr17), new ResponseEmitter()))->run();
 ```
 
 - **Lazy controllers:** a service with many screens shouldn't build every controller, and parse
@@ -110,11 +115,12 @@ $emulator = EmulatorConfig::fromValues(getenv('EMULATOR_URL') ?: null, getenv('G
   ```
 
 - **`Kernel`** is what `public/index.php` runs, and the only place reading the globals: it
-  creates the HTTP request (`symfony/http-foundation`, converted to PSR-7 with
-  `symfony/psr-http-message-bridge`), has its handler (PSR-15) handle it, and sends the
-  response, unless it is an `EmptyHttpResponse` (already written, or nothing to answer). No
-  other class reads `$_SERVER`, the environment or the request's body, nor writes headers or
-  output, except `MiniPaviCli` for the gateway (below).
+  creates the HTTP request with `symfony/http-foundation`, converts it to PSR-7 with the
+  factory it is given (e.g. `symfony/psr-http-message-bridge`'s `PsrHttpFactory`), has its
+  handler (PSR-15) handle it, and sends the response with **`ResponseEmitter`** (its status,
+  headers and body), unless it is an `EmptyHttpResponse` (already written, or nothing to
+  answer). No other class reads `$_SERVER`, the environment or the request's body, nor writes
+  headers or output, except `MiniPaviCli` for the gateway (below).
 - **`WithUrls`** computes the service's URLs for the request once, with **`RequestUrl`**, and
   passes it on with them in its attributes (**`UrlAttribute`**): `Service`, the script, given
   to the gateway as the next URL to call (it travels in `GatewayRequest::$serviceUrl`), and
