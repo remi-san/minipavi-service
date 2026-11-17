@@ -96,10 +96,9 @@ $logger = new ErrorLogLogger();
 - **`Service`** answers a request of the gateway, without I/O:
   `$service->handle(GatewayRequest): ?GatewayAnswer` (null for a disconnection, which has
   nothing to answer). It restores the `Context`, and runs the controller of the current route
-  until a response answers the gateway. Responses are plain data, and `Service` interprets
-  them, in this order: it keeps the state and parameters the response gives for its
-  controller, then either changes route (`goTo()`, running the target controller) or builds
-  the `GatewayAnswer`. A context without route, or
+  until a response answers the gateway. `Service` owns the context: it keeps the state and
+  parameters a response gives for its controller, then the response says what comes next,
+  through a `Flow` (see below). A context without route, or
   whose route the service doesn't have (e.g. removed in a new version), starts again at the
   default route.
   If serving a request fails (an exception or a PHP error, in a controller, a template, the
@@ -148,9 +147,27 @@ $logger = new ErrorLogLogger();
   user comes back to it); give others by name, e.g.
   `Response::readInput($vdt, $command, parameters: ['page' => 2])`. The classes behind them
   (`DisplayPage`, `RunCommand`, `ChangePage`, `RunExternalService`) can also be built directly.
-  They are readonly data, without behaviour, and a closed set (`@phpstan-sealed`): `Service`
-  handles each of them, so a new kind of response is a new class and a new case in
-  `Service`, not a subclass of `Response` elsewhere.
+  They are readonly, and don't change the context. Once `Service` has kept a response's
+  state and parameters, it calls `continueWith(Flow $flow): GatewayAnswer`, where the
+  response says what comes next: `$flow->answer($vdt, $command, $next, $directCall)` ends
+  the request with that answer to the gateway, and `$flow->goTo($route, $parameters)` runs
+  another controller and gives its answer. A response of your own extends `Response` and
+  implements `continueWith()`, without a change to `Service`:
+
+  ```php
+  final readonly class ClearAndShow extends Response
+  {
+      public function __construct(private string $vdt)
+      {
+          parent::__construct(Controller::STATE_READ_INPUT, []);
+      }
+
+      public function continueWith(Flow $flow): GatewayAnswer
+      {
+          return $flow->answer(VdtHelper::clearScreen() . $this->vdt);
+      }
+  }
+  ```
 
 - **`AbstractController`** runs the method of the request's state, so a controller only
   writes what each state does:
