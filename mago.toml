@@ -41,8 +41,6 @@ baseline = "lint-baseline.toml"
 # Named arguments where they help reading (e.g. a display element's row: and col:), not for
 # every literal (assertions, Videotex bytes, MiniPaviCli's arguments)
 literal-named-argument = { enabled = false }
-# else is kept where both branches are alternatives of the same weight
-no-else-clause = { enabled = false }
 # @ silences the warning of a file function whose false result is then handled (reading a
 # page, a messages file, a Videotex file)
 no-error-control-operator = { enabled = false }
