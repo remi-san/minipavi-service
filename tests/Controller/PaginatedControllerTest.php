@@ -25,6 +25,7 @@ final class PaginatedControllerTest extends TestCase
     private const PAGE = <<<'XML'
         <page type="template">
           <foreach items="items" as="item" row="2" step="1"><text>{{item}}</text></foreach>
+          <text row="22">{{firstItem}}-{{lastItem}} of {{itemCount}}, {{perPage}} per page</text>
           <text row="23">Page {{page}}/{{pageCount}}</text>
         </page>
         XML;
@@ -43,7 +44,8 @@ final class PaginatedControllerTest extends TestCase
     public function testShowsTheFirstPageWithItsNumber(): void
     {
         $this->tester(['a', 'b', 'c', 'd', 'e'])
-            ->assertRoute('list')->assertLineContains(2, 'a')->assertLineContains(3, 'b')->assertScreenContains('Page 1/3');
+            ->assertRoute('list')->assertLineContains(2, 'a')->assertLineContains(3, 'b')->assertScreenContains('Page 1/3')
+            ->assertLineContains(22, '1-2 of 5, 2 per page');
     }
 
     public function testSuiteAndRetourChangePage(): void
@@ -51,6 +53,7 @@ final class PaginatedControllerTest extends TestCase
         $this->tester(['a', 'b', 'c', 'd', 'e'])
             ->press(FunctionKey::Next)->assertLineContains(2, 'c')->assertScreenContains('Page 2/3')->assertScreenNotContains('a ')
             ->press(FunctionKey::Next)->assertLineContains(2, 'e')->assertScreenContains('Page 3/3')
+            ->assertLineContains(22, '5-5 of 5, 2 per page')
             ->press(FunctionKey::Previous)->assertLineContains(2, 'c')->assertScreenContains('Page 2/3');
     }
 

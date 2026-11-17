@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MiniPaviService\Tests\Support;
 
 use MiniPaviService\Controller\PaginatedController;
+use MiniPaviService\Controller\Paginator;
 use MiniPaviService\Controller\Request;
 use MiniPaviService\Controller\Response;
 use MiniPaviService\Core\FunctionKey;
@@ -26,22 +27,27 @@ final class ListController extends PaginatedController
         parent::__construct($page);
     }
 
-    protected function pageCount(): int
+    protected function itemCount(): int
     {
-        return (int) ceil(\count($this->items) / $this->perPage);
+        return \count($this->items);
     }
 
-    protected function pageData(int $page): array
+    protected function itemsPerPage(): int
     {
-        return ['items' => \array_slice($this->items, $page * $this->perPage, $this->perPage)];
+        return $this->perPage;
     }
 
-    protected function onOtherKey(Request $request, int $page): Response
+    protected function pageData(Paginator $paginator): array
+    {
+        return ['items' => $paginator->slice($this->items)];
+    }
+
+    protected function onOtherKey(Request $request, Paginator $paginator): Response
     {
         return match ($request->functionKey()) {
             FunctionKey::Summary => Response::goTo('menu'),
             FunctionKey::Send => $this->turn($request, 1),
-            default => $this->stay($page),
+            default => $this->stay($paginator),
         };
     }
 }
