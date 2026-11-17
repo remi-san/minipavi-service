@@ -97,6 +97,15 @@ $logger = new ErrorLogLogger();
   service: with `EMULATOR_URL` set (the local stack), that emulator and the
   gateway `GATEWAY_URL`, which reaches the service at `SERVICES_INTERNAL_HOST`; otherwise (a
   public server), the minipavi.fr emulator and gateway, with the URL the browser asked for.
+
+  **`?web=true`** shows a browser the screen instead, drawn as an HTML page: no interaction,
+  no gateway, just the Videotex interpreted (`Service::preview()`, `Vdt\HtmlRenderer`).
+  `?web=true` shows the default route's first screen, as on a connection, and
+  `?web=true&route=games` that route's, its controller run at its initial state. An unknown
+  route shows the error message on line 0. Only `web=true` does it: any other value, or none,
+  sends the browser to the emulator. The page is in the Minitel's colours, with double sizes,
+  inverse video, underlining, blinking and mosaic pixels, drawn as MiniPavi's emulator does,
+  in self-contained HTML (inline CSS, no JavaScript).
 - **`RequestUrl`** builds the service's URLs for `ServiceRunner` (where browsers come back)
   and `MiniPaviClient` (the next URL given to the gateway): https when the web server says
   the request came over TLS (`HTTPS`, port 443). Both read from the environment:
@@ -538,6 +547,8 @@ echo $moved->screen()->preview();      // the screen, as text
   the status line, is not moved.
 - **`withoutClear()`**: the same content without its clear screens (FF), to draw it over
   other content.
+- **`HtmlRenderer::render($screen, $title)`**: the screen as an HTML page (see `?web=true`
+  above).
 - **`screen()`**: the `Screen` drawn by the content: a `Cell` (character and attributes) or
   `null` per row and column. `preview()` prints it as text, with row numbers (G2 characters
   as `?`), and `line($row)` and `text()` give the text of a row and of the screen, G2
