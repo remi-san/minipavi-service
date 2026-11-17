@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace MiniPaviService\Page\Display;
 
 use MiniPaviService\Minitel\Terminal;
-use MiniPaviService\Vdt\Screen;
+use MiniPaviService\Vdt\Screen\Screen;
 use MiniPaviService\Vdt\VdtHelper;
 
 /**

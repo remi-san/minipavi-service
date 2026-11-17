@@ -6,7 +6,7 @@ namespace MiniPaviService\Page;
 
 use MiniPaviService\Minitel\FunctionKey;
 use MiniPaviService\Page\Display\Position;
-use MiniPaviService\Vdt\Screen;
+use MiniPaviService\Vdt\Screen\Screen;
 
 /**
  * Field where the user types, validated with one of the validWith keys

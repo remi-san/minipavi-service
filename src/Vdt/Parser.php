@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Vdt;
 
+use MiniPaviService\Vdt\Screen\Attributes;
+
 /**
  * Cuts Videotex content into Tokens
  */

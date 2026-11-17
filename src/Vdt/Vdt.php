@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Vdt;
 
+use MiniPaviService\Vdt\Screen\Attributes;
+use MiniPaviService\Vdt\Screen\Cursor;
+use MiniPaviService\Vdt\Screen\Screen;
+
 /**
  * Videotex content: what is sent to the Minitel. The framework and services carry it as this
  * value, and only the gateway client turns it into bytes (toString()). Text is made with

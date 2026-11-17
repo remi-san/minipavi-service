@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Page\Display;
 
-use MiniPaviService\Vdt\Screen;
+use MiniPaviService\Vdt\Screen\Screen;
 
 /**
  * Bounds of the screen (Screen::ROWS and Screen::COLS), shared by the elements

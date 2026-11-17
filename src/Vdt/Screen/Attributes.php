@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace MiniPaviService\Vdt;
+namespace MiniPaviService\Vdt\Screen;
 
 /**
  * Character attributes, as an array group => value: the byte after ESC, or SO / SI for the

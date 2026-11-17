@@ -2,7 +2,11 @@
 
 declare(strict_types=1);
 
-namespace MiniPaviService\Vdt;
+namespace MiniPaviService\Vdt\Screen;
+
+use MiniPaviService\Vdt\Token;
+use MiniPaviService\Vdt\TokenType;
+use MiniPaviService\Vdt\Vdt;
 
 /**
  * Screen drawn by Videotex content: rows 0 (status line) to ROWS, of COLS cells. ROWS and

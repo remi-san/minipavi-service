@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace MiniPaviService\Vdt;
+namespace MiniPaviService\Vdt\Screen;
 
 /**
  * Cursor and attributes of a Minitel screen in page mode, as Videotex content moves them

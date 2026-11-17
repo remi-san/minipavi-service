@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Vdt;
 
+use MiniPaviService\Vdt\Screen\Attributes;
+use MiniPaviService\Vdt\Screen\Screen;
+
 /**
  * Writes Videotex content cell by cell: positions the cursor only where the next character
  * isn't already, sends only the attributes that changed, and repeats characters with REP

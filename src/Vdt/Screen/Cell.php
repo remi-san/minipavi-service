@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace MiniPaviService\Vdt;
+namespace MiniPaviService\Vdt\Screen;
 
 /**
  * Character shown in a cell of the Screen, with its attributes (see Attributes)

@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace MiniPaviService\Tests\Vdt;
+namespace MiniPaviService\Tests\Vdt\Screen;
 
 use MiniPaviService\Minitel\Terminal;
 use MiniPaviService\Page\Display\Key;
-use MiniPaviService\Vdt\Attributes;
-use MiniPaviService\Vdt\Cell;
-use MiniPaviService\Vdt\HtmlRenderer;
-use MiniPaviService\Vdt\Screen;
+use MiniPaviService\Vdt\Screen\Attributes;
+use MiniPaviService\Vdt\Screen\Cell;
+use MiniPaviService\Vdt\Screen\HtmlRenderer;
+use MiniPaviService\Vdt\Screen\Screen;
 use MiniPaviService\Vdt\Vdt;
 use MiniPaviService\Vdt\VdtHelper;
 use PHPUnit\Framework\TestCase;

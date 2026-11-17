@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace MiniPaviService\Vdt;
+namespace MiniPaviService\Vdt\Screen;
 
 /**
  * Draws a Screen as an HTML page, as the Minitel would show it (checked against MiniPavi's
@@ -16,7 +16,7 @@ namespace MiniPaviService\Vdt;
 final readonly class HtmlRenderer
 {
     // Minitel-Canvas's Minitel font (resources/fonts, CC0)
-    public const MINITEL_FONT = __DIR__ . '/../../resources/fonts/Minitel.ttf';
+    public const MINITEL_FONT = __DIR__ . '/../../../resources/fonts/Minitel.ttf';
 
     // Colours of the Minitel, by their index in attribute codes (ESC 0x40 + index for the
     // character, 0x50 + index for the background)
