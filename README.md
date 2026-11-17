@@ -171,14 +171,14 @@ $logger = new ErrorLogLogger();
   ```php
   final readonly class ClearAndShow extends Response
   {
-      public function __construct(private string $vdt)
+      public function __construct(private Vdt $vdt)
       {
           parent::__construct(ControllerState::ReadInput, null);
       }
 
       public function continueWith(Flow $flow): GatewayAnswer
       {
-          return $flow->answer(VdtHelper::clearScreen() . $this->vdt);
+          return $flow->answer(VdtHelper::clearScreen()->append($this->vdt));
       }
   }
   ```
@@ -493,6 +493,21 @@ format changes, change `page.xsd` with the parser.
 
 ## Videotex content
 
+Videotex goes through the framework as a **`Vdt` value**, never as a string: pages display
+one (`Page::display()`), responses and `Flow::answer()` take one, and `GatewayAnswer` holds
+one. Only the gateway client (`MiniPaviClient::send()`) turns it into bytes. Text and
+Videotex can't be mixed up:
+
+```php
+Vdt::text('Déjà vu');                       // text: its accents encoded in G2
+new Vdt("\x0C");                            // raw Videotex (or Vdt::fromString())
+VdtHelper::writeLine0('Choix inconnu');     // MiniPaviCli's helpers give Vdt too
+$page->display($terminal)->append(VdtHelper::writeLine0('Bienvenue'));  // one after the other
+Vdt::join($a, $b, $c);
+```
+
+A `Vdt` keeps its bytes, and reads them only to play, show or move them (below).
+
 Codes to send as they are have names: `Vdt\Videotex` for Videotex (`CLEAR_LINE`,
 `CURSOR_OFF`, `INVERSE_ON`, sizes, `RESET_CHARSETS`...), and the `Minitel\Keyboard`,
 `Minitel\LocalEcho` and `Minitel\Scroll` enums for the sequences configuring the Minitel
@@ -503,8 +518,8 @@ They replace MiniPaviCli's global `VDT_*` and `PRO_*` constants, which are only 
 `MiniPaviCli` is loaded. `VdtHelper` gives MiniPaviCli's Videotex helpers (`setPos()`,
 `writeLine0()`, `toG2()`...).
 
-`MiniPaviService\Vdt\Vdt` reads Videotex content, from a string or a `.vdt` file, and moves
-it on the screen; `<image>` uses it.
+`Vdt` also reads Videotex content, from a string or a `.vdt` file, and moves it on the
+screen; `<image>` uses it.
 
 ```php
 use MiniPaviService\Vdt\Vdt;
