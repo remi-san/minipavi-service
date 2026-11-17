@@ -64,7 +64,7 @@ use MiniPaviService\Http\Dispatch\{ConditionalRequestHandler, Dispatcher, FromMi
 use MiniPaviService\Http\Emulator\{EmulatorConfig, EmulatorRedirect};
 use MiniPaviService\Http\Url\{RequestUrl, WithUrls};
 use Nyholm\Psr7\Factory\Psr17Factory;
-use Symfony\Bridge\PsrHttpMessage\Factory\PsrHttpFactory;
+use Nyholm\Psr7Server\ServerRequestCreator;
 use MiniPaviService\Log\ErrorLogLogger;
 use MiniPaviService\Message\Messages;
 use MiniPaviService\Page\Parser\PageXmlParser;
@@ -88,7 +88,7 @@ $signer = new HmacContextSigner(getenv('CONTEXT_SECRET') ?: throw new \RuntimeEx
 $url = new RequestUrl(getenv('SERVICE_URL') ?: null, getenv('TRUSTED_PROXIES') ?: '');
 $emulator = EmulatorConfig::fromValues(getenv('EMULATOR_URL') ?: null, getenv('GATEWAY_URL') ?: null, getenv('SERVICES_INTERNAL_HOST') ?: null);
 
-// The request is converted to PSR-7 with Nyholm's factories (a PSR-17 implementation)
+// The PSR-7 request is created from the globals with nyholm/psr7-server, and Nyholm's factories (PSR-17)
 $psr17 = new Psr17Factory();
 
 // The gateway's requests, browsers asking ?web=true, and the others (sent to the emulator)
@@ -102,7 +102,7 @@ $psr17 = new Psr17Factory();
         $logger,
     ),
     $url,
-), new PsrHttpFactory($psr17, $psr17, $psr17, $psr17), new ResponseEmitter()))->run();
+), new ServerRequestCreator($psr17, $psr17, $psr17, $psr17), new ResponseEmitter()))->run();
 ```
 
 - **Lazy controllers:** a service with many screens shouldn't build every controller, and parse
@@ -123,9 +123,9 @@ $psr17 = new Psr17Factory();
   ```
 
 - **`Kernel`** is what `public/index.php` runs, and the only place reading the globals: it
-  creates the HTTP request with `symfony/http-foundation`, converts it to PSR-7 with the
-  factory it is given (e.g. `symfony/psr-http-message-bridge`'s `PsrHttpFactory`), has its
-  handler (PSR-15) handle it, and sends the response with **`ResponseEmitter`** (its status,
+  creates the PSR-7 request from the globals with the creator it is given (e.g.
+  `nyholm/psr7-server`'s `ServerRequestCreator`, with `nyholm/psr7`'s PSR-17 factories), has
+  its handler (PSR-15) handle it, and sends the response with **`ResponseEmitter`** (its status,
   headers and body): every response, the gateway's included. No other class reads
   `$_SERVER`, the environment or the request's body, nor writes headers or output (what
   `MiniPaviCli` writes for the gateway is captured, below).
