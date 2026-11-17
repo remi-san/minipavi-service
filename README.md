@@ -58,6 +58,7 @@ In Docker, the framework and the service keep the repository's layout (`/app/fra
 use MiniPaviService\Core\{Router, Service};
 use MiniPaviService\Client\MiniPaviClient;
 use MiniPaviService\Client\HtmlClient;
+use MiniPaviService\Core\Signing\HmacContextSigner;
 use MiniPaviService\Http\{Kernel, ResponseEmitter, ServiceRunner};
 use MiniPaviService\Http\Dispatch\{ConditionalRequestHandler, Dispatcher, FromMiniPaviGateway, QueryParameterEquals};
 use MiniPaviService\Http\Emulator\{EmulatorConfig, EmulatorRedirect};
@@ -83,6 +84,7 @@ $logger = new ErrorLogLogger();
 $service = new Service($router, $messages, $logger);
 
 // The environment is read here (or in the container): the framework doesn't read it itself
+$signer = new HmacContextSigner(getenv('CONTEXT_SECRET') ?: throw new \RuntimeException('CONTEXT_SECRET is not set'));
 $url = new RequestUrl(getenv('SERVICE_URL') ?: null, getenv('TRUSTED_PROXIES') ?: '');
 $emulator = EmulatorConfig::fromValues(getenv('EMULATOR_URL') ?: null, getenv('GATEWAY_URL') ?: null, getenv('SERVICES_INTERNAL_HOST') ?: null);
 
@@ -93,8 +95,8 @@ $psr17 = new Psr17Factory();
 (new Kernel(new WithUrls(
     new Dispatcher(
         [
-            new ConditionalRequestHandler('gateway', new FromMiniPaviGateway(), new ServiceRunner($service, new MiniPaviClient(), $logger)),
-            new ConditionalRequestHandler('web', new QueryParameterEquals('web', 'true'), new ServiceRunner($service, new HtmlClient(new HtmlRenderer(HtmlRenderer::MINITEL_FONT), $messages), $logger)),
+            new ConditionalRequestHandler('gateway', new FromMiniPaviGateway(), new ServiceRunner($service, new MiniPaviClient(), $signer, $logger)),
+            new ConditionalRequestHandler('web', new QueryParameterEquals('web', 'true'), new ServiceRunner($service, new HtmlClient(new HtmlRenderer(HtmlRenderer::MINITEL_FONT), $messages), $signer, $logger)),
         ],
         new EmulatorRedirect($emulator, $logger),     // what none matches
         $logger,
@@ -156,7 +158,19 @@ $psr17 = new Psr17Factory();
   `GatewayRequest` (`$clientState`), and given back to the client with it. A client without
   any uses the null object `NoClientState`, as requests built in memory do. A request that can't be read is answered
   as an error (see `Service`); nothing to answer (e.g. a disconnection) is a `204`, and an
-  answer the client can't give a `500` (logged as critical). Two clients:
+  answer the client can't give a `500` (logged as critical).
+  **The context is signed** on its way through the gateway (or the browser), so that the user
+  can't change it: anyone could otherwise send another route, or other parameters.
+  `ServiceRunner` takes a **`Core\Signing\ContextSigner`**: it checks the context of the
+  request before the service gets it (`GatewayRequest::verify()`; a connection's or
+  disconnection's isn't read, so it isn't checked), and signs the context of the answer before
+  the client gets it (`GatewayResponse::sign()`). **`HmacContextSigner`** signs it with an
+  HMAC-SHA256 of a secret key (`<signature>.<context>`), **`UnsignedContext`** doesn't. A context
+  the signer didn't sign (`ForgedContextException`) is answered as one that can't be read.
+  Keep the key out of the repository: the services read it from the environment,
+  **`CONTEXT_SECRET`** (`openssl rand -base64 32`), and don't sign the context without it, with
+  a warning. Changing the key makes the users of sessions in progress start again at the
+  default route. `Service` and `ServiceTester` deal with the context unsigned. Two clients:
   - **`MiniPaviClient`**, for the MiniPavi gateway, through `MiniPaviCli` used unchanged: it
     reads the gateway's request itself, and writes the answer itself: `MiniPaviClient` captures
     it as the body of the HTTP response;
