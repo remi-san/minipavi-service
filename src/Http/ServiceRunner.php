@@ -6,6 +6,8 @@ namespace MiniPaviService\Http;
 
 use MiniPaviService\Core\Service;
 use MiniPaviService\Gateway\MiniPaviClient;
+use MiniPaviService\Vdt\HtmlRenderer;
+use MiniPaviService\Vdt\Vdt;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 
@@ -42,13 +44,18 @@ final class ServiceRunner
     }
 
     /**
-     * Runs the service if the request comes from a gateway, sends the browser to the
-     * emulator otherwise
+     * Runs the service if the request comes from a gateway. A browser is shown the screen,
+     * drawn as HTML, with ?web=true (and &route=... for a route's), and sent to the emulator
+     * otherwise.
      */
     public function run(): void
     {
         if (!str_contains(ServerVariable::get('HTTP_USER_AGENT'), 'MiniPAVI')) {
-            $this->redirectBrowser();
+            if (ServerVariable::query('web') === 'true') {
+                $this->showScreen();
+            } else {
+                $this->redirectBrowser();
+            }
 
             return;
         }
@@ -68,6 +75,21 @@ final class ServiceRunner
         } catch (\Throwable $e) {
             $this->logger->critical('Cannot send the answer: ' . $e->getMessage(), ['exception' => $e]);
         }
+    }
+
+    /**
+     * Shows the browser the screen of the service (Service::preview()), its Videotex drawn as
+     * HTML: no interaction, no gateway
+     */
+    private function showScreen(): void
+    {
+        $route = ServerVariable::query('route');
+        $route = $route === '' ? null : $route;
+        $answer = $this->service->preview($route);
+        $this->logger->info('Screen shown in a browser', ['route' => $route]);
+
+        header('Content-Type: text/html; charset=utf-8');
+        echo (new HtmlRenderer())->render(($answer->vdt ?? new Vdt())->screen(), $this->url->current());
     }
 
     private function redirectBrowser(): void

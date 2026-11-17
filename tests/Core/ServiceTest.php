@@ -267,6 +267,32 @@ final class ServiceTest extends TestCase
         self::assertStringContainsString('keeps parameters of MiniPaviService\\Controller\\Parameters\\NoParameters, not MiniPaviService\\Controller\\Pagination\\PageParameters', $this->logger->records[0][1] ?? '');
     }
 
+    public function testPreviewShowsTheFirstScreenAsOnAConnection(): void
+    {
+        $answer = (new Service($this->router, Messages::defaults(), $this->logger))->preview();
+
+        self::assertSame('menu', $this->contentOf($answer));
+        self::assertSame([LogLevel::INFO, 'Connection', ['fctn' => 'CNX']], $this->logger->records[0]);
+    }
+
+    public function testPreviewShowsARouteAtItsInitialState(): void
+    {
+        $answer = (new Service($this->router, Messages::defaults(), $this->logger))->preview('directory');
+
+        self::assertSame('directory', $this->contentOf($answer));
+        $directory = $this->requests['directory'][0];
+        self::assertSame(ControllerState::Init, $directory->state());
+        self::assertEquals(new PageParameters(), $directory->parameters());
+    }
+
+    public function testPreviewOfAnUnknownRouteIsAnError(): void
+    {
+        $answer = (new Service($this->router, Messages::defaults(), $this->logger))->preview('removed');
+
+        self::assertSame(self::errorLine0(), $this->contentOf($answer));
+        self::assertSame([LogLevel::ERROR, 'Error serving the request: Unknown route "removed"'], [$this->logger->records[0][0], $this->logger->records[0][1]]);
+    }
+
     public function testInputGoesToTheControllerOfTheCurrentRoute(): void
     {
         $context = $this->context('{"route":"directory","states":{"directory":"read-input"},"parameters":{}}');

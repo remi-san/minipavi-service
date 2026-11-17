@@ -24,6 +24,17 @@ final class ServerVariable
     /**
      * Whether a flag such as HTTPS is on: set, and other than '0' or 'off'
      */
+    /**
+     * Value of a parameter of the query string (QUERY_STRING), null if missing or not text
+     */
+    public static function query(string $name): ?string
+    {
+        parse_str(self::get('QUERY_STRING'), $parameters);
+        $value = $parameters[$name] ?? null;
+
+        return \is_string($value) ? $value : null;
+    }
+
     public static function isOn(string $name): bool
     {
         return !\in_array(strtolower(self::get($name)), ['', '0', 'off'], true);
