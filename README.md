@@ -31,7 +31,7 @@ which depend on nothing above them):
 | `Vdt\` | Videotex: codes, reading, moving and playing Videotex content (`Screen`) |
 | `Gateway\` | the requests and answers the service handles (`GatewayRequest`, `GatewayResponse`, `CallMode`), and the `Client` interface reading and sending them |
 | `Client\` | the clients: `MiniPaviClient` for the MiniPavi gateway, `HtmlClient` for a browser (`?web=true`) |
-| `Http\` | the entry point for the web server, on PSR-7 / PSR-15: `Kernel`, `ResponseEmitter`, `EmptyHttpResponse`, `ServiceRunner`; in `Dispatch\`, who handles the request (`Dispatcher`, `ConditionalRequestHandler(s)`, `RequestMatcher`s); in `Url\`, the request's URLs (`RequestUrl`, `UrlAttribute`, `WithUrls`); in `Emulator\`, the emulator browsers are sent to (`EmulatorConfig`, `EmulatorRedirect`) |
+| `Http\` | the entry point for the web server, on PSR-7 / PSR-15: `Kernel`, `ResponseEmitter`, `EmptyHttpResponse`, `ServiceRunner`; in `Dispatch\`, who handles the request (`Dispatcher`, `ConditionalRequestHandler`, `RequestMatcher`s); in `Url\`, the request's URLs (`RequestUrl`, `UrlAttribute`, `WithUrls`); in `Emulator\`, the emulator browsers are sent to (`EmulatorConfig`, `EmulatorRedirect`) |
 | `Log\` | `ErrorLogLogger` |
 | `Testing\` | `ServiceTester`, functional tests of a service (needs PHPUnit) |
 
@@ -59,7 +59,7 @@ use MiniPaviService\Core\{Router, Service};
 use MiniPaviService\Client\MiniPaviClient;
 use MiniPaviService\Client\HtmlClient;
 use MiniPaviService\Http\{Kernel, ResponseEmitter, ServiceRunner};
-use MiniPaviService\Http\Dispatch\{ConditionalRequestHandler, ConditionalRequestHandlers, Dispatcher, FromMiniPaviGateway, QueryParameterEquals};
+use MiniPaviService\Http\Dispatch\{ConditionalRequestHandler, Dispatcher, FromMiniPaviGateway, QueryParameterEquals};
 use MiniPaviService\Http\Emulator\{EmulatorConfig, EmulatorRedirect};
 use MiniPaviService\Http\Url\{RequestUrl, WithUrls};
 use Nyholm\Psr7\Factory\Psr17Factory;
@@ -92,10 +92,10 @@ $psr17 = new Psr17Factory();
 // The gateway's requests, browsers asking ?web=true, and the others (sent to the emulator)
 (new Kernel(new WithUrls(
     new Dispatcher(
-        new ConditionalRequestHandlers(
+        [
             new ConditionalRequestHandler('gateway', new FromMiniPaviGateway(), new ServiceRunner($service, new MiniPaviClient(), $logger)),
             new ConditionalRequestHandler('web', new QueryParameterEquals('web', 'true'), new ServiceRunner($service, new HtmlClient(new HtmlRenderer(HtmlRenderer::MINITEL_FONT), $messages), $logger)),
-        ),
+        ],
         new EmulatorRedirect($emulator, $logger),     // what none matches
         $logger,
     ),
@@ -139,8 +139,8 @@ $psr17 = new Psr17Factory();
     `X-Forwarded-Proto` is believed, when they terminate TLS. From anyone else, the header
     is ignored.
 - **`Dispatch\Dispatcher`** decides who the HTTP request is for: the first of its
-  **`ConditionalRequestHandler`**s matching the request, or else its fallback. They come in a
-  `ConditionalRequestHandlers` collection, tried in its order. A `ConditionalRequestHandler` is
+  **`ConditionalRequestHandler`**s matching the request (a list, tried in its order), or else
+  its fallback. A `ConditionalRequestHandler` is
   a PSR-15 handler with a name and a condition (`RequestMatcher`); the framework's matchers are
   `FromMiniPaviGateway` (`User-Agent` with `MiniPAVI`) and `QueryParameterEquals` (e.g.
   `web=true`, that value only). The services send the gateway's requests to a `ServiceRunner`

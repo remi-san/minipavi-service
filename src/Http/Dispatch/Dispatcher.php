@@ -22,13 +22,13 @@ final readonly class Dispatcher implements RequestHandlerInterface
     private LoggerInterface $logger;
 
     /**
-     * @param ConditionalRequestHandlers $handlers tried in their order
+     * @param list<ConditionalRequestHandler> $handlers tried in this order
      * @param RequestHandlerInterface $fallback handles the requests none of them matches
      * @param ?LoggerInterface $logger where the case handling each request is logged (debug);
      *                                 none by default
      */
     public function __construct(
-        private ConditionalRequestHandlers $handlers,
+        private array $handlers,
         private RequestHandlerInterface $fallback,
         ?LoggerInterface $logger = null,
     ) {

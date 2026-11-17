@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace MiniPaviService\Tests\Http\Dispatch;
 
 use MiniPaviService\Http\Dispatch\ConditionalRequestHandler;
-use MiniPaviService\Http\Dispatch\ConditionalRequestHandlers;
 use MiniPaviService\Http\Dispatch\Dispatcher;
 use MiniPaviService\Http\Dispatch\FromMiniPaviGateway;
 use MiniPaviService\Http\Dispatch\QueryParameterEquals;
@@ -26,10 +25,10 @@ final class DispatcherTest extends TestCase
     {
         // The services' handlers
         $this->logger = new MemoryLogger();
-        $this->dispatcher = new Dispatcher(new ConditionalRequestHandlers(
+        $this->dispatcher = new Dispatcher([
             new ConditionalRequestHandler('gateway', new FromMiniPaviGateway(), new RecordingHandler('gateway')),
             new ConditionalRequestHandler('web', new QueryParameterEquals('web', 'true'), new RecordingHandler('web')),
-        ), new RecordingHandler('browser'), $this->logger);
+        ], new RecordingHandler('browser'), $this->logger);
     }
 
     public function testGivesTheRequestToTheFirstHandlerMatchingIt(): void
@@ -69,16 +68,26 @@ final class DispatcherTest extends TestCase
     public function testAServiceAddsItsOwnHandlers(): void
     {
         // E.g. a health check, before the others
-        $dispatcher = new Dispatcher(new ConditionalRequestHandlers(
+        $dispatcher = new Dispatcher([
             new ConditionalRequestHandler('health', new QueryParameterEquals('health', '1'), new RecordingHandler('ok')),
             new ConditionalRequestHandler('web', new QueryParameterEquals('web', 'true'), new RecordingHandler('web')),
-        ), new RecordingHandler('browser'));
+        ], new RecordingHandler('browser'));
 
         self::assertSame('ok', (string) $dispatcher->handle(HttpRequests::to('Mozilla/5.0', ['health' => '1', 'web' => 'true']))->getBody());
     }
 
+    public function testAConditionalHandlerMatchesWhatItsMatcherMatchesAndDelegatesToItsHandler(): void
+    {
+        $handler = new ConditionalRequestHandler('web', new QueryParameterEquals('web', 'true'), new RecordingHandler('web'));
+
+        self::assertSame('web', $handler->name());
+        self::assertTrue($handler->matches(HttpRequests::to('Mozilla/5.0', ['web' => 'true'])));
+        self::assertFalse($handler->matches(HttpRequests::to('Mozilla/5.0')));
+        self::assertSame('web', (string) $handler->handle(HttpRequests::to('Mozilla/5.0'))->getBody());
+    }
+
     public function testWithoutHandlersEverythingGoesToTheFallback(): void
     {
-        self::assertSame('browser', (string) (new Dispatcher(new ConditionalRequestHandlers(), new RecordingHandler('browser')))->handle(HttpRequests::to('MiniPAVI'))->getBody());
+        self::assertSame('browser', (string) (new Dispatcher([], new RecordingHandler('browser')))->handle(HttpRequests::to('MiniPAVI'))->getBody());
     }
 }
