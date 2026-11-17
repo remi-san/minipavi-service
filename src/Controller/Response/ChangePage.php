@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace MiniPaviService\Controller\Response;
 
 use MiniPaviService\Controller;
+use MiniPaviService\Controller\Flow;
 use MiniPaviService\Controller\Response;
+use MiniPaviService\Gateway\GatewayAnswer;
 
 /**
  * Switches to the controller of another route, which runs at once: it starts at STATE_INIT,
@@ -23,5 +25,10 @@ final readonly class ChangePage extends Response
         public array $targetParameters = [],
     ) {
         parent::__construct(Controller::STATE_INIT, []);
+    }
+
+    public function continueWith(Flow $flow): GatewayAnswer
+    {
+        return $flow->goTo($this->route, $this->targetParameters);
     }
 }

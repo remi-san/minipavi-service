@@ -12,10 +12,12 @@ use MiniPaviService\Controller\Response\DisplayPage;
 use MiniPaviService\Controller\Response\RunCommand;
 use MiniPaviService\Controller\Response\RunExternalService;
 use MiniPaviService\Page\InputCommand;
+use MiniPaviService\Tests\Support\RecordingFlow;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Responses are plain data: what they do is Service's (ServiceTest)
+ * What a response keeps, and what it asks the flow for: what the flow does is Service's
+ * (ServiceTest)
  */
 final class ResponseTest extends TestCase
 {
@@ -79,5 +81,45 @@ final class ResponseTest extends TestCase
 
         self::assertSame(Controller::STATE_DISPLAY, $response->state());
         self::assertSame(['from' => 'home'], $response->parameters());
+    }
+
+    public function testDisplayAnswersWithItsContent(): void
+    {
+        self::assertSame([['answer', ['vdt' => 'Hello', 'command' => null, 'next' => null, 'directCall' => null]]], $this->callsOf(Response::display('Hello')));
+    }
+
+    public function testReadInputAnswersWithTheCommand(): void
+    {
+        $command = new InputCommand(['COMMAND' => ['name' => 'InputTxt']]);
+
+        self::assertSame([['answer', ['vdt' => 'Code ?', 'command' => $command, 'next' => null, 'directCall' => null]]], $this->callsOf(Response::readInput('Code ?', $command)));
+        // Without content: none sent
+        self::assertSame([['answer', ['vdt' => '', 'command' => null, 'next' => null, 'directCall' => null]]], $this->callsOf(new RunCommand(Controller::STATE_READ_INPUT, [], null, null)));
+    }
+
+    public function testGoToRunsTheTargetController(): void
+    {
+        self::assertSame([['goTo', ['route' => 'menu', 'parameters' => ['from' => 'home']]]], $this->callsOf(Response::goTo('menu', ['from' => 'home'])));
+    }
+
+    public function testConnectToAnswersWithTheOtherService(): void
+    {
+        self::assertSame(
+            [['answer', ['vdt' => 'Cnx en cours', 'command' => null, 'next' => 'https://example.org/service', 'directCall' => CallMode::Connect]]],
+            $this->callsOf(Response::connectTo('https://example.org/service', 'Cnx en cours')),
+        );
+    }
+
+    /**
+     * What response asks the flow for
+     *
+     * @return list<array{string, array<string, mixed>}>
+     */
+    private function callsOf(Response $response): array
+    {
+        $flow = new RecordingFlow();
+        $response->continueWith($flow);
+
+        return $flow->calls;
     }
 }

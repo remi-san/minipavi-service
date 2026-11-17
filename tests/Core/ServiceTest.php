@@ -15,6 +15,7 @@ use MiniPaviService\Core\Terminal;
 use MiniPaviService\Gateway\GatewayAnswer;
 use MiniPaviService\Gateway\GatewayRequest;
 use MiniPaviService\Page\InputCommand;
+use MiniPaviService\Tests\Support\ClearAndShow;
 use MiniPaviService\Tests\Support\MemoryLogger;
 use MiniPaviService\Vdt\VdtHelper;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -228,6 +229,15 @@ final class ServiceTest extends TestCase
         self::assertSame(CallMode::Connect, $answer->directCall);
         // Kept for when the user comes back
         self::assertSame('{"route":"answer","states":{"answer":"init"},"parameters":{"answer":{"back":true}}}', $answer->context);
+    }
+
+    public function testAResponseOfItsOwnNeedsNoChangeToTheService(): void
+    {
+        $answer = $this->answerTo(new ClearAndShow('Hello'));
+
+        self::assertSame(VdtHelper::clearScreen() . 'Hello', $answer->vdt);
+        // Its state and parameters are kept, as for any response
+        self::assertSame('{"route":"answer","states":{"answer":"display"},"parameters":{"answer":{"cleared":true}}}', $answer->context);
     }
 
     public function testInputGoesToTheControllerOfTheCurrentRoute(): void

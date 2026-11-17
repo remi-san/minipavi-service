@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace MiniPaviService\Controller\Response;
 
 use MiniPaviService\Controller\CallMode;
+use MiniPaviService\Controller\Flow;
 use MiniPaviService\Controller\Response;
+use MiniPaviService\Gateway\GatewayAnswer;
 
 /**
  * Sends the user to another service, at url, after showing vdt; state and parameters are kept
@@ -30,5 +32,10 @@ final readonly class RunExternalService extends Response
     ) {
         parent::__construct($state, $parameters);
         $this->callMode = \is_string($callMode) ? CallMode::from($callMode) : $callMode;
+    }
+
+    public function continueWith(Flow $flow): GatewayAnswer
+    {
+        return $flow->answer($this->vdt, next: $this->url, directCall: $this->callMode);
     }
 }

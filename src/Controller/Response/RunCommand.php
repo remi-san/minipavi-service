@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Controller\Response;
 
+use MiniPaviService\Controller\Flow;
 use MiniPaviService\Controller\Response;
+use MiniPaviService\Gateway\GatewayAnswer;
 use MiniPaviService\Page\InputCommand;
 
 /**
@@ -25,5 +27,10 @@ final readonly class RunCommand extends Response
         public ?InputCommand $command,
     ) {
         parent::__construct($state, $parameters);
+    }
+
+    public function continueWith(Flow $flow): GatewayAnswer
+    {
+        return $flow->answer($this->vdt ?? '', $this->command);
     }
 }

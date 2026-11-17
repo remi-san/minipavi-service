@@ -5,10 +5,6 @@ declare(strict_types=1);
 namespace MiniPaviService\Core;
 
 use MiniPaviService\Controller\Response;
-use MiniPaviService\Controller\Response\ChangePage;
-use MiniPaviService\Controller\Response\DisplayPage;
-use MiniPaviService\Controller\Response\RunCommand;
-use MiniPaviService\Controller\Response\RunExternalService;
 use MiniPaviService\Gateway\GatewayAnswer;
 use MiniPaviService\Gateway\GatewayRequest;
 use MiniPaviService\Vdt\VdtHelper;
@@ -17,9 +13,10 @@ use Psr\Log\NullLogger;
 
 /**
  * Answers a request of the gateway: restores the context, and runs the controller of its route
- * until a response answers the gateway. It interprets the responses (plain data): it keeps
- * their state and parameters, changes routes, and builds the answer. Without I/O: reading the request and sending the answer
- * are the gateway client's (MiniPaviClient), run by ServiceRunner.
+ * until a response answers the gateway (RequestFlow). It owns the context: it keeps the state
+ * and parameters of each response, then the response says what comes next, through a Flow.
+ * Without I/O: reading the request and sending the answer are the gateway client's
+ * (MiniPaviClient), run by ServiceRunner.
  */
 final class Service
 {
@@ -71,10 +68,9 @@ final class Service
         $this->logger->error('Error serving the request: ' . $error->getMessage(), ['exception' => $error]);
         try {
             // The context keeps nothing: the default controller starts at STATE_INIT
-            return $this->gatewayAnswer(
-                Response::display(VdtHelper::writeLine0($this->errorMessage)),
-                new Context($this->router->defaultRoute()),
-            );
+            $flow = new RequestFlow($this->router, new Context($this->router->defaultRoute()), new Terminal(), self::MAX_PAGE_CHANGES);
+
+            return Response::display(VdtHelper::writeLine0($this->errorMessage))->continueWith($flow);
         } catch (\Throwable $e) {
             $this->logger->critical('Cannot answer the error: ' . $e->getMessage(), ['exception' => $e]);
 
@@ -122,47 +118,6 @@ final class Service
             $content = [];
         }
 
-        $routes = [$context->route()];
-        while (true) {
-            $controller = $this->router->route($context->route());
-            $response = $controller->run($context->getRequest($key, $content, $terminal));
-
-            // What this controller keeps for its next run (reset when it changes page)
-            $context->updateState($response->state());
-            $context->updateParameters($response->parameters());
-
-            if (!$response instanceof ChangePage) {
-                return $this->gatewayAnswer($response, $context);
-            }
-
-            // The target controller starts at STATE_INIT, with its parameters, and without the
-            // input: it was for this one
-            $context->changeRoute($response->route);
-            $context->resetState();
-            $context->updateParameters($response->targetParameters);
-            $key = '';
-            $content = [];
-
-            $routes[] = $context->route();
-            if (\count($routes) > self::MAX_PAGE_CHANGES + 1) {
-                throw new \LogicException('Too many page changes in one request (more than ' . self::MAX_PAGE_CHANGES . '): ' . implode(' → ', $routes));
-            }
-        }
-    }
-
-    /**
-     * Answer to the gateway for a response that ends the request, with the context as it is
-     * (the response's state and parameters are not applied here)
-     *
-     * @throws \LogicException for a ChangePage, which runs another controller instead
-     */
-    private function gatewayAnswer(Response $response, Context $context): GatewayAnswer
-    {
-        return match (true) {
-            $response instanceof ChangePage => throw new \LogicException('A page change does not answer the gateway'),
-            $response instanceof DisplayPage => new GatewayAnswer($response->vdt, $context->serialize()),
-            $response instanceof RunCommand => new GatewayAnswer($response->vdt ?? '', $context->serialize(), command: $response->command?->toArray()),
-            $response instanceof RunExternalService => new GatewayAnswer($response->vdt, $context->serialize(), $response->url, directCall: $response->callMode),
-        };
+        return (new RequestFlow($this->router, $context, $terminal, self::MAX_PAGE_CHANGES))->run($key, $content);
     }
 }
