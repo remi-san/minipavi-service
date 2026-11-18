@@ -7,7 +7,7 @@ namespace MiniPaviService\Http\Emulator;
 /**
  * Emulator that browsers are sent to, and gateway through which it opens the service
  */
-class EmulatorConfig
+final readonly class EmulatorConfig
 {
     public const PUBLIC_EMULATOR_URL = 'http://www.minipavi.fr/emulminitel/';
     public const PUBLIC_GATEWAY = 'wss://go.minipavi.fr:8181';
@@ -23,7 +23,7 @@ class EmulatorConfig
         private ?string $serviceHost = null,
     ) {}
 
-    public function getEmulatorUrl(string $serviceUrl): string
+    public function emulatorUrl(string $serviceUrl): string
     {
         return (
             rtrim($this->url, characters: '/')

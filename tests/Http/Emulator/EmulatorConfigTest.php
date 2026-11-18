@@ -15,7 +15,7 @@ final class EmulatorConfigTest extends TestCase
         self::assertSame(
             'http://www.minipavi.fr/emulminitel/index.php?gw='
                 . urlencode('wss://go.minipavi.fr:8181/?url=' . urlencode('https://example.org/Svc/?a=1')),
-            (new EmulatorConfig())->getEmulatorUrl('https://example.org/Svc/?a=1'),
+            (new EmulatorConfig())->emulatorUrl('https://example.org/Svc/?a=1'),
         );
     }
 
@@ -26,7 +26,7 @@ final class EmulatorConfigTest extends TestCase
         self::assertSame(
             'http://localhost:8081/index.php?gw='
                 . urlencode('ws://localhost:8182/?url=' . urlencode('http://services/Svc/index.php?a=1')),
-            $config->getEmulatorUrl('https://localhost:8083/Svc/index.php?a=1'),
+            $config->emulatorUrl('https://localhost:8083/Svc/index.php?a=1'),
         );
     }
 
