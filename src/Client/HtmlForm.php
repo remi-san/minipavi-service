@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MiniPaviService\Client;
 
 use MiniPaviService\Gateway\InputCommand;
+use MiniPaviService\Html\Html;
 use MiniPaviService\Message\FrameworkMessage;
 use MiniPaviService\Message\Messages;
 use MiniPaviService\Minitel\FunctionKey;
@@ -13,11 +14,12 @@ use MiniPaviService\Vdt\Vdt;
 use Psr\Http\Message\ServerRequestInterface;
 
 /**
- * The form of HtmlClient's page, both ways: render() draws the screen (HtmlRenderer), with the
- * input fields of the command over it, the function keys under it (those the input doesn't
- * accept disabled), and, hidden, the context, the command and the screen so far; read() gives
- * back what the page posted (PostedForm). Its fields are this class's alone; the command is
- * posted back as InputCommandJson writes it.
+ * The page of HtmlClient, a form, both ways: render() draws the page, the screen
+ * (HtmlRenderer) with the input fields of the command over it, the function keys under it
+ * (those the input doesn't accept disabled), and, hidden, the context, the command and the
+ * screen so far; read() gives back what the page posted (PostedForm). The page, its style and
+ * its fields are this class's alone; the command is posted back as InputCommandJson writes
+ * it. Self-contained: inline CSS and font, no JavaScript.
  */
 final readonly class HtmlForm
 {
@@ -27,6 +29,19 @@ final readonly class HtmlForm
     private const CONTEXT = 'context';
     private const COMMAND = 'command';
     private const SCREEN = 'screen';
+
+    // The page around the screen (HtmlRenderer::style() styles the screen)
+    private const STYLE = <<<'CSS'
+        :root { color-scheme: dark; }
+        body { margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center; background: #1c1c1c; }
+        .page { font: var(--font); }
+        .field { position: absolute; height: var(--h); padding: 0; border: 0; border-bottom: 1px dotted #888; background: transparent;
+            color: #fff; caret-color: #fff; font: inherit; letter-spacing: 0; outline: none; z-index: 2; }
+        .field:focus { border-bottom-color: #fff; }
+        .keys { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 10px; }
+        .keys button { padding: 6px 0; border: 0; border-radius: 3px; background: #6b4b32; color: #fff; font: inherit; cursor: pointer; }
+        .keys button:disabled { opacity: .35; cursor: default; }
+        CSS;
 
     /**
      * @param Messages $messages the service's: the labels of the keys
@@ -52,11 +67,20 @@ final readonly class HtmlForm
             . self::hidden(self::COMMAND, $command === null ? '' : $this->commands->encode($command))
             . self::hidden(self::SCREEN, base64_encode($screen->toString()));
 
-        return $this->renderer->render(
-            $screen->screen(),
-            $title,
-            self::fields($command),
-            $hidden . $this->keys($command),
+        return (
+            '<!doctype html><html><head><meta charset="utf-8">'
+            . '<meta name="viewport" content="width=device-width, initial-scale=1">'
+            . '<title>'
+            . Html::escape($title)
+            . '</title><style>'
+            . $this->renderer->style()
+            . self::STYLE
+            . '</style></head>'
+            . '<body><form method="post" class="page">'
+            . $this->renderer->render($screen->screen(), $this->fields($command))
+            . $hidden
+            . $this->keys($command)
+            . '</form></body></html>'
         );
     }
 
@@ -87,7 +111,7 @@ final readonly class HtmlForm
      * Inputs of the command's field, over the screen: one per line (one for a text field),
      * prefilled as the command says
      */
-    private static function fields(?InputCommand $command): string
+    private function fields(?InputCommand $command): string
     {
         if ($command === null) {
             return '';
@@ -103,10 +127,14 @@ final readonly class HtmlForm
                 . $field->span->length
                 . '"'
                 . ' value="'
-                . HtmlRenderer::escape($command->prefill[$line] ?? '')
+                . Html::escape($command->prefill[$line] ?? '')
                 . '"'
                 . ' style="'
-                . HtmlRenderer::at($field->span->start->col, $field->span->start->row + $line, $field->span->length)
+                . $this->renderer->place(
+                    $field->span->start->col,
+                    $field->span->start->row + $line,
+                    $field->span->length,
+                )
                 . '"'
                 . ($line === 0 ? ' autofocus' : '')
                 . ' autocomplete="off">';
@@ -136,7 +164,7 @@ final readonly class HtmlForm
                 . '"'
                 . ($enabled ? '' : ' disabled')
                 . '>'
-                . HtmlRenderer::escape($this->messages->get(FrameworkMessage::keyLabel($key)))
+                . Html::escape($this->messages->get(FrameworkMessage::keyLabel($key)))
                 . '</button>';
             $buttons[$key === FunctionKey::Send ? 0 : $position + 1] = $button;
         }
@@ -167,6 +195,6 @@ final readonly class HtmlForm
 
     private static function hidden(string $name, string $value): string
     {
-        return '<input type="hidden" name="' . $name . '" value="' . HtmlRenderer::escape($value) . '">';
+        return '<input type="hidden" name="' . $name . '" value="' . Html::escape($value) . '">';
     }
 }
