@@ -30,6 +30,21 @@ final readonly class AttributeValues
     }
 
     /**
+     * A value that must be given, trimmed
+     *
+     * @throws PageXmlException if it is absent or blank
+     */
+    public function required(string $name): string
+    {
+        $value = trim($this->values[$name] ?? '');
+        if ($value === '') {
+            throw new PageXmlException("{$name} is missing");
+        }
+
+        return $value;
+    }
+
+    /**
      * A number (digits only), or default if absent
      *
      * @throws PageXmlException if it isn't a number

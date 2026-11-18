@@ -5,7 +5,8 @@ declare(strict_types=1);
 namespace MiniPaviService\Page\Template;
 
 /**
- * Part of a template: a display element, or an instruction (<foreach>, <if>)
+ * Part of a template: a display element (ElementNode), an instruction (ForeachNode, IfNode),
+ * or nodes one after the other (Nodes)
  */
 interface Node
 {

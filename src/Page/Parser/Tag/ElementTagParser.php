@@ -33,7 +33,8 @@ final readonly class ElementTagParser implements TagParser
                 throw new PageXmlException('{{placeholders}} only in a page of type="template"');
             }
             if ($position->template && !$hasPlaceholder) {
-                // In a <foreach>, its row is relative to the item: checked when displayed
+                // Built now only to find its errors while parsing (the template builds it again
+                // when displayed). In a <foreach>, its row is relative to the item: checked then
                 $values = $tag->values();
                 $builder->build($position->inLoop ? $values->without('row') : $values, $tag->text);
             }

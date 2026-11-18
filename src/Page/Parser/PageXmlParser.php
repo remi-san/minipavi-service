@@ -18,6 +18,7 @@ use MiniPaviService\Page\Parser\Tag\NodesParser;
 use MiniPaviService\Page\Parser\Tag\TagPosition;
 use MiniPaviService\Page\Setup;
 use MiniPaviService\Page\StaticContent;
+use MiniPaviService\Page\Template\Nodes;
 use MiniPaviService\Page\Template\TemplateException;
 use MiniPaviService\Page\TemplateContent;
 use MiniPaviService\Xml\XmlDocument;
@@ -99,7 +100,7 @@ final class PageXmlParser
             $root,
             TagPosition::page(template: $type === 'template'),
         );
-        $template = new TemplateContent($parsed->nodes);
+        $template = new TemplateContent(new Nodes($parsed->nodes));
         if ($type === 'template') {
             return new MinitelPage($template, $messages, $parsed->input, $setup);
         }

@@ -15,14 +15,13 @@ final readonly class ForeachNode implements Node
     /**
      * @param string $items variable holding the items (array or iterable)
      * @param int $row first row of the first item; relative to the enclosing item if nested
-     * @param Node[] $children
      */
     public function __construct(
         private string $items,
         private string $as,
         private int $row,
         private int $step,
-        private array $children,
+        private Nodes $children,
         private string $location,
     ) {}
 
@@ -56,9 +55,7 @@ final readonly class ForeachNode implements Node
                 ],
                 $start + ($i * $this->step),
             );
-            foreach ($this->children as $child) {
-                array_push($elements, ...$child->elements($itemScope));
-            }
+            array_push($elements, ...$this->children->elements($itemScope));
         }
         return $elements;
     }
