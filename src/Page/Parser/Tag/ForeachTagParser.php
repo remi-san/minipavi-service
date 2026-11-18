@@ -1,0 +1,44 @@
+<?php
+
+declare(strict_types=1);
+
+namespace MiniPaviService\Page\Parser\Tag;
+
+use MiniPaviService\Page\Parser\PageXmlException;
+use MiniPaviService\Page\Template\ForeachNode;
+
+/**
+ * <foreach items as row step>: its children drawn once per item, in a page of type="template".
+ * Its row is absolute outside of any <foreach>, relative to the enclosing item inside.
+ */
+final readonly class ForeachTagParser implements TagParser
+{
+    public function parse(XmlTag $tag, TagPosition $position, NodesParser $nodes): ParsedNodes
+    {
+        [$items, $as, $row, $step] = $tag->check(static function () use ($tag, $position): array {
+            if (!$position->template) {
+                throw new PageXmlException('only in a page of type="template"');
+            }
+            foreach (['items', 'as'] as $required) {
+                if (trim($tag->attributes[$required] ?? '') === '') {
+                    throw new PageXmlException("{$required} is missing");
+                }
+            }
+            $as = $tag->attributes['as'] ?? '';
+            if (!preg_match('/^[A-Za-z_]\w*$/', $as) || $as === 'loop') {
+                throw new PageXmlException("as=\"{$as}\" must be a variable name, other than loop");
+            }
+            $values = $tag->values();
+
+            return [
+                trim($tag->attributes['items'] ?? ''),
+                $as,
+                $values->int('row', default: $position->inLoop ? 0 : 1),
+                $values->int('step', default: 1),
+            ];
+        });
+        $children = $nodes->parse($tag->element, $position->inLoop());
+
+        return ParsedNodes::node(new ForeachNode($items, $as, $row, $step, $children->nodes, $tag->at));
+    }
+}

@@ -1,0 +1,33 @@
+<?php
+
+declare(strict_types=1);
+
+namespace MiniPaviService\Page\Parser\Tag;
+
+use MiniPaviService\Page\Parser\PageXmlException;
+use MiniPaviService\Page\Template\IfNode;
+
+/**
+ * <if test="variable"> or <if test="!variable">: its children drawn or not, in a page of
+ * type="template"
+ */
+final readonly class IfTagParser implements TagParser
+{
+    public function parse(XmlTag $tag, TagPosition $position, NodesParser $nodes): ParsedNodes
+    {
+        $test = trim($tag->attributes['test'] ?? '');
+        $tag->check(static function () use ($test, $position): void {
+            if (!$position->template) {
+                throw new PageXmlException('only in a page of type="template"');
+            }
+            if ($test === '' || $test === '!') {
+                throw new PageXmlException('test is missing');
+            }
+        });
+        $children = $nodes->parse($tag->element, $position->nested());
+
+        return ParsedNodes::node(
+            new IfNode(ltrim($test, characters: '!'), str_starts_with($test, '!'), $children->nodes, $tag->at),
+        );
+    }
+}

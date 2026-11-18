@@ -6,20 +6,15 @@ namespace MiniPaviService\Page\Parser;
 
 use MiniPaviService\Io\Files;
 use MiniPaviService\Message\Messages;
-use MiniPaviService\Minitel\FunctionKey;
-use MiniPaviService\Minitel\InputField;
 use MiniPaviService\Minitel\Keyboard;
 use MiniPaviService\Minitel\LocalEcho;
 use MiniPaviService\Minitel\Scroll;
 use MiniPaviService\Page;
 use MiniPaviService\Page\Display\Display;
-use MiniPaviService\Page\Parser\Element\ElementBuilder;
+use MiniPaviService\Page\Parser\Tag\NodesParser;
+use MiniPaviService\Page\Parser\Tag\TagPosition;
 use MiniPaviService\Page\Setup;
 use MiniPaviService\Page\StaticPage;
-use MiniPaviService\Page\Template\ElementNode;
-use MiniPaviService\Page\Template\ForeachNode;
-use MiniPaviService\Page\Template\IfNode;
-use MiniPaviService\Page\Template\Node;
 use MiniPaviService\Page\Template\Scope;
 use MiniPaviService\Page\Template\TemplateException;
 use MiniPaviService\Page\TemplatePage;
@@ -98,9 +93,12 @@ final class PageXmlParser
         );
 
         $messages = $this->messages->with($this->messageTexts($root, $name));
-        $factory = ElementFactory::standard($baseDir, $messages);
-        $input = null;
-        $nodes = $this->nodes($root, $factory, $name, $type === 'template', inLoop: false, input: $input);
+        $parsed = NodesParser::standard(ElementFactory::standard($baseDir, $messages), $name)->parse(
+            $root,
+            TagPosition::page(template: $type === 'template'),
+        );
+        $nodes = $parsed->nodes;
+        $input = $parsed->input;
 
         if ($type === 'template') {
             return new TemplatePage($nodes, $messages, $input, $setup);
@@ -157,166 +155,6 @@ final class PageXmlParser
     }
 
     /**
-     * Nodes for the children of an XML element.
-     *
-     * @param bool $template page of type="template", the only one with placeholders and instructions
-     * @param bool $inLoop inside a <foreach>
-     * @param ?InputField $input set to the <input> of the page, found at its top level only
-     *
-     * @return Node[]
-     */
-    private function nodes(
-        \SimpleXMLElement $parent,
-        ElementFactory $factory,
-        string $name,
-        bool $template,
-        bool $inLoop,
-        ?InputField &$input,
-    ): array {
-        $nodes = [];
-        foreach (XmlElements::children($parent) as $tag => $elem) {
-            $at = $name . ' line ' . dom_import_simplexml($elem)->getLineNo();
-            $attributes = XmlElements::attributes($elem);
-            $hasPlaceholder = (bool) preg_match(Scope::PLACEHOLDER, implode("\n", $attributes) . "\n" . (string) $elem);
-
-            switch ($tag) {
-                case 'message':
-                    // Read by messageTexts()
-                    if ($parent->getName() !== 'page') {
-                        throw new PageXmlException("{$at}: <message>: only at the top level of the page");
-                    }
-                    break;
-
-                case 'input':
-                    $input = $this->check($at, $tag, static function () use (
-                        $parent,
-                        $input,
-                        $hasPlaceholder,
-                        $factory,
-                        $attributes,
-                    ) {
-                        if ($parent->getName() !== 'page') {
-                            throw new PageXmlException('only at the top level of the page');
-                        }
-                        if ($input !== null) {
-                            throw new PageXmlException('only one <input> per page');
-                        }
-                        if ($hasPlaceholder) {
-                            throw new PageXmlException('no {{placeholders}} in <input>');
-                        }
-                        return self::input(new AttributeValues($attributes));
-                    });
-                    break;
-
-                case 'foreach':
-                    [$row, $step] = $this->check($at, $tag, static function () use ($attributes, $inLoop, $template) {
-                        if (!$template) {
-                            throw new PageXmlException('only in a page of type="template"');
-                        }
-                        foreach (['items', 'as'] as $required) {
-                            if (trim($attributes[$required] ?? '') === '') {
-                                throw new PageXmlException("{$required} is missing");
-                            }
-                        }
-                        if (!preg_match('/^[A-Za-z_]\w*$/', $attributes['as']) || $attributes['as'] === 'loop') {
-                            throw new PageXmlException(
-                                "as=\"{$attributes['as']}\" must be a variable name, other than loop",
-                            );
-                        }
-                        // Absolute outside of any <foreach>, relative to the enclosing item inside
-                        $values = new AttributeValues($attributes);
-
-                        return [$values->int('row', default: $inLoop ? 0 : 1), $values->int('step', default: 1)];
-                    });
-                    $children = $this->nodes($elem, $factory, $name, $template, inLoop: true, input: $input);
-                    $nodes[] = new ForeachNode(
-                        trim($attributes['items']),
-                        $attributes['as'],
-                        $row,
-                        $step,
-                        $children,
-                        $at,
-                    );
-                    break;
-
-                case 'if':
-                    $test = trim($attributes['test'] ?? '');
-                    $this->check($at, $tag, static function () use ($test, $template) {
-                        if (!$template) {
-                            throw new PageXmlException('only in a page of type="template"');
-                        }
-                        if ($test === '' || $test === '!') {
-                            throw new PageXmlException('test is missing');
-                        }
-                    });
-                    $children = $this->nodes($elem, $factory, $name, $template, $inLoop, $input);
-                    $nodes[] = new IfNode(ltrim($test, characters: '!'), $test[0] === '!', $children, $at);
-                    break;
-
-                default:
-                    $builder = $this->check($at, $tag, static function () use (
-                        $tag,
-                        $inLoop,
-                        $template,
-                        $hasPlaceholder,
-                        $factory,
-                        $attributes,
-                        $elem,
-                    ): ElementBuilder {
-                        $builder = $factory->builder($tag) ?? throw new PageXmlException('unknown element');
-                        if ($inLoop && !$builder->isAllowedInLoop()) {
-                            throw new PageXmlException('not inside <foreach>');
-                        }
-                        if ($hasPlaceholder && !$template) {
-                            throw new PageXmlException('{{placeholders}} only in a page of type="template"');
-                        }
-                        if ($template && !$hasPlaceholder) {
-                            // Without placeholders, its errors (e.g. a missing file) are found now,
-                            // as in a static page, rather than when it is displayed. In a <foreach>,
-                            // its row is relative to the item: checked when displayed
-                            $values = new AttributeValues($attributes);
-                            $builder->build($inLoop ? $values->without('row') : $values, (string) $elem);
-                        }
-
-                        return $builder;
-                    });
-                    $nodes[] = new ElementNode($builder, $attributes, (string) $elem, $at);
-            }
-        }
-        return $nodes;
-    }
-
-    /**
-     * Field of the <input> of the page
-     *
-     * @throws PageXmlException for an invalid attribute
-     */
-    private static function input(AttributeValues $attributes): InputField
-    {
-        $keys = preg_split('/\s+/', trim($attributes->string('validwith', default: 'envoi')));
-        if ($keys === false) {
-            throw new PageXmlException('validwith: ' . preg_last_error_msg());
-        }
-        // Keys for the validwith attribute of <input>, separated by spaces
-        $validWith = [];
-        foreach ($keys as $name) {
-            $validWith[] = FunctionKey::fromXmlName($name) ?? throw new PageXmlException(
-                "unknown validwith key \"{$name}\" ("
-                . implode(', ', array_map(static fn(FunctionKey $key) => $key->xmlName(), FunctionKey::cases()))
-                . ')',
-            );
-        }
-
-        return new InputField(
-            row: $attributes->int('row', default: 13),
-            col: $attributes->int('col', default: 1),
-            length: $attributes->optionalInt('length'),
-            lines: $attributes->int('lines', default: 2),
-            validWith: $validWith,
-        );
-    }
-
-    /**
      * Texts of the messages the page redefines (<message name> at its top level), by name:
      * messages of the service only
      *
@@ -346,21 +184,5 @@ final class PageXmlParser
         }
 
         return $texts;
-    }
-
-    /**
-     * Result of check(), with the location added to its error message
-     *
-     * @template T
-     * @param callable(): T $check
-     * @return T
-     */
-    private function check(string $at, string $tag, callable $check): mixed
-    {
-        try {
-            return $check();
-        } catch (PageXmlException|\InvalidArgumentException $e) {
-            throw new PageXmlException("{$at}: <{$tag}>: " . $e->getMessage(), 0, $e);
-        }
     }
 }
