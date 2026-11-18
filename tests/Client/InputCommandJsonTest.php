@@ -60,6 +60,24 @@ final class InputCommandJsonTest extends TestCase
         self::assertNull((new InputCommandJson())->decode($json));
     }
 
+    public function testWhatIsMissingHasTheFieldsDefaults(): void
+    {
+        $command = (new InputCommandJson())->decode('{"row": 2, "col": 3, "length": 4, "lines": 1}');
+
+        self::assertEquals(new InputCommand(new InputField(new Span(new Position(2, col: 3), length: 4))), $command);
+    }
+
+    public function testWithoutAKnownKeyTheFieldIsValidatedWithSend(): void
+    {
+        // Rather than no key at all, which would disable every key of the page
+        $command = (new InputCommandJson())->decode(
+            '{"row": 2, "col": 3, "length": 4, "lines": 1, "validWith": ["NOPE"], "spaceChar": 7}',
+        );
+
+        self::assertSame([FunctionKey::Send], $command?->field->validWith);
+        self::assertSame('.', $command?->field->spaceChar);
+    }
+
     public function testIgnoresUnknownKeysAndWrongLines(): void
     {
         $command = (new InputCommandJson())->decode(

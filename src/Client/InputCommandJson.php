@@ -43,6 +43,15 @@ final readonly class InputCommandJson
             static fn(mixed $line) => \is_string($line) ? $line : '',
             \is_array($command['prefill'] ?? null) ? $command['prefill'] : [],
         ));
+        // What is missing (or can't be read, e.g. no key it knows) has the field's defaults:
+        // validated with Send, spaces shown as dots
+        $given = ['cursor' => ($command['cursor'] ?? true) === true];
+        if ($validWith !== []) {
+            $given['validWith'] = $validWith;
+        }
+        if (\is_string($command['spaceChar'] ?? null)) {
+            $given['spaceChar'] = $command['spaceChar'];
+        }
         try {
             $field = new InputField(
                 new Span(
@@ -53,9 +62,7 @@ final readonly class InputCommandJson
                     self::int($command, name: 'length', default: 1),
                 ),
                 self::int($command, name: 'lines', default: 1),
-                $validWith,
-                ($command['cursor'] ?? true) === true,
-                self::text($command, name: 'spaceChar'),
+                ...$given,
             );
         } catch (\InvalidArgumentException) {
             // Off the screen
@@ -96,15 +103,5 @@ final readonly class InputCommandJson
         $value = $values[$name] ?? null;
 
         return is_numeric($value) ? (int) $value : $default;
-    }
-
-    /**
-     * @param array<mixed> $values
-     */
-    private static function text(array $values, string $name): string
-    {
-        $value = $values[$name] ?? '';
-
-        return \is_string($value) ? $value : '';
     }
 }
