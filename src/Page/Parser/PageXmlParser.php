@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MiniPaviService\Page\Parser;
 
 use MiniPaviService\Io\Files;
+use MiniPaviService\Message\MessageElement;
 use MiniPaviService\Message\Messages;
 use MiniPaviService\Message\MessagesXmlParser;
 use MiniPaviService\Minitel\Keyboard;
@@ -18,7 +19,9 @@ use MiniPaviService\Page\Setup;
 use MiniPaviService\Page\StaticContent;
 use MiniPaviService\Page\Template\TemplateException;
 use MiniPaviService\Page\TemplateContent;
+use MiniPaviService\Xml\XmlDocument;
 use MiniPaviService\Xml\XmlElements;
+use MiniPaviService\Xml\XmlException;
 
 /**
  * Reads a page XML file (root element <page>, format documented in the framework's README.md)
@@ -68,21 +71,10 @@ final class PageXmlParser
      */
     public function parse(string $xml, string $baseDir, string $name = 'page'): Page
     {
-        $previous = libxml_use_internal_errors(true);
-        libxml_clear_errors();
-        $root = simplexml_load_string($xml, class_name: null, options: LIBXML_NOCDATA);
-        $errors = libxml_get_errors();
-        libxml_clear_errors();
-        libxml_use_internal_errors($previous);
-
-        if ($root === false) {
-            $error = $errors[0] ?? null;
-            throw new PageXmlException(
-                $error ? "{$name} line {$error->line}: " . trim($error->message) : "{$name}: invalid XML",
-            );
-        }
-        if ($root->getName() !== 'page') {
-            throw new PageXmlException("{$name}: root element must be <page>, not <" . $root->getName() . '>');
+        try {
+            $root = XmlDocument::withRoot($xml, $name, root: 'page');
+        } catch (XmlException $e) {
+            throw new PageXmlException($e->getMessage(), 0, $e);
         }
         $type = trim((string) $root['type']);
         if (!in_array($type, self::TYPES, strict: true)) {
@@ -177,25 +169,19 @@ final class PageXmlParser
      */
     private function messageTexts(\SimpleXMLElement $root, string $name): array
     {
-        $texts = [];
-        foreach (XmlElements::children($root) as $tag => $element) {
-            if ($tag !== 'message') {
-                continue;
+        try {
+            $messages = MessageElement::allIn($root, $name);
+            foreach ($messages as $message) {
+                if (!$this->messages->has($message->name)) {
+                    throw new PageXmlException(
+                        "{$message->at}: name=\"{$message->name}\" is not a message of the service",
+                    );
+                }
             }
-            $at = $name . ' line ' . dom_import_simplexml($element)->getLineNo() . ': <message>';
-            $messageName = trim((string) $element['name']);
-            if ($messageName === '') {
-                throw new PageXmlException("{$at}: name is missing");
-            }
-            if (!$this->messages->has($messageName)) {
-                throw new PageXmlException("{$at}: name=\"{$messageName}\" is not a message of the service");
-            }
-            if (array_key_exists($messageName, $texts)) {
-                throw new PageXmlException("{$at}: name=\"{$messageName}\" is already in the page");
-            }
-            $texts[$messageName] = trim((string) $element);
-        }
 
-        return $texts;
+            return MessageElement::texts($messages, in: 'the page');
+        } catch (XmlException $e) {
+            throw new PageXmlException($e->getMessage(), 0, $e);
+        }
     }
 }

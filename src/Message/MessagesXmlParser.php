@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Message;
 
+use MiniPaviService\Io\Files;
+use MiniPaviService\Xml\XmlDocument;
 use MiniPaviService\Xml\XmlElements;
+use MiniPaviService\Xml\XmlException;
 
 /**
  * Reads a messages file (root element <messages>, a <message name="...">text</message> per
@@ -36,8 +39,8 @@ final class MessagesXmlParser
      */
     public function parseFile(string $file, Messages $base): Messages
     {
-        $xml = is_file($file) ? file_get_contents($file) : false;
-        if ($xml === false) {
+        $xml = Files::read($file);
+        if ($xml === null) {
             throw new MessagesException("{$file}: file not found");
         }
 
@@ -53,24 +56,13 @@ final class MessagesXmlParser
      */
     public function parse(string $xml, Messages $base, string $name = 'messages'): Messages
     {
-        $previous = libxml_use_internal_errors(true);
-        libxml_clear_errors();
-        $root = simplexml_load_string($xml);
-        $errors = libxml_get_errors();
-        libxml_clear_errors();
-        libxml_use_internal_errors($previous);
+        try {
+            $root = XmlDocument::withRoot($xml, $name, root: 'messages');
 
-        if ($root === false) {
-            $error = $errors[0] ?? null;
-            throw new MessagesException(
-                $error !== null ? "{$name} line {$error->line}: " . trim($error->message) : "{$name}: invalid XML",
-            );
+            return $base->with(self::texts($root, $name));
+        } catch (XmlException $e) {
+            throw new MessagesException($e->getMessage(), 0, $e);
         }
-        if ($root->getName() !== 'messages') {
-            throw new MessagesException("{$name}: root element must be <messages>, not <" . $root->getName() . '>');
-        }
-
-        return $base->with(self::texts($root, $name));
     }
 
     /**
@@ -78,27 +70,18 @@ final class MessagesXmlParser
      *
      * @return array<string, string>
      *
-     * @throws MessagesException
+     * @throws XmlException
      */
-    private static function texts(\SimpleXMLElement $parent, string $name): array
+    private static function texts(\SimpleXMLElement $root, string $name): array
     {
-        $texts = [];
-        foreach (XmlElements::children($parent) as $tag => $element) {
+        foreach (XmlElements::children($root) as $tag => $element) {
+            if ($tag === 'message') {
+                continue;
+            }
             $at = $name . ' line ' . dom_import_simplexml($element)->getLineNo();
-            if ($tag !== 'message') {
-                throw new MessagesException("{$at}: <{$tag}>: unknown element");
-            }
-            $at .= ': <message>';
-            $messageName = trim((string) $element['name']);
-            if ($messageName === '') {
-                throw new MessagesException("{$at}: name is missing");
-            }
-            if (array_key_exists($messageName, $texts)) {
-                throw new MessagesException("{$at}: name=\"{$messageName}\" is already in the file");
-            }
-            $texts[$messageName] = trim((string) $element);
+            throw new XmlException("{$at}: <{$tag}>: unknown element");
         }
 
-        return $texts;
+        return MessageElement::texts(MessageElement::allIn($root, $name), in: 'the file');
     }
 }

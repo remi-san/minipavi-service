@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Cli;
 
+use MiniPaviService\Io\Files;
 use MiniPaviService\Message\MessagesException;
 use MiniPaviService\Page\Parser\PageXmlException;
 use MiniPaviService\Page\Parser\PageXmlParser;
+use MiniPaviService\Xml\XmlDocument;
+use MiniPaviService\Xml\XmlException;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -111,11 +114,14 @@ final class LintCommand extends Command
      */
     private static function isPage(string $file): bool
     {
-        $previous = libxml_use_internal_errors(true);
-        $root = simplexml_load_file($file);
-        libxml_clear_errors();
-        libxml_use_internal_errors($previous);
-
-        return $root === false || $root->getName() === 'page';
+        $xml = Files::read($file);
+        if ($xml === null) {
+            return true;
+        }
+        try {
+            return XmlDocument::load($xml, $file)->getName() === 'page';
+        } catch (XmlException) {
+            return true;
+        }
     }
 }
