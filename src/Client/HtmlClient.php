@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MiniPaviService\Client;
 
 use MiniPaviService\Gateway\Client;
+use MiniPaviService\Gateway\ConnectionCode;
 use MiniPaviService\Gateway\GatewayRequest;
 use MiniPaviService\Gateway\GatewayResponse;
 use MiniPaviService\Gateway\InputCommand;
@@ -66,7 +67,7 @@ final readonly class HtmlClient implements Client
             );
 
             return new GatewayRequest(
-                $key->value,
+                $key,
                 array_values(array_map(static fn(mixed $line) => \is_string($line) ? $line : '', $content)),
                 self::text($form, self::CONTEXT),
                 serviceUrl: $serviceUrl,
@@ -74,11 +75,7 @@ final readonly class HtmlClient implements Client
             );
         }
 
-        return new GatewayRequest(
-            GatewayRequest::FCTN_CONNECT,
-            serviceUrl: $serviceUrl,
-            clientState: $this->initialState(),
-        );
+        return new GatewayRequest(ConnectionCode::Connect, serviceUrl: $serviceUrl, clientState: $this->initialState());
     }
 
     /**

@@ -144,7 +144,7 @@ final class PaginatedControllerTest extends TestCase
         $this->router->addRoute('list', new ListController($this->page(), ['a', 'b', 'c']));
 
         $answer = (new Service($this->router, Messages::defaults()))->handle(
-            new GatewayRequest(FunctionKey::Refresh->value, [], $context),
+            new GatewayRequest(FunctionKey::Refresh, [], $context),
         );
 
         $screen = $answer?->vdt->screen() ?? self::fail('No answer');

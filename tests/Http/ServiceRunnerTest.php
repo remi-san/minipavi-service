@@ -13,10 +13,12 @@ use MiniPaviService\Core\Service;
 use MiniPaviService\Core\Signing\ForgedContextException;
 use MiniPaviService\Core\Signing\HmacContextSigner;
 use MiniPaviService\Core\Signing\UnsignedContext;
+use MiniPaviService\Gateway\ConnectionCode;
 use MiniPaviService\Gateway\GatewayRequest;
 use MiniPaviService\Http\ServiceRunner;
 use MiniPaviService\Message\FrameworkMessage;
 use MiniPaviService\Message\Messages;
+use MiniPaviService\Minitel\FunctionKey;
 use MiniPaviService\Tests\Support\CallbackController;
 use MiniPaviService\Tests\Support\HttpRequests;
 use MiniPaviService\Tests\Support\MemoryClient;
@@ -46,7 +48,7 @@ final class ServiceRunnerTest extends TestCase
 
     public function testGivesTheResponseOfTheClientToTheAnswer(): void
     {
-        $client = new MemoryClient(new GatewayRequest(GatewayRequest::FCTN_CONNECT));
+        $client = new MemoryClient(new GatewayRequest(ConnectionCode::Connect));
 
         $response = (new ServiceRunner($this->service, $client, new UnsignedContext()))->handle(HttpRequests::to(
             'MiniPAVI',
@@ -78,7 +80,7 @@ final class ServiceRunnerTest extends TestCase
     {
         $signer = new HmacContextSigner('secret');
         $client = new MemoryClient(
-            new GatewayRequest('ENVOI', [], $signer->sign('{"route":"home","states":{},"parameters":{}}')),
+            new GatewayRequest(FunctionKey::Send, [], $signer->sign('{"route":"home","states":{},"parameters":{}}')),
         );
 
         (new ServiceRunner($this->service, $client, $signer))->handle(HttpRequests::to('MiniPAVI'));
@@ -96,7 +98,9 @@ final class ServiceRunnerTest extends TestCase
     public function testAnswersAForgedContextAsAnErrorWithASignedContext(): void
     {
         $signer = new HmacContextSigner('secret');
-        $client = new MemoryClient(new GatewayRequest('ENVOI', [], '{"route":"home","states":{},"parameters":{}}'));
+        $client = new MemoryClient(
+            new GatewayRequest(FunctionKey::Send, [], '{"route":"home","states":{},"parameters":{}}'),
+        );
 
         (new ServiceRunner($this->service, $client, $signer))->handle(HttpRequests::to('MiniPAVI'));
 
@@ -108,7 +112,7 @@ final class ServiceRunnerTest extends TestCase
 
     public function testNothingToAnswerToADisconnection(): void
     {
-        $client = new MemoryClient(new GatewayRequest(GatewayRequest::FCTN_DISCONNECT));
+        $client = new MemoryClient(new GatewayRequest(ConnectionCode::Disconnect));
 
         $response = (new ServiceRunner($this->service, $client, new UnsignedContext()))->handle(HttpRequests::to(
             'MiniPAVI',
@@ -123,7 +127,7 @@ final class ServiceRunnerTest extends TestCase
     {
         $logger = new MemoryLogger();
         $client = new MemoryClient(
-            new GatewayRequest(GatewayRequest::FCTN_CONNECT),
+            new GatewayRequest(ConnectionCode::Connect),
             new \RuntimeException('Connection reset'),
         );
 

@@ -6,6 +6,8 @@ namespace MiniPaviService\Gateway;
 
 use MiniPaviService\Core\Signing\ContextSigner;
 use MiniPaviService\Core\Signing\ForgedContextException;
+use MiniPaviService\Minitel\FunctionKey;
+use MiniPaviService\Minitel\Key;
 use MiniPaviService\Minitel\Terminal;
 
 /**
@@ -16,16 +18,9 @@ use MiniPaviService\Minitel\Terminal;
  */
 final readonly class GatewayRequest
 {
-    // Codes of key() for connections (function keys: see FunctionKey)
-    public const FCTN_CONNECT = 'CNX';
-    public const FCTN_DIRECT_CONNECT = 'DIRECTCNX';
-    public const FCTN_DISCONNECT = 'FIN';
-    // Start of the code of a background call of the gateway (BGCALL-WM-...), e.g. for web
-    // media: nothing to answer
-    public const FCTN_BACKGROUND_CALL = 'BGCALL-WM-';
-
     /**
-     * @param string $key function key pressed (FunctionKey), or connection code (FCTN_*)
+     * @param ?Key $key function key pressed (FunctionKey), or connection code (ConnectionCode);
+     *                  null for another key (see keyOf())
      * @param list<string> $content text typed, one string per line of the input field
      * @param string $context context sent with the previous answer ('' if none), signed as it
      *                        comes from the gateway (see verify())
@@ -36,7 +31,7 @@ final readonly class GatewayRequest
      *                            gets: given back to it with the request (Client::response())
      */
     public function __construct(
-        public string $key,
+        public ?Key $key,
         public array $content = [],
         public string $context = '',
         public Terminal $terminal = new Terminal(),
@@ -69,21 +64,39 @@ final readonly class GatewayRequest
         );
     }
 
+    /**
+     * Key of a request from what the gateway sends (fctn): a function key, a connection code,
+     * or null for anything else
+     */
+    public static function keyOf(string $fctn): ?Key
+    {
+        return FunctionKey::tryFrom($fctn) ?? ConnectionCode::of($fctn);
+    }
+
+    /**
+     * Name of the key, as the gateway sends it ('ENVOI', 'CNX'...); '' for none
+     */
+    public function fctn(): string
+    {
+        return (string) ($this->key->value ?? '');
+    }
+
     public function isConnecting(): bool
     {
-        return $this->key === self::FCTN_CONNECT || $this->key === self::FCTN_DIRECT_CONNECT;
+        return \in_array($this->key, [ConnectionCode::Connect, ConnectionCode::DirectConnect], strict: true);
     }
 
     public function isDisconnecting(): bool
     {
-        return $this->key === self::FCTN_DISCONNECT;
+        return $this->key === ConnectionCode::Disconnect;
     }
 
     /**
-     * A background call of the gateway (FCTN_BACKGROUND_CALL...), which the user didn't make
+     * A background call of the gateway (ConnectionCode::BackgroundCall), which the user didn't
+     * make
      */
     public function isBackgroundCall(): bool
     {
-        return str_starts_with($this->key, self::FCTN_BACKGROUND_CALL);
+        return $this->key === ConnectionCode::BackgroundCall;
     }
 }

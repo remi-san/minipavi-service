@@ -45,7 +45,7 @@ final class MiniPaviClientTest extends TestCase
 
         $request = (new MiniPaviClient())->decoded(self::SERVICE_URL);
 
-        self::assertSame('ENVOI', $request->key);
+        self::assertSame(FunctionKey::Send, $request->key);
         self::assertSame(['ab', 'cd'], $request->content);
         self::assertSame('{"route":"home"}', $request->context);
         self::assertSame('CALLFROM 0102030405', $request->terminal->remoteAddr());
@@ -65,7 +65,7 @@ final class MiniPaviClientTest extends TestCase
 
         $request = (new MiniPaviClient())->decoded();
 
-        self::assertSame(['', ''], [$request->key, $request->context]);
+        self::assertSame([null, ''], [$request->key, $request->context]);
         self::assertSame('', $request->terminal->remoteAddr());
         self::assertNull($request->terminal->typeSocket());
         self::assertNull($request->terminal->versionMinitel());
@@ -202,7 +202,7 @@ final class MiniPaviClientTest extends TestCase
         ob_start();
         try {
             $response = (new MiniPaviClient())->response(
-                new GatewayRequest('ENVOI', serviceUrl: self::SERVICE_URL),
+                new GatewayRequest(FunctionKey::Send, serviceUrl: self::SERVICE_URL),
                 $answer,
             );
         } finally {

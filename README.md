@@ -207,8 +207,9 @@ KernelBuilder::for($router, $messages)
   context...), the error is logged, and the user gets a message on line 0
   (`FrameworkMessage::Error`, from the `$messages` of the constructor; see
   [Messages](#messages)): their next function key starts again at the default route.
-- **`GatewayRequest`** is what the gateway sends: `key` (the function key, or a connection
-  code), `content` (the text typed), `context` (given back from the previous answer) and
+- **`GatewayRequest`** is what the gateway sends: `key` (a `Minitel\Key`: a `FunctionKey` or a
+  `ConnectionCode`, or null for another key; `GatewayRequest::keyOf()` reads it from what the
+  gateway sends, `fctn()` gives its name back), `content` (the text typed), `context` (given back from the previous answer) and
   `terminal`. **`GatewayResponse`** is what is sent back: `vdt`, `context`, `next` (the URL the
   gateway calls next, null for this service's), `command` (e.g. an input command),
   `directCall` (a `CallMode`, to call `next` at once) and `echo`. Both are plain values, so a
@@ -231,7 +232,9 @@ KernelBuilder::for($router, $messages)
     object of its `Parameters` class;
   - `functionKey()`: the function key the user pressed, a `FunctionKey` (`Send`, `Next`,
     `Previous`, `Refresh`, `Summary`, `Guide`, `Cancel`, `Correction`), or null for a
-    connection code; `key()` gives the name the gateway sent (`ENVOI`…, or `CNX`, `FIN`…);
+    connection code; `connectionCode()` the `Gateway\ConnectionCode` (`Connect`,
+    `DirectConnect`, `Disconnect`, `BackgroundCall`), or null for a function key; `key()` gives
+    the name the gateway sent (`ENVOI`…, or `CNX`, `FIN`…);
   - `content()`: the text typed, one string per line of the input field, and
     `contentAsString()`;
   - `terminal()`: where the user connects from (`remoteAddr()`, `typeSocket()`,
@@ -440,8 +443,9 @@ KernelBuilder::for($router, $messages)
   routes that don't run: they must not use the controller's properties, so that lazy
   controllers stay unbuilt.
 
-- The `FCTN_*` constants of `GatewayRequest` name the connection codes of `Request::key()`
-  (`CNX`, `DIRECTCNX`, `FIN`, and the start of background calls, `BGCALL-WM-`).
+- `Gateway\ConnectionCode` names the connection codes of `Request::key()` (`CNX`,
+  `DIRECTCNX`, `FIN`, and the start of background calls, `BGCALL-WM-`): `ConnectionCode::of($key)`,
+  `Request::connectionCode()`, or `GatewayRequest::$key`.
 
 ## Testing a service
 

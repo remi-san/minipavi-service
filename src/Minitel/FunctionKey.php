@@ -9,7 +9,7 @@ namespace MiniPaviService\Minitel;
  * mask in input commands (MSK_* of MiniPaviCli) and their name in the page XML format
  * (validwith="envoi suite")
  */
-enum FunctionKey: string
+enum FunctionKey: string implements Key
 {
     case Summary = 'SOMMAIRE';
     case Cancel = 'ANNULATION';
