@@ -20,7 +20,8 @@ final class ScreenTest extends TestCase
 
         self::assertCount(26, $lines);
         self::assertSame(' 0|' . str_repeat(' ', times: 40) . '|', $lines[0]);
-        self::assertSame(' 1|Hi?# #' . str_repeat(' ', times: 34) . '|', $lines[1]);
+        // G2 decoded, as line() does
+        self::assertSame(' 1|Hié# #' . str_repeat(' ', times: 34) . '|', $lines[1]);
         self::assertSame(' 2|  ' . str_repeat(' ', times: 38) . '|', $lines[2]);
         self::assertSame('', $lines[25]);
     }

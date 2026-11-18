@@ -651,12 +651,12 @@ echo $moved->screen()->preview();      // the screen, as text
 - **`HtmlRenderer::render($screen, $title)`**: the screen as an HTML page (see `HtmlClient`
   above).
 - **`screen()`**: the `Screen` drawn by the content: a `Cell` (character and attributes) or
-  `null` per row and column. `preview()` prints it as text, with row numbers (G2 characters
-  as `?`), and `line($row)` and `text()` give the text of a row and of the screen, G2
-  characters decoded (`é`, `£`, `½`, `Œ`...; `Cell::text()`).
-- **`play($glyph, $other)`**: plays the content on the simulated screen, calling `$glyph`
-  for each character, with its row, column, width and attributes, and `$other` for the
-  other `Token`s.
+  `null` per row and column. `line($row)` and `text()` give the text of a row and of the
+  screen, G2 characters decoded (`é`, `£`, `½`, `Œ`...; `Cell::text()`), and `preview()`
+  the same rows framed and numbered, to read in a terminal.
+- **`Vdt\Player::play($vdt, $glyph, $other)`** (internal, what `screen()` and `offset()` are
+  built on): plays the content on the simulated screen, calling `$glyph` for each character,
+  with its row, column, width and attributes, and `$other` for the other `Token`s.
 
 `bin/minipavi vdt-offset` does the same from the command line (see [Command line](#command-line)).
 

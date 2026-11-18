@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Vdt\Screen;
 
-use MiniPaviService\Page\Display\Color;
 use MiniPaviService\Vdt\Player;
 use MiniPaviService\Vdt\Token;
 use MiniPaviService\Vdt\TokenType;
@@ -83,29 +82,16 @@ final readonly class Screen
     }
 
     /**
-     * Screen as text, a line per row: text characters as they are (G2 ones as ?), mosaic
-     * cells as # when they have pixels or a background color, empty cells as spaces
+     * Screen as text, to read in a terminal: line() of each row, framed and numbered
+     * (" 0|...|" for the status line), a row per line, ending with a line break
      */
     public function preview(): string
     {
-        $lines = [];
-        foreach ($this->cells as $row => $cells) {
-            $line = '';
-            foreach ($cells as $cell) {
-                if ($cell === null) {
-                    $line .= ' ';
-                    continue;
-                }
-                $mosaic = $cell->attributes->isMosaic();
-                $background = $cell->attributes->background() !== Color::Black;
-                $line .= match (true) {
-                    $mosaic => $cell->bytes === ' ' && !$background ? ' ' : '#',
-                    $cell->bytes[0] === "\x19" || $cell->bytes === "\x1A" => '?',
-                    default => $cell->bytes,
-                };
-            }
-            $lines[] = sprintf('%2d|%s|', $row, $line);
+        $lines = '';
+        foreach (array_keys($this->cells) as $row) {
+            $lines .= \sprintf("%2d|%s|\n", $row, $this->line($row));
         }
-        return implode("\n", $lines) . "\n";
+
+        return $lines;
     }
 }
