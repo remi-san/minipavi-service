@@ -8,6 +8,7 @@ use MiniPaviService\Io\Files;
 use MiniPaviService\Message\MessageElement;
 use MiniPaviService\Message\Messages;
 use MiniPaviService\Message\MessagesXmlParser;
+use MiniPaviService\Message\MessageTexts;
 use MiniPaviService\Minitel\Keyboard;
 use MiniPaviService\Minitel\LocalEcho;
 use MiniPaviService\Minitel\Scroll;
@@ -169,19 +170,23 @@ final class PageXmlParser
      */
     private function messageTexts(\SimpleXMLElement $root, string $name): array
     {
+        // One pass, in document order: the first error in the file is the one reported
+        $texts = new MessageTexts(in: 'the page');
         try {
-            $messages = MessageElement::allIn($root, $name);
-            foreach ($messages as $message) {
-                if (!$this->messages->has($message->name)) {
-                    throw new PageXmlException(
-                        "{$message->at}: name=\"{$message->name}\" is not a message of the service",
-                    );
+            foreach (XmlElements::children($root) as $tag => $element) {
+                if ($tag !== 'message') {
+                    continue;
                 }
+                $message = MessageElement::of($element, $name);
+                if (!$this->messages->has($message->name)) {
+                    throw $message->error("name=\"{$message->name}\" is not a message of the service");
+                }
+                $texts->add($message);
             }
-
-            return MessageElement::texts($messages, in: 'the page');
         } catch (XmlException $e) {
             throw new PageXmlException($e->getMessage(), 0, $e);
         }
+
+        return $texts->texts();
     }
 }

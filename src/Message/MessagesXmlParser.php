@@ -74,14 +74,16 @@ final class MessagesXmlParser
      */
     private static function texts(\SimpleXMLElement $root, string $name): array
     {
+        // One pass, in document order: the first error in the file is the one reported
+        $texts = new MessageTexts(in: 'the file');
         foreach (XmlElements::children($root) as $tag => $element) {
-            if ($tag === 'message') {
-                continue;
+            if ($tag !== 'message') {
+                $line = dom_import_simplexml($element)->getLineNo();
+                throw new XmlException("{$name} line {$line}: <{$tag}>: unknown element");
             }
-            $at = $name . ' line ' . dom_import_simplexml($element)->getLineNo();
-            throw new XmlException("{$at}: <{$tag}>: unknown element");
+            $texts->add(MessageElement::of($element, $name));
         }
 
-        return MessageElement::texts(MessageElement::allIn($root, $name), in: 'the file');
+        return $texts->texts();
     }
 }

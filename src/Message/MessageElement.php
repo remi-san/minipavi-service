@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Message;
 
-use MiniPaviService\Xml\XmlElements;
 use MiniPaviService\Xml\XmlException;
 
 /**
@@ -15,62 +14,38 @@ use MiniPaviService\Xml\XmlException;
  */
 final readonly class MessageElement
 {
-    /**
-     * @param string $at where it is, in errors: "file line n: <message>"
-     */
-    public function __construct(
+    private function __construct(
         public string $name,
         public string $text,
-        public string $at,
+        private \SimpleXMLElement $element,
+        private string $file,
     ) {}
 
     /**
-     * The <message> children of an element, in order (other children are the caller's)
+     * The message of a <message> element
      *
      * @param string $file name of the file, in errors
      *
-     * @return list<self>
-     *
-     * @throws XmlException for a <message> without name
+     * @throws XmlException for one without name
      */
-    public static function allIn(\SimpleXMLElement $parent, string $file): array
+    public static function of(\SimpleXMLElement $element, string $file): self
     {
-        $messages = [];
-        foreach (XmlElements::children($parent) as $tag => $element) {
-            if ($tag !== 'message') {
-                continue;
-            }
-            $at = $file . ' line ' . dom_import_simplexml($element)->getLineNo() . ': <message>';
-            $name = trim((string) $element['name']);
-            if ($name === '') {
-                throw new XmlException("{$at}: name is missing");
-            }
-            $messages[] = new self($name, trim((string) $element), $at);
+        $name = trim((string) $element['name']);
+        $message = new self($name, trim((string) $element), $element, $file);
+        if ($name === '') {
+            throw $message->error('name is missing');
         }
 
-        return $messages;
+        return $message;
     }
 
     /**
-     * Their texts, by name
-     *
-     * @param list<self> $messages
-     * @param string $in what they are in, in errors (e.g. "the file")
-     *
-     * @return array<string, string>
-     *
-     * @throws XmlException for a name given twice
+     * An error of this element, giving where it is ("file line n: <message>: ...")
      */
-    public static function texts(array $messages, string $in): array
+    public function error(string $message): XmlException
     {
-        $texts = [];
-        foreach ($messages as $message) {
-            if (array_key_exists($message->name, $texts)) {
-                throw new XmlException("{$message->at}: name=\"{$message->name}\" is already in {$in}");
-            }
-            $texts[$message->name] = $message->text;
-        }
+        $line = dom_import_simplexml($this->element)->getLineNo();
 
-        return $texts;
+        return new XmlException("{$this->file} line {$line}: <message>: {$message}");
     }
 }
