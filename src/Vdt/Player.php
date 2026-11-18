@@ -29,8 +29,9 @@ final readonly class Player
                 case TokenType::Repeat:
                     $repeat = $token->type === TokenType::Repeat;
                     $bytes = $repeat ? $last : $token->bytes;
+                    // REP with no character before: nothing to draw, nor to tell
                     if ($bytes === null) {
-                        break;
+                        continue 2;
                     }
                     for ($n = 0; $n < ($repeat ? $token->count : 1); $n++) {
                         $width = $cursor->attributes->width();
