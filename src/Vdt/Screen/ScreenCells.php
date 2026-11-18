@@ -59,9 +59,11 @@ final class ScreenCells implements ScreenListener
                 $this->cells[$row] = self::emptyRow();
             }
         }
-        if ($sequence->type === TokenType::ClearLine && $cursor->row >= 0 && $cursor->row <= Screen::ROWS) {
-            for ($col = $cursor->col; $col <= Screen::COLS; $col++) {
-                $this->cells[$cursor->row][$col] = new Cell(' ', $cursor->attributes);
+        $row = $cursor->row();
+        if ($sequence->type === TokenType::ClearLine && $row >= 0 && $row <= Screen::ROWS) {
+            $attributes = $cursor->attributes();
+            for ($col = $cursor->col(); $col <= Screen::COLS; $col++) {
+                $this->cells[$row][$col] = new Cell(' ', $attributes);
             }
         }
     }
