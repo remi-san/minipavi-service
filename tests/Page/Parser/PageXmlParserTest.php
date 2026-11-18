@@ -19,6 +19,7 @@ use MiniPaviService\Page;
 use MiniPaviService\Page\Parser\PageXmlException;
 use MiniPaviService\Page\Parser\PageXmlParser;
 use MiniPaviService\Page\Template\TemplateException;
+use MiniPaviService\Tests\Support\StarsElements;
 use MiniPaviService\Tests\Support\TestMessage;
 use MiniPaviService\Vdt\Vdt;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -134,6 +135,60 @@ final class PageXmlParserTest extends TestCase
             ->with(['welcome' => 'Bonjour'])))->parse('<page type="template"/>', self::FIXTURES);
 
         self::assertSame('Bonjour', $page->message(TestMessage::Welcome));
+    }
+
+    public function testServiceAddsItsElements(): void
+    {
+        $parser = new PageXmlParser((new MessagesXmlParser())->defaults(), new StarsElements());
+        $static = $parser->parse(<<<'XML'
+            <page type="static">
+              <picture>images/logo.vdt</picture>
+              <text row="4">Note</text>
+              <stars row="5" count="4"/>
+            </page>
+            XML, self::FIXTURES);
+        $template = $parser->parse(<<<'XML'
+            <page type="template">
+              <foreach items="notes" as="note" row="5">
+                <stars row="0" count="{{note}}"/>
+              </foreach>
+            </page>
+            XML, self::FIXTURES);
+
+        self::assertSame(
+            [
+                ' 1|##                                      |',
+                ' 2|ok                                      |',
+                ' 4|Note                                    |',
+                ' 5|****                                    |',
+            ],
+            $this->drawnRows($static->display(new Terminal())),
+        );
+        self::assertSame(
+            [' 5|**                                      |', ' 6|*****                                   |'],
+            $this->drawnRows($template->display(new Terminal(), ['notes' => [2, 5]])),
+        );
+    }
+
+    /**
+     * @return iterable<string, array{string}>
+     */
+    public static function takenTags(): iterable
+    {
+        yield 'a framework element' => ['text'];
+        yield 'an instruction' => ['foreach'];
+        yield 'the input' => ['input'];
+    }
+
+    #[DataProvider('takenTags')]
+    public function testServiceElementTakesNoTagOfTheFormat(string $tag): void
+    {
+        $parser = new PageXmlParser((new MessagesXmlParser())->defaults(), new StarsElements($tag));
+
+        $this->expectException(\LogicException::class);
+        $this->expectExceptionMessage("<{$tag}>");
+
+        $parser->parse('<page type="static"/>', self::FIXTURES);
     }
 
     public function testCenteredTextOfEvenWidthHasOneMoreColumnOnTheRight(): void

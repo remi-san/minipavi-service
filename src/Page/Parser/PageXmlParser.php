@@ -34,9 +34,12 @@ final class PageXmlParser
     /**
      * @param Messages $messages the service's messages (e.g. MessagesXmlParser::defaults() for the
      *                           framework's only), which a page's <message> redefine
+     * @param PageElements $elements display elements of the service, besides the framework's
+     *                               (StandardElements); their tags must be new ones
      */
     public function __construct(
         private Messages $messages,
+        private PageElements $elements = new NoElements(),
     ) {}
 
     /**
@@ -93,7 +96,7 @@ final class PageXmlParser
         );
 
         $messages = $this->messages->with($this->messageTexts($root, $name));
-        $elements = ElementFactory::of(new PageFiles($baseDir), $messages, new StandardElements());
+        $elements = ElementFactory::of(new PageFiles($baseDir), $messages, new StandardElements(), $this->elements);
         $parsed = NodesParser::standard($elements, $name)->parse(
             $root,
             TagPosition::page(template: $type === 'template'),

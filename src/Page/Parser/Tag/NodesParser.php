@@ -27,19 +27,23 @@ final readonly class NodesParser
 
     /**
      * The parsers of the page XML format, for a page whose display elements are factory's
+     *
+     * @throws \LogicException for a display element of the tag of an instruction (e.g. <if>)
      */
     public static function standard(ElementFactory $factory, string $file): self
     {
-        return new self(
-            [
-                'message' => new MessageTagParser(),
-                'input' => new InputTagParser(),
-                'foreach' => new ForeachTagParser(),
-                'if' => new IfTagParser(),
-            ],
-            new ElementTagParser($factory),
-            $file,
-        );
+        $parsers = [
+            'message' => new MessageTagParser(),
+            'input' => new InputTagParser(),
+            'foreach' => new ForeachTagParser(),
+            'if' => new IfTagParser(),
+        ];
+        $taken = array_values(array_intersect($factory->tags(), array_keys($parsers)));
+        if ($taken !== []) {
+            throw new \LogicException('No display element <' . implode('>, <', $taken) . '>: a tag of the page format');
+        }
+
+        return new self($parsers, new ElementTagParser($factory), $file);
     }
 
     /**

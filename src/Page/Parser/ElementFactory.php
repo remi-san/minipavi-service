@@ -17,11 +17,23 @@ final readonly class ElementFactory
     /** @var array<string, ElementBuilder> */
     private array $builders;
 
+    /**
+     * @throws \LogicException for two builders of the same tag
+     */
     public function __construct(ElementBuilder ...$builders)
     {
         $byTag = [];
         foreach ($builders as $builder) {
-            $byTag[$builder->tag()] = $builder;
+            $tag = $builder->tag();
+            if (array_key_exists($tag, $byTag)) {
+                throw new \LogicException(\sprintf(
+                    'Two elements <%s>: %s and %s',
+                    $tag,
+                    $byTag[$tag]::class,
+                    $builder::class,
+                ));
+            }
+            $byTag[$tag] = $builder;
         }
         $this->builders = $byTag;
     }
@@ -31,6 +43,8 @@ final readonly class ElementFactory
      *
      * @param PageFiles $files the files of the page's folder
      * @param Messages $messages the page's messages
+     *
+     * @throws \LogicException for two elements of the same tag
      */
     public static function of(PageFiles $files, Messages $messages, PageElements ...$elements): self
     {
