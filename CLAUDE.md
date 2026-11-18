@@ -16,21 +16,17 @@ require its `dev-main`, so **whatever is merged into `main` is what they get** o
 
 ## Its users
 
-The framework's real users are the services of
-[remi-san/minipavi-stack](https://github.com/remi-san/minipavi-stack)
-(`services/MiniPaviAcc`, `services/Octoblue`, with the local MiniPavi stack, gateway and
-emulator, to run them) and the skeleton, [remi-san/minipavi-service-skeleton](https://github.com/remi-san/minipavi-service-skeleton) (the service to start from). It has no other
-users: change its API freely, without deprecation shims, but:
+The framework's real user is the skeleton,
+[remi-san/minipavi-service-skeleton](https://github.com/remi-san/minipavi-service-skeleton) (the
+service to start from). It has no other users: change its API freely, without deprecation
+shims, but:
 
-1. Before changing an API, check how they call it (`grep -rn` in clones of minipavi-stack:
-   `services/*/src`, `services/*/public`, `services/*/config`; and of the skeleton: `src/`,
+1. Before changing an API, check how the skeleton calls it (`grep -rn` in a clone: `src/`,
    `public/`, `config/`).
-2. When a change breaks them, update them in step: in a PR on minipavi-stack, once the
-   framework's PR is merged, the services' lock files get the new `main`
-   (`composer update remi-san/minipavi-service` in each), with their code changes; and in a PR
-   on the skeleton, whose CI checks it against the framework's `main`.
-3. To try a change in a service before it is merged, point the service at a local clone with
-   a `path` repository (see "Installing" in the README), without committing that.
+2. When a change breaks it, update it in step, in a PR on the skeleton once the framework's PR
+   is merged: its CI checks it against the framework's `main`.
+3. To try a change in it before it is merged, point a service created from it at a local clone
+   with a `path` repository (see "Installing" in the README), without committing that.
 
 ## Workflow for fixing an issue
 
@@ -102,10 +98,10 @@ moved ones link to them as `remi-san/minipavi-stack#<n>`. For each issue:
 - **Videotex output**: `tests/Vdt` compares `offset()` with golden files. After an intended
   change to the bytes written, regenerate them with `UPDATE_GOLDEN=1 composer test`, and
   explain the change in the commit.
-- **The services**: for a change to an API they use, or to what they show, run their tests
-  (`composer test` in each of minipavi-stack's `services/*`) against the change, through a
-  local `path` repository; and, for what a user sees, the local stack (see minipavi-stack's
-  README).
+- **The skeleton**: for a change to an API it uses, or to what it shows, run its tests
+  (`composer test` in a service created from the skeleton) against the change, through a
+  local `path` repository; and, for what a user sees, a local MiniPavi stack (see the
+  skeleton's README).
 
 Say in the PR which of these checks were run, and which weren't.
 
