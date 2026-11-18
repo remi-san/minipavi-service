@@ -8,7 +8,8 @@ use MiniPaviService\Vdt\Screen\Cursor;
 
 /**
  * Plays Videotex content on a simulated Minitel screen in page mode: follows the cursor and
- * the attributes as the content moves and sets them, and tells what it draws. What Screen
+ * the attributes as the content moves and sets them, and tells what it draws. As the Minitel
+ * does, it discards double height (ESC M) and double size (ESC O) set on row 1. What Screen
  * and Offset are built on.
  *
  * @internal
@@ -41,7 +42,13 @@ final readonly class Player
                     $last = $bytes;
                     continue 2;
                 case TokenType::Attribute:
-                    $cursor->attributes = $cursor->attributes->with($token->bytes);
+                    $attributes = $cursor->attributes->with($token->bytes);
+                    // Row 1 can't have double height (its top half would be row 0): the
+                    // Minitel discards ESC M and ESC O there, ESC N is kept
+                    if ($cursor->row === 1 && $attributes->isDoubleHeight()) {
+                        break;
+                    }
+                    $cursor->attributes = $attributes;
                     break;
                 case TokenType::Charset:
                     $cursor->attributes = $cursor->attributes->withCharset($token->bytes);

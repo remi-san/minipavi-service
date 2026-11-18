@@ -73,7 +73,8 @@ final class HtmlRendererTest extends TestCase
 
     public function testDoubleHeightBlinkAndUnderline(): void
     {
-        self::assertStringContainsString('class="c h2"', $this->renderCell("\x1B\x4Dx"));
+        // On row 2: row 1 has no double height
+        self::assertStringContainsString('class="c h2"', $this->render(new Vdt("\x1F\x42\x41\x1B\x4Dx")));
         self::assertStringContainsString('class="c blink"', $this->renderCell("\x1B\x48x"));
         self::assertStringContainsString('class="c u"', $this->renderCell("\x1B\x5Ax"));
         // Not in inverse video: the key badges, as in MiniPavi's emulator
