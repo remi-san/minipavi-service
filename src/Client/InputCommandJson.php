@@ -26,10 +26,13 @@ final readonly class InputCommandJson
         if (!\is_array($command)) {
             return null;
         }
-        foreach (['row', 'col', 'length', 'lines'] as $name) {
-            if (!\is_int($command[$name] ?? null)) {
-                return null;
-            }
+        // Without its position and size, there is no field
+        $row = $command['row'] ?? null;
+        $col = $command['col'] ?? null;
+        $length = $command['length'] ?? null;
+        $lines = $command['lines'] ?? null;
+        if (!(\is_int($row) && \is_int($col) && \is_int($length) && \is_int($lines))) {
+            return null;
         }
         $validWith = [];
         foreach (\is_array($command['validWith'] ?? null) ? $command['validWith'] : [] as $name) {
@@ -53,17 +56,7 @@ final readonly class InputCommandJson
             $given['spaceChar'] = $command['spaceChar'];
         }
         try {
-            $field = new InputField(
-                new Span(
-                    new Position(
-                        self::int($command, name: 'row', default: 1),
-                        self::int($command, name: 'col', default: 1),
-                    ),
-                    self::int($command, name: 'length', default: 1),
-                ),
-                self::int($command, name: 'lines', default: 1),
-                ...$given,
-            );
+            $field = new InputField(new Span(new Position($row, $col), $length), $lines, ...$given);
         } catch (\InvalidArgumentException) {
             // Off the screen
             return null;
@@ -93,15 +86,5 @@ final readonly class InputCommandJson
             'spaceChar' => $field->spaceChar,
             'prefill' => $command->prefill,
         ], JSON_THROW_ON_ERROR | JSON_INVALID_UTF8_SUBSTITUTE);
-    }
-
-    /**
-     * @param array<mixed> $values
-     */
-    private static function int(array $values, string $name, int $default): int
-    {
-        $value = $values[$name] ?? null;
-
-        return is_numeric($value) ? (int) $value : $default;
     }
 }
