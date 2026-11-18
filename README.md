@@ -250,8 +250,7 @@ KernelBuilder::for($router, $messages)
     isn't a known key (e.g. `DIRECT`, after a `CallMode::Direct` call);
   - `content()`: the text typed, one string per line of the input field, and
     `contentAsString()`;
-  - `terminal()`: where the user connects from (`remoteAddr()`, `typeSocket()`,
-    `versionMinitel()`), and how: `isAdapter()` (an ESP32 or Minimit adapter, whose function
+  - `terminal()`: where the user connects from (`remoteAddr()`), and how: `isAdapter()` (an ESP32 or Minimit adapter, whose function
     keys need Shift) and `isTelnetOrPhone()`.
 
   `Response`'s named constructors build the responses:
