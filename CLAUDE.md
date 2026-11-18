@@ -10,8 +10,8 @@ changes, and the XML Schemas (`schema/page.xsd`, `schema/messages.xsd`) when the
 change. `bin/minipavi` is its command line (`lint`, `preview`, `vdt-offset`), `vendor/bin/minipavi`
 in a service.
 
-It isn't on Packagist: services require it from this repository (`vcs` repository,
-`dev-main`), so **whatever is merged into `main` is what they get** on their next
+It is on [Packagist](https://packagist.org/packages/remi-san/minipavi-service). Services
+require its `dev-main`, so **whatever is merged into `main` is what they get** on their next
 `composer update`.
 
 ## Its users
