@@ -5,17 +5,26 @@ declare(strict_types=1);
 namespace MiniPaviService\Core;
 
 use MiniPaviService\Controller\Parameters\Values;
+use MiniPaviService\Core\Signing\ContextSigner;
+use MiniPaviService\Core\Signing\ForgedContextException;
+use MiniPaviService\Core\Signing\UnsignedContext;
 
 /**
  * The context as it goes to the gateway and comes back, JSON: {"route": ..., "states": {route:
  * state}, "parameters": {route: {name: value}}}, states as their enum's value, parameters as
- * Parameters::toArray(). Read back typed by the router's routes (Route::restore()). What the
- * gateway gives back is signed (ContextSigner) on its way, not here.
+ * Parameters::toArray(). Read back typed by the router's routes (Route::restore()). It is
+ * signed by the signer (HmacContextSigner), so that a context the service didn't send (e.g.
+ * POSTed by anyone, with another route or other parameters) isn't restored.
  */
 final readonly class ContextSerializer
 {
+    /**
+     * @param ContextSigner $signer signs the context sent, and checks the one given back;
+     *                              UnsignedContext not to sign it
+     */
     public function __construct(
         private Router $router,
+        private ContextSigner $signer = new UnsignedContext(),
     ) {}
 
     /**
@@ -25,7 +34,7 @@ final readonly class ContextSerializer
     {
         $kept = $context->kept();
         try {
-            return json_encode(
+            return $this->signer->sign(json_encode(
                 [
                     'route' => $context->route(),
                     'states' => (object) array_map(static fn(RouteContext $route) => $route->state()->value, $kept),
@@ -35,7 +44,7 @@ final readonly class ContextSerializer
                     ),
                 ],
                 JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES,
-            );
+            ));
         } catch (\JsonException $e) {
             throw new \RuntimeException('Cannot serialize context: ' . $e->getMessage(), 0, $e);
         }
@@ -47,11 +56,12 @@ final readonly class ContextSerializer
      * doesn't have are dropped. A context without route (e.g. sent by another version of the
      * service) starts at the default route.
      *
+     * @throws ForgedContextException if the signer didn't sign it
      * @throws \RuntimeException if it isn't a JSON object
      */
     public function unserialize(string $serialized): Context
     {
-        $context = self::decode($serialized);
+        $context = self::decode($this->signer->verify($serialized));
         $states = \is_array($context['states'] ?? null) ? $context['states'] : [];
         $parameters = \is_array($context['parameters'] ?? null) ? $context['parameters'] : [];
 

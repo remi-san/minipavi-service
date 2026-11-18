@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace MiniPaviService\Core;
 
 use MiniPaviService\Controller\Response;
+use MiniPaviService\Core\Signing\ContextSigner;
+use MiniPaviService\Core\Signing\UnsignedContext;
 use MiniPaviService\Gateway\ClientState;
 use MiniPaviService\Gateway\GatewayRequest;
 use MiniPaviService\Gateway\GatewayResponse;
@@ -40,6 +42,8 @@ final class Service
      *                           (FrameworkMessage::Error), e.g. Messages::defaults()
      * @param ?LoggerInterface $logger where connections, disconnections and errors are logged;
      *                                 none by default
+     * @param ContextSigner $signer signs the context of the answers, and checks the one of the
+     *                              requests (HmacContextSigner); UnsignedContext not to sign it
      *
      * @throws MessagesException if the messages miss some of the framework's
      */
@@ -47,10 +51,11 @@ final class Service
         private Router $router,
         Messages $messages,
         ?LoggerInterface $logger = null,
+        ContextSigner $signer = new UnsignedContext(),
     ) {
         $this->logger = $logger ?? new NullLogger();
         $this->messages = $messages->check(FrameworkMessage::class);
-        $this->serializer = new ContextSerializer($router);
+        $this->serializer = new ContextSerializer($router, $signer);
     }
 
     /**

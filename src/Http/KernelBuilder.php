@@ -165,8 +165,7 @@ final readonly class KernelBuilder
      */
     private function handler(): RequestHandlerInterface
     {
-        $service = new Service($this->router, $this->messages, $this->logger);
-        $signer = $this->signer();
+        $service = new Service($this->router, $this->messages, $this->logger, $this->signer());
 
         return new WithUrls(
             new Dispatcher(
@@ -175,7 +174,7 @@ final readonly class KernelBuilder
                     new ConditionalRequestHandler(
                         'gateway',
                         new FromMiniPaviGateway(),
-                        new ServiceRunner($service, new MiniPaviClient(), $signer, $this->logger),
+                        new ServiceRunner($service, new MiniPaviClient(), $this->logger),
                     ),
                     new ConditionalRequestHandler(
                         'web',
@@ -183,7 +182,6 @@ final readonly class KernelBuilder
                         new ServiceRunner(
                             $service,
                             new HtmlClient(new HtmlRenderer(HtmlRenderer::MINITEL_FONT), $this->messages),
-                            $signer,
                             $this->logger,
                         ),
                     ),

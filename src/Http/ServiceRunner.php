@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace MiniPaviService\Http;
 
 use MiniPaviService\Core\Service;
-use MiniPaviService\Core\Signing\ContextSigner;
 use MiniPaviService\Gateway\Client;
 use MiniPaviService\Gateway\ClientState;
 use MiniPaviService\Gateway\GatewayRequest;
@@ -22,9 +21,7 @@ use Psr\Log\NullLogger;
  * service's values (MiniPaviClient for the gateway, HtmlClient for a browser): the client
  * reads the request, the service answers it, and the client gives the response. The URL of
  * the service (UrlAttribute::Service, from WithUrls) goes to the client, in the GatewayRequest.
- * The context goes through the gateway signed: checked before the service gets the request
- * (GatewayRequest::verify()), signed before the client gets the answer (GatewayResponse::sign()).
- * A context the signer didn't sign is answered as an error (Service::error()).
+ * The context the client carries is signed and checked by the service (ContextSerializer).
  * Nothing to answer (e.g. a disconnection) is a 204, an answer that can't be given a 500.
  *
  * @template TState of ClientState
@@ -35,15 +32,12 @@ final readonly class ServiceRunner implements RequestHandlerInterface
 
     /**
      * @param Client<TState> $client
-     * @param ContextSigner $signer signs the context sent, and checks the one given back
-     *                              (HmacContextSigner; UnsignedContext not to sign it)
      * @param ?LoggerInterface $logger where answers that can't be given are logged; none by
      *                                 default
      */
     public function __construct(
         private Service $service,
         private Client $client,
-        private ContextSigner $signer,
         ?LoggerInterface $logger = null,
     ) {
         $this->logger = $logger ?? new NullLogger();
@@ -54,7 +48,7 @@ final readonly class ServiceRunner implements RequestHandlerInterface
         $serviceUrl = UrlAttribute::Service->of($request);
         try {
             $gatewayRequest = $this->client->request($request, $serviceUrl);
-            $answer = $this->service->handle($gatewayRequest->verify($this->signer));
+            $answer = $this->service->handle($gatewayRequest);
         } catch (\Throwable $e) {
             // The request couldn't be read: all that is known of it is where it was sent
             $gatewayRequest = new GatewayRequest(
@@ -70,7 +64,7 @@ final readonly class ServiceRunner implements RequestHandlerInterface
         }
 
         try {
-            return $this->client->response($gatewayRequest, $answer->sign($this->signer));
+            return $this->client->response($gatewayRequest, $answer);
         } catch (\Throwable $e) {
             $this->logger->critical('Cannot send the answer: ' . $e->getMessage(), ['exception' => $e]);
 

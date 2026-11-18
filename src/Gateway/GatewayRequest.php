@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Gateway;
 
-use MiniPaviService\Core\Signing\ContextSigner;
-use MiniPaviService\Core\Signing\ForgedContextException;
 use MiniPaviService\Minitel\FunctionKey;
 use MiniPaviService\Minitel\Key;
 use MiniPaviService\Minitel\Terminal;
@@ -22,8 +20,8 @@ final readonly class GatewayRequest
      * @param ?Key $key function key pressed (FunctionKey), or connection code (ConnectionCode);
      *                  null for another key (see keyOf())
      * @param list<string> $content text typed, one string per line of the input field
-     * @param string $context context sent with the previous answer ('' if none), signed as it
-     *                        comes from the gateway (see verify())
+     * @param string $context context sent with the previous answer ('' if none), as it comes
+     *                        from the gateway: signed (ContextSerializer)
      * @param string $serviceUrl URL of the service the request was sent to (Http\RequestUrl):
      *                           the next URL of answers without one; '' for a request built
      *                           in memory
@@ -38,31 +36,6 @@ final readonly class GatewayRequest
         public string $serviceUrl = '',
         public ClientState $clientState = new NoClientState(),
     ) {}
-
-    /**
-     * The request with its context checked by signer, and without its signature: the context
-     * the service sent with the previous answer (GatewayResponse::sign()). Unchanged for a
-     * connection, a disconnection or a background call, whose context isn't read.
-     *
-     * @return self<TState>
-     *
-     * @throws ForgedContextException if signer didn't sign the context
-     */
-    public function verify(ContextSigner $signer): self
-    {
-        if ($this->isConnecting() || $this->isDisconnecting() || $this->isBackgroundCall()) {
-            return $this;
-        }
-
-        return new self(
-            $this->key,
-            $this->content,
-            $signer->verify($this->context),
-            $this->terminal,
-            $this->serviceUrl,
-            $this->clientState,
-        );
-    }
 
     /**
      * Key of a request from what the gateway sends (fctn): a function key, a connection code,

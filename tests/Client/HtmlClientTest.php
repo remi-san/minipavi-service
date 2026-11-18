@@ -312,9 +312,8 @@ final class HtmlClientTest extends TestCase
         ))));
         $router = $routes->build();
         $runner = new ServiceRunner(
-            new Service($router, Messages::defaults(), new MemoryLogger()),
+            new Service($router, Messages::defaults(), new MemoryLogger(), new HmacContextSigner('secret')),
             self::client(),
-            new HmacContextSigner('secret'),
         );
 
         $home = (string) $runner->handle(HttpRequests::to('Mozilla/5.0', ['web' => 'true']))->getBody();

@@ -13,6 +13,8 @@ use MiniPaviService\Core\Context;
 use MiniPaviService\Core\ContextSerializer;
 use MiniPaviService\Core\Router;
 use MiniPaviService\Core\RouterBuilder;
+use MiniPaviService\Core\Signing\ForgedContextException;
+use MiniPaviService\Core\Signing\HmacContextSigner;
 use MiniPaviService\Tests\Support\CallbackController;
 use MiniPaviService\Tests\Support\FromParameters;
 use MiniPaviService\Tests\Support\SearchController;
@@ -164,6 +166,36 @@ final class ContextSerializerTest extends TestCase
         $this->expectExceptionMessage('Cannot unserialize context');
 
         $this->serializer()->unserialize($serialized);
+    }
+
+    public function testSignsTheContextItSendsAndChecksTheOneGivenBack(): void
+    {
+        $signing = new ContextSerializer($this->router, new HmacContextSigner('secret'));
+        $context = new Context($this->router, 'home');
+        $context->keep(ControllerState::ReadInput, new PageParameters(2));
+
+        $restored = $signing->unserialize($signing->serialize($context));
+
+        self::assertEquals(new PageParameters(2), $restored->parameters());
+    }
+
+    /**
+     * @return iterable<string, array{string}>
+     */
+    public static function forgedContexts(): iterable
+    {
+        $json = '{"route":"search","states":{},"parameters":{}}';
+
+        yield 'unsigned' => [$json];
+        yield 'signed with another key' => [(new HmacContextSigner('other'))->sign($json)];
+    }
+
+    #[DataProvider('forgedContexts')]
+    public function testRefusesAContextItDidntSign(string $forged): void
+    {
+        $this->expectException(ForgedContextException::class);
+
+        (new ContextSerializer($this->router, new HmacContextSigner('secret')))->unserialize($forged);
     }
 
     private function serializer(): ContextSerializer

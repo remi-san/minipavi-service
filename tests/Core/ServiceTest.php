@@ -12,6 +12,8 @@ use MiniPaviService\Controller\Request;
 use MiniPaviService\Controller\Response;
 use MiniPaviService\Core\RouterBuilder;
 use MiniPaviService\Core\Service;
+use MiniPaviService\Core\Signing\ForgedContextException;
+use MiniPaviService\Core\Signing\HmacContextSigner;
 use MiniPaviService\Gateway\CallMode;
 use MiniPaviService\Gateway\ConnectionCode;
 use MiniPaviService\Gateway\GatewayRequest;
@@ -81,6 +83,41 @@ final class ServiceTest extends TestCase
         self::assertNull($this->handle(new GatewayRequest(ConnectionCode::BackgroundCall, [], $context)));
         self::assertSame([], $this->requests);
         self::assertSame([LogLevel::INFO], $this->levels());
+    }
+
+    public function testContextsOfConnectionsAndBackgroundCallsArentChecked(): void
+    {
+        // Their context isn't read: a service signing its contexts doesn't refuse it
+        $service = new Service(
+            $this->routes->build(),
+            Messages::defaults(),
+            $this->logger,
+            new HmacContextSigner('secret'),
+        );
+
+        self::assertSame(
+            'menu',
+            $this->contentOf($service->handle(new GatewayRequest(ConnectionCode::Connect, [], 'forged'))),
+        );
+        self::assertNull($service->handle(new GatewayRequest(ConnectionCode::BackgroundCall, [], 'forged')));
+        self::assertSame([LogLevel::INFO, LogLevel::INFO], $this->levels());
+    }
+
+    public function testForgedContextIsAnError(): void
+    {
+        $service = new Service(
+            $this->routes->build(),
+            Messages::defaults(),
+            $this->logger,
+            new HmacContextSigner('secret'),
+        );
+
+        $answer = $service->handle(
+            new GatewayRequest(FunctionKey::Send, [], '{"route":"directory","states":{},"parameters":{}}'),
+        );
+
+        self::assertStringContainsString(self::errorMessage(), self::line0($answer));
+        self::assertInstanceOf(ForgedContextException::class, $this->error()[1]['exception'] ?? null);
     }
 
     public function testConnectionStartsAtTheDefaultRoute(): void

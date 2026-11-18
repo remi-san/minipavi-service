@@ -10,9 +10,9 @@ use MiniPaviService\Controller\Request;
 use MiniPaviService\Controller\Response;
 use MiniPaviService\Core\RouterBuilder;
 use MiniPaviService\Core\Service;
+use MiniPaviService\Core\Signing\ContextSigner;
 use MiniPaviService\Core\Signing\ForgedContextException;
 use MiniPaviService\Core\Signing\HmacContextSigner;
-use MiniPaviService\Core\Signing\UnsignedContext;
 use MiniPaviService\Gateway\ConnectionCode;
 use MiniPaviService\Gateway\GatewayRequest;
 use MiniPaviService\Http\ServiceRunner;
@@ -49,9 +49,7 @@ final class ServiceRunnerTest extends TestCase
     {
         $client = new MemoryClient(new GatewayRequest(ConnectionCode::Connect));
 
-        $response = (new ServiceRunner($this->service, $client, new UnsignedContext()))->handle(HttpRequests::to(
-            'MiniPAVI',
-        ));
+        $response = (new ServiceRunner($this->service, $client))->handle(HttpRequests::to('MiniPAVI'));
 
         self::assertSame('home', (string) $response->getBody());
         [[$request, $answer]] = $client->responded;
@@ -64,7 +62,7 @@ final class ServiceRunnerTest extends TestCase
     {
         $client = new MemoryClient(new \RuntimeException('Not JSON'));
 
-        (new ServiceRunner($this->service, $client, new UnsignedContext()))->handle(HttpRequests::to('MiniPAVI'));
+        (new ServiceRunner($this->service, $client))->handle(HttpRequests::to('MiniPAVI'));
 
         [[$request, $answer]] = $client->responded;
         self::assertEquals(Vdt::line0(Messages::defaults()->get(FrameworkMessage::Error)), $answer->vdt);
@@ -75,14 +73,14 @@ final class ServiceRunnerTest extends TestCase
         ]);
     }
 
-    public function testChecksTheContextOfTheRequestAndSignsTheOneOfTheAnswer(): void
+    public function testTheServiceChecksTheContextOfTheRequestAndSignsTheOneOfTheAnswer(): void
     {
         $signer = new HmacContextSigner('secret');
         $client = new MemoryClient(
             new GatewayRequest(FunctionKey::Send, [], $signer->sign('{"route":"home","states":{},"parameters":{}}')),
         );
 
-        (new ServiceRunner($this->service, $client, $signer))->handle(HttpRequests::to('MiniPAVI'));
+        (new ServiceRunner($this->signingService($signer), $client))->handle(HttpRequests::to('MiniPAVI'));
 
         [[$request, $answer]] = $client->responded;
         self::assertEquals(new Vdt('home'), $answer->vdt);
@@ -94,14 +92,14 @@ final class ServiceRunnerTest extends TestCase
         self::assertSame($signer->sign('{"route":"home","states":{},"parameters":{}}'), $request->context);
     }
 
-    public function testAnswersAForgedContextAsAnErrorWithASignedContext(): void
+    public function testTheServiceAnswersAForgedContextAsAnErrorWithASignedContext(): void
     {
         $signer = new HmacContextSigner('secret');
         $client = new MemoryClient(
             new GatewayRequest(FunctionKey::Send, [], '{"route":"home","states":{},"parameters":{}}'),
         );
 
-        (new ServiceRunner($this->service, $client, $signer))->handle(HttpRequests::to('MiniPAVI'));
+        (new ServiceRunner($this->signingService($signer), $client))->handle(HttpRequests::to('MiniPAVI'));
 
         [[, $answer]] = $client->responded;
         self::assertEquals(Vdt::line0(Messages::defaults()->get(FrameworkMessage::Error)), $answer->vdt);
@@ -113,9 +111,7 @@ final class ServiceRunnerTest extends TestCase
     {
         $client = new MemoryClient(new GatewayRequest(ConnectionCode::Disconnect));
 
-        $response = (new ServiceRunner($this->service, $client, new UnsignedContext()))->handle(HttpRequests::to(
-            'MiniPAVI',
-        ));
+        $response = (new ServiceRunner($this->service, $client))->handle(HttpRequests::to('MiniPAVI'));
 
         self::assertSame(204, $response->getStatusCode());
         self::assertSame('', (string) $response->getBody());
@@ -130,12 +126,7 @@ final class ServiceRunnerTest extends TestCase
             new \RuntimeException('Connection reset'),
         );
 
-        $response = (new ServiceRunner(
-            $this->service,
-            $client,
-            new UnsignedContext(),
-            $logger,
-        ))->handle(HttpRequests::to('MiniPAVI'));
+        $response = (new ServiceRunner($this->service, $client, $logger))->handle(HttpRequests::to('MiniPAVI'));
 
         self::assertSame(500, $response->getStatusCode());
         self::assertSame([LogLevel::CRITICAL, 'Cannot send the answer: Connection reset'], [
@@ -156,11 +147,7 @@ final class ServiceRunnerTest extends TestCase
 
         ob_start();
         try {
-            $response = (new ServiceRunner(
-                $this->service,
-                new MiniPaviClient(),
-                new UnsignedContext(),
-            ))->handle(HttpRequests::to('MiniPAVI'));
+            $response = (new ServiceRunner($this->service, new MiniPaviClient()))->handle(HttpRequests::to('MiniPAVI'));
         } finally {
             $output = (string) ob_get_clean();
         }
@@ -175,5 +162,19 @@ final class ServiceRunnerTest extends TestCase
         self::assertSame('{"route":"home","states":{},"parameters":{}}', $answer['context'] ?? null);
         self::assertSame('http://services/Svc/index.php', $answer['next'] ?? null);
         self::assertSame(LogLevel::ERROR, $this->logger->records[0][0] ?? null);
+    }
+
+    /**
+     * The service of the tests, signing its contexts with signer
+     */
+    private function signingService(ContextSigner $signer): Service
+    {
+        $router = (new RouterBuilder('home'))
+            ->addRoute('home', new CallbackController(NoParameters::class, static fn(
+                Request $request,
+            ) => Response::display(new Vdt('home'))))
+            ->build();
+
+        return new Service($router, Messages::defaults(), $this->logger, $signer);
     }
 }

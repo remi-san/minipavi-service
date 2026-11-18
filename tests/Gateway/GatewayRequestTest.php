@@ -4,12 +4,9 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Tests\Gateway;
 
-use MiniPaviService\Core\Signing\ForgedContextException;
-use MiniPaviService\Core\Signing\HmacContextSigner;
 use MiniPaviService\Gateway\ConnectionCode;
 use MiniPaviService\Gateway\GatewayRequest;
 use MiniPaviService\Minitel\FunctionKey;
-use MiniPaviService\Minitel\Terminal;
 use PHPUnit\Framework\TestCase;
 
 final class GatewayRequestTest extends TestCase
@@ -49,46 +46,5 @@ final class GatewayRequestTest extends TestCase
         self::assertTrue((new GatewayRequest(ConnectionCode::BackgroundCall))->isBackgroundCall());
         self::assertFalse((new GatewayRequest(FunctionKey::Send))->isBackgroundCall());
         self::assertFalse((new GatewayRequest(ConnectionCode::Disconnect))->isBackgroundCall());
-    }
-
-    public function testVerifyGivesTheContextWithoutItsSignature(): void
-    {
-        $signer = new HmacContextSigner('secret');
-        $request = new GatewayRequest(
-            FunctionKey::Send,
-            ['36'],
-            $signer->sign('{"route":"menu"}'),
-            new Terminal('192.0.2.1'),
-            'http://services/Svc/',
-        );
-
-        self::assertEquals(
-            new GatewayRequest(
-                FunctionKey::Send,
-                ['36'],
-                '{"route":"menu"}',
-                new Terminal('192.0.2.1'),
-                'http://services/Svc/',
-            ),
-            $request->verify($signer),
-        );
-    }
-
-    public function testVerifyRefusesAContextItDidNotSign(): void
-    {
-        $this->expectException(ForgedContextException::class);
-
-        (new GatewayRequest(FunctionKey::Send, [], '{"route":"menu"}'))->verify(new HmacContextSigner('secret'));
-    }
-
-    /**
-     * Their context isn't read
-     */
-    public function testVerifyLeavesConnectionsAndDisconnectionsAsTheyAre(): void
-    {
-        foreach ([ConnectionCode::Connect, ConnectionCode::DirectConnect, ConnectionCode::Disconnect] as $code) {
-            $request = new GatewayRequest($code, [], 'not signed');
-            self::assertSame($request, $request->verify(new HmacContextSigner('secret')), $code->value);
-        }
     }
 }
