@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Core;
 
+use MiniPaviService\Core\Signing\ForgedContextException;
 use MiniPaviService\Gateway\GatewayRequest;
 use MiniPaviService\Gateway\GatewayResponse;
 use MiniPaviService\Message\FrameworkMessage;
@@ -79,10 +80,9 @@ final class Service
         $this->logger->error('Error serving the request: ' . $error->getMessage(), ['exception' => $error]);
         try {
             // The context keeps nothing: the default controller starts at its initial state
-            return $this->flow(
-                new Context($this->router, $this->router->defaultRoute()),
-                new Terminal(),
-            )->answer(Vdt::line0($this->messages->get(FrameworkMessage::Error)));
+            return $this->flow($this->newContext(), new Terminal())->answer(Vdt::line0($this->messages->get(
+                FrameworkMessage::Error,
+            )));
         } catch (\Throwable $e) {
             $this->logger->critical('Cannot answer the error: ' . $e->getMessage(), ['exception' => $e]);
 
@@ -107,12 +107,7 @@ final class Service
             $this->logger->info('Connection', ['fctn' => $request->fctn()]);
 
             // A new session: without what was typed before
-            return $this->serve(
-                new Context($this->router, $this->router->defaultRoute()),
-                $request->key,
-                [],
-                $request->terminal,
-            );
+            return $this->serve($this->newContext(), $request->key, [], $request->terminal);
         }
 
         try {
@@ -124,12 +119,7 @@ final class Service
                 'route' => $e->route,
             ]);
 
-            return $this->serve(
-                new Context($this->router, $this->router->defaultRoute()),
-                key: null,
-                content: [],
-                terminal: $request->terminal,
-            );
+            return $this->serve($this->newContext(), key: null, content: [], terminal: $request->terminal);
         }
 
         return $this->serve($context, $request->key, $request->content, $request->terminal);
@@ -140,6 +130,8 @@ final class Service
      * declarations of this service's controllers (ContextSerializer::unserialize()): what
      * ServiceTester checks the route of
      *
+     * @throws UnknownRouteException for a context at a route this service doesn't have
+     * @throws ForgedContextException if the signer didn't sign it
      * @throws \RuntimeException if it isn't a JSON object
      */
     public function restore(string $serialized): Context
@@ -148,9 +140,16 @@ final class Service
     }
 
     /**
+     * A new context, at the default route, keeping nothing: as for a new connection
+     */
+    private function newContext(): Context
+    {
+        return new Context($this->router, $this->router->defaultRoute());
+    }
+
+    /**
      * Runs the controller of the context's route on what the user did (key, content), then
-     * the controllers it changes to, until a response answers the gateway. A context whose
-     * route is unknown starts again at the default route.
+     * the controllers it changes to, until a response answers the gateway
      *
      * @throws \LogicException after more than maxPageChanges page changes
      *
