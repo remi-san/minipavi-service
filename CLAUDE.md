@@ -32,11 +32,11 @@ other users: change its API freely, without deprecation shims, but:
 
 ## Workflow for fixing an issue
 
-Work is tracked in GitHub issues. Issues opened before this repository existed are on
-remi-san/minipavi-stack, prefixed with `framework:`. For each issue:
+Work is tracked in GitHub issues on this repository. The framework's open issues were moved
+here from remi-san/minipavi-stack; its closed ones (prefixed `framework:`) stay there, and the
+moved ones link to them as `remi-san/minipavi-stack#<n>`. For each issue:
 
-1. **Read the issue** (`gh issue view <n>`, with `--repo` for minipavi-stack's) and the code
-   it points to. If the proposal no longer matches the code, or the issue is ambiguous, say so
+1. **Read the issue** (`gh issue view <n>`) and the code it points to. If the proposal no longer matches the code, or the issue is ambiguous, say so
    before starting.
 2. **Create a branch from an up-to-date `main`**. Never commit to `main` directly.
    ```sh
@@ -56,7 +56,7 @@ remi-san/minipavi-stack, prefixed with `framework:`. For each issue:
    gh pr create --base main --title "<karma-style title>" --body "..."
    ```
    The PR body states what changed and why, how it was checked, and any follow-up. It ends with
-   `Closes #<n>` (`Closes remi-san/minipavi-stack#<n>` for an issue there). Don't merge the PR:
+   `Closes #<n>`. Don't merge the PR:
    the user reviews and merges it.
 
 ## Commit messages: Karma convention
