@@ -68,7 +68,13 @@ final class HtmlClientTest extends TestCase
                 $screen,
                 '{"route":"menu"}',
                 command: new InputCommand(
-                    new InputField(new Span(new Position(2, 1), 4), validWith: [FunctionKey::Send]),
+                    new InputField(
+                        new Span(new Position(2, 1), 4),
+                        validWith: [FunctionKey::Send, FunctionKey::Next],
+                        cursor: false,
+                        spaceChar: ' ',
+                    ),
+                    ['ab'],
                 ),
             ),
         );
@@ -88,7 +94,11 @@ final class HtmlClientTest extends TestCase
         // and its input field
         $html = (string) $exchange->respond(new GatewayResponse(new Vdt(), '{}', 'https://example.org/'))->getBody();
         self::assertStringContainsString('Menu', self::shownText($html));
-        self::assertStringContainsString('style="' . HtmlRenderer::at(1, row: 2, length: 4) . '"', $html);
+        self::assertStringContainsString('value="ab" style="' . HtmlRenderer::at(1, row: 2, length: 4) . '"', $html);
+        // Its keys: Envoi and Suite only
+        self::assertSame(6, substr_count($html, needle: ' disabled>'));
+        // The whole command, cursor and space character included, posted back as it came
+        self::assertSame(self::hiddenValues($page)['command'], self::hiddenValues($html)['command']);
     }
 
     /**
@@ -112,6 +122,31 @@ final class HtmlClientTest extends TestCase
         // Shown again when leaving the service is blocked: no field
         $html = (string) $exchange->respond(new GatewayResponse(new Vdt(), '{}', 'https://example.org/'))->getBody();
         self::assertStringNotContainsString('class="field"', $html);
+    }
+
+    public function testARequestItCouldntReadIsAnsweredOnABlankPageOfThisService(): void
+    {
+        $html = (string) self::client()
+            ->unreadable('http://services/Other/index.php')
+            ->respond(new GatewayResponse(Vdt::line0('Erreur'), '{}'))
+            ->getBody();
+
+        self::assertStringContainsString('<title>http://services/Other/index.php</title>', $html);
+        self::assertStringContainsString('Erreur', self::shownText($html));
+        // No field: no page was posted
+        self::assertStringNotContainsString('class="field"', $html);
+    }
+
+    public function testConnectionIsAnsweredAtTheUrlItWasSentTo(): void
+    {
+        $html = (string) self::client()
+            ->exchange(HttpRequests::to('Mozilla/5.0', [
+                'web' => 'true',
+            ]), serviceUrl: 'http://services/Other/index.php')
+            ->respond(new GatewayResponse(new Vdt(), '{}'))
+            ->getBody();
+
+        self::assertStringContainsString('<title>http://services/Other/index.php</title>', $html);
     }
 
     public function testUnknownKeyIsAConnection(): void

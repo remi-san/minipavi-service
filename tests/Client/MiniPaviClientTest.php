@@ -8,6 +8,7 @@ use MiniPavi\MiniPaviCli;
 use MiniPaviService\Client\MiniPaviClient;
 use MiniPaviService\Client\MiniPaviExchange;
 use MiniPaviService\Gateway\CallMode;
+use MiniPaviService\Gateway\ClientExchange;
 use MiniPaviService\Gateway\GatewayRequest;
 use MiniPaviService\Gateway\GatewayResponse;
 use MiniPaviService\Gateway\InputCommand;
@@ -91,6 +92,16 @@ final class MiniPaviClientTest extends TestCase
 
         MiniPaviCli::$content = null;
         self::assertSame([], $client->decoded()->content);
+    }
+
+    public function testAnswersARequestItCouldntReadToThisService(): void
+    {
+        $answer = $this->sent(
+            new GatewayResponse(new Vdt('Erreur'), '{}'),
+            (new MiniPaviClient())->unreadable('http://services/Other/index.php'),
+        );
+
+        self::assertSame('http://services/Other/index.php', $answer['next']);
     }
 
     public function testSendsTheAnswerToThisService(): void
@@ -193,13 +204,12 @@ final class MiniPaviClientTest extends TestCase
      *
      * @return array<mixed>
      */
-    private function sent(GatewayResponse $answer): array
+    private function sent(GatewayResponse $answer, ?ClientExchange $exchange = null): array
     {
+        $exchange ??= new MiniPaviExchange(new GatewayRequest(FunctionKey::Send), self::SERVICE_URL);
         ob_start();
         try {
-            $response = (new MiniPaviExchange(new GatewayRequest(FunctionKey::Send), self::SERVICE_URL))->respond(
-                $answer,
-            );
+            $response = $exchange->respond($answer);
         } finally {
             $output = (string) ob_get_clean();
         }
