@@ -142,7 +142,7 @@ final readonly class Attributes
      */
     public static function isTallSize(string $byte): bool
     {
-        return \in_array($byte, [Videotex::SIZE_DOUBLE_HEIGHT[1], Videotex::SIZE_DOUBLE[1]], strict: true);
+        return \in_array($byte, [self::DOUBLE_HEIGHT, self::DOUBLE], strict: true);
     }
 
     /**
@@ -157,7 +157,7 @@ final readonly class Attributes
         }
 
         return new self([
-            'size' => $this->isDoubleWidth() ? Videotex::SIZE_DOUBLE_WIDTH[1] : self::DEFAULTS['size'],
+            'size' => $this->isDoubleWidth() ? self::DOUBLE_WIDTH : self::SIZE_NORMAL,
         ] + $this->values);
     }
 
