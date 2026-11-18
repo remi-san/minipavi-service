@@ -8,6 +8,7 @@ use MiniPaviService\Controller\AbstractController;
 use MiniPaviService\Controller\ControllerState;
 use MiniPaviService\Controller\Pagination\PageParameters;
 use MiniPaviService\Controller\Parameters\NoParameters;
+use MiniPaviService\Controller\Parameters\ParametersType;
 use MiniPaviService\Controller\Request;
 use MiniPaviService\Controller\Response;
 use MiniPaviService\Tests\Support\RecordingFlow;
@@ -42,11 +43,6 @@ final class AbstractControllerTest extends TestCase
     public function testInitAndInitInputCanBeOverridden(): void
     {
         $controller = new /** @extends AbstractController<NoParameters> */ class extends AbstractController {
-            public function parametersType(): string
-            {
-                return NoParameters::class;
-            }
-
             protected function onInit(Request $request): Response
             {
                 return Response::display(new Vdt('first'));
@@ -78,9 +74,9 @@ final class AbstractControllerTest extends TestCase
     public function testGetsItsParametersTyped(): void
     {
         $controller = new /** @extends AbstractController<PageParameters> */ class extends AbstractController {
-            public function parametersType(): string
+            public function parametersType(): ParametersType
             {
-                return PageParameters::class;
+                return ParametersType::of(PageParameters::class);
             }
 
             protected function onDisplay(Request $request): Response
@@ -94,7 +90,7 @@ final class AbstractControllerTest extends TestCase
             }
         };
 
-        self::assertSame(PageParameters::class, $controller->parametersType());
+        self::assertSame(PageParameters::class, $controller->parametersType()->name());
         self::assertSame(
             'page 3',
             self::vdt($controller->run(new Request(ControllerState::Display, new PageParameters(3)))),
@@ -107,11 +103,6 @@ final class AbstractControllerTest extends TestCase
     private static function controller(): AbstractController
     {
         return new /** @extends AbstractController<NoParameters> */ class extends AbstractController {
-            public function parametersType(): string
-            {
-                return NoParameters::class;
-            }
-
             protected function onDisplay(Request $request): Response
             {
                 return Response::display(new Vdt('display'));
@@ -130,5 +121,10 @@ final class AbstractControllerTest extends TestCase
     private static function vdt(Response $response): string
     {
         return $response->continueWith(new RecordingFlow())->vdt->toString();
+    }
+
+    public function testHasNoParametersUnlessItSaysSo(): void
+    {
+        self::assertSame(NoParameters::class, self::controller()->parametersType()->name());
     }
 }

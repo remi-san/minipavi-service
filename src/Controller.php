@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MiniPaviService;
 
 use MiniPaviService\Controller\Parameters\Parameters;
+use MiniPaviService\Controller\Parameters\ParametersType;
 use MiniPaviService\Controller\Request;
 use MiniPaviService\Controller\Response;
 use MiniPaviService\Controller\State;
@@ -12,8 +13,8 @@ use MiniPaviService\Controller\State;
 /**
  * Runs on a request of the user, and returns what comes next. It declares the types of what
  * it keeps in the context, which gives them back typed in the Request: its states (an enum
- * implementing State, initialState() being one of its cases) and its parameters (a class
- * implementing Parameters, NoParameters for none). See AbstractController for one running a
+ * implementing State, initialState() being one of its cases) and its parameters (a
+ * ParametersType, of a class implementing Parameters; none() for none). See AbstractController for one running a
  * method per ControllerState.
  *
  * initialState() and parametersType() must not use the controller's properties: the context
@@ -33,11 +34,12 @@ interface Controller
     public function initialState(): State;
 
     /**
-     * Class of its parameters
+     * Type of its parameters (e.g. ParametersType::of(PageParameters::class), or
+     * ParametersType::none())
      *
-     * @return class-string<TParameters>
+     * @return ParametersType<TParameters>
      */
-    public function parametersType(): string;
+    public function parametersType(): ParametersType;
 
     /**
      * @param Request<TState, TParameters> $request

@@ -7,6 +7,7 @@ namespace MiniPaviService\Tests\Support;
 use MiniPaviService\Controller;
 use MiniPaviService\Controller\ControllerState;
 use MiniPaviService\Controller\Parameters\Parameters;
+use MiniPaviService\Controller\Parameters\ParametersType;
 use MiniPaviService\Controller\Request;
 use MiniPaviService\Controller\Response;
 
@@ -33,9 +34,9 @@ final readonly class CallbackController implements Controller
         return ControllerState::Init;
     }
 
-    public function parametersType(): string
+    public function parametersType(): ParametersType
     {
-        return $this->parametersType;
+        return ParametersType::of($this->parametersType);
     }
 
     public function run(Request $request): Response

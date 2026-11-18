@@ -6,7 +6,6 @@ namespace MiniPaviService\Core;
 
 use MiniPaviService\Controller;
 use MiniPaviService\Controller\Parameters\Parameters;
-use MiniPaviService\Controller\Parameters\Values;
 use MiniPaviService\Controller\Request;
 use MiniPaviService\Controller\Response;
 use MiniPaviService\Controller\State;
@@ -70,17 +69,17 @@ final class RouteContext
                 $state::class,
             ));
         }
-        if ($parameters !== null && !$parameters instanceof $type) {
+        if ($parameters !== null && !$type->accepts($parameters)) {
             throw new \LogicException(\sprintf(
                 '%s keeps parameters of %s, not %s',
                 $this->controller::class,
-                $type,
+                $type->name(),
                 $parameters::class,
             ));
         }
 
         $this->state = $state ?? $initialState;
-        $this->parameters = $parameters ?? $type::fromValues(new Values());
+        $this->parameters = $parameters ?? $type->defaults();
     }
 
     /**

@@ -6,6 +6,7 @@ namespace MiniPaviService\Controller\Pagination;
 
 use MiniPaviService\Controller\AbstractController;
 use MiniPaviService\Controller\ControllerState;
+use MiniPaviService\Controller\Parameters\ParametersType;
 use MiniPaviService\Controller\Request;
 use MiniPaviService\Controller\Response;
 use MiniPaviService\Minitel\FunctionKey;
@@ -32,9 +33,9 @@ final class PaginatedController extends AbstractController
         private readonly PaginatedList $list,
     ) {}
 
-    public function parametersType(): string
+    public function parametersType(): ParametersType
     {
-        return PageParameters::class;
+        return ParametersType::of(PageParameters::class);
     }
 
     protected function onInit(Request $request): Response

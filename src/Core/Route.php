@@ -44,9 +44,11 @@ final readonly class Route
      */
     public function restore(?string $state, Values $values): RouteContext
     {
-        $type = $this->controller->parametersType();
-
-        return new RouteContext($this->controller, $this->stateOf($state), $type::fromValues($values));
+        return new RouteContext(
+            $this->controller,
+            $this->stateOf($state),
+            $this->controller->parametersType()->fromValues($values),
+        );
     }
 
     /**

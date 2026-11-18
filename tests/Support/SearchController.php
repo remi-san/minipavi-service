@@ -6,6 +6,7 @@ namespace MiniPaviService\Tests\Support;
 
 use MiniPaviService\Controller;
 use MiniPaviService\Controller\Pagination\PageParameters;
+use MiniPaviService\Controller\Parameters\ParametersType;
 use MiniPaviService\Controller\Request;
 use MiniPaviService\Controller\Response;
 use MiniPaviService\Vdt\Vdt;
@@ -22,9 +23,9 @@ final class SearchController implements Controller
         return SearchState::Init;
     }
 
-    public function parametersType(): string
+    public function parametersType(): ParametersType
     {
-        return PageParameters::class;
+        return ParametersType::of(PageParameters::class);
     }
 
     public function run(Request $request): Response
