@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Vdt;
 
+use MiniPaviService\Vdt\Screen\Attributes;
 use MiniPaviService\Vdt\Screen\Cursor;
 
 /**
  * Plays Videotex content on a simulated Minitel screen in page mode: follows the cursor and
  * the attributes as the content moves and sets them, and tells what it draws. As the Minitel
- * does, it discards double height (ESC M) and double size (ESC O) set on row 1. What Screen
+ * does, rows 0 and 1 have no double height: ESC M (double height) and ESC O (double size)
+ * received there are discarded, and characters drawn there are drawn at normal height
+ * (Attributes::onRow()). What Screen
  * and Offset are built on.
  *
  * @internal
@@ -35,20 +38,21 @@ final readonly class Player
                         continue 2;
                     }
                     for ($n = 0; $n < ($repeat ? $token->count : 1); $n++) {
-                        $width = $cursor->attributes->width();
-                        $listener->glyph($cursor->row, $cursor->col, $bytes, $width, $cursor->attributes);
+                        // As the Minitel draws it on its row (no double height on rows 0, 1)
+                        $attributes = $cursor->attributes->onRow($cursor->row);
+                        $width = $attributes->width();
+                        $listener->glyph($cursor->row, $cursor->col, $bytes, $width, $attributes);
                         $cursor->advance($width);
                     }
                     $last = $bytes;
                     continue 2;
                 case TokenType::Attribute:
-                    $attributes = $cursor->attributes->with($token->bytes);
-                    // Row 1 can't have double height (its top half would be row 0): the
-                    // Minitel discards ESC M and ESC O there, ESC N is kept
-                    if ($cursor->row === 1 && $attributes->isDoubleHeight()) {
+                    // The Minitel discards ESC M and ESC O received on a row without double
+                    // height (the size stays as it was); ESC N, and the other attributes, apply
+                    if (!Attributes::allowsDoubleHeight($cursor->row) && Attributes::isTallSize($token->bytes)) {
                         break;
                     }
-                    $cursor->attributes = $attributes;
+                    $cursor->attributes = $cursor->attributes->with($token->bytes);
                     break;
                 case TokenType::Charset:
                     $cursor->attributes = $cursor->attributes->withCharset($token->bytes);

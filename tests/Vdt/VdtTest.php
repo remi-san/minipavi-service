@@ -111,15 +111,17 @@ final class VdtTest extends TestCase
     }
 
     /**
-     * A double-height or double-size character moved onto row 1, where the Minitel discards the
-     * size (#172): written at normal size, one column wide, what follows at its own column
+     * A double-height or double-size character moved onto row 1, where the Minitel can't draw
+     * double height (#172): written at normal height, its double width kept
      *
      * @return iterable<string, array{string, string}>
      */
     public static function tallCharactersMovedOntoRow1(): iterable
     {
-        // A in columns 1-2, B in columns 3-4: B positioned again at its column
-        yield 'double size' => ["\x1B\x4FAB", "\x1F\x41\x41A\x1F\x41\x43B"];
+        // Double width kept: A in columns 1-2, B in columns 3-4, as before
+        yield 'double size' => ["\x1B\x4FAB", "\x1F\x41\x41\x1B\x4EAB"];
+        // ESC O after ESC N: B double width too, as drawn on row 1 (ESC O discarded there)
+        yield 'double size after double width' => ["\x1B\x4EA\x1B\x4FB", "\x1F\x41\x41\x1B\x4EAB"];
         // One column each already
         yield 'double height' => ["\x1B\x4DAB", "\x1F\x41\x41AB"];
     }

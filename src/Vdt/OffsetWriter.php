@@ -49,12 +49,9 @@ final readonly class OffsetWriter implements ScreenListener
             if ($row < 1 || $row > Screen::ROWS) {
                 return;
             }
-            // Moved onto row 1, where the Minitel discards double height: at normal size, one
-            // column wide, as it would show it
-            if ($row === 1 && $attributes->isDoubleHeight()) {
-                $attributes = $attributes->withNormalSize();
-                $width = $attributes->width();
-            }
+            // As the Minitel draws it on the row it is moved to (e.g. no double height on row 1)
+            $attributes = $attributes->onRow($row);
+            $width = $attributes->width();
         }
         if ($col < 1 || ($col + $width - 1) > Screen::COLS) {
             return;

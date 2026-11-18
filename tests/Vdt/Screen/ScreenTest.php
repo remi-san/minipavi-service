@@ -163,4 +163,45 @@ final class ScreenTest extends TestCase
 
         self::assertTrue($screen->cell(2, col: 30)?->attributes->isDoubleHeight());
     }
+
+    public function testOnlyTheSizeIsDiscardedOnRow1(): void
+    {
+        // Row 2, double height, VT up to row 1, red, x: x red, at normal height
+        $screen = (new Vdt("\x1F\x42\x41\x1B\x4D\x0B\x1B\x41x"))->screen();
+
+        $cell = $screen->cell(1, col: 1) ?? self::fail('Nothing at row 1');
+        self::assertSame('x', $cell->bytes);
+        self::assertSame(Color::Red, $cell->attributes->foreground());
+        self::assertFalse($cell->attributes->isDoubleHeight());
+    }
+
+    /**
+     * Double height the cursor brings onto row 1 (or set on row 0): drawn at normal height,
+     * double width kept
+     *
+     * @return iterable<string, array{string, int, int, int}>
+     */
+    public static function tallTextBroughtOntoRow1(): iterable
+    {
+        // Row 24, column 40: "a" there, "b" wraps to row 1
+        yield 'wrapping' => ["\x1F\x58\x68\x1B\x4Dab", 1, 1, 1];
+        // Row 24: "a", LF to row 1, "b"
+        yield 'a line feed' => ["\x1F\x58\x41\x1B\x4Da\x0Ab", 1, 2, 1];
+        // Double size: double width kept
+        yield 'double size' => ["\x1F\x42\x41\x1B\x4Fa\x0Bb", 1, 3, 2];
+        // The status row: no row above it
+        yield 'row 0' => ["\x1F\x40\x41\x1B\x4Db", 0, 1, 1];
+    }
+
+    #[DataProvider('tallTextBroughtOntoRow1')]
+    public function testTallTextBroughtOntoRow1IsDrawnAtNormalHeight(string $vdt, int $row, int $col, int $width): void
+    {
+        $cell = (new Vdt($vdt))
+            ->screen()
+            ->cell($row, $col) ?? self::fail("Nothing at row {$row}, column {$col}");
+
+        self::assertSame('b', $cell->bytes);
+        self::assertFalse($cell->attributes->isDoubleHeight());
+        self::assertSame($width, $cell->attributes->width());
+    }
 }

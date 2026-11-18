@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MiniPaviService\Vdt\Screen;
 
 use MiniPaviService\Page\Display\Color;
+use MiniPaviService\Vdt\Videotex;
 
 /**
  * Character attributes of a cell, as Videotex content sets them: the charset (text or mosaic),
@@ -116,12 +117,35 @@ final readonly class Attributes
     }
 
     /**
-     * The same attributes at normal size (no double height, nor width)
+     * Whether a character on row can be drawn in double height: not on rows 0 and 1, where
+     * its top half would be off the screen or on the status row
      */
-    public function withNormalSize(): self
+    public static function allowsDoubleHeight(int $row): bool
     {
-        // ESC L: Videotex::SIZE_NORMAL
-        return new self(['size' => "\x4C"] + $this->values);
+        return $row > 1;
+    }
+
+    /**
+     * Whether ESC byte sets double height: ESC M (double height) or ESC O (double size)
+     */
+    public static function isTallSize(string $byte): bool
+    {
+        return \in_array($byte, [Videotex::SIZE_DOUBLE_HEIGHT[1], Videotex::SIZE_DOUBLE[1]], strict: true);
+    }
+
+    /**
+     * These attributes as the Minitel draws a character with them on row: without double
+     * height on rows 0 and 1 (double height there is normal size, double size double width)
+     */
+    public function onRow(int $row): self
+    {
+        if (self::allowsDoubleHeight($row) || !$this->isDoubleHeight()) {
+            return $this;
+        }
+
+        return new self([
+            'size' => $this->isDoubleWidth() ? Videotex::SIZE_DOUBLE_WIDTH[1] : self::DEFAULTS['size'],
+        ] + $this->values);
     }
 
     /**
