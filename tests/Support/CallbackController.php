@@ -20,14 +20,19 @@ use MiniPaviService\Controller\Response;
  */
 final readonly class CallbackController implements Controller
 {
+    /** @var ParametersType<TParameters> */
+    private ParametersType $parametersType;
+
     /**
-     * @param class-string<TParameters> $parametersType
+     * @param class-string<TParameters> $parameters the class of its parameters
      * @param \Closure(Request<ControllerState, TParameters>): Response $run
      */
     public function __construct(
-        private string $parametersType,
+        string $parameters,
         private \Closure $run,
-    ) {}
+    ) {
+        $this->parametersType = ParametersType::of($parameters);
+    }
 
     public function initialState(): ControllerState
     {
@@ -36,7 +41,7 @@ final readonly class CallbackController implements Controller
 
     public function parametersType(): ParametersType
     {
-        return ParametersType::of($this->parametersType);
+        return $this->parametersType;
     }
 
     public function run(Request $request): Response

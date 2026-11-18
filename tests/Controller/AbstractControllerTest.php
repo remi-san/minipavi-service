@@ -43,6 +43,11 @@ final class AbstractControllerTest extends TestCase
     public function testInitAndInitInputCanBeOverridden(): void
     {
         $controller = new /** @extends AbstractController<NoParameters> */ class extends AbstractController {
+            public function parametersType(): ParametersType
+            {
+                return ParametersType::none();
+            }
+
             protected function onInit(Request $request): Response
             {
                 return Response::display(new Vdt('first'));
@@ -103,6 +108,11 @@ final class AbstractControllerTest extends TestCase
     private static function controller(): AbstractController
     {
         return new /** @extends AbstractController<NoParameters> */ class extends AbstractController {
+            public function parametersType(): ParametersType
+            {
+                return ParametersType::none();
+            }
+
             protected function onDisplay(Request $request): Response
             {
                 return Response::display(new Vdt('display'));
@@ -121,10 +131,5 @@ final class AbstractControllerTest extends TestCase
     private static function vdt(Response $response): string
     {
         return $response->continueWith(new RecordingFlow())->vdt->toString();
-    }
-
-    public function testHasNoParametersUnlessItSaysSo(): void
-    {
-        self::assertSame(NoParameters::class, self::controller()->parametersType()->name());
     }
 }

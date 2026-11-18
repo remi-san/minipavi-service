@@ -14,9 +14,9 @@ use MiniPaviService\Controller\Parameters\ParametersType;
  * onInit() and onInitInput() show the screen too, unless overridden.
  *
  * A state the controller doesn't know (e.g. kept in the context by an older version of the
- * service) starts it again, as ControllerState::Init. It has no parameters, unless it
- * overrides parametersType() (e.g. ParametersType::of(PageParameters::class)), with an
- * extends tag naming their class (AbstractController<TheClass>). A
+ * service) starts it again, as ControllerState::Init. It declares the type of its
+ * parameters (parametersType(): ParametersType::none() for none), and names their class in
+ * its extends tag (AbstractController<TheClass>). A
  * controller with states of its own implements Controller, with its own enum.
  *
  * @template TParameters of Parameters
@@ -31,15 +31,13 @@ abstract class AbstractController implements Controller
     }
 
     /**
-     * No parameters, unless overridden (e.g. ParametersType::of(PageParameters::class))
+     * Type of its parameters: ParametersType::none() for none, or e.g.
+     * ParametersType::of(PageParameters::class). Abstract, so that a controller declaring a
+     * type of parameters (@extends) can't inherit another one
      *
      * @return ParametersType<TParameters>
      */
-    public function parametersType(): ParametersType
-    {
-        /** @var ParametersType<TParameters> */
-        return ParametersType::none();
-    }
+    abstract public function parametersType(): ParametersType;
 
     public function run(Request $request): Response
     {

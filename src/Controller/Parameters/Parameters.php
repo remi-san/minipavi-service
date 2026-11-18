@@ -9,9 +9,10 @@ use MiniPaviService\Controller\Response;
 
 /**
  * Parameters of a controller, as an object (e.g. a readonly class with a property per
- * parameter): the controller declares its class (Controller::parametersType()), gets them
- * typed (Request::parameters()) and keeps them by giving them to a Response. NoParameters for
- * a controller without any.
+ * parameter): the controller declares their type (Controller::parametersType(), a
+ * ParametersType of this class), gets them typed (Request::parameters()) and keeps them by
+ * giving them to a Response. NoParameters (ParametersType::none()) for a controller without
+ * any.
  */
 interface Parameters
 {
