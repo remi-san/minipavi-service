@@ -24,7 +24,7 @@ which depend on nothing above them):
 | `Core\` | the runtime: `Service`, `Router` and its `Route`s, `Context` and its `RouteContext`s, `RequestFlow` |
 | `Controller\` | `AbstractController`, `Request`, `Response` and the response types, `Flow`, the states (`State`, `ControllerState`) |
 | `Controller\Parameters\` | what a controller keeps: `Parameters`, `NoParameters`, and the raw `Values` they are read from |
-| `Controller\Pagination\` | `PaginatedController`, `Paginator`, `PageParameters` |
+| `Controller\Pagination\` | `PaginatedController`, the `PaginatedList` it shows and its `ShownPage`, `Paginator`, `PageParameters` |
 | `Page\` | static and template pages, their display elements, and the page XML parser |
 | `Message\` | the messages shown on screen: `Message`, `FrameworkMessage`, `Messages` and their XML parser |
 | `Minitel\` | the user's terminal: `Terminal`, its `FunctionKey`s, its settings (`Keyboard`, `LocalEcho`, `Scroll`), and the `InputField` where the user types |
@@ -321,47 +321,48 @@ KernelBuilder::for($router, $messages)
   A state it doesn't know (e.g. kept by an older version of the service) starts it again.
   A controller with states of its own implements `Controller` with its own `State` enum.
 
-- **`PaginatedController`** shows items one page at a time: Suite and Retour change page,
-  with "Première page" / "Dernière page" on line 0 at the ends (`FrameworkMessage::FirstPage`,
-  `LastPage`: see [Messages](#messages)), Répétition redraws the page, and the page index is kept
-  in `PageParameters`. A controller gives the number of items and of items per page, the data
-  of a page from its `Paginator`, and handles its other keys, with `display($request,
-  $paginator)`, `stay($paginator, $vdt)` (reads the next input on the page, after `$vdt`) and
-  `turn($request, 1)` (the next page, or the end message):
+- **`PaginatedController`** shows the items of a `PaginatedList` one page at a time: Suite
+  and Retour change page, with "Première page" / "Dernière page" on line 0 at the ends
+  (`FrameworkMessage::FirstPage`, `LastPage`: see [Messages](#messages)), Répétition redraws
+  the page, and the page index is kept in `PageParameters`. The list gives the number of items
+  and of items per page, the data of a page from its `Paginator`, and handles the other keys
+  on the `ShownPage`, with `$page->display()`, `$page->stay($vdt)` (reads the next input on the
+  page, after `$vdt`), `$page->turn(1)` (the next page, or the end message) and
+  `$page->message()` (a message of the page):
 
   ```php
-  final class DirectoryController extends PaginatedController
+  final readonly class DirectoryList implements PaginatedList
   {
-      public function __construct(Page $page, private Directory $directory)
-      {
-          parent::__construct($page);
-      }
+      public function __construct(private Directory $directory) {}
 
-      protected function itemCount(): int
+      public function itemCount(): int
       {
           return $this->directory->count();
       }
 
-      protected function itemsPerPage(): int
+      public function itemsPerPage(): int
       {
           return 4;
       }
 
       // The template also gets the paginator's variables: {{page}}, {{pageCount}}, {{itemCount}}...
-      protected function pageData(Paginator $paginator): array
+      public function pageData(Paginator $paginator): array
       {
           return ['services' => $this->directory->getServices($paginator->offset(), $paginator->limit())];
       }
 
-      protected function onOtherKey(Request $request, Paginator $paginator): Response
+      public function onOtherKey(Request $request, ShownPage $page): Response
       {
           return match ($request->functionKey()) {
               FunctionKey::Summary => Response::goTo('home'),
-              FunctionKey::Send => $this->turn($request, 1),
-              default => $this->stay($paginator),
+              FunctionKey::Send => $page->turn(1),
+              default => $page->stay(),
           };
       }
   }
+
+  // The route's controller
+  new PaginatedController($page, new DirectoryList($directory));
   ```
 
 - **`Paginator`** is a page of `$itemCount` items, `$perPage` at a time (immutable; there is
