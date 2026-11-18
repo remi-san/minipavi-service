@@ -174,7 +174,9 @@ KernelBuilder::for($router, $messages)
     HTTP response;
   - **`HtmlClient`**, for a browser: it shows the service's screen as an HTML page
     (`Vdt\Screen\HtmlRenderer`), and lets the user navigate it as on a Minitel. The first request is a
-    connection, at the default route, as the gateway's. The page is a form posting back to its URL:
+    connection, at the default route, as the gateway's. The page is a form posting back to its URL,
+    which `Client\HtmlForm` renders and reads back (`PostedForm`), `HtmlClient` turning it into
+    a `GatewayRequest`, and an answer into the page:
     - the answer's **input field** (the `InputField` of its `InputCommand`: a text field, or a message of several lines) over the screen, at its position
       and size, one input per line;
     - the 8 **function keys** under the screen, in the Minitel's 2 × 4 layout, those the
