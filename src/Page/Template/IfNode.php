@@ -14,12 +14,11 @@ final readonly class IfNode implements Node
     /**
      * @param string $test variable to check
      * @param bool $negate true for test="!variable"
-     * @param Node[] $children
      */
     public function __construct(
         private string $test,
         private bool $negate,
-        private array $children,
+        private Nodes $children,
         private string $location,
     ) {}
 
@@ -38,10 +37,6 @@ final readonly class IfNode implements Node
             return [];
         }
 
-        $elements = [];
-        foreach ($this->children as $child) {
-            array_push($elements, ...$child->elements($scope));
-        }
-        return $elements;
+        return $this->children->elements($scope);
     }
 }

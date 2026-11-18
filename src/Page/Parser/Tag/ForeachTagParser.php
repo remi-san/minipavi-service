@@ -6,6 +6,7 @@ namespace MiniPaviService\Page\Parser\Tag;
 
 use MiniPaviService\Page\Parser\PageXmlException;
 use MiniPaviService\Page\Template\ForeachNode;
+use MiniPaviService\Page\Template\Nodes;
 
 /**
  * <foreach items as row step>: its children drawn once per item, in a page of type="template".
@@ -35,6 +36,6 @@ final readonly class ForeachTagParser implements TagParser
         });
         $children = $nodes->parse($tag->element, $position->inLoop());
 
-        return ParsedNodes::node(new ForeachNode($items, $as, $row, $step, $children->nodes, $tag->at));
+        return ParsedNodes::node(new ForeachNode($items, $as, $row, $step, new Nodes($children->nodes), $tag->at));
     }
 }

@@ -6,6 +6,7 @@ namespace MiniPaviService\Page\Parser\Tag;
 
 use MiniPaviService\Page\Parser\PageXmlException;
 use MiniPaviService\Page\Template\IfNode;
+use MiniPaviService\Page\Template\Nodes;
 
 /**
  * <if test="variable"> or <if test="!variable">: its children drawn or not, in a page of
@@ -29,7 +30,12 @@ final readonly class IfTagParser implements TagParser
         $children = $nodes->parse($tag->element, $position->nested());
 
         return ParsedNodes::node(
-            new IfNode(ltrim($test, characters: '!'), str_starts_with($test, '!'), $children->nodes, $tag->at),
+            new IfNode(
+                ltrim($test, characters: '!'),
+                str_starts_with($test, '!'),
+                new Nodes($children->nodes),
+                $tag->at,
+            ),
         );
     }
 }
