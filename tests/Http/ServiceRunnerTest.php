@@ -85,6 +85,25 @@ final class ServiceRunnerTest extends TestCase
         ]);
     }
 
+    public function testAFailureAfterTheRequestWasReadIsAnsweredThroughTheExchangeRead(): void
+    {
+        $client = new MemoryClient(
+            new GatewayRequest(FunctionKey::Send, [], 'context'),
+            requestFailure: new \RuntimeException('Gone'),
+        );
+
+        (new ServiceRunner($this->service, $client))->handle(HttpRequests::to('MiniPAVI'));
+
+        // Not an exchange of a request that couldn't be read: the one read, e.g. with its page
+        self::assertSame(['http://services/Svc/index.php'], $client->serviceUrls);
+        [[$request, $answer]] = $client->responded;
+        self::assertEquals(new GatewayRequest(FunctionKey::Send, [], 'context'), $request);
+        self::assertEquals(
+            Vdt::line0((new MessagesXmlParser())->defaults()->get(FrameworkMessage::Error)),
+            $answer->vdt,
+        );
+    }
+
     public function testTheServiceChecksTheContextOfTheRequestAndSignsTheOneOfTheAnswer(): void
     {
         $signer = new HmacContextSigner('secret');

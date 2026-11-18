@@ -14,8 +14,9 @@ use Psr\Http\Message\ServerRequestInterface;
 
 /**
  * Client giving a request (or failing to read it), and answering with the Videotex of the
- * answer; keeps the requests and answers it gave responses for in $responded, and the service
- * URL of each request in $serviceUrls
+ * answer (or failing to give the request, or the response, once read); keeps the requests and
+ * answers it gave responses for in $responded, and the service URL of each exchange in
+ * $serviceUrls
  */
 final class MemoryClient implements Client
 {
@@ -28,6 +29,7 @@ final class MemoryClient implements Client
     public function __construct(
         private GatewayRequest|\Throwable $request,
         private ?\Throwable $responseFailure = null,
+        private ?\Throwable $requestFailure = null,
     ) {}
 
     public function exchange(ServerRequestInterface $request, string $serviceUrl): ClientExchange
@@ -49,15 +51,20 @@ final class MemoryClient implements Client
 
     private function exchangeOf(GatewayRequest $request): ClientExchange
     {
-        return new class($this, $request, $this->responseFailure) implements ClientExchange {
+        return new class($this, $request, $this->responseFailure, $this->requestFailure) implements ClientExchange {
             public function __construct(
                 private readonly MemoryClient $client,
                 private readonly GatewayRequest $request,
                 private readonly ?\Throwable $responseFailure,
+                private readonly ?\Throwable $requestFailure,
             ) {}
 
             public function request(): GatewayRequest
             {
+                if ($this->requestFailure !== null) {
+                    throw $this->requestFailure;
+                }
+
                 return $this->request;
             }
 

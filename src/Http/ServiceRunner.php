@@ -6,6 +6,8 @@ namespace MiniPaviService\Http;
 
 use MiniPaviService\Core\Service;
 use MiniPaviService\Gateway\Client;
+use MiniPaviService\Gateway\ClientExchange;
+use MiniPaviService\Gateway\GatewayResponse;
 use MiniPaviService\Http\Url\UrlAttribute;
 use Nyholm\Psr7\Response;
 use Psr\Http\Message\ResponseInterface;
@@ -44,11 +46,28 @@ final readonly class ServiceRunner implements RequestHandlerInterface
         $serviceUrl = UrlAttribute::Service->of($request);
         try {
             $exchange = $this->client->exchange($request, $serviceUrl);
+        } catch (\Throwable $e) {
+            // The request couldn't be read: all that is known of it is where it was sent
+            $exchange = $this->client->unreadable($serviceUrl);
+
+            return $this->respond($exchange, $this->service->error($e));
+        }
+        try {
             $answer = $this->service->handle($exchange->request());
         } catch (\Throwable $e) {
-            $exchange = $this->client->unreadable($serviceUrl);
+            // Answered through the exchange read (e.g. over the page the browser showed)
             $answer = $this->service->error($e);
         }
+
+        return $this->respond($exchange, $answer);
+    }
+
+    /**
+     * The HTTP response of an answer: 204 for none (e.g. a disconnection), 500 if the client
+     * can't give it
+     */
+    private function respond(ClientExchange $exchange, ?GatewayResponse $answer): ResponseInterface
+    {
         if ($answer === null) {
             // E.g. a disconnection
             return new Response(204);
