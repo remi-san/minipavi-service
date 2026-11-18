@@ -10,20 +10,19 @@ use MiniPaviService\Minitel\Keyboard;
 use MiniPaviService\Minitel\LocalEcho;
 use MiniPaviService\Minitel\Scroll;
 use MiniPaviService\Page;
-use MiniPaviService\Page\Display\Display;
+use MiniPaviService\Page\MinitelPage;
 use MiniPaviService\Page\Parser\Tag\NodesParser;
 use MiniPaviService\Page\Parser\Tag\TagPosition;
 use MiniPaviService\Page\Setup;
-use MiniPaviService\Page\StaticPage;
-use MiniPaviService\Page\Template\Scope;
+use MiniPaviService\Page\StaticContent;
 use MiniPaviService\Page\Template\TemplateException;
-use MiniPaviService\Page\TemplatePage;
+use MiniPaviService\Page\TemplateContent;
 use MiniPaviService\Xml\XmlElements;
 
 /**
  * Reads a page XML file (root element <page>, format documented in the framework's README.md)
- * into a Page, whose type is given by the type attribute of <page>: a StaticPage for
- * type="static", a TemplatePage, with {{placeholders}} and instructions (<foreach>,
+ * into a MinitelPage, whose content the type attribute of <page> gives: StaticContent for
+ * type="static", TemplateContent, with {{placeholders}} and instructions (<foreach>,
  * <if>), for type="template". Anything unknown or invalid throws a PageXmlException
  * giving the file and line.
  */
@@ -97,23 +96,19 @@ final class PageXmlParser
             $root,
             TagPosition::page(template: $type === 'template'),
         );
-        $nodes = $parsed->nodes;
-        $input = $parsed->input;
-
+        $template = new TemplateContent($parsed->nodes);
         if ($type === 'template') {
-            return new TemplatePage($nodes, $messages, $input, $setup);
+            return new MinitelPage($template, $messages, $parsed->input, $setup);
         }
 
         // Static page: elements are built now, so that their errors are found now
         try {
-            $elements = [];
-            foreach ($nodes as $node) {
-                array_push($elements, ...$node->elements(new Scope()));
-            }
+            $display = $template->display([]);
         } catch (TemplateException $e) {
             throw new PageXmlException($e->getMessage(), 0, $e);
         }
-        return new StaticPage(new Display(...$elements), $messages, $input, $setup);
+
+        return new MinitelPage(new StaticContent($display), $messages, $parsed->input, $setup);
     }
 
     /**

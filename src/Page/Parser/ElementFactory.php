@@ -15,7 +15,7 @@ use MiniPaviService\Page\Parser\Element\TextBuilder;
 
 /**
  * The display elements of the page XML format, by tag: the ElementBuilder of each. Used by
- * PageXmlParser, and by TemplatePage at display time (ElementNode), once placeholders are
+ * PageXmlParser, and by TemplateContent at display time (ElementNode), once placeholders are
  * replaced.
  */
 final readonly class ElementFactory

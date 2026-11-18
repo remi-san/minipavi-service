@@ -16,9 +16,7 @@ use MiniPaviService\Minitel\Terminal;
 use MiniPaviService\Page;
 use MiniPaviService\Page\Parser\PageXmlException;
 use MiniPaviService\Page\Parser\PageXmlParser;
-use MiniPaviService\Page\StaticPage;
 use MiniPaviService\Page\Template\TemplateException;
-use MiniPaviService\Page\TemplatePage;
 use MiniPaviService\Tests\Support\TestMessage;
 use MiniPaviService\Vdt\Vdt;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -47,7 +45,6 @@ final class PageXmlParserTest extends TestCase
             </page>
             XML);
 
-        self::assertInstanceOf(StaticPage::class, $page);
         self::assertSame(
             [
                 ' 2|               HHeelllloo               |',
@@ -174,7 +171,6 @@ final class PageXmlParserTest extends TestCase
             </page>
             XML);
 
-        self::assertInstanceOf(TemplatePage::class, $page);
         self::assertSame(
             [
                 ' 1|Games (2)                               |',
