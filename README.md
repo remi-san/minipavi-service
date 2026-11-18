@@ -56,7 +56,7 @@ In Docker, the framework and the service keep the repository's layout (`/app/fra
 ```php
 use Monolog\Handler\ErrorLogHandler;
 use Monolog\Logger;
-use MiniPaviService\Core\Router;
+use MiniPaviService\Core\RouterBuilder;
 use MiniPaviService\Http\Emulator\EmulatorConfig;
 use MiniPaviService\Http\KernelBuilder;
 use MiniPaviService\Http\Url\RequestUrl;
@@ -68,9 +68,10 @@ require __DIR__.'/../vendor/autoload.php';
 // The framework's messages; a service usually reads its own over them (see Messages)
 $messages = Messages::defaults();
 
-$router = new Router();
-$router->addRoute(HomeController::NAME, new HomeController((new PageXmlParser($messages))->parseFile(__DIR__.'/../config/pages/home.xml')));
-$router->setDefaultRoute(HomeController::NAME);
+// New connections start at the default route; build() fails if it isn't one of the routes
+$router = (new RouterBuilder(HomeController::NAME))
+    ->addRoute(HomeController::NAME, new HomeController((new PageXmlParser($messages))->parseFile(__DIR__.'/../config/pages/home.xml')))
+    ->build();
 
 // The environment is read here (or in the container): the framework doesn't read it itself
 KernelBuilder::for($router, $messages)
@@ -108,9 +109,10 @@ KernelBuilder::for($router, $messages)
   $container = (new ContainerBuilder())->addDefinitions([
       'page.home' => factory([PageXmlParser::class, 'parseFile'])->parameter('file', "$config/pages/home.xml"),
       'controller.home' => create(HomeController::class)->constructor(get('page.home'))->lazy(),
-      Router::class => create()
-          ->method('addRoute', HomeController::NAME, get('controller.home'))
-          ->method('setDefaultRoute', HomeController::NAME),
+      RouterBuilder::class => create()
+          ->constructor(HomeController::NAME)
+          ->method('addRoute', HomeController::NAME, get('controller.home')),
+      Router::class => factory([RouterBuilder::class, 'build']),
   ])->build();
   $router = $container->get(Router::class);
   ```
@@ -436,7 +438,8 @@ KernelBuilder::for($router, $messages)
   `array()` coerce what is safe (`'12'` or `12.0` to `12`, a number to text, `1`/`0` and
   `'true'`/`'false'` to a bool), and give the default for anything else.
 
-  Behind it, `Router::addRoute()` binds each controller with its types (`Route`), and the
+  Behind it, `RouterBuilder::addRoute()` binds each controller with its types (`Route`), in
+  the immutable `Router` it builds, and the
   `Context` keeps a `RouteContext` per route: restored from the JSON with these types (a
   state the enum doesn't have is the initial one, unknown routes are dropped), and serialized
   as the enum's value and `toArray()`. `initialState()` and `parametersType()` are called for
