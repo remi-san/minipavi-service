@@ -618,20 +618,20 @@ They replace MiniPaviCli's global `VDT_*` and `PRO_*` constants, which are only 
 `MiniPaviCli` is loaded. `VdtHelper` gives MiniPaviCli's Videotex helpers (`setPos()`,
 `writeLine0()`, `toG2()`...).
 
-`Vdt` also reads Videotex content, from a string or a `.vdt` file, and moves it on the
-screen; `<image>` uses it.
+`Vdt` also reads Videotex content, e.g. of a `.vdt` file, and moves it on the screen;
+`<image>` uses it.
 
 ```php
 use MiniPaviService\Vdt\Vdt;
 
-$picture = Vdt::fromFile('octopus.vdt');
+$picture = Vdt::fromString(file_get_contents('octopus.vdt'));
 $moved = $picture->offset(8, -2);     // 8 columns right, 2 rows up (negative: left, up)
 echo $moved->toString();               // the Videotex content
 echo $moved->screen()->preview();      // the screen, as text
 ```
 
-- **`offset($x, $y)`**: Videotex positions are mostly absolute, but text also flows from cell
-  to cell and wraps at column 40, so the content is played on a simulated screen rather than
+- **`offset($x, $y)`** (`Vdt\Offset`): Videotex positions are mostly absolute, but text also flows from cell
+  to cell and wraps at column 40, so the content is played on a simulated screen (`Vdt\Player`) rather than
   having its positions patched. Characters that end up off the screen are dropped instead of
   wrapping onto the next row, and the cursor is positioned again where needed, with the
   current attributes (character set, colors, size...), which a positioning resets. Row 0,
