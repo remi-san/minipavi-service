@@ -110,6 +110,41 @@ final class VdtTest extends TestCase
         self::assertSame(' X', rtrim($moved->line(2)));
     }
 
+    /**
+     * A double-height or double-size character moved onto row 1, where the Minitel discards the
+     * size (#172): written at normal size, one column wide, what follows at its own column
+     *
+     * @return iterable<string, array{string, string}>
+     */
+    public static function tallCharactersMovedOntoRow1(): iterable
+    {
+        // A in columns 1-2, B in columns 3-4: B positioned again at its column
+        yield 'double size' => ["\x1B\x4FAB", "\x1F\x41\x41A\x1F\x41\x43B"];
+        // One column each already
+        yield 'double height' => ["\x1B\x4DAB", "\x1F\x41\x41AB"];
+    }
+
+    #[DataProvider('tallCharactersMovedOntoRow1')]
+    public function testOffsetWritesATallCharacterMovedOntoRow1AtNormalSize(string $row3, string $written): void
+    {
+        self::assertSame(
+            $written,
+            (new Vdt("\x1F\x43\x41" . $row3))
+                ->offset(x: 0, y: -2)
+                ->toString(),
+        );
+    }
+
+    public function testOffsetKeepsDoubleHeightMovedOntoRow2(): void
+    {
+        self::assertSame(
+            "\x1F\x42\x41\x1B\x4DA",
+            (new Vdt("\x1F\x43\x41\x1B\x4DA"))
+                ->offset(x: 0, y: -1)
+                ->toString(),
+        );
+    }
+
     public function testDoubleWidthTakesTwoColumnsInTextButNotInMosaic(): void
     {
         $text = (new Vdt("\x1F\x41\x41\x1B\x4EAB"))->screen();

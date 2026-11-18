@@ -116,6 +116,15 @@ final readonly class Attributes
     }
 
     /**
+     * The same attributes at normal size (no double height, nor width)
+     */
+    public function withNormalSize(): self
+    {
+        // ESC L: Videotex::SIZE_NORMAL
+        return new self(['size' => "\x4C"] + $this->values);
+    }
+
+    /**
      * Columns taken by a character: double width only applies to text characters
      */
     public function width(): int
