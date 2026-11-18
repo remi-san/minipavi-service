@@ -10,9 +10,9 @@ use MiniPaviService\Vdt\Screen\Cursor;
 /**
  * Plays Videotex content on a simulated Minitel screen in page mode: follows the cursor and
  * the attributes as the content moves and sets them, and tells what it draws. As the Minitel
- * does, rows 0 and 1 have no double height: ESC M (double height) and ESC O (double size)
- * received there are discarded, and characters drawn there are drawn at normal height
- * (Attributes::onRow()). What Screen
+ * does, it discards ESC M (double height) and ESC O (double size) received on rows 0 and 1,
+ * the size staying as it was; a double height already set when a cursor move brings the
+ * cursor there is kept (the character drawn over the row above). What Screen
  * and Offset are built on.
  *
  * @internal
@@ -38,10 +38,8 @@ final readonly class Player
                         continue 2;
                     }
                     for ($n = 0; $n < ($repeat ? $token->count : 1); $n++) {
-                        // As the Minitel draws it on its row (no double height on rows 0, 1)
-                        $attributes = $cursor->attributes->onRow($cursor->row);
-                        $width = $attributes->width();
-                        $listener->glyph($cursor->row, $cursor->col, $bytes, $width, $attributes);
+                        $width = $cursor->attributes->width();
+                        $listener->glyph($cursor->row, $cursor->col, $bytes, $width, $cursor->attributes);
                         $cursor->advance($width);
                     }
                     $last = $bytes;

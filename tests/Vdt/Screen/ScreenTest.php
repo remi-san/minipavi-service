@@ -164,44 +164,42 @@ final class ScreenTest extends TestCase
         self::assertTrue($screen->cell(2, col: 30)?->attributes->isDoubleHeight());
     }
 
-    public function testOnlyTheSizeIsDiscardedOnRow1(): void
+    public function testDoubleHeightIsDiscardedOnRow0(): void
     {
-        // Row 2, double height, VT up to row 1, red, x: x red, at normal height
-        $screen = (new Vdt("\x1F\x42\x41\x1B\x4D\x0B\x1B\x41x"))->screen();
+        $cell = (new Vdt("\x1F\x40\x41\x1B\x4DZ"))
+            ->screen()
+            ->cell(0, col: 1) ?? self::fail('Nothing on row 0');
 
-        $cell = $screen->cell(1, col: 1) ?? self::fail('Nothing at row 1');
-        self::assertSame('x', $cell->bytes);
-        self::assertSame(Color::Red, $cell->attributes->foreground());
+        self::assertSame('Z', $cell->bytes);
         self::assertFalse($cell->attributes->isDoubleHeight());
     }
 
     /**
-     * Double height the cursor brings onto row 1 (or set on row 0): drawn at normal height,
-     * double width kept
+     * Double height already set when a cursor move brings the cursor onto row 1: kept, the
+     * character drawn tall there, over row 0, with the attributes set since (checked in
+     * MiniPavi's emulator, #172)
      *
-     * @return iterable<string, array{string, int, int, int}>
+     * @return iterable<string, array{string, int, bool, Color}>
      */
-    public static function tallTextBroughtOntoRow1(): iterable
+    public static function sizeBroughtOntoRow1(): iterable
     {
-        // Row 24, column 40: "a" there, "b" wraps to row 1
-        yield 'wrapping' => ["\x1F\x58\x68\x1B\x4Dab", 1, 1, 1];
-        // Row 24: "a", LF to row 1, "b"
-        yield 'a line feed' => ["\x1F\x58\x41\x1B\x4Da\x0Ab", 1, 2, 1];
-        // Double size: double width kept
-        yield 'double size' => ["\x1F\x42\x41\x1B\x4Fa\x0Bb", 1, 3, 2];
-        // The status row: no row above it
-        yield 'row 0' => ["\x1F\x40\x41\x1B\x4Db", 0, 1, 1];
+        // Row 24, column 10: ESC M, L, LF to row 1, M
+        yield 'a line feed' => ["\x1F\x58\x4A\x1B\x4DL\x0AM", 11, false, Color::White];
+        // Row 2, column 20: ESC M, V, VT to row 1, red, W
+        yield 'a move up, then a colour' => ["\x1F\x42\x54\x1B\x4DV\x0B\x1B\x41W", 21, false, Color::Red];
+        // Row 3, column 30: ESC O, S (two columns), two VT to row 1, T
+        yield 'double size' => ["\x1F\x43\x5E\x1B\x4FS\x0B\x0BT", 32, true, Color::White];
     }
 
-    #[DataProvider('tallTextBroughtOntoRow1')]
-    public function testTallTextBroughtOntoRow1IsDrawnAtNormalHeight(string $vdt, int $row, int $col, int $width): void
+    #[DataProvider('sizeBroughtOntoRow1')]
+    public function testSizeBroughtOntoRow1IsKept(string $vdt, int $col, bool $doubleWidth, Color $color): void
     {
         $cell = (new Vdt($vdt))
             ->screen()
-            ->cell($row, $col) ?? self::fail("Nothing at row {$row}, column {$col}");
+            ->cell(1, $col) ?? self::fail("Nothing at row 1, column {$col}");
 
-        self::assertSame('b', $cell->bytes);
-        self::assertFalse($cell->attributes->isDoubleHeight());
-        self::assertSame($width, $cell->attributes->width());
+        self::assertTrue($cell->attributes->isDoubleHeight());
+        self::assertSame($doubleWidth, $cell->attributes->isDoubleWidth());
+        self::assertSame($color, $cell->attributes->foreground());
     }
 }

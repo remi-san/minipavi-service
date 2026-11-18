@@ -117,8 +117,8 @@ final readonly class Attributes
     }
 
     /**
-     * Whether a character on row can be drawn in double height: not on rows 0 and 1, where
-     * its top half would be off the screen or on the status row
+     * Whether ESC M (double height) and ESC O (double size) are accepted on row: not on rows
+     * 0 and 1, where the Minitel discards them (checked in MiniPavi's emulator, #172)
      */
     public static function allowsDoubleHeight(int $row): bool
     {
@@ -134,10 +134,11 @@ final readonly class Attributes
     }
 
     /**
-     * These attributes as the Minitel draws a character with them on row: without double
-     * height on rows 0 and 1 (double height there is normal size, double size double width)
+     * These attributes, with a size that can be set on row: where ESC M and ESC O would be
+     * discarded, double height becomes normal size and double size double width (ESC N is
+     * accepted there), so that a character written there takes the columns it is given
      */
-    public function onRow(int $row): self
+    public function writableOn(int $row): self
     {
         if (self::allowsDoubleHeight($row) || !$this->isDoubleHeight()) {
             return $this;
