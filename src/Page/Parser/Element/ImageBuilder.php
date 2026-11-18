@@ -34,7 +34,7 @@ final class ImageBuilder implements ElementBuilder
         $path = $this->files->path($text);
 
         return new Image(
-            $this->pictures[$path] ??= Vdt::fromString($this->files->read($text)),
+            $this->pictures[$path] ??= new Vdt($this->files->read($text)),
             new Position($attributes->int('row', default: 1), $attributes->int('col', default: 1)),
         );
     }

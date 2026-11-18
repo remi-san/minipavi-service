@@ -65,7 +65,7 @@ final class VdtOffsetCommand extends Command
 
             return self::FAILURE;
         }
-        $vdt = Vdt::fromString($bytes);
+        $vdt = new Vdt($bytes);
         $moved = $vdt->offset($x, $y);
 
         if ($input->getOption('preview') === true) {

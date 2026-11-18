@@ -78,7 +78,7 @@ final readonly class HtmlForm
             array_values(array_map(static fn(mixed $line) => \is_string($line) ? $line : '', $content)),
             self::text($form, self::CONTEXT),
             new HtmlPageState(
-                Vdt::fromString((string) base64_decode(self::text($form, self::SCREEN), strict: true)),
+                new Vdt((string) base64_decode(self::text($form, self::SCREEN), strict: true)),
                 self::command(self::text($form, self::COMMAND)),
             ),
         );

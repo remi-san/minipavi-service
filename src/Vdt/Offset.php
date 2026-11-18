@@ -80,6 +80,6 @@ final readonly class Offset
                 }
             },
         );
-        return Vdt::fromString($out->vdt());
+        return new Vdt($out->vdt());
     }
 }

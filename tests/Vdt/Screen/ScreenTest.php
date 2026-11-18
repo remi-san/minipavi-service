@@ -16,7 +16,7 @@ final class ScreenTest extends TestCase
         // on black, empty on blue. Row 2: cleared with a blue background from column 3.
         $vdt = "\x1F\x41\x41Hi\x19\x42e\x0E\x21\x20\x1B\x54\x20\x1F\x42\x43\x1B\x54\x18";
 
-        $lines = explode("\n", Vdt::fromString($vdt)->screen()->preview());
+        $lines = explode("\n", (new Vdt($vdt))->screen()->preview());
 
         self::assertCount(26, $lines);
         self::assertSame(' 0|' . str_repeat(' ', times: 40) . '|', $lines[0]);
@@ -28,7 +28,7 @@ final class ScreenTest extends TestCase
 
     public function testClearScreenEmptiesEveryRowButTheStatusRow(): void
     {
-        $screen = Vdt::fromString("\x1F\x40\x41S\x1F\x45\x45X\x0C")->screen();
+        $screen = (new Vdt("\x1F\x40\x41S\x1F\x45\x45X\x0C"))->screen();
 
         self::assertSame('S', $screen->cell(row: 0, col: 1)?->bytes);
         self::assertNull($screen->cell(row: 5, col: 5));
@@ -52,7 +52,7 @@ final class ScreenTest extends TestCase
     public function testLineShowsMosaicAsInThePreview(): void
     {
         // A mosaic cell with pixels, one empty on black, one empty on blue
-        $screen = Vdt::fromString("\x1F\x41\x41\x0E\x21\x20\x1B\x54\x20")->screen();
+        $screen = (new Vdt("\x1F\x41\x41\x0E\x21\x20\x1B\x54\x20"))->screen();
 
         self::assertSame('# #', substr($screen->line(1), offset: 0, length: 3));
     }
@@ -70,7 +70,7 @@ final class ScreenTest extends TestCase
     {
         // Clear screen, position at row 1 column 2, AB, B three more times, red mosaic,
         // clear to the end of the row, back one column, home
-        $screen = Vdt::fromString("\x0C\x1F\x41\x42AB\x12\x43\x1B\x41\x0E\x18\x08\x1E")->screen();
+        $screen = (new Vdt("\x0C\x1F\x41\x42AB\x12\x43\x1B\x41\x0E\x18\x08\x1E"))->screen();
 
         self::assertSame(' ABBBB', rtrim($screen->line(1)));
         self::assertTrue($screen->cell(row: 1, col: 7)?->attributes->isMosaic());
@@ -79,12 +79,23 @@ final class ScreenTest extends TestCase
 
     public function testPositionsCanBeGivenInDigits(): void
     {
-        self::assertSame('A', Vdt::fromString("\x1F0712A")->screen()->cell(row: 7, col: 12)?->text());
+        self::assertSame(
+            'A',
+            (new Vdt("\x1F0712A"))
+                ->screen()
+                ->cell(row: 7, col: 12)
+                ?->text(),
+        );
     }
 
     public function testAG2AccentGoesWithItsLetter(): void
     {
-        self::assertStringStartsWith('é!', Vdt::fromString("\x1F\x41\x41\x19\x42e!")->screen()->line(1));
+        self::assertStringStartsWith(
+            'é!',
+            (new Vdt("\x1F\x41\x41\x19\x42e!"))
+                ->screen()
+                ->line(1),
+        );
     }
 
     public function testProtocolSequencesDrawNothing(): void
@@ -92,7 +103,9 @@ final class ScreenTest extends TestCase
         // PRO2 (ESC : x y) and PRO1 (ESC 9 x): none of their bytes is a character
         self::assertStringStartsWith(
             'A ',
-            Vdt::fromString("\x1F\x41\x41\x1B\x3A\x69\x43\x1B\x39\x70A")->screen()->line(1),
+            (new Vdt("\x1F\x41\x41\x1B\x3A\x69\x43\x1B\x39\x70A"))
+                ->screen()
+                ->line(1),
         );
     }
 }

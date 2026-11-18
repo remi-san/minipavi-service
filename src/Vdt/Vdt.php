@@ -12,7 +12,7 @@ use MiniPaviService\Vdt\Screen\Screen;
  * value, and only the gateway client turns it into bytes (toString()). Text is made with
  * text(), which encodes its accents (G2); positions, the status line, a clear screen and
  * repetitions with position(), line0(), clearScreen() and repeat(), MiniPaviCli's helpers
- * as Vdt; raw Videotex with new Vdt() or fromString().
+ * as Vdt; raw Videotex with new Vdt().
  *
  * It keeps the bytes, and doesn't draw them itself: what the content shows is Screen's
  * (screen()), moving it Offset's (offset()), both played by Player. A file is read by its
@@ -26,14 +26,6 @@ final readonly class Vdt
     public function __construct(
         private string $bytes = '',
     ) {}
-
-    /**
-     * Raw Videotex
-     */
-    public static function fromString(string $bytes): self
-    {
-        return new self($bytes);
-    }
 
     /**
      * Text (UTF-8), its accented and special characters encoded in G2; control characters

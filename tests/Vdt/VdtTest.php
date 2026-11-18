@@ -55,7 +55,7 @@ final class VdtTest extends TestCase
     {
         $vdt = (string) file_get_contents(self::FIXTURES . '/background.vdt');
 
-        self::assertSame($vdt, Vdt::fromString($vdt)->toString());
+        self::assertSame($vdt, (new Vdt($vdt))->toString());
         // Equal by its bytes, drawn or not
         $drawn = new Vdt("\x1F\x41\x41Hi");
         $drawn->screen();
@@ -65,7 +65,9 @@ final class VdtTest extends TestCase
     public function testOffsetMovesTextAndKeepsItsAttributes(): void
     {
         // HELLO on row 1, then four red A (the last three as a repetition) on row 2
-        $moved = Vdt::fromString("\x1F\x41\x41HELLO\x1F\x42\x41\x1B\x41AA\x12\x42")->offset(x: 2, y: 3)->screen();
+        $moved = (new Vdt("\x1F\x41\x41HELLO\x1F\x42\x41\x1B\x41AA\x12\x42"))
+            ->offset(x: 2, y: 3)
+            ->screen();
 
         self::assertSame('  HELLO', rtrim($moved->line(4)));
         self::assertSame('  AAAA', rtrim($moved->line(5)));
@@ -78,17 +80,27 @@ final class VdtTest extends TestCase
 
     public function testOffsetDropsWhatGoesOffTheScreenInsteadOfWrapping(): void
     {
-        $abcde = Vdt::fromString("\x1F\x41\x41ABCDE");
+        $abcde = new Vdt("\x1F\x41\x41ABCDE");
 
         self::assertSame('CDE', rtrim($abcde->offset(x: -2, y: 0)->screen()->line(1)));
         self::assertSame(str_repeat(' ', times: 37) . 'ABC', $abcde->offset(x: 37, y: 0)->screen()->line(1));
         self::assertSame('', trim($abcde->offset(x: 37, y: 0)->screen()->line(2)));
-        self::assertSame('', trim(Vdt::fromString("\x1F\x41\x41ABC")->offset(x: 0, y: -1)->screen()->text()));
+        self::assertSame(
+            '',
+            trim(
+                (new Vdt("\x1F\x41\x41ABC"))
+                    ->offset(x: 0, y: -1)
+                    ->screen()
+                    ->text(),
+            ),
+        );
     }
 
     public function testOffsetDoesNotMoveTheStatusRow(): void
     {
-        $moved = Vdt::fromString("\x1F\x40\x41status\x1F\x41\x41X")->offset(x: 1, y: 1)->screen();
+        $moved = (new Vdt("\x1F\x40\x41status\x1F\x41\x41X"))
+            ->offset(x: 1, y: 1)
+            ->screen();
 
         self::assertSame('status', rtrim($moved->line(0)));
         self::assertSame(' X', rtrim($moved->line(2)));
@@ -96,8 +108,8 @@ final class VdtTest extends TestCase
 
     public function testDoubleWidthTakesTwoColumnsInTextButNotInMosaic(): void
     {
-        $text = Vdt::fromString("\x1F\x41\x41\x1B\x4EAB")->screen();
-        $mosaic = Vdt::fromString("\x1F\x41\x41\x0E\x1B\x4E\x21\x22")->screen();
+        $text = (new Vdt("\x1F\x41\x41\x1B\x4EAB"))->screen();
+        $mosaic = (new Vdt("\x1F\x41\x41\x0E\x1B\x4E\x21\x22"))->screen();
 
         self::assertSame(['A', 'A', 'B', 'B'], array_map(static fn(int $col) => $text->cell(1, $col)?->bytes, [
             1,
@@ -113,7 +125,9 @@ final class VdtTest extends TestCase
 
     public function testWithoutClearDrawsOverWhatIsShown(): void
     {
-        $screen = Vdt::fromString("\x1F\x43\x41shown")->append(Vdt::fromString("\x0CAB")->withoutClear())->screen();
+        $screen = (new Vdt("\x1F\x43\x41shown"))
+            ->append((new Vdt("\x0CAB"))->withoutClear())
+            ->screen();
 
         self::assertSame('shown', rtrim($screen->line(3)));
         // From the top left corner, as after a clear screen
@@ -212,6 +226,6 @@ final class VdtTest extends TestCase
      */
     private static function fixture(string $name): Vdt
     {
-        return Vdt::fromString((string) file_get_contents(self::FIXTURES . "/{$name}.vdt"));
+        return new Vdt((string) file_get_contents(self::FIXTURES . "/{$name}.vdt"));
     }
 }
