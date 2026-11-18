@@ -36,18 +36,29 @@ which depend on nothing above them):
 
 ## Installing
 
-From a service in this repository, as a `path` repository (Composer symlinks it into `vendor/`,
-so edits to the framework apply without reinstalling):
+From this repository, as a `vcs` repository (it isn't on Packagist), at its `main` branch:
 
 ```json
 {
-    "repositories": [{ "type": "path", "url": "../../framework" }],
-    "require": { "remi-san/minipavi-service": "*@dev" }
+    "repositories": [{ "type": "vcs", "url": "https://github.com/remi-san/minipavi-service" }],
+    "require": { "remi-san/minipavi-service": "dev-main" }
 }
 ```
 
-In Docker, the framework and the service keep the repository's layout (`/app/framework` and
-`/app/services/<service>`), so that the relative path and the symlink resolve there too.
+To work on the framework and a service together, point the service at a local clone with a
+`path` repository listed first (Composer symlinks it into `vendor/`, so edits to the framework
+apply without reinstalling), and don't commit it:
+
+```json
+{
+    "repositories": [
+        { "type": "path", "url": "../minipavi-service" },
+        { "type": "vcs", "url": "https://github.com/remi-san/minipavi-service" }
+    ]
+}
+```
+
+The services of [minipavi-stack](https://github.com/remi-san/minipavi-stack) (MiniPaviAcc, Octoblue) and its skeleton use it this way.
 
 ## Writing a service
 
@@ -102,8 +113,8 @@ KernelBuilder::for($router, $messages)
 - **Lazy controllers:** a service with many screens shouldn't build every controller, and parse
   every page, on each request. With a dependency injection container such as PHP-DI, define
   the controllers as lazy: the router gets proxies, and a controller is only built when its
-  route runs (PHP 8.4's native lazy objects, which keep controllers `final`). See
-  `services/*/config/container.php`:
+  route runs (PHP 8.4's native lazy objects, which keep controllers `final`). See the
+  `config/container.php` of [minipavi-stack](https://github.com/remi-san/minipavi-stack)'s services:
 
   ```php
   $container = (new ContainerBuilder())->addDefinitions([
@@ -229,7 +240,7 @@ KernelBuilder::for($router, $messages)
   `$page->display($request->terminal(), $data)`; display elements get it too
   (`Element::toVdt(Terminal $terminal): Vdt`).
 - **Logging:** `Service`, `ServiceRunner`, `Dispatcher` and `EmulatorRedirect` take an optional PSR-3 logger (`KernelBuilder::withLogger()` gives it to all of them; e.g.
-  Monolog, with its `ErrorLogHandler` for PHP's error log, as the services of this repository do) and log
+  Monolog, with its `ErrorLogHandler` for PHP's error log, as the services of [minipavi-stack](https://github.com/remi-san/minipavi-stack) do) and log
   connections, disconnections and browsers sent to the emulator at info level, the handler
   of each request at debug level, and errors at error level (with the exception):
   `new Service($router, $messages, $serializer, logger: $logger)`, `new ServiceRunner($service, $client, $logger)`,
@@ -494,7 +505,7 @@ $tester->connect()->assertRoute('home')->assertScreenContains('OCTOBLUE')
   other assertions.
 
 To test the service as it is served, build its `Service` from the same wiring as its
-`public/index.php`: the services of this repository keep it in `config/container.php`, which
+`public/index.php`: the services of [minipavi-stack](https://github.com/remi-san/minipavi-stack) keep it in `config/container.php`, which
 both require (see their `tests/`).
 
 ## Messages
@@ -735,7 +746,7 @@ vendor/bin/minipavi vdt-offset --preview -- images/background.vdt 8 -2 # move a 
 - **`lint [--messages <messages.xml>] <path>...`** parses every page (XML file whose root is
   `<page>`) of the files and folders given, with their subfolders, as the service does: other
   XML files are skipped. Each error is printed with its file and line, and the command exits
-  with 1 on an error, or if it found no page. The services of this repository run it with
+  with 1 on an error, or if it found no page. The services of [minipavi-stack](https://github.com/remi-san/minipavi-stack) run it with
   `composer lint`, in CI.
 - **`preview [--messages <messages.xml>] <page.xml> [<data.json>]`** prints the screen a page
   draws, as text (`Screen::preview()`): a template with the variables of a JSON object (e.g.
