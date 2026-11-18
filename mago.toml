@@ -26,9 +26,9 @@ ignore = [
     # found among its cases(), which Mago doesn't follow
     { code = "invalid-return-statement", in = ["src/Core/Route.php"] },
     { code = "invalid-property-assignment-value", in = ["src/Core/RouteContext.php"] },
-    # Template variables read the property of an object named in the template
-    { code = "string-member-selector", in = ["src/Page/Template/Scope.php"] },
-    { code = "ambiguous-object-property-access", in = ["src/Page/Template/Scope.php"] },
+    # Placeholders (of templates and messages) read the property of an object they name
+    { code = "string-member-selector", in = ["src/Text/Placeholders.php"] },
+    { code = "ambiguous-object-property-access", in = ["src/Text/Placeholders.php"] },
 ]
 
 [linter]

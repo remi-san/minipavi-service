@@ -6,7 +6,7 @@ namespace MiniPaviService\Page\Parser\Tag;
 
 use MiniPaviService\Page\Parser\AttributeValues;
 use MiniPaviService\Page\Parser\PageXmlException;
-use MiniPaviService\Page\Template\Scope;
+use MiniPaviService\Text\Placeholders;
 use MiniPaviService\Xml\XmlElements;
 
 /**
@@ -50,7 +50,7 @@ final readonly class XmlTag
      */
     public function hasPlaceholder(): bool
     {
-        return (bool) preg_match(Scope::PLACEHOLDER, implode("\n", $this->attributes) . "\n" . $this->text);
+        return (bool) preg_match(Placeholders::PLACEHOLDER, implode("\n", $this->attributes) . "\n" . $this->text);
     }
 
     /**
