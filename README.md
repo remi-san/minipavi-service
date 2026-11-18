@@ -504,7 +504,8 @@ Text shown on the Minitel is not written in the code: it is read from messages f
 - **Texts** come from `config/messages.xml` in the framework (its defaults,
   `MessagesXmlParser::defaults()`, read where the service is built), then the service's
   messages file over them, then a page's
-  `<message>` over those, for that page. A text can have `{{placeholders}}`.
+  `<message>` over those, for that page. A text can have `{{placeholders}}`, as in page
+  templates: `{{name}}`, or a dotted path through arrays and object properties (`{{user.name}}`).
 - **Always given:** `Service`, `PageXmlParser` and the pages take the messages as a required
   argument, never a hidden default: pass `(new MessagesXmlParser())->defaults()` for the
   framework's only.
@@ -537,8 +538,10 @@ $service = new Service($router, $messages, new ContextSerializer($router), logge
 Vdt::line0($this->page->message(AccMessage::ConnectedFrom, ['remoteAddr' => $addr]));
 ```
 
-A message without text, or a placeholder without its variable, is a `LogicException`; a
-messages file that can't be read is a `MessagesException` with the file and line.
+A message without text, a placeholder without its variable or whose value isn't text (an
+array, an object without `__toString()`), or a `{{...}}` that isn't a placeholder (`{{1}}`,
+`{{user-name}}`: a page template would leave it as it is) is a `LogicException` naming the
+message; a messages file that can't be read is a `MessagesException` with the file and line.
 `schema/messages.xsd` describes messages files.
 
 ## Page XML format
