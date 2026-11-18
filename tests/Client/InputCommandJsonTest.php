@@ -51,7 +51,13 @@ final class InputCommandJsonTest extends TestCase
         yield 'not an object' => ['"command"'];
         yield 'a position missing' => ['{"row": 1, "col": 1, "length": 1}'];
         yield 'a position not a number' => ['{"row": "1", "col": 1, "length": 1, "lines": 1}'];
-        yield 'off the screen' => ['{"row": 30, "col": 1, "length": 1, "lines": 1}'];
+        // Refused by InputField, Span and Position
+        yield 'below the last row' => ['{"row": 30, "col": 1, "length": 1, "lines": 1}'];
+        yield 'more lines than rows left' => ['{"row": 24, "col": 1, "length": 1, "lines": 2}'];
+        yield 'no line' => ['{"row": 2, "col": 1, "length": 1, "lines": 0}'];
+        yield 'column 0' => ['{"row": 2, "col": 0, "length": 1, "lines": 1}'];
+        yield 'past the last column' => ['{"row": 2, "col": 41, "length": 1, "lines": 1}'];
+        yield 'a length past the last column' => ['{"row": 2, "col": 38, "length": 4, "lines": 1}'];
     }
 
     #[DataProvider('unreadable')]
