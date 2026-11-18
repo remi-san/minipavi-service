@@ -23,7 +23,6 @@ use Psr\Log\NullLogger;
  * the service (UrlAttribute::Service, from WithUrls) goes to the client, for its answers.
  * The context the client carries is signed and checked by the service (ContextSerializer).
  * Nothing to answer (e.g. a disconnection) is a 204, an answer that can't be given a 500.
- *
  */
 final readonly class ServiceRunner implements RequestHandlerInterface
 {

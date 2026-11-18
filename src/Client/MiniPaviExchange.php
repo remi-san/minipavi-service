@@ -19,11 +19,19 @@ use Psr\Http\Message\ResponseInterface;
  */
 final readonly class MiniPaviExchange implements ClientExchange
 {
+    /**
+     * @param GatewayRequest $request what MiniPaviCli read of the gateway's request
+     * @param string $serviceUrl URL the request was sent to: the next URL of answers without
+     *                           one
+     */
     public function __construct(
         private GatewayRequest $request,
         private string $serviceUrl,
     ) {}
 
+    /**
+     * The gateway's request, as MiniPaviCli read it
+     */
     public function request(): GatewayRequest
     {
         return $this->request;

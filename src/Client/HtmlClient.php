@@ -18,7 +18,6 @@ use Psr\Http\Message\ServerRequestInterface;
  * blocked: the screen stays, with FrameworkMessage::WebLeave on line 0.
  *
  * The first request (no key posted) is a connection, as the gateway's: at the default route.
- *
  */
 final readonly class HtmlClient implements Client
 {
@@ -39,7 +38,7 @@ final readonly class HtmlClient implements Client
     {
         $posted = $this->form->read($request);
         if ($posted === null) {
-            return $this->unread(new GatewayRequest(ConnectionCode::Connect), $serviceUrl);
+            return $this->blankPage(new GatewayRequest(ConnectionCode::Connect), $serviceUrl);
         }
 
         return new HtmlExchange(
@@ -56,10 +55,14 @@ final readonly class HtmlClient implements Client
      */
     public function unreadable(string $serviceUrl): HtmlExchange
     {
-        return $this->unread(new GatewayRequest(null), $serviceUrl);
+        return $this->blankPage(new GatewayRequest(null), $serviceUrl);
     }
 
-    private function unread(GatewayRequest $request, string $serviceUrl): HtmlExchange
+    /**
+     * The exchange of a request without a page posted (the first one, or one that couldn't be
+     * read): an empty screen, no input
+     */
+    private function blankPage(GatewayRequest $request, string $serviceUrl): HtmlExchange
     {
         return new HtmlExchange($request, new HtmlPageState(), $serviceUrl, $this->form, $this->messages);
     }
