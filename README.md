@@ -157,17 +157,17 @@ KernelBuilder::for($router, $messages)
   answer the client can't give a `500` (logged as critical).
   **The context is signed** on its way through the gateway (or the browser), so that the user
   can't change it: anyone could otherwise send another route, or other parameters.
-  `Service` takes a **`Core\Signing\ContextSigner`** (its fourth argument, `KernelBuilder`
-  gives it), with which its `Core\ContextSerializer` signs the context of each answer and
-  checks the one of each request it reads (that of a connection, a disconnection or a
+  `Service` takes its **`Core\ContextSerializer`** (`KernelBuilder` gives it), which signs the
+  context of each answer and checks the one of each request it reads with a
+  **`Core\Signing\ContextSigner`** (that of a connection, a disconnection or a
   background call isn't read, so it isn't checked). **`HmacContextSigner`** signs it with an
   HMAC-SHA256 of a secret key (`<signature>.<context>`), **`UnsignedContext`** doesn't. A context
   the signer didn't sign (`ForgedContextException`) is answered as one that can't be read.
   Keep the key out of the repository: the services read it from the environment,
   **`CONTEXT_SECRET`** (`openssl rand -base64 32`), and don't sign the context without it, with
   a warning. Changing the key makes the users of sessions in progress start again at the
-  default route. Without a signer, `Service` (and so `ServiceTester`) doesn't sign it
-  (`UnsignedContext`). Two clients:
+  default route. A serializer without signer (`new ContextSerializer($router)`, e.g. for a
+  `ServiceTester`) doesn't sign it (`UnsignedContext`). Two clients:
   - **`MiniPaviClient`**, for the MiniPavi gateway, through `MiniPaviCli` used unchanged: it
     reads the gateway's request itself (background calls included, which the service doesn't
     answer), and writes the answer itself: `MiniPaviClient` captures it as the body of the
@@ -224,7 +224,7 @@ KernelBuilder::for($router, $messages)
   Monolog, with its `ErrorLogHandler` for PHP's error log, as the services of this repository do) and log
   connections, disconnections and browsers sent to the emulator at info level, the handler
   of each request at debug level, and errors at error level (with the exception):
-  `new Service($router, $messages, $logger)`, `new ServiceRunner($service, $client, $signer, $logger)`,
+  `new Service($router, $messages, $serializer, $logger)`, `new ServiceRunner($service, $client, $logger)`,
   `new Dispatcher($handlers, $fallback, $logger)`, `new EmulatorRedirect($emulator, $logger)`.
   Without one, nothing is logged.
 - **A `Controller`** runs on a `Request` and returns a `Response`. The request gives:
@@ -460,7 +460,7 @@ of each answer back with the next request, and plays every answer since the conn
 simulated `Screen`, as the Minitel keeps what isn't cleared:
 
 ```php
-$tester = new ServiceTester(new Service($router, $messages));   // optionally, a Terminal
+$tester = new ServiceTester(new Service($router, $messages, new ContextSerializer($router)));   // optionally, a Terminal
 
 $tester->connect()->assertRoute('home')->assertScreenContains('OCTOBLUE')
     ->type('2')->press(FunctionKey::Send)->assertRoute('games')
@@ -516,7 +516,7 @@ $messages = (new MessagesXmlParser())
     ->parseFile("$config/messages.xml", Messages::defaults())
     ->check(FrameworkMessage::class, AccMessage::class);
 $parser = new PageXmlParser($messages);              // pages redefine them with <message>
-$service = new Service($router, $messages, $logger);  // for its error message
+$service = new Service($router, $messages, new ContextSerializer($router), $logger);  // for its error message
 
 // In a controller: the page's text, its placeholders replaced
 Vdt::line0($this->page->message(AccMessage::ConnectedFrom, ['remoteAddr' => $addr]));
