@@ -32,7 +32,7 @@ final readonly class Line implements Element
     {
         return Vdt::join(
             Vdt::position($this->span->start->col, $this->span->start->row),
-            new Vdt($this->color->text()),
+            $this->color->text(),
             Vdt::repeat($this->char, $this->span->length),
         );
     }

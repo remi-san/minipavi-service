@@ -14,7 +14,7 @@ use MiniPaviService\Vdt\Vdt;
 final readonly class Background implements Element
 {
     public function __construct(
-        public Vdt $vdt,
+        private Vdt $vdt,
     ) {}
 
     public function toVdt(Terminal $terminal): Vdt

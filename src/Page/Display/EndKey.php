@@ -39,7 +39,7 @@ final readonly class EndKey implements Element
 
             return Vdt::join(
                 Vdt::position(self::centered($width), $this->position->row ?? (Screen::ROWS - 1)),
-                new Vdt(Color::White->text()),
+                Color::White->text(),
                 Vdt::text($this->shiftLabel),
                 $badge,
             );

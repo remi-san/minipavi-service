@@ -29,7 +29,7 @@ final readonly class Key implements Element
     {
         return Vdt::join(
             Vdt::position($this->position->col, $this->position->row),
-            new Vdt($this->bg?->background() ?? ''),
+            $this->bg?->background() ?? new Vdt(),
             self::badge($this->label, $this->color),
         );
     }
@@ -40,9 +40,15 @@ final readonly class Key implements Element
     public static function badge(string $label, Color $color): Vdt
     {
         return Vdt::join(
-            new Vdt(Color::White->text() . Videotex::UNDERLINE_ON . ' ' . $color->text() . Videotex::INVERSE_ON),
+            Color::White->text(),
+            new Vdt(Videotex::UNDERLINE_ON),
+            Vdt::text(' '),
+            $color->text(),
+            new Vdt(Videotex::INVERSE_ON),
             Vdt::text(' ' . $label . ' '),
-            new Vdt(Color::White->text() . Videotex::INVERSE_OFF . Videotex::UNDERLINE_OFF . ' '),
+            Color::White->text(),
+            new Vdt(Videotex::INVERSE_OFF . Videotex::UNDERLINE_OFF),
+            Vdt::text(' '),
         );
     }
 }

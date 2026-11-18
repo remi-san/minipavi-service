@@ -30,7 +30,11 @@ final readonly class Text implements Element
 
     public function toVdt(Terminal $terminal): Vdt
     {
-        $attr = new Vdt(($this->size?->vdt() ?? '') . ($this->bg?->background() ?? '') . $this->color->text());
+        $attr = Vdt::join(
+            $this->size?->toVdt() ?? new Vdt(),
+            $this->bg?->background() ?? new Vdt(),
+            $this->color->text(),
+        );
         // Characters of double width take two columns each
         $charWidth = $this->size?->width() ?? 1;
         $vdt = $this->placed($attr, Vdt::text($this->text), $charWidth);
