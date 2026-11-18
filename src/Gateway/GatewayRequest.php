@@ -56,7 +56,7 @@ final readonly class GatewayRequest
 
     public function isConnecting(): bool
     {
-        return \in_array($this->key, [ConnectionCode::Connect, ConnectionCode::DirectConnect], strict: true);
+        return $this->key?->connectionCode()?->isConnection() ?? false;
     }
 
     public function isDisconnecting(): bool
