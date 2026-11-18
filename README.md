@@ -439,10 +439,10 @@ KernelBuilder::for($router, $messages)
   `'true'`/`'false'` to a bool), and give the default for anything else.
 
   Behind it, `RouterBuilder::addRoute()` binds each controller with its types (`Route`), in
-  the immutable `Router` it builds, and the
-  `Context` keeps a `RouteContext` per route: restored from the JSON with these types (a
-  state the enum doesn't have is the initial one, unknown routes are dropped), and serialized
-  as the enum's value and `toArray()`. `initialState()` and `parametersType()` are called for
+  the immutable `Router` it builds, and the `Context` keeps a `RouteContext` per route.
+  `Core\ContextSerializer` writes it as JSON (the enum's value and `toArray()`), and restores it
+  with these types (a state the enum doesn't have is the initial one, unknown routes are
+  dropped). `initialState()` and `parametersType()` are called for
   routes that don't run: they must not use the controller's properties, so that lazy
   controllers stay unbuilt.
 
