@@ -27,7 +27,7 @@ which depend on nothing above them):
 | `Controller\Pagination\` | `PaginatedController`, `Paginator`, `PageParameters` |
 | `Page\` | static and template pages, their display elements, and the page XML parser |
 | `Message\` | the messages shown on screen: `Message`, `FrameworkMessage`, `Messages` and their XML parser |
-| `Minitel\` | the user's terminal: `Terminal`, its `FunctionKey`s, and its settings (`Keyboard`, `LocalEcho`, `Scroll`) |
+| `Minitel\` | the user's terminal: `Terminal`, its `FunctionKey`s, its settings (`Keyboard`, `LocalEcho`, `Scroll`), and the `InputField` where the user types |
 | `Vdt\` | Videotex: codes, reading, writing and moving Videotex content (`Vdt`, `VdtHelper`, `Videotex`); in `Screen\`, the Minitel screen it draws (`Screen`, `Cell`) and its HTML rendering (`HtmlRenderer`) |
 | `Gateway\` | the requests and answers the service handles (`GatewayRequest`, `GatewayResponse`, `CallMode`, the `InputCommand` reading a field), and the `Client` interface reading and sending them |
 | `Client\` | the clients: `MiniPaviClient` for the MiniPavi gateway, `HtmlClient` for a browser (`?web=true`) |
@@ -172,7 +172,7 @@ KernelBuilder::for($router, $messages)
   - **`HtmlClient`**, for a browser: it shows the service's screen as an HTML page
     (`Vdt\Screen\HtmlRenderer`), and lets the user navigate it as on a Minitel. The first request is a
     connection, at the default route, as the gateway's. The page is a form posting back to its URL:
-    - the answer's **input field** (its `InputCommand`: a text field or a message) over the screen, at its position
+    - the answer's **input field** (the `InputField` of its `InputCommand`: a text field, or a message of several lines) over the screen, at its position
       and size, one input per line;
     - the 8 **function keys** under the screen, in the Minitel's 2 × 4 layout, those the
       input doesn't accept (`validwith`) disabled; Enter in a field presses Envoi;
@@ -242,7 +242,7 @@ KernelBuilder::for($router, $messages)
   | Response | Effect | State kept by default |
   |---|---|---|
   | `Response::display($vdt)` | sends Videotex content to the gateway; the next key comes back to this controller | `ControllerState::ReadInput` |
-  | `Response::readInput($vdt, $command)` | sends content and the command reading the page's input field (`Page::inputCommand()`, an `InputCommand`: where the field is, its size, the keys validating it, its prefill) to the gateway | `ControllerState::ReadInput` |
+  | `Response::readInput($vdt, $command)` | sends content and the command reading the page's input field (`Page::inputCommand()`, an `InputCommand`: the page's `Minitel\InputField`, where it is, its size and the keys validating it, and its prefill) to the gateway | `ControllerState::ReadInput` |
   | `Response::goTo($route, $parameters)` | switches to another controller, which runs at once: at `ControllerState::Init`, with `$parameters` (a `Parameters` object, or none), without the user's input; this controller is reset | `ControllerState::Init` |
   | `Response::connectTo($url, $vdt)` | sends the user to another service, as a new connection (`CallMode::Connect`) | `ControllerState::Init` |
 
