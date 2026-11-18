@@ -42,7 +42,7 @@ final class ContextTest extends TestCase
                         . ' '
                         . $request->parameters()->page
                         . ' '
-                        . ($request->key()->value ?? '')
+                        . (string) $request->key()?->value
                         . ' '
                         . $request->contentAsString()
                         . ' '

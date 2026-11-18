@@ -43,7 +43,7 @@ final class ContextSerializerTest extends TestCase
                         . ' '
                         . $request->parameters()->page
                         . ' '
-                        . ($request->key()->value ?? '')
+                        . (string) $request->key()?->value
                         . ' '
                         . $request->contentAsString()
                         . ' '
