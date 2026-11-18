@@ -29,28 +29,16 @@ final readonly class Terminal
     }
 
     /**
-     * 'websocket' (emulators, ESP32 / Wi-Fi adapters) or 'other' (telnet, phone), null if unknown
-     */
-    public function typeSocket(): ?string
-    {
-        return $this->typeSocket;
-    }
-
-    /**
-     * Version of the Minitel if known, '???' otherwise
-     */
-    public function versionMinitel(): ?string
-    {
-        return $this->versionMinitel;
-    }
-
-    /**
      * Whether the user connects through an ESP32 or Minimit adapter: a websocket with a known
      * Minitel (emulators, websockets too, don't know it). Their function keys need Shift.
      */
     public function isAdapter(): bool
     {
-        return $this->typeSocket === self::WEBSOCKET && $this->versionMinitel !== self::UNKNOWN_VERSION;
+        return (
+            $this->typeSocket === self::WEBSOCKET
+            && $this->versionMinitel !== null
+            && $this->versionMinitel !== self::UNKNOWN_VERSION
+        );
     }
 
     /**

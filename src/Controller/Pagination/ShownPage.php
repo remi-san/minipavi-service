@@ -51,21 +51,27 @@ final readonly class ShownPage
     }
 
     /**
-     * Turns by pages (1: the next one, -1: the previous one), or stays at the end with its
-     * message on line 0 (FrameworkMessage::FirstPage, LastPage)
+     * The next page, or this one with FrameworkMessage::LastPage on line 0 on the last
      */
-    public function turn(int $by): Response
+    public function next(): Response
     {
-        $target = $this->paginator->index() + $by;
+        $next = $this->paginator->next();
 
-        if ($target < 0) {
-            return $this->stay(Vdt::line0($this->message(FrameworkMessage::FirstPage)));
-        }
-        if ($target >= $this->paginator->pageCount()) {
-            return $this->stay(Vdt::line0($this->message(FrameworkMessage::LastPage)));
-        }
+        return $next === null
+            ? $this->stay(Vdt::line0($this->message(FrameworkMessage::LastPage)))
+            : $this->at($next)->display();
+    }
 
-        return (new self($this->page, $this->list, $this->request, $this->paginator->at($target)))->display();
+    /**
+     * The previous page, or this one with FrameworkMessage::FirstPage on line 0 on the first
+     */
+    public function previous(): Response
+    {
+        $previous = $this->paginator->previous();
+
+        return $previous === null
+            ? $this->stay(Vdt::line0($this->message(FrameworkMessage::FirstPage)))
+            : $this->at($previous)->display();
     }
 
     /**
@@ -76,5 +82,13 @@ final readonly class ShownPage
     public function message(Message $message, array $variables = []): string
     {
         return $this->page->message($message, $variables);
+    }
+
+    /**
+     * The same list and request, at another page
+     */
+    private function at(Paginator $paginator): self
+    {
+        return new self($this->page, $this->list, $this->request, $paginator);
     }
 }

@@ -64,8 +64,11 @@ final class RequestTest extends TestCase
         $terminal = new Terminal('192.0.2.1', 'websocket', 'Cv5');
 
         self::assertSame('192.0.2.1', $terminal->remoteAddr());
-        self::assertSame('websocket', $terminal->typeSocket());
-        self::assertSame('Cv5', $terminal->versionMinitel());
-        self::assertNull((new Terminal())->typeSocket());
+        // A websocket with a known Minitel: an ESP32 or Minimit adapter
+        self::assertTrue($terminal->isAdapter());
+        self::assertFalse($terminal->isTelnetOrPhone());
+        self::assertFalse((new Terminal())->isAdapter());
+        // The version kept: without it, not an adapter
+        self::assertFalse((new Terminal('192.0.2.1', 'websocket'))->isAdapter());
     }
 }
