@@ -186,12 +186,11 @@ final class PageXmlParserTest extends TestCase
     #[DataProvider('takenTags')]
     public function testServiceElementTakesNoTagOfTheFormat(string $tag): void
     {
-        $parser = new PageXmlParser((new MessagesXmlParser())->defaults(), new StarsElements($tag));
-
         $this->expectException(\LogicException::class);
         $this->expectExceptionMessage("<{$tag}>");
 
-        $parser->parse('<page type="static"/>', self::FIXTURES);
+        // When the parser is built (at boot), not when a page is first parsed
+        new PageXmlParser((new MessagesXmlParser())->defaults(), new StarsElements($tag));
     }
 
     public function testCenteredTextOfEvenWidthHasOneMoreColumnOnTheRight(): void

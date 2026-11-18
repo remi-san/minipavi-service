@@ -36,11 +36,17 @@ final class PageXmlParser
      *                           framework's only), which a page's <message> redefine
      * @param PageElements $elements display elements of the service, besides the framework's
      *                               (StandardElements); their tags must be new ones
+     *
+     * @throws \LogicException for an element whose tag is taken, by another element or by the
+     *                         format (e.g. <if>): checked now, at boot, rather than when a page
+     *                         is first parsed
      */
     public function __construct(
         private Messages $messages,
         private PageElements $elements = new NoElements(),
-    ) {}
+    ) {
+        NodesParser::standard($this->elementsOf(new PageFiles('.'), $messages), file: 'PageXmlParser');
+    }
 
     /**
      * Page from a file; <background> and <image> files are read from the same folder
@@ -96,8 +102,7 @@ final class PageXmlParser
         );
 
         $messages = $this->messages->with($this->messageTexts($root, $name));
-        $elements = ElementFactory::of(new PageFiles($baseDir), $messages, new StandardElements(), $this->elements);
-        $parsed = NodesParser::standard($elements, $name)->parse(
+        $parsed = NodesParser::standard($this->elementsOf(new PageFiles($baseDir), $messages), $name)->parse(
             $root,
             TagPosition::page(template: $type === 'template'),
         );
@@ -114,6 +119,14 @@ final class PageXmlParser
         }
 
         return new MinitelPage(new StaticContent($display), $messages, $parsed->input, $setup);
+    }
+
+    /**
+     * The display elements of a page: the framework's, and the service's
+     */
+    private function elementsOf(PageFiles $files, Messages $messages): ElementFactory
+    {
+        return ElementFactory::of($files, $messages, new StandardElements(), $this->elements);
     }
 
     /**

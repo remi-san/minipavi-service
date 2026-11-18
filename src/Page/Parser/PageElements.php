@@ -14,7 +14,8 @@ use MiniPaviService\Page\Parser\Element\ElementBuilder;
 interface PageElements
 {
     /**
-     * The builders of the elements, for a page
+     * The builders of the elements, for a page. Called once more when PageXmlParser is built, to
+     * check their tags: building them must not read the files.
      *
      * @param PageFiles $files the files of the page's folder (e.g. for an element drawing a file)
      * @param Messages $messages the page's messages: the service's, with the page's <message>
