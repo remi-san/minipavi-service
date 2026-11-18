@@ -21,9 +21,6 @@ final readonly class Offset
 
     public function apply(Vdt $vdt): Vdt
     {
-        $out = new OffsetWriter($this->x, $this->y);
-        (new Player())->play($vdt, $out);
-
-        return $out->vdt();
+        return OffsetWriter::write($vdt, $this->x, $this->y);
     }
 }

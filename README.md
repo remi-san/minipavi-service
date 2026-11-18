@@ -662,8 +662,9 @@ echo $moved->screen()->preview();      // the screen, as text
 - **`Vdt\Player::play($vdt, $listener)`** (internal, what `screen()` and `offset()` are
   built on): plays the content on the simulated screen, telling a `Vdt\ScreenListener` each
   character (`glyph()`, with its row, column, width and attributes) and the other `Token`s
-  (`sequence()`, with the cursor). `Screen\ScreenCells` collects the cells of `screen()`,
-  `Vdt\OffsetWriter` writes the content moved by `offset()`.
+  (`sequence()`, with a copy of the cursor). `Screen\ScreenCells::of()` collects the cells of
+  `screen()`, `Vdt\OffsetWriter::write()` writes the content moved by `offset()`: each listens
+  to one content, built by that static method only.
 
 `bin/minipavi vdt-offset` does the same from the command line (see [Command line](#command-line)).
 

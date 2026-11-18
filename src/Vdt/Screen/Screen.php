@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Vdt\Screen;
 
-use MiniPaviService\Vdt\Player;
 use MiniPaviService\Vdt\Vdt;
 
 /**
@@ -25,10 +24,7 @@ final readonly class Screen
 
     public static function of(Vdt $vdt): self
     {
-        $cells = new ScreenCells();
-        (new Player())->play($vdt, $cells);
-
-        return new self($cells->cells());
+        return new self(ScreenCells::of($vdt));
     }
 
     public function cell(int $row, int $col): ?Cell

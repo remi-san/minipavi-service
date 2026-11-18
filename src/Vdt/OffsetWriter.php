@@ -13,17 +13,31 @@ use MiniPaviService\Vdt\Screen\Screen;
  * Offset listens to while playing the content. Characters that end up off the screen are
  * dropped, and row 0, the status line, is not moved.
  *
+ * Its Writer keeps where it is and what it wrote, so it listens to one content only: it is
+ * only built, and played to, by write().
+ *
  * @internal
  */
-final class OffsetWriter implements ScreenListener
+final readonly class OffsetWriter implements ScreenListener
 {
-    private readonly Writer $out;
+    private Writer $out;
 
-    public function __construct(
-        private readonly int $x,
-        private readonly int $y,
+    private function __construct(
+        private int $x,
+        private int $y,
     ) {
         $this->out = new Writer();
+    }
+
+    /**
+     * The content, moved
+     */
+    public static function write(Vdt $vdt, int $x, int $y): Vdt
+    {
+        $writer = new self($x, $y);
+        (new Player())->play($vdt, $writer);
+
+        return new Vdt($writer->out->vdt());
     }
 
     public function glyph(int $row, int $col, string $bytes, int $width, Attributes $attributes): void
@@ -55,14 +69,6 @@ final class OffsetWriter implements ScreenListener
                 $this->out->raw($sequence->bytes);
                 break;
         }
-    }
-
-    /**
-     * The content written, moved
-     */
-    public function vdt(): Vdt
-    {
-        return new Vdt($this->out->vdt());
     }
 
     private function clearLine(Cursor $cursor): void
