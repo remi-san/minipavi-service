@@ -218,6 +218,22 @@ final class PageXmlParserTest extends TestCase
         self::assertSame(['23|        [Maj] +  Connexion/fin          |'], $this->drawnRows($page->display($adapter)));
     }
 
+    public function testForeachItemNameIsTrimmed(): void
+    {
+        $page = $this->parse(<<<'XML'
+            <page type="template">
+              <foreach items="games" as=" game " row="2">
+                <text>{{game}}</text>
+              </foreach>
+            </page>
+            XML);
+
+        self::assertSame(
+            [' 2|Alien                                   |', ' 3|Tetris                                  |'],
+            $this->drawnRows($page->display(new Terminal(), ['games' => ['Alien', 'Tetris']])),
+        );
+    }
+
     public function testTemplateRepeatsAndTestsItsContent(): void
     {
         $page = $this->parse(<<<'XML'
@@ -477,6 +493,15 @@ final class PageXmlParserTest extends TestCase
             'as="loop" must be a variable name, other than loop',
         ];
         yield 'if without test' => ['<page type="template"><if test="!"/></page>', '<if>: test is missing'];
+        // Found while parsing, with the file and line, not when displayed
+        yield 'if test with a space' => [
+            '<page type="template"><if test="! x"/></page>',
+            'f.xml line 1: <if>: test="! x" must be a variable, or !variable',
+        ];
+        yield 'if test negated twice' => [
+            '<page type="template"><if test="!!x"/></page>',
+            'f.xml line 1: <if>: test="!!x" must be a variable, or !variable',
+        ];
         yield 'two inputs' => ['<page type="static"><input/><input/></page>', '<input>: only one <input> per page'];
         yield 'input in a loop' => [
             '<page type="template"><foreach items="a" as="b"><input/></foreach></page>',
