@@ -40,7 +40,9 @@ final class PaginatedControllerTest extends TestCase
         $this->routes = new RouterBuilder('menu');
         $this->routes->addRoute('menu', new CallbackController(NoParameters::class, static fn(
             Request $request,
-        ) => $request->key() === 'ENVOI' ? Response::goTo('list') : Response::display(new Vdt('MENU'))));
+        ) => $request->functionKey() === FunctionKey::Send
+            ? Response::goTo('list')
+            : Response::display(new Vdt('MENU'))));
     }
 
     public function testShowsTheFirstPageWithItsNumber(): void

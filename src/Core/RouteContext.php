@@ -10,6 +10,7 @@ use MiniPaviService\Controller\Parameters\Values;
 use MiniPaviService\Controller\Request;
 use MiniPaviService\Controller\Response;
 use MiniPaviService\Controller\State;
+use MiniPaviService\Minitel\Key;
 use MiniPaviService\Minitel\Terminal;
 
 /**
@@ -87,7 +88,7 @@ final class RouteContext
      *
      * @param list<string> $content
      */
-    public function run(string $key, array $content, Terminal $terminal): Response
+    public function run(?Key $key, array $content, Terminal $terminal): Response
     {
         return $this->controller->run(new Request($this->state, $this->parameters, $key, $content, $terminal));
     }

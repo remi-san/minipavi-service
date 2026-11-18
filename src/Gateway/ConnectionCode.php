@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Gateway;
 
+use MiniPaviService\Minitel\FunctionKey;
 use MiniPaviService\Minitel\Key;
 
 /**
@@ -39,6 +40,16 @@ enum ConnectionCode: string implements Key
     /**
      * Whether the user connects: a new connection, or one from another service
      */
+    public function functionKey(): ?FunctionKey
+    {
+        return null;
+    }
+
+    public function connectionCode(): self
+    {
+        return $this;
+    }
+
     public function isConnection(): bool
     {
         return $this === self::Connect || $this === self::DirectConnect;

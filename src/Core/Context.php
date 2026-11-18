@@ -7,6 +7,7 @@ namespace MiniPaviService\Core;
 use MiniPaviService\Controller\Parameters\Parameters;
 use MiniPaviService\Controller\Response;
 use MiniPaviService\Controller\State;
+use MiniPaviService\Minitel\Key;
 use MiniPaviService\Minitel\Terminal;
 
 /**
@@ -110,7 +111,7 @@ final class Context
      *
      * @param list<string> $content
      */
-    public function run(string $key = '', array $content = [], Terminal $terminal = new Terminal()): Response
+    public function run(?Key $key = null, array $content = [], Terminal $terminal = new Terminal()): Response
     {
         return $this->current()->run($key, $content, $terminal);
     }

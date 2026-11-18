@@ -21,14 +21,14 @@ final class RequestTest extends TestCase
         $request = new Request(
             ControllerState::ReadInput,
             new PageParameters(2),
-            FunctionKey::Send->value,
+            FunctionKey::Send,
             ['Hello ', 'world'],
             $terminal,
         );
 
         self::assertSame(ControllerState::ReadInput, $request->state());
         self::assertEquals(new PageParameters(2), $request->parameters());
-        self::assertSame('ENVOI', $request->key());
+        self::assertSame(FunctionKey::Send, $request->key());
         self::assertSame(['Hello ', 'world'], $request->content());
         self::assertSame('Hello world', $request->contentAsString());
         self::assertSame($terminal, $request->terminal());
@@ -36,15 +36,15 @@ final class RequestTest extends TestCase
 
     public function testFunctionKeyIsNullForConnectionCodes(): void
     {
-        self::assertSame(FunctionKey::Guide, (new Request(key: 'GUIDE'))->functionKey());
-        self::assertNull((new Request(key: ConnectionCode::Connect->value))->functionKey());
+        self::assertSame(FunctionKey::Guide, (new Request(key: FunctionKey::Guide))->functionKey());
+        self::assertNull((new Request(key: ConnectionCode::Connect))->functionKey());
         self::assertNull((new Request())->functionKey());
     }
 
     public function testConnectionCodeIsNullForFunctionKeys(): void
     {
-        self::assertSame(ConnectionCode::Connect, (new Request(key: 'CNX'))->connectionCode());
-        self::assertNull((new Request(key: 'GUIDE'))->connectionCode());
+        self::assertSame(ConnectionCode::Connect, (new Request(key: ConnectionCode::Connect))->connectionCode());
+        self::assertNull((new Request(key: FunctionKey::Guide))->connectionCode());
     }
 
     public function testWithoutInputNothingWasTyped(): void
@@ -53,7 +53,7 @@ final class RequestTest extends TestCase
 
         self::assertSame(ControllerState::Init, $request->state());
         self::assertEquals(new NoParameters(), $request->parameters());
-        self::assertSame('', $request->key());
+        self::assertNull($request->key());
         self::assertSame([], $request->content());
         self::assertSame('', $request->contentAsString());
         self::assertEquals(new Terminal(), $request->terminal());

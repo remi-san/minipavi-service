@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Minitel;
 
+use MiniPaviService\Gateway\ConnectionCode;
+
 /**
  * Function keys of the Minitel, by the name the gateway sends (Request::key()), with their
  * mask in input commands (MSK_* of MiniPaviCli) and their name in the page XML format
@@ -23,6 +25,16 @@ enum FunctionKey: string implements Key
     /**
      * Key of a name of the page XML format (envoi, suite...), null if there is none
      */
+    public function functionKey(): self
+    {
+        return $this;
+    }
+
+    public function connectionCode(): ?ConnectionCode
+    {
+        return null;
+    }
+
     public static function fromXmlName(string $name): ?self
     {
         foreach (self::cases() as $key) {

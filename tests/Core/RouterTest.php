@@ -37,7 +37,7 @@ final class RouterTest extends TestCase
             new PageParameters(3),
             $route->restore('read-input', new Values(['page' => 3]))->parameters(),
         );
-        self::assertEquals(Response::display(new Vdt('home 0')), $route->start()->run('', [], new Terminal()));
+        self::assertEquals(Response::display(new Vdt('home 0')), $route->start()->run(null, [], new Terminal()));
         self::assertTrue($router->has('home'));
         self::assertFalse($router->has('menu'));
         self::assertSame('home', $router->defaultRoute());
