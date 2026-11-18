@@ -6,6 +6,7 @@ namespace MiniPaviService\Tests\Client;
 
 use MiniPavi\MiniPaviCli;
 use MiniPaviService\Client\MiniPaviClient;
+use MiniPaviService\Client\MiniPaviExchange;
 use MiniPaviService\Gateway\CallMode;
 use MiniPaviService\Gateway\GatewayRequest;
 use MiniPaviService\Gateway\GatewayResponse;
@@ -45,7 +46,7 @@ final class MiniPaviClientTest extends TestCase
         MiniPaviCli::$typeSocket = 'websocket';
         MiniPaviCli::$versionMinitel = 'Cv5';
 
-        $request = (new MiniPaviClient())->decoded(self::SERVICE_URL);
+        $request = (new MiniPaviClient())->decoded();
 
         self::assertSame(FunctionKey::Send, $request->key);
         self::assertSame(['ab', 'cd'], $request->content);
@@ -53,8 +54,6 @@ final class MiniPaviClientTest extends TestCase
         self::assertSame('CALLFROM 0102030405', $request->terminal->remoteAddr());
         self::assertSame('websocket', $request->terminal->typeSocket());
         self::assertSame('Cv5', $request->terminal->versionMinitel());
-        // The next URL of answers without one
-        self::assertSame(self::SERVICE_URL, $request->serviceUrl);
     }
 
     public function testValuesThatAreNotTextBecomeEmpty(): void
@@ -198,8 +197,7 @@ final class MiniPaviClientTest extends TestCase
     {
         ob_start();
         try {
-            $response = (new MiniPaviClient())->response(
-                new GatewayRequest(FunctionKey::Send, serviceUrl: self::SERVICE_URL),
+            $response = (new MiniPaviExchange(new GatewayRequest(FunctionKey::Send), self::SERVICE_URL))->respond(
                 $answer,
             );
         } finally {

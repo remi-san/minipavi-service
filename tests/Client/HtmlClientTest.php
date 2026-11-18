@@ -6,7 +6,6 @@ namespace MiniPaviService\Tests\Client;
 
 use MiniPaviService\Client\HtmlClient;
 use MiniPaviService\Client\HtmlForm;
-use MiniPaviService\Client\HtmlPageState;
 use MiniPaviService\Controller\Parameters\NoParameters;
 use MiniPaviService\Controller\Request;
 use MiniPaviService\Controller\Response;
@@ -55,12 +54,8 @@ final class HtmlClientTest extends TestCase
     public function testFirstRequestIsAConnection(array $query): void
     {
         self::assertEquals(
-            new GatewayRequest(
-                ConnectionCode::Connect,
-                serviceUrl: self::SERVICE_URL,
-                clientState: new HtmlPageState(),
-            ),
-            self::client()->request(HttpRequests::to('Mozilla/5.0', $query), self::SERVICE_URL),
+            new GatewayRequest(ConnectionCode::Connect),
+            self::client()->exchange(HttpRequests::to('Mozilla/5.0', $query), self::SERVICE_URL)->request(),
         );
     }
 
@@ -79,24 +74,21 @@ final class HtmlClientTest extends TestCase
         );
         $form = ['key' => 'ENVOI', 'content' => ['36', '15']] + self::hiddenValues($page);
 
-        $request = self::client()
-            ->request(
+        $exchange = self::client()
+            ->exchange(
                 HttpRequests::posting('Mozilla/5.0', ['web' => 'true', 'route' => 'games'], $form),
                 self::SERVICE_URL,
             );
 
-        self::assertSame([FunctionKey::Send, ['36', '15'], '{"route":"menu"}', self::SERVICE_URL], [
-            $request->key,
-            $request->content,
-            $request->context,
-            $request->serviceUrl,
-        ]);
-        // With the page posted back: its screen and its input command
-        self::assertEquals($screen, $request->clientState->screen);
         self::assertEquals(
-            new InputCommand(new InputField(new Span(new Position(2, 1), 4), validWith: [FunctionKey::Send])),
-            $request->clientState->command,
+            new GatewayRequest(FunctionKey::Send, ['36', '15'], '{"route":"menu"}'),
+            $exchange->request(),
         );
+        // With the page posted back: an answer leaving the service shows it again, its screen
+        // and its input field
+        $html = (string) $exchange->respond(new GatewayResponse(new Vdt(), '{}', 'https://example.org/'))->getBody();
+        self::assertStringContainsString('Menu', self::shownText($html));
+        self::assertStringContainsString('style="' . HtmlRenderer::at(1, row: 2, length: 4) . '"', $html);
     }
 
     /**
@@ -114,10 +106,12 @@ final class HtmlClientTest extends TestCase
     {
         $form = ['key' => 'ENVOI', 'command' => $command];
 
-        $request = self::client()
-            ->request(HttpRequests::posting('Mozilla/5.0', ['web' => 'true'], $form), self::SERVICE_URL);
+        $exchange = self::client()
+            ->exchange(HttpRequests::posting('Mozilla/5.0', ['web' => 'true'], $form), self::SERVICE_URL);
 
-        self::assertNull($request->clientState->command);
+        // Shown again when leaving the service is blocked: no field
+        $html = (string) $exchange->respond(new GatewayResponse(new Vdt(), '{}', 'https://example.org/'))->getBody();
+        self::assertStringNotContainsString('class="field"', $html);
     }
 
     public function testUnknownKeyIsAConnection(): void
@@ -125,7 +119,8 @@ final class HtmlClientTest extends TestCase
         self::assertSame(
             ConnectionCode::Connect,
             self::client()
-                ->request(HttpRequests::posting('Mozilla/5.0', ['web' => 'true'], ['key' => 'CNX']), self::SERVICE_URL)
+                ->exchange(HttpRequests::posting('Mozilla/5.0', ['web' => 'true'], ['key' => 'CNX']), self::SERVICE_URL)
+                ->request()
                 ->key,
         );
     }
@@ -372,10 +367,10 @@ final class HtmlClientTest extends TestCase
      */
     private static function page(GatewayResponse $answer, array $form = [], ?Messages $messages = null): string
     {
-        $client = self::client($messages);
-        $request = $client->request(HttpRequests::posting('Mozilla/5.0', ['web' => 'true'], $form), self::SERVICE_URL);
+        $exchange = self::client($messages)
+            ->exchange(HttpRequests::posting('Mozilla/5.0', ['web' => 'true'], $form), self::SERVICE_URL);
 
-        return (string) $client->response($request, $answer)->getBody();
+        return (string) $exchange->respond($answer)->getBody();
     }
 
     /**
