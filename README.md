@@ -586,6 +586,35 @@ instructions, filled in with the data given to `Page::display($terminal, $data)`
 | `<if test="loop.last">…</if>` | content shown only if the variable is set and not empty |
 | `<if test="!loop.last">…</if>` | … or only if it is not |
 
+### Elements of a service
+
+A service adds its own display elements by giving `PageXmlParser` a `Page\Parser\PageElements`
+after its messages. For each page, `builders()` gets the files of the page's folder
+(`PageFiles`) and the page's messages, and returns an `ElementBuilder` per element: its tag,
+how it is built from its attributes and text (placeholders already replaced), whether its
+`row` is relative inside a `<foreach>`, and whether it can be in one.
+
+```php
+final readonly class GameElements implements PageElements
+{
+    public function builders(PageFiles $files, Messages $messages): array
+    {
+        return [new ScoreBuilder()];   // <score row="3" value="{{game.score}}"/>
+    }
+}
+
+$parser = new PageXmlParser($messages, new GameElements());
+// With PHP-DI: PageXmlParser::class => create()->constructor(get(Messages::class), get(GameElements::class))
+```
+
+The parser takes one `PageElements`: a service with several sets of elements returns all their
+builders from one.
+
+A tag of the format (`text`, `foreach`, `input`...) can't be taken again, nor one tag by two
+elements: parsing a page then throws a `LogicException`. These elements aren't in the XML
+Schema, which rejects them, and `minipavi lint` and `minipavi preview` only know the
+framework's.
+
 ### XML Schema
 
 `schema/page.xsd` describes the format as an XML Schema (1.0), for editors to complete and
@@ -723,9 +752,8 @@ property that the moved screen is the original one moved, and byte for byte agai
 files (`tests/fixtures/vdt/*.offset_*.vdt`). Run `UPDATE_GOLDEN=1 composer test` to rewrite
 the golden files after an intended change.
 
-A new display element of the page XML format is a `Page\Parser\Element\ElementBuilder`
-(its tag, how it is built from its attributes and text, whether its `row` is relative inside a
-`<foreach>`, whether it can be in one), added to `ElementFactory::standard()`; then the XML
+A new display element of the framework is a `Page\Parser\Element\ElementBuilder` (see
+[Elements of a service](#elements-of-a-service)), added to `StandardElements`; then the XML
 Schema (`schema/page.xsd`) and the [Page XML format](#page-xml-format) above.
 The other tags (`<input>`, `<foreach>`, `<if>`, `<message>`) each have their
 `Page\Parser\Tag\TagParser`, by tag in `NodesParser::standard()`, which reads the children
