@@ -172,7 +172,7 @@ KernelBuilder::for($router, $messages)
   - **`HtmlClient`**, for a browser: it shows the service's screen as an HTML page
     (`Vdt\Screen\HtmlRenderer`), and lets the user navigate it as on a Minitel. The first request is a
     connection, at the default route, as the gateway's. The page is a form posting back to its URL:
-    - the answer's **input field** (`InputTxt`, `InputMsg`) over the screen, at its position
+    - the answer's **input field** (its `InputCommand`: a text field or a message) over the screen, at its position
       and size, one input per line;
     - the 8 **function keys** under the screen, in the Minitel's 2 × 4 layout, those the
       input doesn't accept (`validwith`) disabled; Enter in a field presses Envoi;
@@ -242,7 +242,7 @@ KernelBuilder::for($router, $messages)
   | Response | Effect | State kept by default |
   |---|---|---|
   | `Response::display($vdt)` | sends Videotex content to the gateway; the next key comes back to this controller | `ControllerState::ReadInput` |
-  | `Response::readInput($vdt, $command)` | sends content and the command reading the page's input field (`Page::inputCommand()`) to the gateway | `ControllerState::ReadInput` |
+  | `Response::readInput($vdt, $command)` | sends content and the command reading the page's input field (`Page::inputCommand()`, an `InputCommand`: where the field is, its size, the keys validating it, its prefill) to the gateway | `ControllerState::ReadInput` |
   | `Response::goTo($route, $parameters)` | switches to another controller, which runs at once: at `ControllerState::Init`, with `$parameters` (a `Parameters` object, or none), without the user's input; this controller is reset | `ControllerState::Init` |
   | `Response::connectTo($url, $vdt)` | sends the user to another service, as a new connection (`CallMode::Connect`) | `ControllerState::Init` |
 
