@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MiniPaviService\Page\Display;
 
 use MiniPaviService\Vdt\Vdt;
+use MiniPaviService\Vdt\Videotex;
 
 /**
  * Minitel colors, named as in the page XML format (color="red")
@@ -41,7 +42,7 @@ enum Color: string
      */
     public function text(): Vdt
     {
-        return new Vdt("\x1B" . chr(0x40 + $this->index()));
+        return new Vdt(Videotex::ESC . chr(0x40 + $this->index()));
     }
 
     /**
@@ -49,7 +50,7 @@ enum Color: string
      */
     public function background(): Vdt
     {
-        return new Vdt("\x1B" . chr(0x50 + $this->index()));
+        return new Vdt(Videotex::ESC . chr(0x50 + $this->index()));
     }
 
     /**

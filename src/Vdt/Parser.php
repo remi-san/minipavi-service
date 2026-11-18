@@ -22,13 +22,12 @@ final class Parser
         $length = strlen($vdt);
         for ($i = 0; $i < $length; $i++) {
             $byte = $vdt[$i];
-            $code = ord($byte);
-            if ($code >= 0x20) {
+            if (ord($byte) >= 0x20) {
                 $tokens[] = new Token(TokenType::Glyph, $byte, $byte);
                 continue;
             }
-            switch ($code) {
-                case 0x19: // SS2: G2 character, possibly an accent followed by its letter
+            switch ($byte) {
+                case Videotex::G2: // G2 character, possibly an accent followed by its letter
                     $glyph = substr($vdt, $i, length: 2);
                     $accent = ord($vdt[$i + 1] ?? "\0");
                     if ($accent >= 0x41 && $accent <= 0x4F && ($i + 2) < \strlen($vdt) && ord($vdt[$i + 2]) >= 0x20) {
@@ -37,10 +36,10 @@ final class Parser
                     $tokens[] = new Token(TokenType::Glyph, $glyph, $glyph);
                     $i += strlen($glyph) - 1;
                     break;
-                case 0x1A: // SUB, shown as an error character
+                case Videotex::SUB: // shown as an error character
                     $tokens[] = new Token(TokenType::Glyph, $byte, $byte);
                     break;
-                case 0x12: // REP
+                case Videotex::REPEAT:
                     $tokens[] = new Token(
                         TokenType::Repeat,
                         substr($vdt, $i, length: 2),
@@ -48,37 +47,37 @@ final class Parser
                     );
                     $i++;
                     break;
-                case 0x0E:
-                case 0x0F:
+                case Videotex::MOSAIC_SET:
+                case Videotex::TEXT_SET:
                     $tokens[] = new Token(TokenType::Charset, $byte, $byte);
                     break;
-                case 0x1F: // US: row, column as 0x40+n, or as 4 decimal digits
+                case Videotex::POSITION: // row, column as 0x40+n, or as 4 decimal digits
                     [$position, $skipped] = self::position($vdt, $i);
                     $tokens[] = $position;
                     $i += $skipped;
                     break;
-                case 0x08:
-                case 0x09:
-                case 0x0A:
-                case 0x0B:
-                case 0x0D:
+                case Videotex::CURSOR_LEFT:
+                case Videotex::CURSOR_RIGHT:
+                case Videotex::CURSOR_DOWN:
+                case Videotex::CURSOR_UP:
+                case Videotex::CARRIAGE_RETURN:
                     $tokens[] = new Token(TokenType::Move, $byte, $byte);
                     break;
-                case 0x1E:
+                case Videotex::HOME:
                     $tokens[] = new Token(TokenType::Home, $byte);
                     break;
-                case 0x0C:
+                case Videotex::CLEAR_SCREEN:
                     $tokens[] = new Token(TokenType::Clear, $byte);
                     break;
-                case 0x18:
+                case Videotex::CLEAR_LINE:
                     $tokens[] = new Token(TokenType::ClearLine, $byte);
                     break;
-                case 0x13: // SEP and SS3: one byte follows
-                case 0x1D:
+                case Videotex::SEP: // one byte follows each
+                case Videotex::SS3:
                     $tokens[] = new Token(TokenType::Raw, substr($vdt, $i, length: 2), substr($vdt, $i, length: 2));
                     $i++;
                     break;
-                case 0x1B:
+                case Videotex::ESC:
                     $sequence = $this->escapeSequence($vdt, $i);
                     $tokens[] = strlen($sequence) === 2 && Attributes::isAttribute($sequence[1])
                         ? new Token(TokenType::Attribute, $sequence, $sequence[1])
@@ -124,7 +123,7 @@ final class Parser
             return [
                 new Token(
                     TokenType::Position,
-                    "\x1F" . $digits,
+                    Videotex::POSITION . $digits,
                     row: (int) substr($digits, offset: 0, length: 2),
                     col: (int) substr($digits, offset: 2, length: 2),
                 ),

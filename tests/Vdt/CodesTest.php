@@ -69,6 +69,7 @@ final class CodesTest extends TestCase
             VDT_G1,
             VDT_BLINK,
             VDT_FIXED,
+            VDT_G2,
         ], [
             Videotex::CURSOR_LEFT,
             Videotex::CURSOR_RIGHT,
@@ -82,6 +83,7 @@ final class CodesTest extends TestCase
             Videotex::MOSAIC_SET,
             Videotex::BLINK_ON,
             Videotex::BLINK_OFF,
+            Videotex::G2,
         ]);
     }
 

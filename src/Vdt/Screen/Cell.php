@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MiniPaviService\Vdt\Screen;
 
 use MiniPaviService\Page\Display\Color;
+use MiniPaviService\Vdt\Videotex;
 
 /**
  * Character shown in a cell of the Screen, with its attributes (see Attributes)
@@ -103,10 +104,10 @@ final readonly class Cell
         if ($this->attributes->isMosaic()) {
             return $this->bytes === ' ' && $this->attributes->background() === Color::Black ? ' ' : '#';
         }
-        if ($this->bytes === "\x1A") {
+        if ($this->bytes === Videotex::SUB) {
             return '?';
         }
-        if ($this->bytes[0] !== "\x19") {
+        if ($this->bytes[0] !== Videotex::G2) {
             return $this->bytes;
         }
 
