@@ -15,14 +15,16 @@ final readonly class IfTagParser implements TagParser
 {
     public function parse(XmlTag $tag, TagPosition $position, NodesParser $nodes): ParsedNodes
     {
-        $test = trim($tag->attributes['test'] ?? '');
-        $tag->check(static function () use ($test, $position): void {
+        $test = $tag->check(static function () use ($tag, $position): string {
             if (!$position->template) {
                 throw new PageXmlException('only in a page of type="template"');
             }
-            if ($test === '' || $test === '!') {
+            $test = $tag->values()->required('test');
+            if ($test === '!') {
                 throw new PageXmlException('test is missing');
             }
+
+            return $test;
         });
         $children = $nodes->parse($tag->element, $position->nested());
 

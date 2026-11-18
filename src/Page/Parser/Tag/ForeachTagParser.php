@@ -19,19 +19,15 @@ final readonly class ForeachTagParser implements TagParser
             if (!$position->template) {
                 throw new PageXmlException('only in a page of type="template"');
             }
-            foreach (['items', 'as'] as $required) {
-                if (trim($tag->attributes[$required] ?? '') === '') {
-                    throw new PageXmlException("{$required} is missing");
-                }
-            }
-            $as = $tag->attributes['as'] ?? '';
+            $values = $tag->values();
+            $items = $values->required('items');
+            $as = $values->required('as');
             if (!preg_match('/^[A-Za-z_]\w*$/', $as) || $as === 'loop') {
                 throw new PageXmlException("as=\"{$as}\" must be a variable name, other than loop");
             }
-            $values = $tag->values();
 
             return [
-                trim($tag->attributes['items'] ?? ''),
+                $items,
                 $as,
                 $values->int('row', default: $position->inLoop ? 0 : 1),
                 $values->int('step', default: 1),
