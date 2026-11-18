@@ -157,16 +157,17 @@ KernelBuilder::for($router, $messages)
   answer the client can't give a `500` (logged as critical).
   **The context is signed** on its way through the gateway (or the browser), so that the user
   can't change it: anyone could otherwise send another route, or other parameters.
-  `ServiceRunner` takes a **`Core\Signing\ContextSigner`**: it checks the context of the
-  request before the service gets it (`GatewayRequest::verify()`; the context of a connection,
-  a disconnection or a background call isn't read, so it isn't checked), and signs the context of the answer before
-  the client gets it (`GatewayResponse::sign()`). **`HmacContextSigner`** signs it with an
+  `Service` takes a **`Core\Signing\ContextSigner`** (its fourth argument, `KernelBuilder`
+  gives it), with which its `Core\ContextSerializer` signs the context of each answer and
+  checks the one of each request it reads (that of a connection, a disconnection or a
+  background call isn't read, so it isn't checked). **`HmacContextSigner`** signs it with an
   HMAC-SHA256 of a secret key (`<signature>.<context>`), **`UnsignedContext`** doesn't. A context
   the signer didn't sign (`ForgedContextException`) is answered as one that can't be read.
   Keep the key out of the repository: the services read it from the environment,
   **`CONTEXT_SECRET`** (`openssl rand -base64 32`), and don't sign the context without it, with
   a warning. Changing the key makes the users of sessions in progress start again at the
-  default route. `Service` and `ServiceTester` deal with the context unsigned. Two clients:
+  default route. Without a signer, `Service` (and so `ServiceTester`) doesn't sign it
+  (`UnsignedContext`). Two clients:
   - **`MiniPaviClient`**, for the MiniPavi gateway, through `MiniPaviCli` used unchanged: it
     reads the gateway's request itself (background calls included, which the service doesn't
     answer), and writes the answer itself: `MiniPaviClient` captures it as the body of the
