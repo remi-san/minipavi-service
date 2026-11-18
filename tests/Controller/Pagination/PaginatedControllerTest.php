@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Tests\Controller\Pagination;
 
-use MiniPaviService\Controller\ControllerState;
 use MiniPaviService\Controller\Pagination\PageParameters;
 use MiniPaviService\Controller\Parameters\NoParameters;
 use MiniPaviService\Controller\Request;
 use MiniPaviService\Controller\Response;
 use MiniPaviService\Core\Router;
 use MiniPaviService\Core\Service;
+use MiniPaviService\Gateway\GatewayRequest;
 use MiniPaviService\Message\Messages;
 use MiniPaviService\Minitel\FunctionKey;
 use MiniPaviService\Page;
@@ -133,12 +133,23 @@ final class PaginatedControllerTest extends TestCase
 
     public function testPageKeptBeyondTheLastOneShowsTheLastOne(): void
     {
-        // E.g. the list got shorter since the page was kept
-        $controller = new ListController($this->page(), ['a', 'b', 'c']);
+        // At the third page of five items, when the list gets shorter: three items
+        $context = $this
+            ->tester(['a', 'b', 'c', 'd', 'e'])
+            ->press(FunctionKey::Next)
+            ->press(FunctionKey::Next)
+            ->assertScreenContains('Page 3/3')
+            ->answer()
+            ->context;
+        $this->router->addRoute('list', new ListController($this->page(), ['a', 'b', 'c']));
 
-        $response = $controller->run(new Request(ControllerState::Display, new PageParameters(9)));
+        $answer = (new Service($this->router, Messages::defaults()))->handle(
+            new GatewayRequest(FunctionKey::Refresh->value, [], $context),
+        );
 
-        self::assertEquals(new PageParameters(1), $response->parameters());
+        $screen = $answer?->vdt->screen() ?? self::fail('No answer');
+        self::assertStringContainsString('Page 2/2', $screen->text());
+        self::assertStringStartsWith('c', $screen->line(2));
     }
 
     public function testEmptyListHasOnePage(): void
