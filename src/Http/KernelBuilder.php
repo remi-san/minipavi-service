@@ -108,7 +108,9 @@ final readonly class KernelBuilder
     }
 
     /**
-     * A copy with the values given, the others as they are: what each with...() changes
+     * A copy with the values given, the others as they are: what each with...() changes. Null
+     * means "not given", so this can't set an option back to null: a nullable option would
+     * need its own copy
      *
      * @param ?list<ConditionalRequestHandler> $handlers
      */

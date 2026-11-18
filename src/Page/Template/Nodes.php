@@ -14,7 +14,7 @@ final readonly class Nodes implements Node
      * @param list<Node> $nodes
      */
     public function __construct(
-        private array $nodes = [],
+        private array $nodes,
     ) {}
 
     public function elements(Scope $scope): array
