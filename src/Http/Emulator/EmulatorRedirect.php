@@ -33,7 +33,7 @@ final readonly class EmulatorRedirect implements RequestHandlerInterface
 
     public function handle(ServerRequestInterface $request): ResponseInterface
     {
-        $url = $this->emulator->getEmulatorUrl(UrlAttribute::Current->of($request));
+        $url = $this->emulator->emulatorUrl(UrlAttribute::Current->of($request));
         $this->logger->info('Browser sent to the emulator', ['url' => $url]);
 
         return new Response(302, ['Location' => $url]);
