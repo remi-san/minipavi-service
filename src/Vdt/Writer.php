@@ -17,16 +17,17 @@ final class Writer
     // Where the next character would go, and with which attributes (null: unknown)
     private ?int $row = null;
     private ?int $col = null;
-    /** @var array<string, string> */
-    private array $attributes = Attributes::DEFAULTS;
+    private Attributes $attributes;
     // Last character sent, and how many more times it is to be repeated
     private ?string $pending = null;
     private int $repeat = 0;
 
-    /**
-     * @param array<string, string> $attributes
-     */
-    public function glyph(int $row, int $col, string $bytes, int $width, array $attributes): void
+    public function __construct()
+    {
+        $this->attributes = Attributes::defaults();
+    }
+
+    public function glyph(int $row, int $col, string $bytes, int $width, Attributes $attributes): void
     {
         $this->moveTo($row, $col);
         $this->setAttributes($attributes);
@@ -40,10 +41,7 @@ final class Writer
         }
     }
 
-    /**
-     * @param array<string, string> $attributes
-     */
-    public function clearLine(int $row, int $col, array $attributes): void
+    public function clearLine(int $row, int $col, Attributes $attributes): void
     {
         $this->moveTo($row, $col);
         $this->setAttributes($attributes);
@@ -55,7 +53,7 @@ final class Writer
         $this->send("\x0C");
         $this->row = 1;
         $this->col = 1;
-        $this->attributes = Attributes::DEFAULTS;
+        $this->attributes = Attributes::defaults();
     }
 
     public function raw(string $bytes): void
@@ -91,30 +89,18 @@ final class Writer
         $this->send("\x1F" . chr(0x40 + $row) . chr(0x40 + $col));
         $this->row = $row;
         $this->col = $col;
-        $this->attributes = Attributes::DEFAULTS;
+        $this->attributes = Attributes::defaults();
     }
 
     // Sends the attributes that differ from the current ones
-    /**
-     * @param array<string, string> $attributes
-     */
-    private function setAttributes(array $attributes): void
+    private function setAttributes(Attributes $attributes): void
     {
-        $codes = '';
-        if ($attributes['charset'] !== $this->attributes['charset']) {
-            $codes .= $attributes['charset'];
-        }
-        foreach ($attributes as $group => $value) {
-            if ($group === 'charset' || $value === $this->attributes[$group]) {
-                continue;
-            }
-
-            $codes .= "\x1B" . $value;
-        }
+        $codes = $attributes->codesFrom($this->attributes);
         $this->attributes = $attributes;
         if ($codes === '') {
             return;
         }
+
         $this->send($codes);
     }
 

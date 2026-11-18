@@ -15,7 +15,7 @@ enum TokenType
     case Glyph;
     // REP: repeats the last character Token::$count times
     case Repeat;
-    // ESC <byte> setting an attribute: Token::$group, and the byte in Token::$bytes
+    // ESC <byte> setting an attribute (Attributes::with()): the byte in Token::$bytes
     case Attribute;
     // SO (mosaic, G1) or SI (text, G0): Token::$bytes
     case Charset;

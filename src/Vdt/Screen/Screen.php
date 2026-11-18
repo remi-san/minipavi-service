@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Vdt\Screen;
 
+use MiniPaviService\Page\Display\Color;
 use MiniPaviService\Vdt\Token;
 use MiniPaviService\Vdt\TokenType;
 use MiniPaviService\Vdt\Vdt;
@@ -27,28 +28,26 @@ final readonly class Screen
     public static function of(Vdt $vdt): self
     {
         $cells = array_fill(0, self::ROWS + 1, array_fill(1, self::COLS, value: null));
-        $vdt->play(
-            /** @param array<string, string> $attributes see Attributes */
-            static function (int $row, int $col, string $bytes, int $width, array $attributes) use (&$cells): void {
-                if ($row >= 0 && $row <= self::ROWS) {
-                    for ($i = 0; $i < $width && ($col + $i) <= self::COLS; $i++) {
-                        $cells[$row][$col + $i] = new Cell($bytes, $attributes);
-                    }
+        $vdt->play(static function (int $row, int $col, string $bytes, int $width, Attributes $attributes) use (
+            &$cells,
+        ): void {
+            if ($row >= 0 && $row <= self::ROWS) {
+                for ($i = 0; $i < $width && ($col + $i) <= self::COLS; $i++) {
+                    $cells[$row][$col + $i] = new Cell($bytes, $attributes);
                 }
-            },
-            static function (Token $token, Cursor $cursor) use (&$cells): void {
-                if ($token->type === TokenType::Clear) {
-                    for ($row = 1; $row <= self::ROWS; $row++) {
-                        $cells[$row] = array_fill(1, self::COLS, value: null);
-                    }
+            }
+        }, static function (Token $token, Cursor $cursor) use (&$cells): void {
+            if ($token->type === TokenType::Clear) {
+                for ($row = 1; $row <= self::ROWS; $row++) {
+                    $cells[$row] = array_fill(1, self::COLS, value: null);
                 }
-                if ($token->type === TokenType::ClearLine && $cursor->row >= 0 && $cursor->row <= self::ROWS) {
-                    for ($col = $cursor->col; $col <= self::COLS; $col++) {
-                        $cells[$cursor->row][$col] = new Cell(' ', $cursor->attributes);
-                    }
+            }
+            if ($token->type === TokenType::ClearLine && $cursor->row >= 0 && $cursor->row <= self::ROWS) {
+                for ($col = $cursor->col; $col <= self::COLS; $col++) {
+                    $cells[$cursor->row][$col] = new Cell(' ', $cursor->attributes);
                 }
-            },
-        );
+            }
+        });
         return new self($cells);
     }
 
@@ -92,8 +91,8 @@ final readonly class Screen
                     $line .= ' ';
                     continue;
                 }
-                $mosaic = $cell->attributes['charset'] === Attributes::MOSAIC;
-                $background = $cell->attributes['bg'] !== Attributes::BLACK_BACKGROUND;
+                $mosaic = $cell->attributes->isMosaic();
+                $background = $cell->attributes->background() !== Color::Black;
                 $line .= match (true) {
                     $mosaic => $cell->bytes === ' ' && !$background ? ' ' : '#',
                     $cell->bytes[0] === "\x19" || $cell->bytes === "\x1A" => '?',

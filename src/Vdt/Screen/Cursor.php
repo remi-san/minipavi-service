@@ -11,14 +11,18 @@ final class Cursor
 {
     public int $row = 1;
     public int $col = 1;
-    /** @var array<string, string> */
-    public array $attributes = Attributes::DEFAULTS;
+    public Attributes $attributes;
+
+    public function __construct()
+    {
+        $this->attributes = Attributes::defaults();
+    }
 
     public function reset(int $row, int $col): void
     {
         $this->row = $row;
         $this->col = $col;
-        $this->attributes = Attributes::DEFAULTS;
+        $this->attributes = Attributes::defaults();
     }
 
     // After a character, or a move right: wraps to the next row, from the last one to the first

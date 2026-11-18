@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MiniPaviService\Vdt\Screen;
 
 use MiniPaviService\Io\Files;
+use MiniPaviService\Page\Display\Color;
 
 /**
  * Draws a Screen as an HTML page, as the Minitel would show it (checked against MiniPavi's
@@ -19,10 +20,6 @@ final readonly class HtmlRenderer
 {
     // Minitel-Canvas's Minitel font (resources/fonts, CC0)
     public const MINITEL_FONT = __DIR__ . '/../../../resources/fonts/Minitel.ttf';
-
-    // Colours of the Minitel, by their index in attribute codes (ESC 0x40 + index for the
-    // character, 0x50 + index for the background)
-    private const COLORS = ['#000000', '#ff0000', '#00ff00', '#ffff00', '#0000ff', '#ff00ff', '#00ffff', '#ffffff'];
 
     // Pixels of a mosaic character, top left to bottom right, and the bit of each
     private const MOSAIC_BITS = [0x01, 0x02, 0x04, 0x08, 0x10, 0x40];
@@ -77,7 +74,7 @@ final readonly class HtmlRenderer
             for ($col = 1; $col <= Screen::COLS; $col++) {
                 $cell = $screen->cell($row, $col);
                 $cells .= $this->cell($cell, $row);
-                if ($cell !== null && Attributes::width($cell->attributes) === 2) {
+                if ($cell !== null && $cell->attributes->width() === 2) {
                     $col++;
                 }
             }
@@ -126,23 +123,23 @@ final readonly class HtmlRenderer
         }
 
         $attributes = $cell->attributes;
-        $foreground = self::color($attributes['fg'], base: 0x40);
-        $background = self::color($attributes['bg'], base: 0x50);
-        $mosaic = $attributes['charset'] === Attributes::MOSAIC;
-        $inverse = !$mosaic && $attributes['inverse'] === "\x5D";
+        $foreground = self::color($attributes->foreground());
+        $background = self::color($attributes->background());
+        $mosaic = $attributes->isMosaic();
+        $inverse = !$mosaic && $attributes->isInverse();
         if ($inverse) {
             [$foreground, $background] = [$background, $foreground];
         }
-        if (Attributes::width($attributes) === 2) {
+        if ($attributes->width() === 2) {
             $classes[] = 'w2';
         }
-        if (\in_array($attributes['size'], ["\x4D", "\x4F"], strict: true)) {
+        if ($attributes->isDoubleHeight()) {
             $classes[] = 'h2';
         }
-        if ($attributes['blink'] === "\x48") {
+        if ($attributes->isBlinking()) {
             $classes[] = 'blink';
         }
-        $underline = $attributes['underline'] === "\x5A";
+        $underline = $attributes->isUnderlined();
         // Neither spaces nor inverse video (the key badges, Page\Display\Key) are underlined,
         // as in MiniPavi's emulator
         if (!$mosaic && $underline && !$inverse && $cell->bytes !== ' ') {
@@ -150,7 +147,7 @@ final readonly class HtmlRenderer
         }
 
         $style = "color:{$foreground};background:{$background}";
-        if ($attributes['mask'] === "\x58") {
+        if ($attributes->isMasked()) {
             // Masked: hidden until revealed
             return '<span class="' . implode(' ', $classes) . '" style="' . $style . '"> </span>';
         }
@@ -210,8 +207,17 @@ final readonly class HtmlRenderer
         return \strlen($bytes) === 1 && \ord($bytes) >= 0x20;
     }
 
-    private static function color(string $code, int $base): string
+    private static function color(Color $color): string
     {
-        return self::COLORS[\ord($code) - $base] ?? self::COLORS[0];
+        return match ($color) {
+            Color::Black => '#000000',
+            Color::Red => '#ff0000',
+            Color::Green => '#00ff00',
+            Color::Yellow => '#ffff00',
+            Color::Blue => '#0000ff',
+            Color::Magenta => '#ff00ff',
+            Color::Cyan => '#00ffff',
+            Color::White => '#ffffff',
+        };
     }
 }

@@ -6,8 +6,6 @@ namespace MiniPaviService\Tests\Vdt\Screen;
 
 use MiniPaviService\Minitel\Terminal;
 use MiniPaviService\Page\Display\Key;
-use MiniPaviService\Vdt\Screen\Attributes;
-use MiniPaviService\Vdt\Screen\Cell;
 use MiniPaviService\Vdt\Screen\HtmlRenderer;
 use MiniPaviService\Vdt\Screen\Screen;
 use MiniPaviService\Vdt\Vdt;
@@ -59,8 +57,7 @@ final class HtmlRendererTest extends TestCase
 
     public function testInverseVideoSwapsTheColours(): void
     {
-        $html = $this->renderCell(new Cell('x', ['fg' => "\x44", 'bg' => "\x57", 'inverse' => "\x5D"]
-        + Attributes::DEFAULTS));
+        $html = $this->renderCell("\x1B\x44\x1B\x57\x1B\x5Dx");
 
         self::assertStringContainsString('style="color:#ffffff;background:#0000ff">x</span>', $html);
     }
@@ -76,20 +73,13 @@ final class HtmlRendererTest extends TestCase
 
     public function testDoubleHeightBlinkAndUnderline(): void
     {
-        self::assertStringContainsString('class="c h2"', $this->renderCell(new Cell('x', ['size' => "\x4D"]
-        + Attributes::DEFAULTS)));
-        self::assertStringContainsString('class="c blink"', $this->renderCell(new Cell('x', ['blink' => "\x48"]
-        + Attributes::DEFAULTS)));
-        self::assertStringContainsString('class="c u"', $this->renderCell(new Cell('x', ['underline' => "\x5A"]
-        + Attributes::DEFAULTS)));
+        self::assertStringContainsString('class="c h2"', $this->renderCell("\x1B\x4Dx"));
+        self::assertStringContainsString('class="c blink"', $this->renderCell("\x1B\x48x"));
+        self::assertStringContainsString('class="c u"', $this->renderCell("\x1B\x5Ax"));
         // Not in inverse video: the key badges, as in MiniPavi's emulator
-        self::assertStringNotContainsString('class="c u"', $this->renderCell(new Cell('x', [
-            'underline' => "\x5A",
-            'inverse' => "\x5D",
-        ] + Attributes::DEFAULTS)));
+        self::assertStringNotContainsString('class="c u"', $this->renderCell("\x1B\x5A\x1B\x5Dx"));
         // Not an underlined space, as in MiniPavi's emulator
-        self::assertStringNotContainsString('class="c u"', $this->renderCell(new Cell(' ', ['underline' => "\x5A"]
-        + Attributes::DEFAULTS)));
+        self::assertStringNotContainsString('class="c u"', $this->renderCell("\x1B\x5A "));
     }
 
     public function testKeyBadgesArentUnderlined(): void
@@ -105,7 +95,7 @@ final class HtmlRendererTest extends TestCase
 
     public function testMaskedTextIsHidden(): void
     {
-        $html = $this->renderCell(new Cell('s', ['mask' => "\x58"] + Attributes::DEFAULTS));
+        $html = $this->renderCell("\x1B\x58s");
 
         self::assertStringNotContainsString('>s<', $html);
     }
@@ -113,22 +103,18 @@ final class HtmlRendererTest extends TestCase
     public function testDrawsMosaicPixels(): void
     {
         // 0x21: the top left pixel; 0x7F: all six
-        $mosaic = ['charset' => Attributes::MOSAIC] + Attributes::DEFAULTS;
-
         self::assertStringContainsString(
             '<span class="m"><i class="on"></i><i></i><i></i><i></i><i></i><i></i></span>',
-            $this->renderCell(new Cell("\x21", $mosaic)),
+            $this->renderCell("\x0E\x21"),
         );
-        self::assertSame(6, substr_count($this->renderCell(new Cell("\x7F", $mosaic)), needle: '<i class="on">'));
+        self::assertSame(6, substr_count($this->renderCell("\x0E\x7F"), needle: '<i class="on">'));
         // 0x40 to 0x5F too: 0x4A is the right column
         self::assertStringContainsString(
             '<span class="m"><i></i><i class="on"></i><i></i><i class="on"></i><i></i><i class="on"></i></span>',
-            $this->renderCell(new Cell("\x4A", $mosaic)),
+            $this->renderCell("\x0E\x4A"),
         );
         // Underlined mosaic is separated
-        self::assertStringContainsString('<span class="m sep">', $this->renderCell(new Cell("\x7F", [
-            'underline' => "\x5A",
-        ] + $mosaic)));
+        self::assertStringContainsString('<span class="m sep">', $this->renderCell("\x0E\x1B\x5A\x7F"));
     }
 
     public function testDrawsTheStatusLine(): void
@@ -147,13 +133,11 @@ final class HtmlRendererTest extends TestCase
     }
 
     /**
-     * Page of a screen with this cell at row 1, column 1
+     * Page of the screen Videotex content draws from row 1, column 1, e.g. attributes and a
+     * character
      */
-    private function renderCell(Cell $cell): string
+    private function renderCell(string $vdt): string
     {
-        $cells = array_fill(0, Screen::ROWS + 1, array_fill(1, Screen::COLS, value: null));
-        $cells[1][1] = $cell;
-
-        return (new HtmlRenderer(HtmlRenderer::MINITEL_FONT))->render(new Screen($cells), title: 'test');
+        return $this->render(new Vdt("\x1F\x41\x41" . $vdt));
     }
 }

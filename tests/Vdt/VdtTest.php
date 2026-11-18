@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Tests\Vdt;
 
+use MiniPaviService\Page\Display\Color;
 use MiniPaviService\Vdt\Screen\Screen;
 use MiniPaviService\Vdt\Vdt;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -69,7 +70,7 @@ final class VdtTest extends TestCase
         self::assertSame('  AAAA', rtrim($moved->line(5)));
         // Still red, after the positioning, which resets the attributes
         foreach ([3, 6] as $col) {
-            self::assertSame("\x41", $moved->cell(row: 5, col: $col)?->attributes['fg']);
+            self::assertSame(Color::Red, $moved->cell(row: 5, col: $col)?->attributes->foreground());
         }
         self::assertSame('', trim($moved->line(1) . $moved->line(2)));
     }

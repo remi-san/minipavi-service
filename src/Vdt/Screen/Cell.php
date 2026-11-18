@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Vdt\Screen;
 
+use MiniPaviService\Page\Display\Color;
+
 /**
  * Character shown in a cell of the Screen, with its attributes (see Attributes)
  */
@@ -86,12 +88,9 @@ final readonly class Cell
         "\x4B" => ['c' => 'ç', 'C' => 'Ç'],
     ];
 
-    /**
-     * @param array<string, string> $attributes see Attributes
-     */
     public function __construct(
         public string $bytes,
-        public array $attributes,
+        public Attributes $attributes,
     ) {}
 
     /**
@@ -101,8 +100,8 @@ final readonly class Cell
      */
     public function text(): string
     {
-        if ($this->attributes['charset'] === Attributes::MOSAIC) {
-            return $this->bytes === ' ' && $this->attributes['bg'] === Attributes::BLACK_BACKGROUND ? ' ' : '#';
+        if ($this->attributes->isMosaic()) {
+            return $this->bytes === ' ' && $this->attributes->background() === Color::Black ? ' ' : '#';
         }
         if ($this->bytes === "\x1A") {
             return '?';

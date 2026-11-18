@@ -80,9 +80,8 @@ final class Parser
                     break;
                 case 0x1B:
                     $sequence = $this->escapeSequence($vdt, $i);
-                    $group = strlen($sequence) === 2 ? Attributes::group($sequence[1]) : null;
-                    $tokens[] = $group !== null
-                        ? new Token(TokenType::Attribute, $sequence, $sequence[1], group: $group)
+                    $tokens[] = strlen($sequence) === 2 && Attributes::isAttribute($sequence[1])
+                        ? new Token(TokenType::Attribute, $sequence, $sequence[1])
                         : new Token(TokenType::Raw, $sequence, $sequence);
                     $i += strlen($sequence) - 1;
                     break;

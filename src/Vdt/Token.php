@@ -17,7 +17,6 @@ final readonly class Token
         public string $source,
         public string $bytes = '',
         public int $count = 0,
-        public ?string $group = null,
         public int $row = 0,
         public int $col = 0,
     ) {}

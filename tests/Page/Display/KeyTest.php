@@ -26,8 +26,8 @@ final class KeyTest extends TestCase
         if ($cell === null) {
             self::fail('Nothing drawn at row 20, column 32');
         }
-        self::assertSame("\x5D", $cell->attributes['inverse']);
-        self::assertSame(Color::Red->text()[1], $cell->attributes['fg']);
+        self::assertTrue($cell->attributes->isInverse());
+        self::assertSame(Color::Red, $cell->attributes->foreground());
     }
 
     public function testEndKeyIsOnTheLastRowForAMinitel(): void

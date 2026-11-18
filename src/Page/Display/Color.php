@@ -19,6 +19,22 @@ enum Color: string
     case White = 'white';
 
     /**
+     * Color of a number in Videotex, from 0 (black) to 7 (white)
+     *
+     * @throws \ValueError for another number
+     */
+    public static function fromIndex(int $index): self
+    {
+        foreach (self::cases() as $color) {
+            if ($color->index() === $index) {
+                return $color;
+            }
+        }
+
+        throw new \ValueError("No color of index {$index}");
+    }
+
+    /**
      * Videotex attribute for this text (foreground) color
      */
     public function text(): string

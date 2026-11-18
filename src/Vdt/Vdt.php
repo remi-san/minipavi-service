@@ -132,8 +132,7 @@ final readonly class Vdt
     {
         $out = new Writer();
         $this->play(
-            /** @param array<string, string> $attributes see Attributes */
-            static function (int $row, int $col, string $bytes, int $width, array $attributes) use (
+            static function (int $row, int $col, string $bytes, int $width, Attributes $attributes) use (
                 $out,
                 $x,
                 $y,
@@ -203,7 +202,7 @@ final readonly class Vdt
      * attributes) for each character (repetitions included), and other(token, cursor) for
      * the other tokens, once the cursor has followed them
      *
-     * @param callable(int, int, string, int, array<string, string>): void $glyph
+     * @param callable(int, int, string, int, Attributes): void $glyph
      * @param ?callable(Token, Cursor): void $other
      */
     public function play(callable $glyph, ?callable $other = null): void
@@ -220,18 +219,17 @@ final readonly class Vdt
                         break;
                     }
                     for ($n = 0; $n < ($repeat ? $token->count : 1); $n++) {
-                        $width = Attributes::width($cursor->attributes);
+                        $width = $cursor->attributes->width();
                         $glyph($cursor->row, $cursor->col, $bytes, $width, $cursor->attributes);
                         $cursor->advance($width);
                     }
                     $last = $bytes;
                     continue 2;
                 case TokenType::Attribute:
-                    $cursor->attributes[$token->group ?? throw new \LogicException('Attribute without group')] =
-                        $token->bytes;
+                    $cursor->attributes = $cursor->attributes->with($token->bytes);
                     break;
                 case TokenType::Charset:
-                    $cursor->attributes['charset'] = $token->bytes;
+                    $cursor->attributes = $cursor->attributes->withCharset($token->bytes);
                     break;
                 case TokenType::Position:
                     $cursor->reset($token->row, max(1, $token->col));

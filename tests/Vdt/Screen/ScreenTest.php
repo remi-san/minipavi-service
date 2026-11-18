@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Tests\Vdt\Screen;
 
+use MiniPaviService\Page\Display\Color;
 use MiniPaviService\Vdt\Vdt;
 use MiniPaviService\Vdt\VdtHelper;
 use PHPUnit\Framework\TestCase;
@@ -72,8 +73,8 @@ final class ScreenTest extends TestCase
         $screen = Vdt::fromString("\x0C\x1F\x41\x42AB\x12\x43\x1B\x41\x0E\x18\x08\x1E")->screen();
 
         self::assertSame(' ABBBB', rtrim($screen->line(1)));
-        self::assertSame("\x0E", $screen->cell(row: 1, col: 7)?->attributes['charset']);
-        self::assertSame("\x41", $screen->cell(row: 1, col: 40)?->attributes['fg']);
+        self::assertTrue($screen->cell(row: 1, col: 7)?->attributes->isMosaic());
+        self::assertSame(Color::Red, $screen->cell(row: 1, col: 40)?->attributes->foreground());
     }
 
     public function testPositionsCanBeGivenInDigits(): void
