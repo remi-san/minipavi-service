@@ -659,9 +659,11 @@ echo $moved->screen()->preview();      // the screen, as text
   `null` per row and column. `line($row)` and `text()` give the text of a row and of the
   screen, G2 characters decoded (`é`, `£`, `½`, `Œ`...; `Cell::text()`), and `preview()`
   the same rows framed and numbered, to read in a terminal.
-- **`Vdt\Player::play($vdt, $glyph, $other)`** (internal, what `screen()` and `offset()` are
-  built on): plays the content on the simulated screen, calling `$glyph` for each character,
-  with its row, column, width and attributes, and `$other` for the other `Token`s.
+- **`Vdt\Player::play($vdt, $listener)`** (internal, what `screen()` and `offset()` are
+  built on): plays the content on the simulated screen, telling a `Vdt\ScreenListener` each
+  character (`glyph()`, with its row, column, width and attributes) and the other `Token`s
+  (`sequence()`, with the cursor). `Screen\ScreenCells` collects the cells of `screen()`,
+  `Vdt\OffsetWriter` writes the content moved by `offset()`.
 
 `bin/minipavi vdt-offset` does the same from the command line (see [Command line](#command-line)).
 
