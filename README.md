@@ -717,6 +717,9 @@ A new display element of the page XML format is a `Page\Parser\Element\ElementBu
 (its tag, how it is built from its attributes and text, whether its `row` is relative inside a
 `<foreach>`, whether it can be in one), added to `ElementFactory::standard()`; then the XML
 Schema (`schema/page.xsd`) and the [Page XML format](#page-xml-format) above.
+The other tags (`<input>`, `<foreach>`, `<if>`, `<message>`) each have their
+`Page\Parser\Tag\TagParser`, by tag in `NodesParser::standard()`, which reads the children
+of an element with them, and gives the nodes and the page's `<input>` (`ParsedNodes`).
 
 GitHub Actions runs the three checks on PHP 8.2, 8.3, 8.4 and 8.5 for every change to the
 framework.
