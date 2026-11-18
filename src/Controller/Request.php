@@ -19,7 +19,7 @@ use MiniPaviService\Minitel\Terminal;
  * @template-covariant TState of State
  * @template-covariant TParameters of Parameters
  */
-readonly class Request
+final readonly class Request
 {
     /**
      * @param TState $state

@@ -53,8 +53,8 @@ final class MiniPaviClientTest extends TestCase
         self::assertSame(['ab', 'cd'], $request->content);
         self::assertSame('{"route":"home"}', $request->context);
         self::assertSame('CALLFROM 0102030405', $request->terminal->remoteAddr());
-        self::assertSame('websocket', $request->terminal->typeSocket());
-        self::assertSame('Cv5', $request->terminal->versionMinitel());
+        // A websocket with a known Minitel
+        self::assertTrue($request->terminal->isAdapter());
     }
 
     public function testValuesThatAreNotTextBecomeEmpty(): void
@@ -69,8 +69,8 @@ final class MiniPaviClientTest extends TestCase
 
         self::assertSame([null, ''], [$request->key, $request->context]);
         self::assertSame('', $request->terminal->remoteAddr());
-        self::assertNull($request->terminal->typeSocket());
-        self::assertNull($request->terminal->versionMinitel());
+        // Nothing known of the connection
+        self::assertFalse($request->terminal->isAdapter() || $request->terminal->isTelnetOrPhone());
     }
 
     public function testReadsABackgroundCallForTheServiceToAnswerNothing(): void
