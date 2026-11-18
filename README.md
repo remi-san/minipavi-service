@@ -126,7 +126,7 @@ KernelBuilder::for($router, $messages)
   `MiniPaviCli` writes for the gateway is captured, below).
 - **`WithUrls`** computes the service's URLs for the request once, with **`RequestUrl`**, and
   passes it on with them in its attributes (**`UrlAttribute`**): `Service`, the script, given
-  to the gateway as the next URL to call (it travels in `GatewayRequest::$serviceUrl`), and
+  to the gateway as the next URL to call (the client keeps it with the request it reads), and
   `Current`, the URL asked for, where the emulator sends browsers back. `RequestUrl` takes
   https when the request came over TLS (`HTTPS`, port 443), and its configuration explicitly
   (read from the environment in the service's container):
@@ -147,12 +147,12 @@ KernelBuilder::for($router, $messages)
   level.
 - **`ServiceRunner`** runs the service for an HTTP request, through a client
   (`Gateway\Client`, in `Client\`) translating between HTTP and the service's values: the
-  client turns the HTTP request into a `GatewayRequest`, the service answers it, and the client
-  turns the `GatewayResponse` into the HTTP response. What the client needs to answer, besides what the service
-  gets, is its state (`Gateway\ClientState`): read with the HTTP request, kept in the
-  `GatewayRequest` (`$clientState`), and given back to the client with it. A client without
-  any uses the null object `NoClientState`, as requests built in memory do. A request that can't be read is answered
-  as an error (see `Service`); nothing to answer (a disconnection, a background call of the
+  client reads the HTTP request into a **`Gateway\ClientExchange`** (`exchange()`), whose
+  `request()` the service answers, and whose `respond()` turns the `GatewayResponse` into the
+  HTTP response. What the client needs to answer, besides what the service gets (the service's
+  URL, the page `HtmlClient`'s browser showed), stays in the exchange. A request that can't be
+  read is answered as an error (see `Service`), through the client's `unreadable()` exchange;
+  nothing to answer (a disconnection, a background call of the
   gateway) is a `204`, and an
   answer the client can't give a `500` (logged as critical).
   **The context is signed** on its way through the gateway (or the browser), so that the user
