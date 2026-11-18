@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MiniPaviService\Tests\Controller\Pagination;
 
 use MiniPaviService\Controller\Pagination\PageParameters;
+use MiniPaviService\Controller\Pagination\PaginatedController;
 use MiniPaviService\Controller\Parameters\NoParameters;
 use MiniPaviService\Controller\Request;
 use MiniPaviService\Controller\Response;
@@ -18,7 +19,7 @@ use MiniPaviService\Page;
 use MiniPaviService\Page\Parser\PageXmlParser;
 use MiniPaviService\Testing\ServiceTester;
 use MiniPaviService\Tests\Support\CallbackController;
-use MiniPaviService\Tests\Support\ListController;
+use MiniPaviService\Tests\Support\ListItems;
 use MiniPaviService\Vdt\Vdt;
 use PHPUnit\Framework\TestCase;
 
@@ -96,7 +97,7 @@ final class PaginatedControllerTest extends TestCase
             ),
             __DIR__,
         );
-        $this->routes->addRoute('list', new ListController($page, ['a', 'b', 'c']));
+        $this->routes->addRoute('list', new PaginatedController($page, new ListItems(['a', 'b', 'c'])));
 
         $router = $this->routes->build();
         (new ServiceTester(new Service($router, (new MessagesXmlParser())->defaults(), new ContextSerializer($router))))
@@ -142,7 +143,7 @@ final class PaginatedControllerTest extends TestCase
             ->assertScreenContains('Page 3/3')
             ->answer()
             ->context;
-        $this->routes->addRoute('list', new ListController($this->page(), ['a', 'b', 'c']));
+        $this->routes->addRoute('list', new PaginatedController($this->page(), new ListItems(['a', 'b', 'c'])));
 
         $router = $this->routes->build();
         $answer = (new Service($router, (new MessagesXmlParser())->defaults(), new ContextSerializer($router)))->handle(
@@ -166,7 +167,7 @@ final class PaginatedControllerTest extends TestCase
      */
     private function tester(array $items): ServiceTester
     {
-        $this->routes->addRoute('list', new ListController($this->page(), $items));
+        $this->routes->addRoute('list', new PaginatedController($this->page(), new ListItems($items)));
 
         $router = $this->routes->build();
 
