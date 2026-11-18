@@ -72,7 +72,7 @@ final class Service
      * controller the user's next function key runs. It is not run now: if it is the one
      * failing, the user would get the same error again at once.
      *
-     * Null if even that answer fails (e.g. no default route): logged as critical.
+     * Null if even that answer fails: logged as critical.
      */
     public function error(\Throwable $error): ?GatewayResponse
     {

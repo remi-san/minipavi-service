@@ -8,7 +8,7 @@ use MiniPaviService\Controller\ControllerState;
 use MiniPaviService\Controller\Parameters\NoParameters;
 use MiniPaviService\Controller\Request;
 use MiniPaviService\Controller\Response;
-use MiniPaviService\Core\Router;
+use MiniPaviService\Core\RouterBuilder;
 use MiniPaviService\Core\Service;
 use MiniPaviService\Gateway\CallMode;
 use MiniPaviService\Message\Messages;
@@ -31,17 +31,17 @@ final class ServiceTesterTest extends TestCase
     {
         // menu: a code, Envoi goes to the directory ("2") or to another service ("ext");
         // directory: Suite on its only page shows a message on line 0
-        $router = new Router();
-        $router->addRoute('menu', $this->controller(static fn(Request $request) => match ($request->contentAsString()) {
+        $routes = new RouterBuilder('menu');
+        $routes->addRoute('menu', $this->controller(static fn(Request $request) => match ($request->contentAsString()) {
             '2' => Response::goTo('directory'),
             'ext' => Response::connectTo('https://example.org/', Vdt::line0('Connexion…')),
             default => Response::display(Vdt::join(Vdt::clearScreen(), Vdt::position(1, row: 1), Vdt::text('MENU'))),
         }));
-        $router->addRoute('directory', $this->controller(static fn(Request $request) => $request->functionKey()
+        $routes->addRoute('directory', $this->controller(static fn(Request $request) => $request->functionKey()
             === FunctionKey::Next
                 ? Response::display(Vdt::line0('Dernière page'))
                 : Response::display(Vdt::join(Vdt::clearScreen(), Vdt::position(1, row: 2), Vdt::text('Annuaire')))));
-        $router->setDefaultRoute('menu');
+        $router = $routes->build();
 
         $this->tester = new ServiceTester(
             new Service($router, Messages::defaults()),

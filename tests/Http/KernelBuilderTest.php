@@ -7,7 +7,7 @@ namespace MiniPaviService\Tests\Http;
 use MiniPaviService\Controller\Parameters\NoParameters;
 use MiniPaviService\Controller\Request;
 use MiniPaviService\Controller\Response;
-use MiniPaviService\Core\Router;
+use MiniPaviService\Core\RouterBuilder;
 use MiniPaviService\Core\Signing\HmacContextSigner;
 use MiniPaviService\Http\Dispatch\ConditionalRequestHandler;
 use MiniPaviService\Http\Dispatch\QueryParameterEquals;
@@ -33,11 +33,11 @@ final class KernelBuilderTest extends TestCase
 
     protected function setUp(): void
     {
-        $router = new Router();
-        $router->addRoute('home', new CallbackController(NoParameters::class, static fn(
+        $routes = new RouterBuilder('home');
+        $routes->addRoute('home', new CallbackController(NoParameters::class, static fn(
             Request $request,
         ) => Response::display(Vdt::position(1, row: 1)->append(Vdt::text('HOME')))));
-        $router->setDefaultRoute('home');
+        $router = $routes->build();
         $this->builder = KernelBuilder::for($router, Messages::defaults());
     }
 

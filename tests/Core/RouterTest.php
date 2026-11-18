@@ -10,7 +10,7 @@ use MiniPaviService\Controller\Parameters\NoParameters;
 use MiniPaviService\Controller\Parameters\Values;
 use MiniPaviService\Controller\Request;
 use MiniPaviService\Controller\Response;
-use MiniPaviService\Core\Router;
+use MiniPaviService\Core\RouterBuilder;
 use MiniPaviService\Minitel\Terminal;
 use MiniPaviService\Tests\Support\CallbackController;
 use MiniPaviService\Vdt\Vdt;
@@ -20,16 +20,16 @@ final class RouterTest extends TestCase
 {
     public function testGivesTheRouteOfItsController(): void
     {
-        $router = new Router();
-        $router->addRoute(
-            'home',
-            new CallbackController(
-                PageParameters::class,
-                /** @param Request<ControllerState, PageParameters> $request */
-                static fn(Request $request) => Response::display(Vdt::text('home ' . $request->parameters()->page)),
-            ),
-        );
-        $router->setDefaultRoute('home');
+        $router = (new RouterBuilder('home'))
+            ->addRoute(
+                'home',
+                new CallbackController(
+                    PageParameters::class,
+                    /** @param Request<ControllerState, PageParameters> $request */
+                    static fn(Request $request) => Response::display(Vdt::text('home ' . $request->parameters()->page)),
+                ),
+            )
+            ->build();
 
         $route = $router->route('home');
         self::assertSame(ControllerState::Init, $route->start()->state());
@@ -43,31 +43,23 @@ final class RouterTest extends TestCase
         self::assertSame('home', $router->defaultRoute());
     }
 
-    public function testDefaultRouteMustBeSet(): void
-    {
-        $this->expectException(\LogicException::class);
-        $this->expectExceptionMessage('No default route: call Router::setDefaultRoute()');
-
-        (new Router())->defaultRoute();
-    }
-
     public function testDefaultRouteMustBeARoute(): void
     {
-        $router = new Router();
-        $router->setDefaultRoute('hme');
-        $router->addRoute('home', self::controller());
-        $router->addRoute('menu', self::controller());
+        $builder = (new RouterBuilder('hme'))
+            ->addRoute('home', self::controller())
+            ->addRoute('menu', self::controller());
 
         $this->expectException(\LogicException::class);
         $this->expectExceptionMessage('Default route "hme" is not a route (routes: home, menu)');
 
-        $router->defaultRoute();
+        $builder->build();
     }
 
     public function testUnknownRouteIsNamed(): void
     {
-        $router = new Router();
-        $router->addRoute('home', self::controller());
+        $router = (new RouterBuilder('home'))
+            ->addRoute('home', self::controller())
+            ->build();
 
         $this->expectException(\LogicException::class);
         $this->expectExceptionMessage('Unknown route "directory" (routes: home)');

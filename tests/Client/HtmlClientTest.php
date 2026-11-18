@@ -9,7 +9,7 @@ use MiniPaviService\Client\HtmlPageState;
 use MiniPaviService\Controller\Parameters\NoParameters;
 use MiniPaviService\Controller\Request;
 use MiniPaviService\Controller\Response;
-use MiniPaviService\Core\Router;
+use MiniPaviService\Core\RouterBuilder;
 use MiniPaviService\Core\Service;
 use MiniPaviService\Core\Signing\HmacContextSigner;
 use MiniPaviService\Gateway\ConnectionCode;
@@ -298,19 +298,19 @@ final class HtmlClientTest extends TestCase
 
     public function testNavigatesTheService(): void
     {
-        $router = new Router();
-        $router->addRoute('home', new CallbackController(NoParameters::class, static fn(
+        $routes = new RouterBuilder('home');
+        $routes->addRoute('home', new CallbackController(NoParameters::class, static fn(
             Request $request,
         ) => $request->functionKey() === FunctionKey::Send
             ? Response::goTo('games')
             : Response::display(Vdt::clearScreen()->append(Vdt::position(1, row: 1), Vdt::text('HOME')))));
-        $router->addRoute('games', new CallbackController(NoParameters::class, static fn(
+        $routes->addRoute('games', new CallbackController(NoParameters::class, static fn(
             Request $request,
         ) => Response::display(Vdt::clearScreen()->append(
             Vdt::position(1, row: 1),
             Vdt::text('GAMES ' . $request->contentAsString()),
         ))));
-        $router->setDefaultRoute('home');
+        $router = $routes->build();
         $runner = new ServiceRunner(
             new Service($router, Messages::defaults(), new MemoryLogger()),
             self::client(),

@@ -11,6 +11,7 @@ use MiniPaviService\Controller\Request;
 use MiniPaviService\Controller\Response;
 use MiniPaviService\Core\Context;
 use MiniPaviService\Core\Router;
+use MiniPaviService\Core\RouterBuilder;
 use MiniPaviService\Minitel\Terminal;
 use MiniPaviService\Tests\Support\CallbackController;
 use MiniPaviService\Tests\Support\FromParameters;
@@ -29,8 +30,8 @@ final class ContextTest extends TestCase
     {
         // home: built-in states, a page; search: states of its own, a page; menu: nothing;
         // origin: the route it was opened from
-        $this->router = new Router();
-        $this->router->addRoute(
+        $routes = new RouterBuilder('home');
+        $routes->addRoute(
             'home',
             new CallbackController(
                 PageParameters::class,
@@ -49,11 +50,11 @@ final class ContextTest extends TestCase
                 )),
             ),
         );
-        $this->router->addRoute('search', new SearchController());
-        $this->router->addRoute('menu', new CallbackController(NoParameters::class, static fn(
+        $routes->addRoute('search', new SearchController());
+        $routes->addRoute('menu', new CallbackController(NoParameters::class, static fn(
             Request $request,
         ) => Response::display(new Vdt('menu'))));
-        $this->router->addRoute(
+        $routes->addRoute(
             'origin',
             new CallbackController(
                 FromParameters::class,
@@ -61,7 +62,7 @@ final class ContextTest extends TestCase
                 static fn(Request $request) => Response::display(Vdt::text('from ' . $request->parameters()->from)),
             ),
         );
-        $this->router->setDefaultRoute('home');
+        $this->router = $routes->build();
     }
 
     public function testNewRouteHasTheInitialStateAndDefaultParametersOfItsController(): void

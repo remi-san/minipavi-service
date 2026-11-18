@@ -4,35 +4,30 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Core;
 
-use MiniPaviService\Controller;
 use MiniPaviService\Controller\Parameters\Parameters;
 use MiniPaviService\Controller\State;
 
-final class Router
+/**
+ * The routes of a service, each with its controller bound to the types of what it keeps
+ * (Route), and the one new connections start at. Immutable, built by RouterBuilder: its
+ * default route is always one of its routes, a service whose default route isn't one failing
+ * when its router is built, at boot.
+ */
+final readonly class Router
 {
-    /** @var array<string, Route<State, Parameters>> */
-    private array $routes = [];
-
-    public function __construct(
-        private ?string $defaultRoute = null,
-    ) {}
-
     /**
-     * Adds a route, binding its controller with the types of what it keeps (Route)
+     * @param string $defaultRoute route of new connections, one of routes
+     * @param array<string, Route<State, Parameters>> $routes by name
      *
-     * @template TState of State
-     * @template TParameters of Parameters
-     *
-     * @param Controller<TState, TParameters> $controller
+     * @throws \LogicException if the default route isn't one of the routes
      */
-    public function addRoute(string $name, Controller $controller): void
-    {
-        $this->routes[$name] = new Route($controller);
-    }
-
-    public function setDefaultRoute(string $name): void
-    {
-        $this->defaultRoute = $name;
+    public function __construct(
+        private string $defaultRoute,
+        private array $routes,
+    ) {
+        if (!$this->has($defaultRoute)) {
+            throw new \LogicException("Default route \"{$defaultRoute}\" is not a route (routes: {$this->names()})");
+        }
     }
 
     public function has(string $name): bool
@@ -54,20 +49,10 @@ final class Router
 
     /**
      * Route of new connections
-     *
-     * @throws \LogicException if it was not set, or is not a route
      */
     public function defaultRoute(): string
     {
-        $route = $this->defaultRoute;
-        if ($route === null) {
-            throw new \LogicException('No default route: call Router::setDefaultRoute()');
-        }
-        if (!$this->has($route)) {
-            throw new \LogicException("Default route \"{$route}\" is not a route (routes: {$this->names()})");
-        }
-
-        return $route;
+        return $this->defaultRoute;
     }
 
     private function names(): string

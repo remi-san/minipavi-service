@@ -10,7 +10,7 @@ use MiniPaviService\Controller\Parameters\NoParameters;
 use MiniPaviService\Controller\Parameters\Parameters;
 use MiniPaviService\Controller\Request;
 use MiniPaviService\Controller\Response;
-use MiniPaviService\Core\Router;
+use MiniPaviService\Core\RouterBuilder;
 use MiniPaviService\Core\Service;
 use MiniPaviService\Gateway\CallMode;
 use MiniPaviService\Gateway\ConnectionCode;
@@ -43,7 +43,7 @@ final class ServiceTest extends TestCase
     /** @var array<string, list<Request<ControllerState, Parameters>>> requests each controller ran on, by route */
     private array $requests = [];
 
-    private Router $router;
+    private RouterBuilder $routes;
 
     private MemoryLogger $logger;
 
@@ -53,52 +53,7 @@ final class ServiceTest extends TestCase
     {
         $this->logger = new MemoryLogger();
         $this->terminal = new Terminal(self::TERMINAL_ADDRESS, 'websocket', 'Cv5');
-        // menu: Envoi goes to the directory, at page 1, Suite to the route typed;
-        // directory: shows its page, reads a code, Sommaire goes back to the menu
-        $this->router = new Router();
-        $this->router->addRoute('menu', $this->controller(
-            'menu',
-            NoParameters::class,
-            static fn(Request $request) => match ($request->key()) {
-                'ENVOI' => Response::goTo('directory', new PageParameters(1)),
-                'SUITE' => Response::goTo($request->contentAsString()),
-                default => Response::display(new Vdt('menu')),
-            },
-        ));
-        $this->router->addRoute('directory', $this->controller(
-            'directory',
-            PageParameters::class,
-            static fn(Request $request) => match (true) {
-                $request->key() === 'SOMMAIRE' => Response::goTo('menu'),
-                $request->state() === ControllerState::ReadInput => Response::display(Vdt::text(
-                    'code ' . $request->contentAsString(),
-                )),
-                default => Response::display(new Vdt('directory'), parameters: new PageParameters(2)),
-            },
-        ));
-        $this->router->addRoute('broken', $this->controller(
-            'broken',
-            NoParameters::class,
-            static fn(Request $request) => throw new \RuntimeException('Template data missing'),
-        ));
-        // Two controllers changing to each other
-        $this->router->addRoute('ping', $this->controller(
-            'ping',
-            NoParameters::class,
-            static fn(Request $request) => Response::goTo('pong'),
-        ));
-        $this->router->addRoute('pong', $this->controller(
-            'pong',
-            NoParameters::class,
-            static fn(Request $request) => Response::goTo('ping'),
-        ));
-        // Keeps parameters of another class than it declares
-        $this->router->addRoute('mistyped', $this->controller(
-            'mistyped',
-            NoParameters::class,
-            static fn(Request $request) => Response::display(new Vdt('x'), parameters: new PageParameters(1)),
-        ));
-        $this->router->setDefaultRoute('menu');
+        $this->routes = $this->routesStartingAt('menu');
     }
 
     /**
@@ -186,7 +141,7 @@ final class ServiceTest extends TestCase
     public function testErrorOfTheDefaultRouteIsAnsweredOnce(): void
     {
         // On a connection, the default controller fails: no loop, an error answer
-        $this->router->setDefaultRoute('broken');
+        $this->routes = $this->routesStartingAt('broken');
 
         self::assertStringContainsString(self::errorMessage(), self::line0($this->connect()));
         self::assertCount(1, $this->requests['broken']);
@@ -194,7 +149,7 @@ final class ServiceTest extends TestCase
 
     public function testErrorMessageCanBeChanged(): void
     {
-        $service = new Service($this->router, Messages::defaults()->with(['error' => 'Oops']), $this->logger);
+        $service = new Service($this->routes->build(), Messages::defaults()->with(['error' => 'Oops']), $this->logger);
 
         self::assertStringContainsString(
             'Oops',
@@ -207,7 +162,7 @@ final class ServiceTest extends TestCase
         $this->expectException(MessagesException::class);
         $this->expectExceptionMessage('No text for the messages: error, page.first, page.last, endkey, endkey.shift');
 
-        new Service($this->router, new Messages(['other' => 'x']));
+        new Service($this->routes->build(), new Messages(['other' => 'x']));
     }
 
     public function testEndlessPageChangesAreStoppedAndAnsweredAsAnError(): void
@@ -251,13 +206,13 @@ final class ServiceTest extends TestCase
     public function testUnknownRouteStartsAgainAtTheDefaultRoute(): void
     {
         // A context of a previous version of the service, at a route removed since
-        $previous = new Router();
-        $previous->addRoute('removed', $this->controller(
+        $routes = new RouterBuilder('removed');
+        $routes->addRoute('removed', $this->controller(
             'removed',
             NoParameters::class,
             static fn(Request $request) => Response::display(new Vdt('removed')),
         ));
-        $previous->setDefaultRoute('removed');
+        $previous = $routes->build();
         $context =
             (new Service($previous, Messages::defaults()))->handle(
                 new GatewayRequest(ConnectionCode::Connect, terminal: $this->terminal),
@@ -353,6 +308,60 @@ final class ServiceTest extends TestCase
     }
 
     /**
+     * The routes of the tests, new connections starting at defaultRoute
+     */
+    private function routesStartingAt(string $defaultRoute): RouterBuilder
+    {
+        // menu: Envoi goes to the directory, at page 1, Suite to the route typed;
+        // directory: shows its page, reads a code, Sommaire goes back to the menu
+        $routes = new RouterBuilder($defaultRoute);
+        $routes->addRoute('menu', $this->controller(
+            'menu',
+            NoParameters::class,
+            static fn(Request $request) => match ($request->key()) {
+                'ENVOI' => Response::goTo('directory', new PageParameters(1)),
+                'SUITE' => Response::goTo($request->contentAsString()),
+                default => Response::display(new Vdt('menu')),
+            },
+        ));
+        $routes->addRoute('directory', $this->controller(
+            'directory',
+            PageParameters::class,
+            static fn(Request $request) => match (true) {
+                $request->key() === 'SOMMAIRE' => Response::goTo('menu'),
+                $request->state() === ControllerState::ReadInput => Response::display(Vdt::text(
+                    'code ' . $request->contentAsString(),
+                )),
+                default => Response::display(new Vdt('directory'), parameters: new PageParameters(2)),
+            },
+        ));
+        $routes->addRoute('broken', $this->controller(
+            'broken',
+            NoParameters::class,
+            static fn(Request $request) => throw new \RuntimeException('Template data missing'),
+        ));
+        // Two controllers changing to each other
+        $routes->addRoute('ping', $this->controller(
+            'ping',
+            NoParameters::class,
+            static fn(Request $request) => Response::goTo('pong'),
+        ));
+        $routes->addRoute('pong', $this->controller(
+            'pong',
+            NoParameters::class,
+            static fn(Request $request) => Response::goTo('ping'),
+        ));
+        // Keeps parameters of another class than it declares
+        $routes->addRoute('mistyped', $this->controller(
+            'mistyped',
+            NoParameters::class,
+            static fn(Request $request) => Response::display(new Vdt('x'), parameters: new PageParameters(1)),
+        ));
+
+        return $routes;
+    }
+
+    /**
      * Controller recording the requests it runs on, in $this->requests
      *
      * @template TParameters of Parameters
@@ -381,12 +390,12 @@ final class ServiceTest extends TestCase
      */
     private function answerTo(Response $response): GatewayResponse
     {
-        $this->router->addRoute('answer', $this->controller(
+        $this->routes = $this->routesStartingAt('answer');
+        $this->routes->addRoute('answer', $this->controller(
             'answer',
             PageParameters::class,
             static fn(Request $request) => $response,
         ));
-        $this->router->setDefaultRoute('answer');
 
         return $this->connect();
     }
@@ -408,7 +417,7 @@ final class ServiceTest extends TestCase
      */
     private function handle(GatewayRequest $request): ?GatewayResponse
     {
-        return (new Service($this->router, Messages::defaults(), $this->logger))->handle($request);
+        return (new Service($this->routes->build(), Messages::defaults(), $this->logger))->handle($request);
     }
 
     private function connect(): GatewayResponse

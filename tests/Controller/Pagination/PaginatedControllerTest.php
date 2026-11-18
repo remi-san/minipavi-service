@@ -8,7 +8,7 @@ use MiniPaviService\Controller\Pagination\PageParameters;
 use MiniPaviService\Controller\Parameters\NoParameters;
 use MiniPaviService\Controller\Request;
 use MiniPaviService\Controller\Response;
-use MiniPaviService\Core\Router;
+use MiniPaviService\Core\RouterBuilder;
 use MiniPaviService\Core\Service;
 use MiniPaviService\Gateway\GatewayRequest;
 use MiniPaviService\Message\Messages;
@@ -31,15 +31,14 @@ final class PaginatedControllerTest extends TestCase
         </page>
         XML;
 
-    private Router $router;
+    private RouterBuilder $routes;
 
     protected function setUp(): void
     {
-        $this->router = new Router();
-        $this->router->addRoute('menu', new CallbackController(NoParameters::class, static fn(
+        $this->routes = new RouterBuilder('menu');
+        $this->routes->addRoute('menu', new CallbackController(NoParameters::class, static fn(
             Request $request,
         ) => $request->key() === 'ENVOI' ? Response::goTo('list') : Response::display(new Vdt('MENU'))));
-        $this->router->setDefaultRoute('menu');
     }
 
     public function testShowsTheFirstPageWithItsNumber(): void
@@ -96,9 +95,9 @@ final class PaginatedControllerTest extends TestCase
             ),
             __DIR__,
         );
-        $this->router->addRoute('list', new ListController($page, ['a', 'b', 'c']));
+        $this->routes->addRoute('list', new ListController($page, ['a', 'b', 'c']));
 
-        (new ServiceTester(new Service($this->router, Messages::defaults())))
+        (new ServiceTester(new Service($this->routes->build(), Messages::defaults())))
             ->connect()
             ->press(FunctionKey::Send)
             ->press(FunctionKey::Next)
@@ -141,9 +140,9 @@ final class PaginatedControllerTest extends TestCase
             ->assertScreenContains('Page 3/3')
             ->answer()
             ->context;
-        $this->router->addRoute('list', new ListController($this->page(), ['a', 'b', 'c']));
+        $this->routes->addRoute('list', new ListController($this->page(), ['a', 'b', 'c']));
 
-        $answer = (new Service($this->router, Messages::defaults()))->handle(
+        $answer = (new Service($this->routes->build(), Messages::defaults()))->handle(
             new GatewayRequest(FunctionKey::Refresh, [], $context),
         );
 
@@ -164,9 +163,9 @@ final class PaginatedControllerTest extends TestCase
      */
     private function tester(array $items): ServiceTester
     {
-        $this->router->addRoute('list', new ListController($this->page(), $items));
+        $this->routes->addRoute('list', new ListController($this->page(), $items));
 
-        return (new ServiceTester(new Service($this->router, Messages::defaults())))
+        return (new ServiceTester(new Service($this->routes->build(), Messages::defaults())))
             ->connect()
             ->press(FunctionKey::Send);
     }

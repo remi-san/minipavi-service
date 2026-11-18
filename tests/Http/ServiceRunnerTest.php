@@ -8,7 +8,7 @@ use MiniPaviService\Client\MiniPaviClient;
 use MiniPaviService\Controller\Parameters\NoParameters;
 use MiniPaviService\Controller\Request;
 use MiniPaviService\Controller\Response;
-use MiniPaviService\Core\Router;
+use MiniPaviService\Core\RouterBuilder;
 use MiniPaviService\Core\Service;
 use MiniPaviService\Core\Signing\ForgedContextException;
 use MiniPaviService\Core\Signing\HmacContextSigner;
@@ -36,11 +36,11 @@ final class ServiceRunnerTest extends TestCase
 
     protected function setUp(): void
     {
-        $router = new Router();
-        $router->addRoute('home', new CallbackController(NoParameters::class, static fn(
+        $routes = new RouterBuilder('home');
+        $routes->addRoute('home', new CallbackController(NoParameters::class, static fn(
             Request $request,
         ) => Response::display(new Vdt('home'))));
-        $router->setDefaultRoute('home');
+        $router = $routes->build();
         $this->logger = new MemoryLogger();
         $this->service = new Service($router, Messages::defaults(), $this->logger);
     }
