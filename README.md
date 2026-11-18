@@ -685,7 +685,8 @@ echo $moved->screen()->preview();      // the screen, as text
   having its positions patched. Characters that end up off the screen are dropped instead of
   wrapping onto the next row, and the cursor is positioned again where needed, with the
   current attributes (character set, colors, size...), which a positioning resets. Row 0,
-  the status line, is not moved.
+  the status line, is not moved. A double-height or double-size character moved onto row 1,
+  where the Minitel can't draw it tall, is written at normal size, one column wide.
 - **`withoutClear()`**: the same content without its clear screens (FF), to draw it over
   other content.
 - **`HtmlRenderer::render($screen, $title)`**: the screen as an HTML page (see `HtmlClient`
@@ -693,7 +694,9 @@ echo $moved->screen()->preview();      // the screen, as text
 - **`screen()`**: the `Screen` drawn by the content: a `Cell` (character and attributes) or
   `null` per row and column. `line($row)` and `text()` give the text of a row and of the
   screen, G2 characters decoded (`é`, `£`, `½`, `Œ`...; `Cell::text()`), and `preview()`
-  the same rows framed and numbered, to read in a terminal.
+  the same rows framed and numbered, to read in a terminal. As on a Minitel, double height
+  (`ESC M`) and double size (`ESC O`) set on row 1 are discarded: its characters are drawn at
+  normal size, one column each (double width, `ESC N`, is kept).
 - **`Vdt\Player::play($vdt, $listener)`** (internal, what `screen()` and `offset()` are
   built on): plays the content on the simulated screen, telling a `Vdt\ScreenListener` each
   character (`glyph()`, with its row, column, width and attributes) and the other `Token`s
