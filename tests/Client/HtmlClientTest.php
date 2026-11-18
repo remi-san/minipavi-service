@@ -94,7 +94,10 @@ final class HtmlClientTest extends TestCase
         // and its input field
         $html = (string) $exchange->respond(new GatewayResponse(new Vdt(), '{}', 'https://example.org/'))->getBody();
         self::assertStringContainsString('Menu', self::shownText($html));
-        self::assertStringContainsString('value="ab" style="' . HtmlRenderer::at(1, row: 2, length: 4) . '"', $html);
+        self::assertStringContainsString(
+            'value="ab" style="' . (new HtmlRenderer(HtmlRenderer::MINITEL_FONT))->place(1, row: 2, length: 4) . '"',
+            $html,
+        );
         // Its keys: Envoi and Suite only
         self::assertSame(6, substr_count($html, needle: ' disabled>'));
         // The whole command, cursor and space character included, posted back as it came
