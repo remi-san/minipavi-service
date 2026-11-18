@@ -99,6 +99,21 @@ final class ContextTest extends TestCase
         self::assertEquals(new PageParameters(2), $context->parameters());
     }
 
+    public function testEnteringARouteStartsItsControllerAgain(): void
+    {
+        $context = new Context($this->router, 'home');
+        $context->changeRoute('search');
+        $context->keep(SearchState::ReadQuery, new PageParameters(5));
+        $context->changeRoute('home');
+
+        $context->enter('search', new PageParameters(2));
+
+        self::assertSame('search', $context->route());
+        // Whatever it kept before
+        self::assertSame(SearchState::Init, $context->state());
+        self::assertEquals(new PageParameters(2), $context->parameters());
+    }
+
     public function testKeepingNothingResetsTheCurrentRoute(): void
     {
         $context = new Context($this->router, 'search');

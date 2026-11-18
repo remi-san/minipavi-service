@@ -50,6 +50,24 @@ final class Context
         $this->routes = [];
     }
 
+    /**
+     * Goes to route, whose controller starts again: its initial state, and parameters (null:
+     * their defaults), whatever it kept before (e.g. Response::goTo())
+     *
+     * @param ?Parameters $parameters of the class its controller declares
+     *
+     * @throws \LogicException for parameters of another class than the controller's
+     */
+    public function enter(string $route, ?Parameters $parameters = null): void
+    {
+        $this->changeRoute($route);
+        $this->keep(null, $parameters);
+    }
+
+    /**
+     * Goes to route, as it is: with what it kept (or its controller's initial state and the
+     * defaults of its parameters)
+     */
     public function changeRoute(string $route): void
     {
         $this->route = $route;
