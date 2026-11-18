@@ -60,13 +60,13 @@ use MiniPaviService\Core\RouterBuilder;
 use MiniPaviService\Http\Emulator\EmulatorConfig;
 use MiniPaviService\Http\KernelBuilder;
 use MiniPaviService\Http\Url\RequestUrl;
-use MiniPaviService\Message\Messages;
+use MiniPaviService\Message\MessagesXmlParser;
 use MiniPaviService\Page\Parser\PageXmlParser;
 
 require __DIR__.'/../vendor/autoload.php';
 
 // The framework's messages; a service usually reads its own over them (see Messages)
-$messages = Messages::defaults();
+$messages = (new MessagesXmlParser())->defaults();
 
 // New connections start at the default route; build() fails if it isn't one of the routes
 $router = (new RouterBuilder(HomeController::NAME))
@@ -492,10 +492,12 @@ Text shown on the Minitel is not written in the code: it is read from messages f
   files: `FrameworkMessage` for the framework's (`error`, `page.first`, `page.last`,
   `endkey`, `endkey.shift`, and for the HTML view the key labels `key.*` and `web.leave`), and an enum of its own for a service's.
 - **Texts** come from `config/messages.xml` in the framework (its defaults,
-  `Messages::defaults()`), then the service's messages file over them, then a page's
+  `MessagesXmlParser::defaults()`, read where the service is built), then the service's
+  messages file over them, then a page's
   `<message>` over those, for that page. A text can have `{{placeholders}}`.
 - **Always given:** `Service`, `PageXmlParser` and the pages take the messages as a required
-  argument, never a hidden default: pass `Messages::defaults()` for the framework's only.
+  argument, never a hidden default: pass `(new MessagesXmlParser())->defaults()` for the
+  framework's only.
 
 ```xml
 <messages xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -514,8 +516,9 @@ enum AccMessage: string implements Message
 }
 
 // Composition root: read and checked at startup (every message of these enums has a text)
-$messages = (new MessagesXmlParser())
-    ->parseFile("$config/messages.xml", Messages::defaults())
+$parser = new MessagesXmlParser();
+$messages = $parser
+    ->parseFile("$config/messages.xml", $parser->defaults())
     ->check(FrameworkMessage::class, AccMessage::class);
 $parser = new PageXmlParser($messages);              // pages redefine them with <message>
 $service = new Service($router, $messages, new ContextSerializer($router), $logger);  // for its error message
