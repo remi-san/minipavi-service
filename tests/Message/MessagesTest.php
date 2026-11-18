@@ -99,6 +99,11 @@ final class MessagesTest extends TestCase
             "<messages><message name=\"a\">x</message>\n<message name=\"a\">y</message></messages>",
             'm.xml line 2: <message>: name="a" is already in the file',
         ];
+        // The first error in the file: the name missing, before the unknown element
+        yield 'first error in the file' => [
+            "<messages>\n<message>x</message>\n<text/></messages>",
+            'm.xml line 2: <message>: name is missing',
+        ];
     }
 
     #[DataProvider('invalidFiles')]

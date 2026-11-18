@@ -111,11 +111,23 @@ final class LintCommand extends Command
      */
     private static function isPage(string $file): bool
     {
+        // Read up to the root element only: the parser reads the whole file next
         $previous = libxml_use_internal_errors(true);
-        $root = simplexml_load_file($file);
-        libxml_clear_errors();
-        libxml_use_internal_errors($previous);
+        try {
+            $reader = new \XMLReader();
+            if (!$reader->open($file)) {
+                return true;
+            }
+            while ($reader->read()) {
+                if ($reader->nodeType === \XMLReader::ELEMENT) {
+                    return $reader->name === 'page';
+                }
+            }
 
-        return $root === false || $root->getName() === 'page';
+            return true;
+        } finally {
+            libxml_clear_errors();
+            libxml_use_internal_errors($previous);
+        }
     }
 }

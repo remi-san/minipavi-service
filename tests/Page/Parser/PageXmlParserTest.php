@@ -423,6 +423,11 @@ final class PageXmlParserTest extends TestCase
             '<page type="static"><message name="page.last">x</message><message name="page.last">y</message></page>',
             'name="page.last" is already in the page',
         ];
+        // The first error in the file: the second "page.last", before the unknown message
+        yield 'first message error in the file' => [
+            "<page type=\"static\">\n<message name=\"page.last\">x</message>\n<message name=\"page.last\">y</message>\n<message name=\"zzz\">z</message></page>",
+            'f.xml line 3: <message>: name="page.last" is already in the page',
+        ];
         yield 'message in a loop' => [
             '<page type="template"><foreach items="a" as="b"><message name="page.last">x</message></foreach></page>',
             '<message>: only at the top level of the page',
