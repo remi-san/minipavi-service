@@ -133,7 +133,8 @@ final class Service
 
     /**
      * Context sent with a previous answer (GatewayResponse::$context), typed with the
-     * declarations of this service's controllers (ContextSerializer::unserialize())
+     * declarations of this service's controllers (ContextSerializer::unserialize()): what
+     * ServiceTester checks the route of
      *
      * @throws \RuntimeException if it isn't a JSON object
      */
@@ -151,7 +152,7 @@ final class Service
      *
      * @param list<string> $content
      */
-    public function serve(Context $context, string $key, array $content, Terminal $terminal): GatewayResponse
+    private function serve(Context $context, string $key, array $content, Terminal $terminal): GatewayResponse
     {
         // A route this service doesn't have, e.g. removed in a new version: the input was for
         // a screen that doesn't exist any more
