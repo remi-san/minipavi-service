@@ -68,5 +68,7 @@ final class RequestTest extends TestCase
         self::assertTrue($terminal->isAdapter());
         self::assertFalse($terminal->isTelnetOrPhone());
         self::assertFalse((new Terminal())->isAdapter());
+        // The version kept: without it, not an adapter
+        self::assertFalse((new Terminal('192.0.2.1', 'websocket'))->isAdapter());
     }
 }

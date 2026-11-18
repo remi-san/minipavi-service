@@ -34,7 +34,11 @@ final readonly class Terminal
      */
     public function isAdapter(): bool
     {
-        return $this->typeSocket === self::WEBSOCKET && $this->versionMinitel !== self::UNKNOWN_VERSION;
+        return (
+            $this->typeSocket === self::WEBSOCKET
+            && $this->versionMinitel !== null
+            && $this->versionMinitel !== self::UNKNOWN_VERSION
+        );
     }
 
     /**
