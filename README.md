@@ -231,7 +231,9 @@ KernelBuilder::for($router, $messages)
     object of its `Parameters` class;
   - `functionKey()`: the function key the user pressed, a `FunctionKey` (`Send`, `Next`,
     `Previous`, `Refresh`, `Summary`, `Guide`, `Cancel`, `Correction`), or null for a
-    connection code; `key()` gives the name the gateway sent (`ENVOI`…, or `CNX`, `FIN`…);
+    connection code; `connectionCode()` the `Gateway\ConnectionCode` (`Connect`,
+    `DirectConnect`, `Disconnect`, `BackgroundCall`), or null for a function key; `key()` gives
+    the name the gateway sent (`ENVOI`…, or `CNX`, `FIN`…);
   - `content()`: the text typed, one string per line of the input field, and
     `contentAsString()`;
   - `terminal()`: where the user connects from (`remoteAddr()`, `typeSocket()`,
@@ -439,8 +441,9 @@ KernelBuilder::for($router, $messages)
   routes that don't run: they must not use the controller's properties, so that lazy
   controllers stay unbuilt.
 
-- The `FCTN_*` constants of `GatewayRequest` name the connection codes of `Request::key()`
-  (`CNX`, `DIRECTCNX`, `FIN`, and the start of background calls, `BGCALL-WM-`).
+- `Gateway\ConnectionCode` names the connection codes of `Request::key()` (`CNX`,
+  `DIRECTCNX`, `FIN`, and the start of background calls, `BGCALL-WM-`): `ConnectionCode::of($key)`,
+  or `connectionCode()` on `Request` and `GatewayRequest`.
 
 ## Testing a service
 
