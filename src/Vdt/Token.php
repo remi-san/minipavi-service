@@ -6,6 +6,8 @@ namespace MiniPaviService\Vdt;
 
 /**
  * Part of Videotex content (see TokenType), with the bytes it was read from
+ *
+ * @internal
  */
 final readonly class Token
 {

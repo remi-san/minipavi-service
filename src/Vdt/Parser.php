@@ -7,7 +7,9 @@ namespace MiniPaviService\Vdt;
 use MiniPaviService\Vdt\Screen\Attributes;
 
 /**
- * Cuts Videotex content into Tokens
+ * Cuts Videotex content into Tokens: how Vdt reads it, tested through what it draws
+ *
+ * @internal
  */
 final class Parser
 {
