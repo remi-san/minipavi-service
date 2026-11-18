@@ -59,8 +59,8 @@ final readonly class HtmlClient implements Client
             $content = \is_array($form[self::CONTENT] ?? null) ? $form[self::CONTENT] : [];
             // What the page showed, posted back with the key
             $state = new HtmlPageState(
-                Vdt::fromString((string) base64_decode(self::text($form, self::SCREEN), true)),
-                self::command(json_decode(self::text($form, self::COMMAND), true)),
+                Vdt::fromString((string) base64_decode(self::text($form, self::SCREEN), strict: true)),
+                self::command(json_decode(self::text($form, self::COMMAND), associative: true)),
             );
 
             return new GatewayRequest(
@@ -154,11 +154,11 @@ final readonly class HtmlClient implements Client
             return '';
         }
         $param = $command['param'];
-        $col = self::int($param, 'x', 1);
-        $row = self::int($param, 'y', 1);
+        $col = self::int($param, name: 'x', default: 1);
+        $row = self::int($param, name: 'y', default: 1);
         $multiline = $command['name'] === 'InputMsg';
-        $width = $multiline ? self::int($param, 'w', 1) : self::int($param, 'l', 1);
-        $lines = $multiline ? self::int($param, 'h', 1) : 1;
+        $width = $multiline ? self::int($param, name: 'w', default: 1) : self::int($param, name: 'l', default: 1);
+        $lines = $multiline ? self::int($param, name: 'h', default: 1) : 1;
         $prefill = $param['prefill'] ?? '';
         $prefill = \is_array($prefill) ? array_values($prefill) : [$prefill];
 
@@ -193,7 +193,7 @@ final readonly class HtmlClient implements Client
      */
     private function keys(?array $command): string
     {
-        $validWith = $command === null ? null : self::int($command['param'], 'validwith', 0);
+        $validWith = $command === null ? null : self::int($command['param'], name: 'validwith', default: 0);
         $keys = FunctionKey::cases();
         $buttons = [];
         foreach ($keys as $position => $key) {
@@ -228,7 +228,7 @@ final readonly class HtmlClient implements Client
         $command = \is_array($command) ? $command['COMMAND'] ?? null : null;
         if (
             !\is_array($command)
-            || !\in_array($command['name'] ?? null, ['InputTxt', 'InputMsg'], true)
+            || !\in_array($command['name'] ?? null, ['InputTxt', 'InputMsg'], strict: true)
             || !\is_array($command['param'] ?? null)
         ) {
             return null;

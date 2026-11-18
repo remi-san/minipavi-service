@@ -40,7 +40,7 @@ final readonly class RequestUrl
      */
     public function script(ServerRequestInterface $request): string
     {
-        return $this->requestOrigin($request) . self::server($request, 'PHP_SELF');
+        return $this->requestOrigin($request) . self::server($request, name: 'PHP_SELF');
     }
 
     /**
@@ -48,18 +48,21 @@ final readonly class RequestUrl
      */
     public function current(ServerRequestInterface $request): string
     {
-        return $this->requestOrigin($request) . self::server($request, 'REQUEST_URI');
+        return $this->requestOrigin($request) . self::server($request, name: 'REQUEST_URI');
     }
 
     private function requestOrigin(ServerRequestInterface $request): string
     {
-        return $this->origin ?? $this->scheme($request) . '://' . self::server($request, 'HTTP_HOST');
+        return $this->origin ?? $this->scheme($request) . '://' . self::server($request, name: 'HTTP_HOST');
     }
 
     private function scheme(ServerRequestInterface $request): string
     {
-        $https = strtolower(self::server($request, 'HTTPS'));
-        if (!\in_array($https, ['', '0', 'off'], true) || (int) self::server($request, 'SERVER_PORT') === 443) {
+        $https = strtolower(self::server($request, name: 'HTTPS'));
+        if (
+            !\in_array($https, ['', '0', 'off'], strict: true)
+            || (int) self::server($request, name: 'SERVER_PORT') === 443
+        ) {
             return 'https';
         }
         if ($this->fromTrustedProxy($request) && strtolower($request->getHeaderLine('X-Forwarded-Proto')) === 'https') {
@@ -79,7 +82,7 @@ final readonly class RequestUrl
 
     private function fromTrustedProxy(ServerRequestInterface $request): bool
     {
-        $remote = self::packed(self::server($request, 'REMOTE_ADDR'));
+        $remote = self::packed(self::server($request, name: 'REMOTE_ADDR'));
         if ($remote === null) {
             return false;
         }
@@ -110,8 +113,8 @@ final readonly class RequestUrl
         if (\strlen($remote) !== \strlen($address)) {
             return false;
         }
-        $bytes = intdiv($prefix, 8);
-        if (substr($remote, 0, $bytes) !== substr($address, 0, $bytes)) {
+        $bytes = intdiv($prefix, num2: 8);
+        if (substr($remote, offset: 0, length: $bytes) !== substr($address, offset: 0, length: $bytes)) {
             return false;
         }
         $bits = $prefix % 8;
@@ -129,9 +132,9 @@ final readonly class RequestUrl
         $scheme = strtolower($parts['scheme'] ?? '');
         if (
             $parts === false
-            || !\in_array($scheme, ['http', 'https'], true)
+            || !\in_array($scheme, ['http', 'https'], strict: true)
             || !array_key_exists('host', $parts)
-            || !\in_array($parts['path'] ?? '', ['', '/'], true)
+            || !\in_array($parts['path'] ?? '', ['', '/'], strict: true)
             || array_key_exists('query', $parts)
             || array_key_exists('fragment', $parts)
             || array_key_exists('user', $parts)
@@ -155,7 +158,7 @@ final readonly class RequestUrl
             if ($proxy === '') {
                 continue;
             }
-            $parts = explode('/', $proxy, 2);
+            $parts = explode('/', $proxy, limit: 2);
             $ip = $parts[0];
             $prefix = $parts[1] ?? null;
             $address = self::packed($ip);

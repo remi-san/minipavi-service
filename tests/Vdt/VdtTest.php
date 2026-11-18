@@ -13,6 +13,9 @@ final class VdtTest extends TestCase
 {
     private const FIXTURES = __DIR__ . '/../fixtures/vdt';
 
+    // PHPUnit's assertions take no named arguments: their messages are constants
+    private const GOLDEN_MISSING = 'Run the tests with UPDATE_GOLDEN=1 to write it';
+
     public function testTextEncodesItsAccents(): void
     {
         // é and à are G2: SS2, the accent, the letter
@@ -61,23 +64,23 @@ final class VdtTest extends TestCase
     public function testOffsetMovesTextAndKeepsItsAttributes(): void
     {
         // HELLO on row 1, then four red A (the last three as a repetition) on row 2
-        $moved = Vdt::fromString("\x1F\x41\x41HELLO\x1F\x42\x41\x1B\x41AA\x12\x42")->offset(2, 3);
+        $moved = Vdt::fromString("\x1F\x41\x41HELLO\x1F\x42\x41\x1B\x41AA\x12\x42")->offset(x: 2, y: 3);
 
         // Positioning resets the attributes, so red is sent again after it
         self::assertSame("\x1F\x44\x43HELLO\x1F\x45\x43\x1B\x41A\x12\x43", $moved->toString());
-        self::assertSame("\x41", $moved->screen()->cell(5, 6)?->attributes['fg']);
+        self::assertSame("\x41", $moved->screen()->cell(row: 5, col: 6)?->attributes['fg']);
     }
 
     public function testOffsetDropsWhatGoesOffTheScreenInsteadOfWrapping(): void
     {
-        self::assertSame("\x1F\x41\x41CDE", Vdt::fromString("\x1F\x41\x41ABCDE")->offset(-2, 0)->toString());
-        self::assertSame("\x1F\x41\x66ABC", Vdt::fromString("\x1F\x41\x41ABCDE")->offset(37, 0)->toString());
-        self::assertSame('', Vdt::fromString("\x1F\x41\x41ABC")->offset(0, -1)->toString());
+        self::assertSame("\x1F\x41\x41CDE", Vdt::fromString("\x1F\x41\x41ABCDE")->offset(x: -2, y: 0)->toString());
+        self::assertSame("\x1F\x41\x66ABC", Vdt::fromString("\x1F\x41\x41ABCDE")->offset(x: 37, y: 0)->toString());
+        self::assertSame('', Vdt::fromString("\x1F\x41\x41ABC")->offset(x: 0, y: -1)->toString());
     }
 
     public function testOffsetDoesNotMoveTheStatusRow(): void
     {
-        $moved = Vdt::fromString("\x1F\x40\x41status\x1F\x41\x41X")->offset(1, 1);
+        $moved = Vdt::fromString("\x1F\x40\x41status\x1F\x41\x41X")->offset(x: 1, y: 1);
 
         self::assertSame("\x1F\x40\x41status\x1F\x42\x42X", $moved->toString());
     }
@@ -187,7 +190,7 @@ final class VdtTest extends TestCase
         if (getenv('UPDATE_GOLDEN') === '1') {
             file_put_contents($golden, $vdt);
         }
-        self::assertFileExists($golden, 'Run the tests with UPDATE_GOLDEN=1 to write it');
+        self::assertFileExists($golden, self::GOLDEN_MISSING);
         self::assertSame((string) file_get_contents($golden), $vdt);
     }
 

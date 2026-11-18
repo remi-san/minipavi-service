@@ -38,7 +38,7 @@ final class ServiceTesterTest extends TestCase
             'ext' => Response::connectTo('https://example.org/', VdtHelper::writeLine0('Connexion…')),
             default => Response::display(Vdt::join(
                 VdtHelper::clearScreen(),
-                VdtHelper::setPos(1, 1),
+                VdtHelper::setPos(1, row: 1),
                 Vdt::text('MENU'),
             )),
         }));
@@ -47,7 +47,7 @@ final class ServiceTesterTest extends TestCase
                 ? Response::display(VdtHelper::writeLine0('Dernière page'))
                 : Response::display(Vdt::join(
                     VdtHelper::clearScreen(),
-                    VdtHelper::setPos(1, 2),
+                    VdtHelper::setPos(1, row: 2),
                     Vdt::text('Annuaire'),
                 ))));
         $router->setDefaultRoute('menu');
@@ -69,7 +69,7 @@ final class ServiceTesterTest extends TestCase
             ->assertRoute('directory')
             ->assertScreenContains('Annuaire')
             ->assertScreenNotContains('MENU')
-            ->assertLineContains(2, 'Annuaire');
+            ->assertLineContains(2, text: 'Annuaire');
 
         self::assertSame(['2'], $this->requests[1]->content());
         self::assertEquals(new Terminal('192.0.2.1', 'websocket', 'Cv5'), $this->requests[1]->terminal());
@@ -89,7 +89,7 @@ final class ServiceTesterTest extends TestCase
 
     public function testTypedTextIsOnlyForTheNextKey(): void
     {
-        $this->tester->connect()->type('a', 'b')->press(FunctionKey::Send)->press(FunctionKey::Send);
+        $this->tester->connect()->type(...['a', 'b'])->press(FunctionKey::Send)->press(FunctionKey::Send);
 
         self::assertSame(['a', 'b'], $this->requests[1]->content());
         self::assertSame([], $this->requests[2]->content());
@@ -125,7 +125,7 @@ final class ServiceTesterTest extends TestCase
             $this->tester->connect()->assertScreenContains('Annuaire');
         } catch (AssertionFailedError $e) {
             self::assertStringContainsString("The screen doesn't show \"Annuaire\". Screen:\n", $e->getMessage());
-            self::assertStringContainsString(' 1|MENU' . str_repeat(' ', 36) . '|', $e->getMessage());
+            self::assertStringContainsString(' 1|MENU' . str_repeat(' ', times: 36) . '|', $e->getMessage());
 
             return;
         }

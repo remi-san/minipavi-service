@@ -46,7 +46,7 @@ final class ListController extends PaginatedController
     {
         return match ($request->functionKey()) {
             FunctionKey::Summary => Response::goTo('menu'),
-            FunctionKey::Send => $this->turn($request, 1),
+            FunctionKey::Send => $this->turn($request, by: 1),
             default => $this->stay($paginator),
         };
     }

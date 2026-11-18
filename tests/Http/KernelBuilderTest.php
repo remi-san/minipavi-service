@@ -37,7 +37,7 @@ final class KernelBuilderTest extends TestCase
         $router = new Router();
         $router->addRoute('home', new CallbackController(NoParameters::class, static fn(
             Request $request,
-        ) => Response::display(VdtHelper::setPos(1, 1)->append(Vdt::text('HOME')))));
+        ) => Response::display(VdtHelper::setPos(1, row: 1)->append(Vdt::text('HOME')))));
         $router->setDefaultRoute('home');
         $this->builder = KernelBuilder::for($router, Messages::defaults());
     }
@@ -45,7 +45,7 @@ final class KernelBuilderTest extends TestCase
     #[RunInSeparateProcess]
     public function testBrowsersAskingWebGetTheServiceWithASignedContext(): void
     {
-        $html = self::serve($this->builder->withContextKey('secret'), 'web=true');
+        $html = self::serve($this->builder->withContextKey('secret'), query: 'web=true');
 
         $context = [];
         preg_match('#name="context" value="([^"]*)"#', $html, $context);
@@ -66,7 +66,7 @@ final class KernelBuilderTest extends TestCase
                 'ws://localhost:8182/',
                 'services',
             )),
-            '',
+            query: '',
         );
 
         self::assertSame(302, http_response_code());
@@ -82,7 +82,7 @@ final class KernelBuilderTest extends TestCase
             $this->builder->withHandler(
                 new ConditionalRequestHandler('api', new QueryParameterEquals('web', 'true'), $api),
             ),
-            'web=true',
+            query: 'web=true',
         );
 
         self::assertSame('api', $page);
@@ -92,7 +92,10 @@ final class KernelBuilderTest extends TestCase
     #[RunInSeparateProcess]
     public function testComputesTheUrlsWithTheRequestUrl(): void
     {
-        $html = self::serve($this->builder->withRequestUrl(new RequestUrl('https://minitel.example.org')), 'web=true');
+        $html = self::serve(
+            $this->builder->withRequestUrl(new RequestUrl('https://minitel.example.org')),
+            query: 'web=true',
+        );
 
         self::assertStringContainsString('<title>https://minitel.example.org/Svc/index.php', $html);
     }
@@ -102,7 +105,7 @@ final class KernelBuilderTest extends TestCase
     {
         $logger = new MemoryLogger();
 
-        self::serve($this->builder->withLogger($logger), 'web=true');
+        self::serve($this->builder->withLogger($logger), query: 'web=true');
 
         self::assertSame([LogLevel::WARNING, 'No key signing the context: it is not signed, and can be forged'], [
             $logger->records[0][0],
@@ -117,7 +120,7 @@ final class KernelBuilderTest extends TestCase
     {
         $logger = new MemoryLogger();
 
-        self::serve($this->builder->withLogger($logger)->withContextKey('secret'), 'web=true');
+        self::serve($this->builder->withLogger($logger)->withContextKey('secret'), query: 'web=true');
 
         self::assertSame(
             [],

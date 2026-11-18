@@ -14,9 +14,9 @@ final class FilesTest extends TestCase
 {
     public function testReadsAndWritesAFile(): void
     {
-        $file = (string) tempnam(sys_get_temp_dir(), 'files');
+        $file = (string) tempnam(sys_get_temp_dir(), prefix: 'files');
         try {
-            self::assertTrue(Files::write($file, "\x0C\x1F\x41\x41OK"));
+            self::assertTrue(Files::write($file, content: "\x0C\x1F\x41\x41OK"));
             self::assertSame("\x0C\x1F\x41\x41OK", Files::read($file));
         } finally {
             unlink($file);
@@ -30,7 +30,10 @@ final class FilesTest extends TestCase
 
     public function testWritesNothingInAMissingFolder(): void
     {
-        self::assertFalse(Files::write(sys_get_temp_dir() . '/missing-' . bin2hex(random_bytes(4)) . '/out.vdt', 'x'));
+        self::assertFalse(Files::write(
+            sys_get_temp_dir() . '/missing-' . bin2hex(random_bytes(4)) . '/out.vdt',
+            content: 'x',
+        ));
     }
 
     public function testKeepsTheErrorHandlerOfTheCaller(): void

@@ -27,7 +27,7 @@ final class Parser
             }
             switch ($code) {
                 case 0x19: // SS2: G2 character, possibly an accent followed by its letter
-                    $glyph = substr($vdt, $i, 2);
+                    $glyph = substr($vdt, $i, length: 2);
                     $accent = ord($vdt[$i + 1] ?? "\0");
                     if ($accent >= 0x41 && $accent <= 0x4F && ($i + 2) < \strlen($vdt) && ord($vdt[$i + 2]) >= 0x20) {
                         $glyph .= $vdt[$i + 2];
@@ -41,7 +41,7 @@ final class Parser
                 case 0x12: // REP
                     $tokens[] = new Token(
                         TokenType::Repeat,
-                        substr($vdt, $i, 2),
+                        substr($vdt, $i, length: 2),
                         count: ord($vdt[$i + 1] ?? "\x40") - 0x40,
                     );
                     $i++;
@@ -73,7 +73,7 @@ final class Parser
                     break;
                 case 0x13: // SEP and SS3: one byte follows
                 case 0x1D:
-                    $tokens[] = new Token(TokenType::Raw, substr($vdt, $i, 2), substr($vdt, $i, 2));
+                    $tokens[] = new Token(TokenType::Raw, substr($vdt, $i, length: 2), substr($vdt, $i, length: 2));
                     $i++;
                     break;
                 case 0x1B:
@@ -118,14 +118,14 @@ final class Parser
     {
         $first = $vdt[$i + 1] ?? '';
         if ($first !== '' && ctype_digit($first)) {
-            $digits = substr($vdt, $i + 1, 4);
+            $digits = substr($vdt, $i + 1, length: 4);
 
             return [
                 new Token(
                     TokenType::Position,
                     "\x1F" . $digits,
-                    row: (int) substr($digits, 0, 2),
-                    col: (int) substr($digits, 2, 2),
+                    row: (int) substr($digits, offset: 0, length: 2),
+                    col: (int) substr($digits, offset: 2, length: 2),
                 ),
                 4,
             ];
@@ -134,7 +134,7 @@ final class Parser
         return [
             new Token(
                 TokenType::Position,
-                substr($vdt, $i, 3),
+                substr($vdt, $i, length: 3),
                 row: ord($first) - 0x40,
                 col: ord($vdt[$i + 2] ?? "\x41") - 0x40,
             ),

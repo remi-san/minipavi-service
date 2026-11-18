@@ -27,7 +27,7 @@ final readonly class EndKey implements Element
         public Color $color = Color::Green,
     ) {
         if ($row !== null) {
-            Position::check($row, 1);
+            Position::check($row, col: 1);
         }
     }
 
@@ -55,6 +55,6 @@ final readonly class EndKey implements Element
     // Column of the first cell of something width wide, centered on the row
     private static function centered(int $width): int
     {
-        return max(1, intdiv(Screen::COLS - $width, 2) + 1);
+        return max(1, intdiv(Screen::COLS - $width, num2: 2) + 1);
     }
 }

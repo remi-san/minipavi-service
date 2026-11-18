@@ -88,7 +88,7 @@ final class RouteTest extends TestCase
     {
         $route = (new Route(new SearchController()))->restore('read-query', new Values(['page' => 3]));
 
-        $route->keep(null, null);
+        $route->keep(null, parameters: null);
 
         self::assertSame(SearchState::Init, $route->state());
         self::assertEquals(new PageParameters(), $route->parameters());
@@ -103,7 +103,7 @@ final class RouteTest extends TestCase
             SearchController::class . ' keeps states of ' . SearchState::class . ', not ' . ControllerState::class,
         );
 
-        $route->keep(ControllerState::ReadInput, null);
+        $route->keep(ControllerState::ReadInput, parameters: null);
     }
 
     public function testParametersOfAnotherClassAreRejected(): void

@@ -58,38 +58,45 @@ final class ElementFactory
             'background' => Background::fromFile($this->file($text)),
             'image' => new Image(
                 $this->image(trim($text)),
-                row: $this->int($attributes, 'row', 1),
-                col: $this->int($attributes, 'col', 1),
+                row: $this->int($attributes, attr: 'row', default: 1),
+                col: $this->int($attributes, attr: 'col', default: 1),
             ),
             'text' => new Text(
                 $text,
-                row: $this->int($attributes, 'row', 1),
-                col: $this->int($attributes, 'col', 1),
-                centered: $this->choice($attributes, 'align', ['left' => false, 'center' => true], false),
-                color: $this->color($attributes, 'color') ?? Color::White,
-                bg: $this->color($attributes, 'bg'),
+                row: $this->int($attributes, attr: 'row', default: 1),
+                col: $this->int($attributes, attr: 'col', default: 1),
+                centered: $this->choice(
+                    $attributes,
+                    attr: 'align',
+                    values: ['left' => false, 'center' => true],
+                    default: false,
+                ),
+                color: $this->color($attributes, attr: 'color') ?? Color::White,
+                bg: $this->color($attributes, attr: 'bg'),
                 size: $this->size($attributes),
-                fill: $this->choice($attributes, 'fill', ['yes' => true, 'no' => false], false),
+                fill: $this->choice($attributes, attr: 'fill', values: ['yes' => true, 'no' => false], default: false),
             ),
             'line' => new Line(
-                row: $this->int($attributes, 'row', 1),
-                col: $this->int($attributes, 'col', 1),
-                length: array_key_exists('length', $attributes) ? $this->int($attributes, 'length', 0) : null,
+                row: $this->int($attributes, attr: 'row', default: 1),
+                col: $this->int($attributes, attr: 'col', default: 1),
+                length: array_key_exists('length', $attributes)
+                    ? $this->int($attributes, attr: 'length', default: 0)
+                    : null,
                 char: $this->lineChar($attributes),
-                color: $this->color($attributes, 'color') ?? Color::White,
+                color: $this->color($attributes, attr: 'color') ?? Color::White,
             ),
             'key' => new Key(
                 $text,
-                row: $this->int($attributes, 'row', 1),
-                col: $this->int($attributes, 'col', 1),
-                color: $this->color($attributes, 'color') ?? Color::Green,
-                bg: $this->color($attributes, 'bg'),
+                row: $this->int($attributes, attr: 'row', default: 1),
+                col: $this->int($attributes, attr: 'col', default: 1),
+                color: $this->color($attributes, attr: 'color') ?? Color::Green,
+                bg: $this->color($attributes, attr: 'bg'),
             ),
             'endkey' => new EndKey(
                 $this->messages->get(FrameworkMessage::EndKey),
                 $this->messages->get(FrameworkMessage::EndKeyShift),
-                row: array_key_exists('row', $attributes) ? $this->int($attributes, 'row', 0) : null,
-                color: $this->color($attributes, 'color') ?? Color::Green,
+                row: array_key_exists('row', $attributes) ? $this->int($attributes, attr: 'row', default: 0) : null,
+                color: $this->color($attributes, attr: 'color') ?? Color::Green,
             ),
             default => throw new PageXmlException('unknown element'),
         };
@@ -115,7 +122,10 @@ final class ElementFactory
         if ($path === '') {
             throw new PageXmlException('the file is missing');
         }
-        if (str_starts_with($path, '/') || in_array('..', explode('/', str_replace('\\', '/', $path)), true)) {
+        if (
+            str_starts_with($path, '/')
+            || in_array('..', explode('/', str_replace('\\', replace: '/', subject: $path)), strict: true)
+        ) {
             throw new PageXmlException("{$path}: only files from the page's folder or its subfolders");
         }
         return $this->baseDir . '/' . $path;
@@ -140,10 +150,12 @@ final class ElementFactory
             );
         }
         return new Input(
-            row: $this->int($attributes, 'row', 13),
-            col: $this->int($attributes, 'col', 1),
-            length: array_key_exists('length', $attributes) ? $this->int($attributes, 'length', 0) : null,
-            lines: $this->int($attributes, 'lines', 2),
+            row: $this->int($attributes, attr: 'row', default: 13),
+            col: $this->int($attributes, attr: 'col', default: 1),
+            length: array_key_exists('length', $attributes)
+                ? $this->int($attributes, attr: 'length', default: 0)
+                : null,
+            lines: $this->int($attributes, attr: 'lines', default: 2),
             validWith: $validWith,
         );
     }

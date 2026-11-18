@@ -27,10 +27,10 @@ final class PreviewCommand extends Command
 {
     protected function configure(): void
     {
-        $this->addArgument('page', InputArgument::REQUIRED, 'The page file')->addArgument(
+        $this->addArgument('page', InputArgument::REQUIRED, description: 'The page file')->addArgument(
             'data',
             InputArgument::OPTIONAL,
-            'The variables of a template: a JSON file, with an object',
+            description: 'The variables of a template: a JSON file, with an object',
         );
         MessagesOption::addTo($this);
     }
@@ -40,11 +40,14 @@ final class PreviewCommand extends Command
         try {
             $data = $input->getArgument('data');
             $variables = \is_string($data) ? self::data($data) : [];
-            $page = (new PageXmlParser(MessagesOption::messages($input)))->parseFile(Input::string($input, 'page'));
+            $page = (new PageXmlParser(MessagesOption::messages($input)))->parseFile(Input::string(
+                $input,
+                argument: 'page',
+            ));
             $output->write(
                 $page->display(new Terminal(), $variables)->screen()->preview(),
-                false,
-                OutputInterface::OUTPUT_RAW,
+                newline: false,
+                options: OutputInterface::OUTPUT_RAW,
             );
         } catch (MessagesException|PageXmlException|TemplateException|\UnexpectedValueException $e) {
             (new SymfonyStyle($input, $output))
@@ -71,7 +74,7 @@ final class PreviewCommand extends Command
             throw new \UnexpectedValueException("{$file}: file not found");
         }
         try {
-            $data = json_decode($json, true, 512, JSON_THROW_ON_ERROR);
+            $data = json_decode($json, associative: true, depth: 512, flags: JSON_THROW_ON_ERROR);
         } catch (\JsonException $e) {
             throw new \UnexpectedValueException("{$file}: " . $e->getMessage(), 0, $e);
         }

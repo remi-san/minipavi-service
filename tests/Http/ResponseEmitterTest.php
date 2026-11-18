@@ -33,7 +33,7 @@ final class ResponseEmitterTest extends TestCase
     #[RunInSeparateProcess]
     public function testSendsALongBodyWhole(): void
     {
-        $body = str_repeat('0123456789', 2000);
+        $body = str_repeat('0123456789', times: 2000);
         $response = new Response(200, [], $body);
         // Already read once: sent from its start
         (string) $response->getBody();

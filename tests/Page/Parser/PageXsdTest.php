@@ -113,7 +113,7 @@ final class PageXsdTest extends TestCase
                 continue;
             }
 
-            yield $name => [$xml, !\in_array($name, self::PARSER_ONLY, true)];
+            yield $name => [$xml, !\in_array($name, self::PARSER_ONLY, strict: true)];
         }
         yield 'unknown attribute' => ['<page type="static"><text bold="yes">x</text></page>', true];
         yield 'col 0' => ['<page type="static"><text col="0">x</text></page>', true];
@@ -196,7 +196,7 @@ final class PageXsdTest extends TestCase
         $document = new \DOMDocument();
         self::assertTrue($document->load(self::SCHEMA));
         $xpath = new \DOMXPath($document);
-        $xpath->registerNamespace('xs', 'http://www.w3.org/2001/XMLSchema');
+        $xpath->registerNamespace(prefix: 'xs', namespace: 'http://www.w3.org/2001/XMLSchema');
 
         return $xpath;
     }

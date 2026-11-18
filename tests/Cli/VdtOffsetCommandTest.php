@@ -38,7 +38,7 @@ final class VdtOffsetCommandTest extends TestCase
 
     public function testWritesTheMovedPageToTheOutputFile(): void
     {
-        $output = tempnam(sys_get_temp_dir(), 'vdt');
+        $output = tempnam(sys_get_temp_dir(), prefix: 'vdt');
         self::assertIsString($output);
         try {
             self::assertSame(Command::SUCCESS, $this->tester->execute([

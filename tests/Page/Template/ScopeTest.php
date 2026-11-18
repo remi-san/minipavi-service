@@ -84,7 +84,7 @@ final class ScopeTest extends TestCase
 
     public function testWithAddsVariablesAndChangesTheRowOffset(): void
     {
-        $scope = (new Scope(['a' => 1, 'b' => 2]))->with(['b' => 3], 5);
+        $scope = (new Scope(['a' => 1, 'b' => 2]))->with(['b' => 3], rowOffset: 5);
 
         self::assertSame([1, 3], [$scope->value('a'), $scope->value('b')]);
         self::assertSame(5, $scope->rowOffset);

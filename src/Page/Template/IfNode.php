@@ -33,7 +33,7 @@ final readonly class IfNode implements Node
         // PHP's truthiness, and a collection is true when it has elements
         $true = $value instanceof \Countable
             ? \count($value) > 0
-            : !\in_array($value, [null, false, 0, 0.0, '', '0', []], true);
+            : !\in_array($value, [null, false, 0, 0.0, '', '0', []], strict: true);
         if ($true === $this->negate) {
             return [];
         }

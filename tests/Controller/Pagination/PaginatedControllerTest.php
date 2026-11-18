@@ -48,10 +48,10 @@ final class PaginatedControllerTest extends TestCase
         $this
             ->tester(['a', 'b', 'c', 'd', 'e'])
             ->assertRoute('list')
-            ->assertLineContains(2, 'a')
-            ->assertLineContains(3, 'b')
+            ->assertLineContains(2, text: 'a')
+            ->assertLineContains(3, text: 'b')
             ->assertScreenContains('Page 1/3')
-            ->assertLineContains(22, '1-2 of 5, 2 per page');
+            ->assertLineContains(22, text: '1-2 of 5, 2 per page');
     }
 
     public function testSuiteAndRetourChangePage(): void
@@ -59,15 +59,15 @@ final class PaginatedControllerTest extends TestCase
         $this
             ->tester(['a', 'b', 'c', 'd', 'e'])
             ->press(FunctionKey::Next)
-            ->assertLineContains(2, 'c')
+            ->assertLineContains(2, text: 'c')
             ->assertScreenContains('Page 2/3')
             ->assertScreenNotContains('a ')
             ->press(FunctionKey::Next)
-            ->assertLineContains(2, 'e')
+            ->assertLineContains(2, text: 'e')
             ->assertScreenContains('Page 3/3')
-            ->assertLineContains(22, '5-5 of 5, 2 per page')
+            ->assertLineContains(22, text: '5-5 of 5, 2 per page')
             ->press(FunctionKey::Previous)
-            ->assertLineContains(2, 'c')
+            ->assertLineContains(2, text: 'c')
             ->assertScreenContains('Page 2/3');
     }
 
@@ -90,7 +90,11 @@ final class PaginatedControllerTest extends TestCase
     public function testPageRedefinesTheEndMessages(): void
     {
         $page = (new PageXmlParser(Messages::defaults()))->parse(
-            str_replace('<foreach', '<message name="page.last">Fin de la liste</message><foreach', self::PAGE),
+            str_replace(
+                '<foreach',
+                replace: '<message name="page.last">Fin de la liste</message><foreach',
+                subject: self::PAGE,
+            ),
             __DIR__,
         );
         $this->router->addRoute('list', new ListController($page, ['a', 'b', 'c']));
@@ -112,8 +116,8 @@ final class PaginatedControllerTest extends TestCase
 
         // The whole page again, from a clear screen
         $clear = VdtHelper::clearScreen()->toString();
-        self::assertSame($clear, substr($tester->answer()->vdt->toString(), 0, \strlen($clear)));
-        $tester->assertScreenContains('Page 2/2')->assertLineContains(2, 'c');
+        self::assertSame($clear, substr($tester->answer()->vdt->toString(), offset: 0, length: \strlen($clear)));
+        $tester->assertScreenContains('Page 2/2')->assertLineContains(2, text: 'c');
         self::assertEquals(new PageParameters(1), $tester->context()->parameters());
     }
 

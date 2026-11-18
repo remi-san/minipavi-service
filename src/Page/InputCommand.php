@@ -40,8 +40,8 @@ final readonly class InputCommand
             $validWith,
             $cursor,
             $spaceChar,
-            '',
-            $prefill,
+            char: '',
+            preFill: $prefill,
         ));
     }
 

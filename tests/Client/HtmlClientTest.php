@@ -60,8 +60,13 @@ final class HtmlClientTest extends TestCase
 
     public function testKeyPressedWithWhatWasTyped(): void
     {
-        $screen = VdtHelper::setPos(1, 1)->append(Vdt::text('Menu'));
-        $command = InputCommand::text(1, 2, 4, FunctionKey::masks(FunctionKey::Send))->toArray();
+        $screen = VdtHelper::setPos(1, row: 1)->append(Vdt::text('Menu'));
+        $command = InputCommand::text(
+            1,
+            row: 2,
+            length: 4,
+            validWith: FunctionKey::masks(FunctionKey::Send),
+        )->toArray();
         $form = [
             'key' => 'ENVOI',
             'content' => ['36', '15'],
@@ -100,7 +105,7 @@ final class HtmlClientTest extends TestCase
 
     public function testPageKeepsTheContextAndTheScreen(): void
     {
-        $vdt = VdtHelper::clearScreen()->append(VdtHelper::setPos(1, 1), Vdt::text('Bonjour <3'));
+        $vdt = VdtHelper::clearScreen()->append(VdtHelper::setPos(1, row: 1), Vdt::text('Bonjour <3'));
         $html = self::page(new GatewayResponse($vdt, '{"route":"home"}'));
 
         self::assertStringStartsWith('<!doctype html>', $html);
@@ -120,7 +125,7 @@ final class HtmlClientTest extends TestCase
 
     public function testAnswerIsDrawnOverTheScreenSoFar(): void
     {
-        $before = VdtHelper::clearScreen()->append(VdtHelper::setPos(1, 3), Vdt::text('Page 2/2'));
+        $before = VdtHelper::clearScreen()->append(VdtHelper::setPos(1, row: 3), Vdt::text('Page 2/2'));
 
         $html = self::page(new GatewayResponse(VdtHelper::writeLine0('Dernière page'), '{}'), [
             'key' => 'SUITE',
@@ -133,8 +138,8 @@ final class HtmlClientTest extends TestCase
 
     public function testScreenIsKeptFromItsLastClear(): void
     {
-        $before = VdtHelper::clearScreen()->append(VdtHelper::setPos(1, 3), Vdt::text('Avant'));
-        $answer = VdtHelper::clearScreen()->append(VdtHelper::setPos(1, 3), Vdt::text('Après'));
+        $before = VdtHelper::clearScreen()->append(VdtHelper::setPos(1, row: 3), Vdt::text('Avant'));
+        $answer = VdtHelper::clearScreen()->append(VdtHelper::setPos(1, row: 3), Vdt::text('Après'));
 
         $html = self::page(new GatewayResponse($answer, '{}'), [
             'key' => 'SUITE',
@@ -154,13 +159,21 @@ final class HtmlClientTest extends TestCase
             new GatewayResponse(
                 new Vdt(),
                 '{}',
-                command: InputCommand::text(16, 24, 2, FunctionKey::masks(FunctionKey::Send), prefill: 'ab')->toArray(),
+                command: InputCommand::text(
+                    16,
+                    row: 24,
+                    length: 2,
+                    validWith: FunctionKey::masks(FunctionKey::Send),
+                    prefill: 'ab',
+                )->toArray(),
             ),
         );
 
-        self::assertSame(1, substr_count($html, 'class="field"'));
+        self::assertSame(1, substr_count($html, needle: 'class="field"'));
         self::assertStringContainsString(
-            'name="content[]" maxlength="2" value="ab" style="' . HtmlRenderer::at(16, 24, 2) . '" autofocus',
+            'name="content[]" maxlength="2" value="ab" style="'
+            . HtmlRenderer::at(16, row: 24, length: 2)
+            . '" autofocus',
             $html,
         );
     }
@@ -173,17 +186,17 @@ final class HtmlClientTest extends TestCase
                 '{}',
                 command: InputCommand::message(
                     1,
-                    13,
-                    40,
-                    2,
-                    FunctionKey::masks(FunctionKey::Send),
+                    row: 13,
+                    width: 40,
+                    height: 2,
+                    validWith: FunctionKey::masks(FunctionKey::Send),
                     prefill: ['l1', 'l2'],
                 )->toArray(),
             ),
         );
 
-        self::assertStringContainsString('value="l1" style="' . HtmlRenderer::at(1, 13, 40) . '"', $html);
-        self::assertStringContainsString('value="l2" style="' . HtmlRenderer::at(1, 14, 40) . '"', $html);
+        self::assertStringContainsString('value="l1" style="' . HtmlRenderer::at(1, row: 13, length: 40) . '"', $html);
+        self::assertStringContainsString('value="l2" style="' . HtmlRenderer::at(1, row: 14, length: 40) . '"', $html);
     }
 
     public function testKeysTheInputDoesntAcceptAreDisabled(): void
@@ -194,15 +207,15 @@ final class HtmlClientTest extends TestCase
                 '{}',
                 command: InputCommand::text(
                     1,
-                    1,
-                    1,
-                    FunctionKey::masks(FunctionKey::Send, FunctionKey::Next),
+                    row: 1,
+                    length: 1,
+                    validWith: FunctionKey::masks(FunctionKey::Send, FunctionKey::Next),
                 )->toArray(),
             ),
         );
 
-        self::assertSame(8, substr_count($html, 'name="key"'));
-        self::assertSame(6, substr_count($html, ' disabled>'));
+        self::assertSame(8, substr_count($html, needle: 'name="key"'));
+        self::assertSame(6, substr_count($html, needle: ' disabled>'));
         self::assertMatchesRegularExpression('#value="SUITE" style="order: \d+">Suite</button>#', $html);
         // Envoi first: the key Enter presses in a field
         self::assertMatchesRegularExpression(
@@ -215,7 +228,7 @@ final class HtmlClientTest extends TestCase
     {
         $html = self::page(new GatewayResponse(new Vdt(), '{}'));
 
-        self::assertSame(8, substr_count($html, 'name="key"'));
+        self::assertSame(8, substr_count($html, needle: 'name="key"'));
         self::assertStringNotContainsString(' disabled>', $html);
         self::assertStringNotContainsString('class="field"', $html);
     }
@@ -232,12 +245,17 @@ final class HtmlClientTest extends TestCase
     public function testLeavingTheServiceIsBlocked(): void
     {
         // The page the key is pressed on: its hidden values, posted back as they are
-        $before = VdtHelper::clearScreen()->append(VdtHelper::setPos(1, 3), Vdt::text('Annuaire'));
+        $before = VdtHelper::clearScreen()->append(VdtHelper::setPos(1, row: 3), Vdt::text('Annuaire'));
         $page = self::page(
             new GatewayResponse(
                 $before,
                 '{"route":"directory"}',
-                command: InputCommand::text(7, 23, 23, FunctionKey::masks(FunctionKey::Send))->toArray(),
+                command: InputCommand::text(
+                    7,
+                    row: 23,
+                    length: 23,
+                    validWith: FunctionKey::masks(FunctionKey::Send),
+                )->toArray(),
             ),
         );
         $form = ['key' => 'ENVOI'] + self::hiddenValues($page);
@@ -253,14 +271,14 @@ final class HtmlClientTest extends TestCase
         self::assertStringNotContainsString('Cnx en cours', $shown);
         // Where the user was: their context and their input
         self::assertStringContainsString('name="context" value="{&quot;route&quot;:&quot;directory&quot;}"', $html);
-        self::assertStringContainsString('style="' . HtmlRenderer::at(7, 23, 23) . '"', $html);
-        self::assertSame(7, substr_count($html, ' disabled>'));
+        self::assertStringContainsString('style="' . HtmlRenderer::at(7, row: 23, length: 23) . '"', $html);
+        self::assertSame(7, substr_count($html, needle: ' disabled>'));
     }
 
     public function testNextUrlOfTheServiceIsntLeaving(): void
     {
         $html = self::page(
-            new GatewayResponse(VdtHelper::setPos(1, 1)->append(Vdt::text('Ici')), '{}', self::SERVICE_URL),
+            new GatewayResponse(VdtHelper::setPos(1, row: 1)->append(Vdt::text('Ici')), '{}', self::SERVICE_URL),
         );
 
         self::assertStringContainsString('Ici', self::shownText($html));
@@ -277,11 +295,11 @@ final class HtmlClientTest extends TestCase
             Request $request,
         ) => $request->functionKey() === FunctionKey::Send
             ? Response::goTo('games')
-            : Response::display(VdtHelper::clearScreen()->append(VdtHelper::setPos(1, 1), Vdt::text('HOME')))));
+            : Response::display(VdtHelper::clearScreen()->append(VdtHelper::setPos(1, row: 1), Vdt::text('HOME')))));
         $router->addRoute('games', new CallbackController(NoParameters::class, static fn(
             Request $request,
         ) => Response::display(VdtHelper::clearScreen()->append(
-            VdtHelper::setPos(1, 1),
+            VdtHelper::setPos(1, row: 1),
             Vdt::text('GAMES ' . $request->contentAsString()),
         ))));
         $router->setDefaultRoute('home');
@@ -362,8 +380,8 @@ final class HtmlClientTest extends TestCase
     {
         $html = (string) preg_replace(
             ['#<style>.*</style>#s', '#<input[^>]*>#', '#<div class="keys">.*</div>#s'],
-            '',
-            $html,
+            replacement: '',
+            subject: $html,
         );
 
         return html_entity_decode(strip_tags($html));

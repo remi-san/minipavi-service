@@ -102,7 +102,7 @@ final class MessagesTest extends TestCase
         $this->expectException(MessagesException::class);
         $this->expectExceptionMessage($message);
 
-        (new MessagesXmlParser())->parse($xml, new Messages(), 'm.xml');
+        (new MessagesXmlParser())->parse($xml, new Messages(), name: 'm.xml');
     }
 
     public function testMissingFileIsNamed(): void

@@ -38,7 +38,7 @@ final readonly class ForeachNode implements Node
                 "{$this->location}: <foreach>: {{{$this->items}}} is not a list (" . get_debug_type($items) . ')',
             );
         }
-        $items = is_array($items) ? array_values($items) : iterator_to_array($items, false);
+        $items = is_array($items) ? array_values($items) : iterator_to_array($items, preserve_keys: false);
 
         $start = ($scope->rowOffset ?? 0) + $this->row;
         $count = count($items);

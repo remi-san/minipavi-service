@@ -168,7 +168,7 @@ final readonly class Vdt
                         // are written as spaces instead
                         if ($x < 0) {
                             for ($col = max(1, $cursor->col + $x); $col <= (Screen::COLS + $x); $col++) {
-                                $out->glyph($row, $col, ' ', 1, $cursor->attributes);
+                                $out->glyph($row, $col, bytes: ' ', width: 1, attributes: $cursor->attributes);
                             }
                             break;
                         }
@@ -239,7 +239,7 @@ final readonly class Vdt
                     break;
                 case TokenType::Home:
                 case TokenType::Clear:
-                    $cursor->reset(1, 1);
+                    $cursor->reset(1, col: 1);
                     break;
             }
             if ($other !== null) {

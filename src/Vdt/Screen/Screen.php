@@ -26,7 +26,7 @@ final readonly class Screen
 
     public static function of(Vdt $vdt): self
     {
-        $cells = array_fill(0, self::ROWS + 1, array_fill(1, self::COLS, null));
+        $cells = array_fill(0, self::ROWS + 1, array_fill(1, self::COLS, value: null));
         $vdt->play(
             /** @param array<string, string> $attributes see Attributes */
             static function (int $row, int $col, string $bytes, int $width, array $attributes) use (&$cells): void {
@@ -39,7 +39,7 @@ final readonly class Screen
             static function (Token $token, Cursor $cursor) use (&$cells): void {
                 if ($token->type === TokenType::Clear) {
                     for ($row = 1; $row <= self::ROWS; $row++) {
-                        $cells[$row] = array_fill(1, self::COLS, null);
+                        $cells[$row] = array_fill(1, self::COLS, value: null);
                     }
                 }
                 if ($token->type === TokenType::ClearLine && $cursor->row >= 0 && $cursor->row <= self::ROWS) {

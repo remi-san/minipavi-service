@@ -50,9 +50,9 @@ final class PreviewCommandTest extends TestCase
     {
         $this->write(
             'list.xml',
-            '<page type="template"><foreach items="games" as="game" row="3"><text>{{game.name}}</text></foreach></page>',
+            content: '<page type="template"><foreach items="games" as="game" row="3"><text>{{game.name}}</text></foreach></page>',
         );
-        $this->write('data.json', '{"games": [{"name": "Alien Wipeout"}, {"name": "Twin Pine Falls"}]}');
+        $this->write('data.json', content: '{"games": [{"name": "Alien Wipeout"}, {"name": "Twin Pine Falls"}]}');
 
         self::assertSame(Command::SUCCESS, $this->preview([$this->dir . '/list.xml', $this->dir . '/data.json']));
         $rows = explode("\n", $this->tester->getDisplay());
@@ -64,8 +64,11 @@ final class PreviewCommandTest extends TestCase
 
     public function testReadsThePageWithTheMessagesOfTheService(): void
     {
-        $this->write('messages.xml', '<messages><message name="greeting">Hello</message></messages>');
-        $this->write('page.xml', '<page type="static"><message name="greeting">Hi</message><text>x</text></page>');
+        $this->write('messages.xml', content: '<messages><message name="greeting">Hello</message></messages>');
+        $this->write(
+            'page.xml',
+            content: '<page type="static"><message name="greeting">Hi</message><text>x</text></page>',
+        );
 
         self::assertSame(Command::SUCCESS, $this->preview([
             '--messages',
@@ -125,7 +128,7 @@ final class PreviewCommandTest extends TestCase
         $input = [];
         if (($arguments[0] ?? '') === '--messages') {
             $input['--messages'] = $arguments[1] ?? '';
-            $arguments = \array_slice($arguments, 2);
+            $arguments = \array_slice($arguments, offset: 2);
         }
         foreach (['page', 'data'] as $i => $name) {
             if (!array_key_exists($i, $arguments)) {

@@ -115,7 +115,7 @@ final readonly class HtmlRenderer
      */
     public static function escape(string $text): string
     {
-        return htmlspecialchars($text, ENT_QUOTES | ENT_SUBSTITUTE | ENT_HTML5, 'UTF-8');
+        return htmlspecialchars($text, ENT_QUOTES | ENT_SUBSTITUTE | ENT_HTML5, encoding: 'UTF-8');
     }
 
     private function cell(?Cell $cell, int $row): string
@@ -126,8 +126,8 @@ final readonly class HtmlRenderer
         }
 
         $attributes = $cell->attributes;
-        $foreground = self::color($attributes['fg'], 0x40);
-        $background = self::color($attributes['bg'], 0x50);
+        $foreground = self::color($attributes['fg'], base: 0x40);
+        $background = self::color($attributes['bg'], base: 0x50);
         $mosaic = $attributes['charset'] === Attributes::MOSAIC;
         $inverse = !$mosaic && $attributes['inverse'] === "\x5D";
         if ($inverse) {
@@ -136,7 +136,7 @@ final readonly class HtmlRenderer
         if (Attributes::width($attributes) === 2) {
             $classes[] = 'w2';
         }
-        if (\in_array($attributes['size'], ["\x4D", "\x4F"], true)) {
+        if (\in_array($attributes['size'], ["\x4D", "\x4F"], strict: true)) {
             $classes[] = 'h2';
         }
         if ($attributes['blink'] === "\x48") {

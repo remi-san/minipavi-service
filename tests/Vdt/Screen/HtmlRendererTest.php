@@ -18,19 +18,19 @@ final class HtmlRendererTest extends TestCase
 {
     public function testDrawsEveryCellOfEveryRowInAPage(): void
     {
-        $html = (new HtmlRenderer(HtmlRenderer::MINITEL_FONT))->render((new Vdt())->screen(), 'Service <test>');
+        $html = (new HtmlRenderer(HtmlRenderer::MINITEL_FONT))->render((new Vdt())->screen(), title: 'Service <test>');
 
         self::assertStringStartsWith('<!doctype html>', $html);
         self::assertStringContainsString('<title>Service &lt;test&gt;</title>', $html);
-        self::assertSame((Screen::ROWS + 1) * Screen::COLS, substr_count($html, '<span class="c'));
+        self::assertSame((Screen::ROWS + 1) * Screen::COLS, substr_count($html, needle: '<span class="c'));
         // Row 0, the status line, is set apart
-        self::assertSame(Screen::COLS, substr_count($html, 'class="c status"'));
+        self::assertSame(Screen::COLS, substr_count($html, needle: 'class="c status"'));
         self::assertStringNotContainsString('<script', $html);
     }
 
     public function testEmbedsTheMinitelFont(): void
     {
-        $html = (new HtmlRenderer(HtmlRenderer::MINITEL_FONT))->render((new Vdt())->screen(), 'test');
+        $html = (new HtmlRenderer(HtmlRenderer::MINITEL_FONT))->render((new Vdt())->screen(), title: 'test');
 
         self::assertStringContainsString(
             '@font-face { font-family: Minitel; src: url(data:font/ttf;base64,'
@@ -46,12 +46,12 @@ final class HtmlRendererTest extends TestCase
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('Font file not found: /missing.ttf');
 
-        (new HtmlRenderer('/missing.ttf'))->render((new Vdt())->screen(), 'test');
+        (new HtmlRenderer('/missing.ttf'))->render((new Vdt())->screen(), title: 'test');
     }
 
     public function testDrawsTextInItsColoursWithItsAccents(): void
     {
-        $html = $this->render(Vdt::join(VdtHelper::setPos(1, 1), new Vdt("\x1B\x41"), Vdt::text('é<')));
+        $html = $this->render(Vdt::join(VdtHelper::setPos(1, row: 1), new Vdt("\x1B\x41"), Vdt::text('é<')));
 
         self::assertStringContainsString('style="color:#ff0000;background:#000000">é</span>', $html);
         self::assertStringContainsString('>&lt;</span>', $html);
@@ -67,11 +67,11 @@ final class HtmlRendererTest extends TestCase
 
     public function testDoubleWidthTakesTwoColumns(): void
     {
-        $html = $this->render(Vdt::join(VdtHelper::setPos(1, 1), new Vdt("\x1B\x4E"), Vdt::text('W')));
+        $html = $this->render(Vdt::join(VdtHelper::setPos(1, row: 1), new Vdt("\x1B\x4E"), Vdt::text('W')));
 
         self::assertStringContainsString('class="c w2"', $html);
         // The character's second column is not drawn again
-        self::assertSame(((Screen::ROWS + 1) * Screen::COLS) - 1, substr_count($html, '<span class="c'));
+        self::assertSame(((Screen::ROWS + 1) * Screen::COLS) - 1, substr_count($html, needle: '<span class="c'));
     }
 
     public function testDoubleHeightBlinkAndUnderline(): void
@@ -96,7 +96,7 @@ final class HtmlRendererTest extends TestCase
     {
         $html = (new HtmlRenderer(HtmlRenderer::MINITEL_FONT))->render(
             (new Vdt((new Key('Envoi', 1, 1))->getContent(new Terminal())))->screen(),
-            'test',
+            title: 'test',
         );
 
         self::assertStringContainsString('>E</span>', $html);
@@ -119,7 +119,7 @@ final class HtmlRendererTest extends TestCase
             '<span class="m"><i class="on"></i><i></i><i></i><i></i><i></i><i></i></span>',
             $this->renderCell(new Cell("\x21", $mosaic)),
         );
-        self::assertSame(6, substr_count($this->renderCell(new Cell("\x7F", $mosaic)), '<i class="on">'));
+        self::assertSame(6, substr_count($this->renderCell(new Cell("\x7F", $mosaic)), needle: '<i class="on">'));
         // 0x40 to 0x5F too: 0x4A is the right column
         self::assertStringContainsString(
             '<span class="m"><i></i><i class="on"></i><i></i><i class="on"></i><i></i><i class="on"></i></span>',
@@ -143,7 +143,7 @@ final class HtmlRendererTest extends TestCase
 
     private function render(Vdt $vdt): string
     {
-        return (new HtmlRenderer(HtmlRenderer::MINITEL_FONT))->render($vdt->screen(), 'test');
+        return (new HtmlRenderer(HtmlRenderer::MINITEL_FONT))->render($vdt->screen(), title: 'test');
     }
 
     /**
@@ -151,9 +151,9 @@ final class HtmlRendererTest extends TestCase
      */
     private function renderCell(Cell $cell): string
     {
-        $cells = array_fill(0, Screen::ROWS + 1, array_fill(1, Screen::COLS, null));
+        $cells = array_fill(0, Screen::ROWS + 1, array_fill(1, Screen::COLS, value: null));
         $cells[1][1] = $cell;
 
-        return (new HtmlRenderer(HtmlRenderer::MINITEL_FONT))->render(new Screen($cells), 'test');
+        return (new HtmlRenderer(HtmlRenderer::MINITEL_FONT))->render(new Screen($cells), title: 'test');
     }
 }

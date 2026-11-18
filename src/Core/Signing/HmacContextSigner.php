@@ -37,7 +37,7 @@ final readonly class HmacContextSigner implements ContextSigner
 
     public function verify(string $signed): string
     {
-        $parts = explode(self::SEPARATOR, $signed, 2);
+        $parts = explode(self::SEPARATOR, $signed, limit: 2);
         if (\count($parts) !== 2) {
             throw new ForgedContextException('Context without signature');
         }
@@ -51,6 +51,9 @@ final readonly class HmacContextSigner implements ContextSigner
 
     private function signature(string $context): string
     {
-        return rtrim(strtr(base64_encode(hash_hmac(self::ALGORITHM, $context, $this->key, true)), '+/', '-_'), '=');
+        return rtrim(
+            strtr(base64_encode(hash_hmac(self::ALGORITHM, $context, $this->key, binary: true)), from: '+/', to: '-_'),
+            characters: '=',
+        );
     }
 }

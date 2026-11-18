@@ -91,7 +91,7 @@ final class ContextTest extends TestCase
     {
         $context = new Context($this->router, 'search');
         $context->keep(SearchState::ReadQuery, new PageParameters(2));
-        $context->keep(null, null);
+        $context->keep(null, parameters: null);
 
         self::assertSame(SearchState::Init, $context->state());
         self::assertEquals(new PageParameters(), $context->parameters());
@@ -104,7 +104,7 @@ final class ContextTest extends TestCase
         $this->expectException(\LogicException::class);
         $this->expectExceptionMessage('keeps states of ' . SearchState::class . ', not ' . ControllerState::class);
 
-        $context->keep(ControllerState::ReadInput, null);
+        $context->keep(ControllerState::ReadInput, parameters: null);
     }
 
     public function testSurvivesSerializationTyped(): void

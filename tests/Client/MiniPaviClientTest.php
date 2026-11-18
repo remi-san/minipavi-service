@@ -141,7 +141,7 @@ final class MiniPaviClientTest extends TestCase
         self::assertSame('', $output);
         self::assertSame(200, $response->getStatusCode());
         $body = (string) $response->getBody();
-        $sent = json_decode($body, true);
+        $sent = json_decode($body, associative: true);
 
         return \is_array($sent) ? $sent : self::fail("Not an answer: {$body}");
     }

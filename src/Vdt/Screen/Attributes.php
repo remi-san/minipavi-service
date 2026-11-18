@@ -51,7 +51,7 @@ final class Attributes
      */
     public static function width(array $attributes): int
     {
-        $doubleWidth = in_array($attributes['size'], ["\x4E", "\x4F"], true);
+        $doubleWidth = in_array($attributes['size'], ["\x4E", "\x4F"], strict: true);
         return $doubleWidth && $attributes['charset'] === self::TEXT ? 2 : 1;
     }
 }

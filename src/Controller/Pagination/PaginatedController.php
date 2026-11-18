@@ -84,7 +84,7 @@ abstract class PaginatedController extends AbstractController
     final protected function onReadInput(Request $request): Response
     {
         return match ($request->functionKey()) {
-            FunctionKey::Next => $this->turn($request, 1),
+            FunctionKey::Next => $this->turn($request, by: 1),
             FunctionKey::Previous => $this->turn($request, -1),
             FunctionKey::Refresh => $this->display($request, $this->paginatorOf($request)),
             default => $this->onOtherKey($request, $this->paginatorOf($request)),

@@ -179,7 +179,7 @@ final class ServiceTest extends TestCase
     {
         self::assertSame(
             VdtHelper::writeLine0('Oops')->toString(),
-            $this->contentOf($this->handle(new GatewayRequest('ENVOI', [], 'not a context'), 'Oops')),
+            $this->contentOf($this->handle(new GatewayRequest('ENVOI', [], 'not a context'), errorMessage: 'Oops')),
         );
     }
 
@@ -200,7 +200,7 @@ final class ServiceTest extends TestCase
             'Too many page changes in one request (more than 10): ping → pong → ping → pong → ping → pong → ping → pong → ping → pong → ping → pong',
         );
 
-        $this->serve($context, 'ENVOI', []);
+        $this->serve($context, key: 'ENVOI', content: []);
     }
 
     public function testEndlessPageChangesAreAnsweredAsAnError(): void
@@ -221,7 +221,7 @@ final class ServiceTest extends TestCase
             '{"route":"menu","states":{"directory":"read-input","menu":"read-input"},"parameters":{"directory":{"page":5}}}',
         );
 
-        $answer = $this->serve($context, 'ENVOI', ['1']);
+        $answer = $this->serve($context, key: 'ENVOI', content: ['1']);
 
         self::assertSame('directory', $answer);
         $directory = $this->requests['directory'][0];
@@ -236,7 +236,7 @@ final class ServiceTest extends TestCase
     {
         $context = $this->context('{"route":"menu","states":{"menu":"read-input"},"parameters":{}}');
 
-        $this->serve($context, 'ENVOI', ['1']);
+        $this->serve($context, key: 'ENVOI', content: ['1']);
 
         self::assertSame('directory', $context->route());
         self::assertSame(ControllerState::ReadInput, $context->state());
@@ -253,7 +253,7 @@ final class ServiceTest extends TestCase
             '{"route":"removed","states":{"removed":"read-input","directory":"read-input"},"parameters":{"directory":{"page":5}}}',
         );
 
-        $answer = $this->serve($context, 'ENVOI', ['1']);
+        $answer = $this->serve($context, key: 'ENVOI', content: ['1']);
 
         self::assertSame('menu', $answer);
         $menu = $this->requests['menu'][0];
@@ -306,7 +306,7 @@ final class ServiceTest extends TestCase
     public function testReadInputWithoutCommandOnlySendsTheContent(): void
     {
         // Page::inputCommand() gives null for a page without <input>
-        $answer = $this->answerTo(Response::readInput(new Vdt('Hello'), null));
+        $answer = $this->answerTo(Response::readInput(new Vdt('Hello'), command: null));
 
         self::assertSame('Hello', $answer->vdt->toString());
         self::assertNull($answer->command);
@@ -357,7 +357,7 @@ final class ServiceTest extends TestCase
     {
         $context = $this->context('{"route":"directory","states":{"directory":"read-input"},"parameters":{}}');
 
-        self::assertSame('code 3615', $this->serve($context, 'ENVOI', ['36', '15']));
+        self::assertSame('code 3615', $this->serve($context, key: 'ENVOI', content: ['36', '15']));
     }
 
     /**
@@ -404,9 +404,9 @@ final class ServiceTest extends TestCase
 
         return (new Service($this->router, Messages::defaults(), $this->logger))->serve(
             new Context($this->router, 'answer'),
-            'ENVOI',
-            [],
-            new Terminal(),
+            key: 'ENVOI',
+            content: [],
+            terminal: new Terminal(),
         );
     }
 

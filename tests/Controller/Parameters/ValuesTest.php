@@ -39,7 +39,7 @@ final class ValuesTest extends TestCase
     #[DataProvider('intValues')]
     public function testIntCoercesOrFallsBackToTheDefault(mixed $value, int $expected): void
     {
-        self::assertSame($expected, (new Values(['page' => $value]))->int('page', 7));
+        self::assertSame($expected, (new Values(['page' => $value]))->int('page', default: 7));
     }
 
     public function testIntDefaultsToZero(): void
@@ -64,7 +64,7 @@ final class ValuesTest extends TestCase
     #[DataProvider('stringValues')]
     public function testStringCoercesOrFallsBackToTheDefault(mixed $value, string $expected): void
     {
-        self::assertSame($expected, (new Values(['query' => $value]))->string('query', 'default'));
+        self::assertSame($expected, (new Values(['query' => $value]))->string('query', default: 'default'));
         self::assertSame($expected === 'default' ? '' : $expected, (new Values(['query' => $value]))->string('query'));
     }
 
@@ -95,7 +95,7 @@ final class ValuesTest extends TestCase
     {
         $values = new Values(['logged' => $value]);
 
-        self::assertSame($expected ?? true, $values->bool('logged', true));
+        self::assertSame($expected ?? true, $values->bool('logged', default: true));
         self::assertSame($expected ?? false, $values->bool('logged'));
     }
 

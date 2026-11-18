@@ -69,6 +69,6 @@ final readonly class Text implements Element
     {
         $width = mb_strlen($this->text) * $charWidth;
 
-        return $width >= Screen::COLS ? 1 : intdiv(Screen::COLS - $width, 2) + 1;
+        return $width >= Screen::COLS ? 1 : intdiv(Screen::COLS - $width, num2: 2) + 1;
     }
 }

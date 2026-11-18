@@ -65,7 +65,10 @@ final class PageXmlParserTest extends TestCase
         $before = "\x1F\x45\x41previous screen";
         $vdt = $this->parse('<page type="static"><text row="1">x</text></page>')->display(new Terminal());
 
-        self::assertSame([' 1|x' . str_repeat(' ', 39) . '|'], $this->drawnRows((new Vdt($before))->append($vdt)));
+        self::assertSame(
+            [' 1|x' . str_repeat(' ', times: 39) . '|'],
+            $this->drawnRows((new Vdt($before))->append($vdt)),
+        );
     }
 
     public function testDisplaySetsUpTheMinitelFirst(): void
@@ -94,8 +97,8 @@ final class PageXmlParserTest extends TestCase
         $clear = VdtHelper::clearScreen()->toString();
         self::assertSame($clear, substr(
             $this->parse('<page type="static"/>')->display(new Terminal())->toString(),
-            0,
-            \strlen($clear),
+            offset: 0,
+            length: \strlen($clear),
         ));
         // Only what is given
         self::assertStringStartsWith(
@@ -138,7 +141,7 @@ final class PageXmlParserTest extends TestCase
         $page = $this->parse('<page type="static"><text row="1" align="center">Jeux</text></page>');
 
         self::assertSame(
-            [' 1|' . str_repeat(' ', 18) . 'Jeux' . str_repeat(' ', 18) . '|'],
+            [' 1|' . str_repeat(' ', times: 18) . 'Jeux' . str_repeat(' ', times: 18) . '|'],
             $this->drawnRows($page->display(new Terminal())),
         );
     }
@@ -228,7 +231,7 @@ final class PageXmlParserTest extends TestCase
 
     public function testTemplateErrorsGiveTheLine(): void
     {
-        $page = $this->parse("<page type=\"template\">\n<text row=\"{{row}}\">x</text></page>", 'list.xml');
+        $page = $this->parse("<page type=\"template\">\n<text row=\"{{row}}\">x</text></page>", name: 'list.xml');
 
         $this->expectException(TemplateException::class);
         $this->expectExceptionMessage('list.xml line 2: <text>: Row 30 is off the screen (0 to 24)');
@@ -298,7 +301,7 @@ final class PageXmlParserTest extends TestCase
         $this->parser->parse(
             "<page type=\"static\">\n<image>images/missing.vdt</image></page>",
             self::FIXTURES,
-            'f.xml',
+            name: 'f.xml',
         );
     }
 
@@ -334,7 +337,7 @@ final class PageXmlParserTest extends TestCase
         $this->expectException(PageXmlException::class);
         $this->expectExceptionMessage($error);
 
-        $this->parser->parse($xml, self::FIXTURES, 'f.xml');
+        $this->parser->parse($xml, self::FIXTURES, name: 'f.xml');
     }
 
     public function testTemplateRowInAForeachIsCheckedWhenDisplayed(): void
@@ -343,7 +346,7 @@ final class PageXmlParserTest extends TestCase
         $page = $this->parser->parse(
             '<page type="template"><foreach items="xs" as="x" row="5"><image row="0">images/logo.vdt</image></foreach></page>',
             self::FIXTURES,
-            'f.xml',
+            name: 'f.xml',
         );
 
         self::assertSame(
@@ -463,7 +466,7 @@ final class PageXmlParserTest extends TestCase
         $this->expectException(PageXmlException::class);
         $this->expectExceptionMessage($message);
 
-        $this->parser->parse($xml, self::FIXTURES, 'f.xml');
+        $this->parser->parse($xml, self::FIXTURES, name: 'f.xml');
     }
 
     public function testTemplateFileOutsideTheFolderIsRefusedAtDisplay(): void
@@ -488,8 +491,11 @@ final class PageXmlParserTest extends TestCase
      */
     private function drawnRows(Vdt $vdt): array
     {
-        $rows = explode("\n", rtrim($vdt->screen()->preview(), "\n"));
+        $rows = explode("\n", rtrim($vdt->screen()->preview(), characters: "\n"));
 
-        return array_values(array_filter($rows, static fn(string $row) => trim(substr($row, 3), ' |') !== ''));
+        return array_values(array_filter(
+            $rows,
+            static fn(string $row) => trim(substr($row, offset: 3), characters: ' |') !== '',
+        ));
     }
 }

@@ -19,7 +19,7 @@ final class LintCommandTest extends TestCase
     protected function setUp(): void
     {
         $this->dir = sys_get_temp_dir() . '/minipavi-lint-' . bin2hex(random_bytes(4));
-        mkdir($this->dir . '/pages/sub', 0o777, true);
+        mkdir($this->dir . '/pages/sub', permissions: 0o777, recursive: true);
         $this->tester = new CommandTester(new LintCommand());
     }
 
@@ -41,11 +41,11 @@ final class LintCommandTest extends TestCase
 
     public function testChecksThePagesOfAFolderAndItsSubfolders(): void
     {
-        $this->write('pages/home.xml', '<page type="static"><text>Home</text></page>');
-        $this->write('pages/sub/list.xml', '<page type="template"><text>{{title}}</text></page>');
+        $this->write('pages/home.xml', content: '<page type="static"><text>Home</text></page>');
+        $this->write('pages/sub/list.xml', content: '<page type="template"><text>{{title}}</text></page>');
         // Not pages: skipped
-        $this->write('pages/messages.xml', '<messages><message name="x">X</message></messages>');
-        $this->write('pages/notes.txt', 'not XML');
+        $this->write('pages/messages.xml', content: '<messages><message name="x">X</message></messages>');
+        $this->write('pages/notes.txt', content: 'not XML');
 
         self::assertSame(Command::SUCCESS, $this->lint([$this->dir . '/pages']));
         self::assertSame("2 pages checked, 0 errors\n", $this->tester->getDisplay());
@@ -54,9 +54,9 @@ final class LintCommandTest extends TestCase
 
     public function testFailsWithTheErrorsOfThePages(): void
     {
-        $this->write('pages/home.xml', '<page type="static"><text>Home</text></page>');
-        $this->write('pages/image.xml', "<page type=\"template\">\n<image>missing.vdt</image></page>");
-        $this->write('pages/broken.xml', "<page type=\"static\">\n<text>");
+        $this->write('pages/home.xml', content: '<page type="static"><text>Home</text></page>');
+        $this->write('pages/image.xml', content: "<page type=\"template\">\n<image>missing.vdt</image></page>");
+        $this->write('pages/broken.xml', content: "<page type=\"static\">\n<text>");
 
         self::assertSame(Command::FAILURE, $this->lint([$this->dir . '/pages']));
         self::assertSame("3 pages checked, 2 errors\n", $this->tester->getDisplay());
@@ -71,8 +71,8 @@ final class LintCommandTest extends TestCase
 
     public function testReadsThePagesWithTheMessagesOfTheService(): void
     {
-        $this->write('messages.xml', '<messages><message name="greeting">Hello</message></messages>');
-        $this->write('pages/home.xml', '<page type="static"><message name="greeting">Hi</message></page>');
+        $this->write('messages.xml', content: '<messages><message name="greeting">Hello</message></messages>');
+        $this->write('pages/home.xml', content: '<page type="static"><message name="greeting">Hi</message></page>');
 
         self::assertSame(Command::FAILURE, $this->lint([$this->dir . '/pages']));
         self::assertStringContainsString(
@@ -97,7 +97,7 @@ final class LintCommandTest extends TestCase
 
     public function testFailsOnAPathNotFound(): void
     {
-        $this->write('pages/home.xml', '<page type="static"/>');
+        $this->write('pages/home.xml', content: '<page type="static"/>');
 
         self::assertSame(Command::FAILURE, $this->lint([$this->dir . '/pages', $this->dir . '/nope']));
         self::assertSame("{$this->dir}/nope: not found\n", $this->tester->getErrorOutput());

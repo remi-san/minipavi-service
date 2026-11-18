@@ -64,7 +64,7 @@ final class PageXmlParser
     {
         $previous = libxml_use_internal_errors(true);
         libxml_clear_errors();
-        $root = simplexml_load_string($xml, null, LIBXML_NOCDATA);
+        $root = simplexml_load_string($xml, class_name: null, options: LIBXML_NOCDATA);
         $errors = libxml_get_errors();
         libxml_clear_errors();
         libxml_use_internal_errors($previous);
@@ -79,7 +79,7 @@ final class PageXmlParser
             throw new PageXmlException("{$name}: root element must be <page>, not <" . $root->getName() . '>');
         }
         $type = trim((string) $root['type']);
-        if (!in_array($type, self::TYPES, true)) {
+        if (!in_array($type, self::TYPES, strict: true)) {
             throw new PageXmlException(
                 "{$name}: <page>: "
                 . ($type === '' ? 'type is missing' : "type=\"{$type}\" is unknown")
@@ -90,15 +90,15 @@ final class PageXmlParser
         }
 
         $setup = new Setup(
-            self::setting($root, 'keyboard', Keyboard::class, $name),
-            self::setting($root, 'echo', LocalEcho::class, $name),
-            self::setting($root, 'scroll', Scroll::class, $name),
+            self::setting($root, attribute: 'keyboard', enum: Keyboard::class, name: $name),
+            self::setting($root, attribute: 'echo', enum: LocalEcho::class, name: $name),
+            self::setting($root, attribute: 'scroll', enum: Scroll::class, name: $name),
         );
 
         $messages = $this->messages->with($this->messageTexts($root, $name));
         $factory = new ElementFactory($baseDir, $messages);
         $input = null;
-        $nodes = $this->nodes($root, $factory, $name, $type === 'template', false, $input);
+        $nodes = $this->nodes($root, $factory, $name, $type === 'template', inLoop: false, input: $input);
 
         if ($type === 'template') {
             return new TemplatePage($nodes, $messages, $input, $setup);
@@ -228,11 +228,11 @@ final class PageXmlParser
                         }
                         // Absolute outside of any <foreach>, relative to the enclosing item inside
                         return [
-                            $factory->int($attributes, 'row', $inLoop ? 0 : 1),
-                            $factory->int($attributes, 'step', 1),
+                            $factory->int($attributes, attr: 'row', default: $inLoop ? 0 : 1),
+                            $factory->int($attributes, attr: 'step', default: 1),
                         ];
                     });
-                    $children = $this->nodes($elem, $factory, $name, $template, true, $input);
+                    $children = $this->nodes($elem, $factory, $name, $template, inLoop: true, input: $input);
                     $nodes[] = new ForeachNode(
                         trim($attributes['items']),
                         $attributes['as'],
@@ -254,7 +254,7 @@ final class PageXmlParser
                         }
                     });
                     $children = $this->nodes($elem, $factory, $name, $template, $inLoop, $input);
-                    $nodes[] = new IfNode(ltrim($test, '!'), $test[0] === '!', $children, $at);
+                    $nodes[] = new IfNode(ltrim($test, characters: '!'), $test[0] === '!', $children, $at);
                     break;
 
                 default:
@@ -267,7 +267,7 @@ final class PageXmlParser
                         $attributes,
                         $elem,
                     ) {
-                        if (!in_array($tag, ElementFactory::TAGS, true)) {
+                        if (!in_array($tag, ElementFactory::TAGS, strict: true)) {
                             throw new PageXmlException('unknown element');
                         }
                         if ($tag === 'endkey' && $inLoop) {

@@ -31,6 +31,9 @@ use PHPUnit\Framework\Assert;
  */
 final class ServiceTester
 {
+    // PHPUnit's assertions take no named arguments: their messages are constants
+    private const DISCONNECTION_ANSWERED = 'A disconnection is answered';
+
     // Videotex the session received, since the connection: the screen is all of it, played
     private Vdt $vdt;
 
@@ -86,7 +89,7 @@ final class ServiceTester
         $answer = $this->service->handle(
             new GatewayRequest(GatewayRequest::FCTN_DISCONNECT, [], $this->answer->context ?? '', $this->terminal),
         );
-        Assert::assertNull($answer, 'A disconnection is answered');
+        Assert::assertNull($answer, self::DISCONNECTION_ANSWERED);
 
         return $this;
     }

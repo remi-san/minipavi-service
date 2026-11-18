@@ -30,11 +30,24 @@ final class VdtOffsetCommand extends Command
     protected function configure(): void
     {
         $this
-            ->addArgument('input', InputArgument::REQUIRED, 'The Videotex file (- reads the standard input)')
-            ->addArgument('x', InputArgument::REQUIRED, 'Columns to move right (negative: left)')
-            ->addArgument('y', InputArgument::REQUIRED, 'Rows to move down (negative: up)')
-            ->addArgument('output', InputArgument::OPTIONAL, 'The file to write (default: the standard output)')
-            ->addOption('preview', null, InputOption::VALUE_NONE, 'Prints the screen as text, before and after')
+            ->addArgument(
+                'input',
+                InputArgument::REQUIRED,
+                description: 'The Videotex file (- reads the standard input)',
+            )
+            ->addArgument('x', InputArgument::REQUIRED, description: 'Columns to move right (negative: left)')
+            ->addArgument('y', InputArgument::REQUIRED, description: 'Rows to move down (negative: up)')
+            ->addArgument(
+                'output',
+                InputArgument::OPTIONAL,
+                description: 'The file to write (default: the standard output)',
+            )
+            ->addOption(
+                'preview',
+                shortcut: null,
+                mode: InputOption::VALUE_NONE,
+                description: 'Prints the screen as text, before and after',
+            )
             ->setHelp(
                 'Negative numbers are read as options: put <info>--</info> before the arguments, e.g. <info>vdt-offset -- background.vdt 8 -2</info>',
             );
@@ -42,8 +55,8 @@ final class VdtOffsetCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $file = Input::string($input, 'input');
-        [$x, $y] = [self::int($input, 'x'), self::int($input, 'y')];
+        $file = Input::string($input, argument: 'input');
+        [$x, $y] = [self::int($input, name: 'x'), self::int($input, name: 'y')];
         $errors = (new SymfonyStyle($input, $output))->getErrorStyle();
 
         try {
@@ -58,15 +71,15 @@ final class VdtOffsetCommand extends Command
         if ($input->getOption('preview') === true) {
             $output->write(
                 "Before:\n" . $vdt->screen()->preview() . "After ({$x}, {$y}):\n" . $moved->screen()->preview(),
-                false,
-                OutputInterface::OUTPUT_RAW,
+                newline: false,
+                options: OutputInterface::OUTPUT_RAW,
             );
 
             return self::SUCCESS;
         }
         $target = $input->getArgument('output');
         if (!\is_string($target)) {
-            $output->write($moved->toString(), false, OutputInterface::OUTPUT_RAW);
+            $output->write($moved->toString(), newline: false, options: OutputInterface::OUTPUT_RAW);
 
             return self::SUCCESS;
         }

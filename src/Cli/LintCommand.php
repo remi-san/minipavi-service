@@ -28,7 +28,7 @@ final class LintCommand extends Command
         $this->addArgument(
             'paths',
             InputArgument::REQUIRED | InputArgument::IS_ARRAY,
-            'Page files, or folders of pages (with their subfolders)',
+            description: 'Page files, or folders of pages (with their subfolders)',
         );
         MessagesOption::addTo($this);
     }
@@ -46,7 +46,7 @@ final class LintCommand extends Command
 
         $pages = 0;
         $errors = 0;
-        foreach (Input::strings($input, 'paths') as $path) {
+        foreach (Input::strings($input, argument: 'paths') as $path) {
             if (!file_exists($path)) {
                 $errorOutput->writeln(Input::escape("{$path}: not found"));
                 $errors++;

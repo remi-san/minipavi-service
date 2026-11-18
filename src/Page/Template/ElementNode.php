@@ -31,7 +31,9 @@ final readonly class ElementNode implements Node
             $attributes = array_map($scope->substitute(...), $this->attributes);
             // Inside a <foreach>, row is relative to the current item (0 = its first row)
             if ($scope->rowOffset !== null && $this->tag !== 'background') {
-                $attributes['row'] = (string) ($scope->rowOffset + $this->factory->int($attributes, 'row', 0));
+                $attributes['row'] = (string) (
+                    $scope->rowOffset + $this->factory->int($attributes, attr: 'row', default: 0)
+                );
             }
             return [$this->factory->element($this->tag, $attributes, $scope->substitute($this->text))];
         } catch (PageXmlException|\InvalidArgumentException $e) {

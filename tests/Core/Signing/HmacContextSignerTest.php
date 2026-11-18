@@ -41,12 +41,14 @@ final class HmacContextSignerTest extends TestCase
     public static function forged(): iterable
     {
         $signed = (new HmacContextSigner('secret'))->sign(self::CONTEXT);
-        [$signature] = explode('.', $signed, 2);
+        [$signature] = explode('.', $signed, limit: 2);
 
         yield 'unsigned' => [self::CONTEXT];
         yield 'empty' => [''];
-        yield 'other context' => [$signature . '.' . str_replace('"page":2', '"page":99999', self::CONTEXT)];
-        yield 'other signature' => ['A' . substr($signed, 1)];
+        yield 'other context' => [
+            $signature . '.' . str_replace('"page":2', replace: '"page":99999', subject: self::CONTEXT),
+        ];
+        yield 'other signature' => ['A' . substr($signed, offset: 1)];
         yield 'other key' => [(new HmacContextSigner('other'))->sign(self::CONTEXT)];
     }
 

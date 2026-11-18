@@ -24,9 +24,9 @@ final readonly class MessagesOption
     {
         $command->addOption(
             self::NAME,
-            null,
-            InputOption::VALUE_REQUIRED,
-            'The service\'s messages file (messages.xml), over the framework\'s',
+            shortcut: null,
+            mode: InputOption::VALUE_REQUIRED,
+            description: 'The service\'s messages file (messages.xml), over the framework\'s',
         );
     }
 

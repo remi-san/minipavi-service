@@ -24,7 +24,7 @@ final readonly class ChangePage extends Response
         public string $route,
         public ?Parameters $targetParameters = null,
     ) {
-        parent::__construct(null, null);
+        parent::__construct(null, parameters: null);
     }
 
     public function continueWith(Flow $flow): GatewayResponse

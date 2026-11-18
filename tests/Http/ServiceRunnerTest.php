@@ -163,7 +163,7 @@ final class ServiceRunnerTest extends TestCase
         }
 
         self::assertSame('', $output);
-        $answer = json_decode((string) $response->getBody(), true);
+        $answer = json_decode((string) $response->getBody(), associative: true);
         self::assertIsArray($answer);
         self::assertSame(
             base64_encode(VdtHelper::writeLine0(Messages::defaults()->get(FrameworkMessage::Error))->toString()),

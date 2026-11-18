@@ -26,9 +26,11 @@ class EmulatorConfig
     public function getEmulatorUrl(string $serviceUrl): string
     {
         return (
-            rtrim($this->url, '/')
+            rtrim($this->url, characters: '/')
             . '/index.php?gw='
-            . urlencode(rtrim($this->gateway, '/') . '/?url=' . urlencode($this->gatewayServiceUrl($serviceUrl)))
+            . urlencode(
+                rtrim($this->gateway, characters: '/') . '/?url=' . urlencode($this->gatewayServiceUrl($serviceUrl)),
+            )
         );
     }
 

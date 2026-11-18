@@ -48,7 +48,7 @@ final class PaginatorTest extends TestCase
         self::assertSame(8, $paginator->offset());
         self::assertSame(2, $paginator->itemCountOnPage());
         self::assertSame([9, 10], [$paginator->firstItem(), $paginator->lastItem()]);
-        self::assertSame(['i', 'j'], $paginator->slice(range('a', 'j')));
+        self::assertSame(['i', 'j'], $paginator->slice(range('a', end: 'j')));
     }
 
     public function testEmptyPageHasNoItems(): void
@@ -87,7 +87,7 @@ final class PaginatorTest extends TestCase
 
     public function testSlicesThePageOutOfTheItems(): void
     {
-        self::assertSame(['e', 'f', 'g', 'h'], (new Paginator(10, 4, 1))->slice(range('a', 'j')));
+        self::assertSame(['e', 'f', 'g', 'h'], (new Paginator(10, 4, 1))->slice(range('a', end: 'j')));
     }
 
     public function testGivesTheVariablesOfATemplate(): void
