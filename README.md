@@ -205,9 +205,10 @@ KernelBuilder::for($router, $messages)
   `$service->handle(GatewayRequest): ?GatewayResponse` (null for a disconnection or a
   background call of the gateway, `BGCALL-WM-...`, which have nothing to answer). It restores the `Context`, and runs the controller of the current route
   until a response answers the gateway. `Service` owns the context: a response says, through
-  a `Flow` (see below), the state and parameters its controller keeps and what comes next. A context without route, or
-  whose route the service doesn't have (e.g. removed in a new version), starts again at the
-  default route.
+  a `Flow` (see below), the state and parameters its controller keeps and what comes next. A context without route
+  starts at the default route. One whose route the service doesn't have (e.g. removed in a new
+  version) starts again there too, without what the user typed, which was for a screen that
+  doesn't exist any more (the serializer refuses it with an `UnknownRouteException`).
   More than 10 page changes (`Response::goTo()`) in one request are taken as controllers
   changing to each other endlessly, and answered as an error; give another limit with
   `new Service(..., maxPageChanges: 20)`.
@@ -454,8 +455,9 @@ KernelBuilder::for($router, $messages)
   Behind it, `RouterBuilder::addRoute()` binds each controller with its types (`Route`), in
   the immutable `Router` it builds, and the `Context` keeps a `RouteContext` per route.
   `Core\ContextSerializer` writes it as JSON (the enum's value and `toArray()`), and restores it
-  with these types (a state the enum doesn't have is the initial one, unknown routes are
-  dropped). `initialState()` and `parametersType()` are called for
+  with these types (a state the enum doesn't have is the initial one, routes kept that the
+  router doesn't have are dropped, and a context whose current route it doesn't have is
+  refused with an `UnknownRouteException`). `initialState()` and `parametersType()` are called for
   routes that don't run: they must not use the controller's properties, so that lazy
   controllers stay unbuilt.
 
