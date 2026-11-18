@@ -207,6 +207,9 @@ KernelBuilder::for($router, $messages)
   a `Flow` (see below), the state and parameters its controller keeps and what comes next. A context without route, or
   whose route the service doesn't have (e.g. removed in a new version), starts again at the
   default route.
+  More than 10 page changes (`Response::goTo()`) in one request are taken as controllers
+  changing to each other endlessly, and answered as an error; give another limit with
+  `new Service(..., maxPageChanges: 20)`.
   If serving a request fails (an exception or a PHP error, in a controller, a template, the
   context...), the error is logged, and the user gets a message on line 0
   (`FrameworkMessage::Error`, from the `$messages` of the constructor; see
@@ -225,7 +228,7 @@ KernelBuilder::for($router, $messages)
   Monolog, with its `ErrorLogHandler` for PHP's error log, as the services of this repository do) and log
   connections, disconnections and browsers sent to the emulator at info level, the handler
   of each request at debug level, and errors at error level (with the exception):
-  `new Service($router, $messages, $serializer, $logger)`, `new ServiceRunner($service, $client, $logger)`,
+  `new Service($router, $messages, $serializer, logger: $logger)`, `new ServiceRunner($service, $client, $logger)`,
   `new Dispatcher($handlers, $fallback, $logger)`, `new EmulatorRedirect($emulator, $logger)`.
   Without one, nothing is logged.
 - **A `Controller`** runs on a `Request` and returns a `Response`. The request gives:
@@ -523,7 +526,7 @@ $messages = $parser
     ->parseFile("$config/messages.xml", $parser->defaults())
     ->check(FrameworkMessage::class, AccMessage::class);
 $parser = new PageXmlParser($messages);              // pages redefine them with <message>
-$service = new Service($router, $messages, new ContextSerializer($router), $logger);  // for its error message
+$service = new Service($router, $messages, new ContextSerializer($router), logger: $logger);  // for its error message
 
 // In a controller: the page's text, its placeholders replaced
 Vdt::line0($this->page->message(AccMessage::ConnectedFrom, ['remoteAddr' => $addr]));
