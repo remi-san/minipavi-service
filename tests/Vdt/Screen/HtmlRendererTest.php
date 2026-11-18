@@ -14,21 +14,20 @@ use PHPUnit\Framework\TestCase;
 
 final class HtmlRendererTest extends TestCase
 {
-    public function testDrawsEveryCellOfEveryRowInAPage(): void
+    public function testDrawsEveryCellOfEveryRow(): void
     {
-        $html = (new HtmlRenderer(HtmlRenderer::MINITEL_FONT))->render((new Vdt())->screen(), title: 'Service <test>');
+        $html = $this->render(new Vdt());
 
-        self::assertStringStartsWith('<!doctype html>', $html);
-        self::assertStringContainsString('<title>Service &lt;test&gt;</title>', $html);
+        self::assertStringStartsWith('<div class="minitel">', $html);
         self::assertSame((Screen::ROWS + 1) * Screen::COLS, substr_count($html, needle: '<span class="c'));
         // Row 0, the status line, is set apart
         self::assertSame(Screen::COLS, substr_count($html, needle: 'class="c status"'));
         self::assertStringNotContainsString('<script', $html);
     }
 
-    public function testEmbedsTheMinitelFont(): void
+    public function testItsStyleEmbedsTheMinitelFont(): void
     {
-        $html = (new HtmlRenderer(HtmlRenderer::MINITEL_FONT))->render((new Vdt())->screen(), title: 'test');
+        $html = (new HtmlRenderer(HtmlRenderer::MINITEL_FONT))->style();
 
         self::assertStringContainsString(
             '@font-face { font-family: Minitel; src: url(data:font/ttf;base64,'
@@ -36,15 +35,27 @@ final class HtmlRendererTest extends TestCase
             . ') format("truetype"); }',
             $html,
         );
-        self::assertStringContainsString('font: var(--w)/var(--h) Minitel,', $html);
+        self::assertStringContainsString('--font: var(--w)/var(--h) Minitel,', $html);
+        self::assertStringContainsString('.minitel { font: var(--font);', $html);
     }
 
-    public function testMissingFontIsAnError(): void
+    public function testMissingFontIsAnErrorOfItsStyleOnly(): void
     {
+        $renderer = new HtmlRenderer('/missing.ttf');
+        // The screen doesn't need it
+        $renderer->render((new Vdt())->screen());
+
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('Font file not found: /missing.ttf');
 
-        (new HtmlRenderer('/missing.ttf'))->render((new Vdt())->screen(), title: 'test');
+        $renderer->style();
+    }
+
+    public function testPutsTheOverlayOverTheScreen(): void
+    {
+        self::assertStringEndsWith('<input class="field"></div>', (new HtmlRenderer(
+            HtmlRenderer::MINITEL_FONT,
+        ))->render((new Vdt())->screen(), overlay: '<input class="field">'));
     }
 
     public function testDrawsTextInItsColoursWithItsAccents(): void
@@ -85,12 +96,7 @@ final class HtmlRendererTest extends TestCase
 
     public function testKeyBadgesArentUnderlined(): void
     {
-        $html = (new HtmlRenderer(HtmlRenderer::MINITEL_FONT))->render(
-            (new Key('Envoi', new Position(1, 1)))
-                ->toVdt(new Terminal())
-                ->screen(),
-            title: 'test',
-        );
+        $html = $this->render((new Key('Envoi', new Position(1, 1)))->toVdt(new Terminal()));
 
         self::assertStringContainsString('>E</span>', $html);
         self::assertStringNotContainsString(' u"', $html);
@@ -132,7 +138,7 @@ final class HtmlRendererTest extends TestCase
 
     private function render(Vdt $vdt): string
     {
-        return (new HtmlRenderer(HtmlRenderer::MINITEL_FONT))->render($vdt->screen(), title: 'test');
+        return (new HtmlRenderer(HtmlRenderer::MINITEL_FONT))->render($vdt->screen());
     }
 
     /**

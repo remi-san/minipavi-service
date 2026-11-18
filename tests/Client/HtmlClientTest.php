@@ -94,7 +94,10 @@ final class HtmlClientTest extends TestCase
         // and its input field
         $html = (string) $exchange->respond(new GatewayResponse(new Vdt(), '{}', 'https://example.org/'))->getBody();
         self::assertStringContainsString('Menu', self::shownText($html));
-        self::assertStringContainsString('value="ab" style="' . HtmlRenderer::at(1, row: 2, length: 4) . '"', $html);
+        self::assertStringContainsString(
+            'value="ab" style="' . (new HtmlRenderer(HtmlRenderer::MINITEL_FONT))->place(1, row: 2, length: 4) . '"',
+            $html,
+        );
         // Its keys: Envoi and Suite only
         self::assertSame(6, substr_count($html, needle: ' disabled>'));
         // The whole command, cursor and space character included, posted back as it came
@@ -180,6 +183,33 @@ final class HtmlClientTest extends TestCase
         );
     }
 
+    public function testPageIsSelfContainedWithTheMinitelFont(): void
+    {
+        $html = self::page(new GatewayResponse(new Vdt(), ''));
+
+        self::assertSame(1, substr_count($html, needle: '<div class="minitel">'));
+        self::assertStringContainsString(
+            '@font-face { font-family: Minitel; src: url(data:font/ttf;base64,'
+            . base64_encode((string) file_get_contents(HtmlRenderer::MINITEL_FONT))
+            . ') format("truetype"); }',
+            $html,
+        );
+        self::assertStringNotContainsString('<script', $html);
+    }
+
+    public function testTitleOfThePageIsEscaped(): void
+    {
+        $messages = (new MessagesXmlParser())->defaults();
+        $form = new HtmlForm(new HtmlRenderer(HtmlRenderer::MINITEL_FONT), $messages);
+
+        self::assertStringContainsString('<title>Svc &lt;a &amp; &quot;b&quot;&gt;</title>', $form->render(
+            new Vdt(),
+            context: '',
+            command: null,
+            title: 'Svc <a & "b">',
+        ));
+    }
+
     public function testAnswerIsDrawnOverTheScreenSoFar(): void
     {
         $before = Vdt::clearScreen()->append(Vdt::position(1, row: 3), Vdt::text('Page 2/2'));
@@ -226,7 +256,7 @@ final class HtmlClientTest extends TestCase
         self::assertSame(1, substr_count($html, needle: 'class="field"'));
         self::assertStringContainsString(
             'name="content[]" maxlength="2" value="ab" style="'
-            . HtmlRenderer::at(16, row: 24, length: 2)
+            . (new HtmlRenderer(HtmlRenderer::MINITEL_FONT))->place(16, row: 24, length: 2)
             . '" autofocus',
             $html,
         );
@@ -245,8 +275,14 @@ final class HtmlClientTest extends TestCase
             ),
         );
 
-        self::assertStringContainsString('value="l1" style="' . HtmlRenderer::at(1, row: 13, length: 40) . '"', $html);
-        self::assertStringContainsString('value="l2" style="' . HtmlRenderer::at(1, row: 14, length: 40) . '"', $html);
+        self::assertStringContainsString(
+            'value="l1" style="' . (new HtmlRenderer(HtmlRenderer::MINITEL_FONT))->place(1, row: 13, length: 40) . '"',
+            $html,
+        );
+        self::assertStringContainsString(
+            'value="l2" style="' . (new HtmlRenderer(HtmlRenderer::MINITEL_FONT))->place(1, row: 14, length: 40) . '"',
+            $html,
+        );
     }
 
     public function testKeysTheInputDoesntAcceptAreDisabled(): void
@@ -320,7 +356,10 @@ final class HtmlClientTest extends TestCase
         self::assertStringNotContainsString('Cnx en cours', $shown);
         // Where the user was: their context and their input
         self::assertStringContainsString('name="context" value="{&quot;route&quot;:&quot;directory&quot;}"', $html);
-        self::assertStringContainsString('style="' . HtmlRenderer::at(7, row: 23, length: 23) . '"', $html);
+        self::assertStringContainsString(
+            'style="' . (new HtmlRenderer(HtmlRenderer::MINITEL_FONT))->place(7, row: 23, length: 23) . '"',
+            $html,
+        );
         self::assertSame(7, substr_count($html, needle: ' disabled>'));
     }
 

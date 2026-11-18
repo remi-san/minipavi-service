@@ -194,7 +194,8 @@ KernelBuilder::for($router, $messages)
     double sizes, inverse video, underlining, blinking and mosaic pixels, as MiniPavi's
     emulator does, in self-contained HTML (inline CSS, no JavaScript). The text is drawn with the
     Minitel font of [Minitel-Canvas](https://github.com/Zigazou/Minitel-Canvas) (CC0, in
-    `resources/fonts`), embedded in the page (`HtmlRenderer::MINITEL_FONT`).
+    `resources/fonts`), embedded in the page (`HtmlRenderer::MINITEL_FONT`, read for each
+    page only: the gateway's requests don't need it).
 - **`EmulatorRedirect`** sends other browsers to an emulator that opens the service
   (`EmulatorConfig`): with an emulator configured (`EMULATOR_URL`, the local stack), that
   emulator and the gateway `GATEWAY_URL`, which reaches the service at
@@ -696,8 +697,11 @@ echo $moved->screen()->preview();      // the screen, as text
   double width for double size, in the columns it had.
 - **`withoutClear()`**: the same content without its clear screens (FF), to draw it over
   other content.
-- **`HtmlRenderer::render($screen, $title)`**: the screen as an HTML page (see `HtmlClient`
-  above).
+- **`HtmlRenderer::render($screen, $overlay)`**: the screen in HTML (a `<div class="minitel">`,
+  with `$overlay` over it), `style()` its CSS (the cell size in `--w`, `--h`, the Minitel font
+  in `--font`) with the font embedded, and `place($col, $row, $length)` the style placing an
+  element over a cell; the page around it is the HTML client's (`Client\HtmlForm`, see
+  `HtmlClient` above).
 - **`screen()`**: the `Screen` drawn by the content: a `Cell` (character and attributes) or
   `null` per row and column. `line($row)` and `text()` give the text of a row and of the
   screen, G2 characters decoded (`é`, `£`, `½`, `Œ`...; `Cell::text()`), and `preview()`

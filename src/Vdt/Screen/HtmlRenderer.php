@@ -4,17 +4,22 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Vdt\Screen;
 
+use MiniPaviService\Html\Html;
 use MiniPaviService\Io\Files;
 use MiniPaviService\Page\Display\Color;
 
 /**
- * Draws a Screen as an HTML page, as the Minitel would show it (checked against MiniPavi's
- * emulator): row 0 (the status line) and the ROWS × COLS cells, in the Minitel's colours,
- * with their sizes, inverse video, underlining (but not in inverse video, as the emulator
- * draws the key badges) and blinking. Text is drawn with a Minitel
- * font (MINITEL_FONT: Minitel-Canvas's, whose glyphs fill the cells), embedded in the page.
- * Mosaic cells are drawn as their 2 × 3 pixels (separated when underlined), without depending
- * on a font. Self-contained: inline CSS and font, no JavaScript.
+ * Draws a Screen in HTML, as the Minitel would show it (checked against MiniPavi's emulator):
+ * row 0 (the status line) and the ROWS × COLS cells, in the Minitel's colours, with their
+ * sizes, inverse video, underlining (but not in inverse video, as the emulator draws the key
+ * badges) and blinking. Text is drawn with a Minitel font (MINITEL_FONT: Minitel-Canvas's,
+ * whose glyphs fill the cells), embedded in style(). Mosaic cells are drawn as their 2 × 3
+ * pixels (separated when underlined), without depending on a font. No JavaScript.
+ *
+ * It draws the screen only: the page around it (e.g. Client\HtmlForm's) puts render() in its
+ * body, and style() in its <style>. style() sets, for the whole page, --w and --h, the size
+ * of a cell, --pad, the screen's padding, and --font, the Minitel font at the cell's size
+ * (e.g. for the page's other controls); place() places an element over the screen.
  */
 final readonly class HtmlRenderer
 {
@@ -25,17 +30,9 @@ final readonly class HtmlRenderer
     private const MOSAIC_BITS = [0x01, 0x02, 0x04, 0x08, 0x10, 0x40];
 
     private const STYLE = <<<'CSS'
-        :root { color-scheme: dark; }
-        body { margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center; background: #1c1c1c; }
-        .page { --w: 16px; --h: 20px; --pad: 12px; font: var(--w)/var(--h) Minitel, "DejaVu Sans Mono", Menlo, Consolas, monospace; }
-        .minitel { position: relative; display: grid; grid-template-columns: repeat(40, var(--w)); grid-auto-rows: var(--h);
+        :root { --w: 16px; --h: 20px; --pad: 12px; --font: var(--w)/var(--h) Minitel, "DejaVu Sans Mono", Menlo, Consolas, monospace; }
+        .minitel { font: var(--font); position: relative; display: grid; grid-template-columns: repeat(40, var(--w)); grid-auto-rows: var(--h);
             padding: var(--pad); background: #000; }
-        .field { position: absolute; height: var(--h); padding: 0; border: 0; border-bottom: 1px dotted #888; background: transparent;
-            color: #fff; caret-color: #fff; font: inherit; letter-spacing: 0; outline: none; z-index: 2; }
-        .field:focus { border-bottom-color: #fff; }
-        .keys { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 10px; }
-        .keys button { padding: 6px 0; border: 0; border-radius: 3px; background: #6b4b32; color: #fff; font: inherit; cursor: pointer; }
-        .keys button:disabled { opacity: .35; cursor: default; }
         .status { border-bottom: 1px solid #444; }
         .c { position: relative; white-space: pre; text-align: center; overflow: visible; }
         .w2 { grid-column: span 2; transform: scaleX(2); transform-origin: left; width: var(--w); }
@@ -51,7 +48,7 @@ final readonly class HtmlRenderer
         CSS;
 
     /**
-     * @param string $fontFile TrueType font of the text, embedded in the page (e.g.
+     * @param string $fontFile TrueType font of the text, embedded in style() (e.g.
      *                         MINITEL_FONT): its glyphs 1 em wide, 1.25 em high
      */
     public function __construct(
@@ -59,15 +56,12 @@ final readonly class HtmlRenderer
     ) {}
 
     /**
-     * The page showing the screen: a form posting back to its URL, with what overlay puts over
-     * the screen (e.g. input fields, positioned with field()) and controls under it (e.g. the
-     * function keys and hidden values)
+     * The screen (a <div class="minitel">), with what overlay puts over it (e.g. input fields,
+     * positioned with --w, --h and --pad)
      *
-     * @param string $title of the page, in the browser (e.g. the URL of the service)
      * @param string $overlay HTML over the screen
-     * @param string $controls HTML under the screen
      */
-    public function render(Screen $screen, string $title, string $overlay = '', string $controls = ''): string
+    public function render(Screen $screen, string $overlay = ''): string
     {
         $cells = '';
         for ($row = 0; $row <= Screen::ROWS; $row++) {
@@ -80,39 +74,37 @@ final readonly class HtmlRenderer
             }
         }
 
-        return (
-            '<!doctype html><html><head><meta charset="utf-8">'
-            . '<meta name="viewport" content="width=device-width, initial-scale=1">'
-            . '<title>'
-            . self::escape($title)
-            . '</title><style>'
-            . $this->fontFace()
-            . self::STYLE
-            . '</style></head>'
-            . '<body><form method="post" class="page"><div class="minitel">'
-            . $cells
-            . $overlay
-            . '</div>'
-            . $controls
-            . '</form></body></html>'
-        );
+        return '<div class="minitel">' . $cells . $overlay . '</div>';
     }
 
     /**
-     * Style placing an element over the screen at a cell (from column 1, row 0), length cells
-     * wide
+     * Style placing an element over the screen (e.g. an input field of the overlay) at a cell,
+     * from column 1, row 0, length cells wide: the screen's geometry, kept with its CSS
      */
-    public static function at(int $col, int $row, int $length): string
+    public function place(int $col, int $row, int $length): string
     {
         return "left: calc(var(--pad) + {$col}*var(--w) - var(--w)); top: calc(var(--pad) + {$row}*var(--h)); width: calc({$length}*var(--w));";
     }
 
     /**
-     * Text escaped for HTML (content and attribute values)
+     * The CSS of render()'s screen, its font included: read now, so only a page drawing the
+     * screen needs it
+     *
+     * @throws \RuntimeException if the font file can't be read
      */
-    public static function escape(string $text): string
+    public function style(): string
     {
-        return htmlspecialchars($text, ENT_QUOTES | ENT_SUBSTITUTE | ENT_HTML5, encoding: 'UTF-8');
+        $font = Files::read($this->fontFile);
+        if ($font === null) {
+            throw new \RuntimeException("Font file not found: {$this->fontFile}");
+        }
+
+        return (
+            '@font-face { font-family: Minitel; src: url(data:font/ttf;base64,'
+            . base64_encode($font)
+            . ') format("truetype"); }'
+            . self::STYLE
+        );
     }
 
     private function cell(?Cell $cell, int $row): string
@@ -161,28 +153,9 @@ final readonly class HtmlRenderer
             . (
                 $mosaic && self::isMosaic($cell->bytes)
                     ? self::mosaic($cell->bytes, $underline)
-                    : self::escape($cell->text())
+                    : Html::escape($cell->text())
             )
             . '</span>'
-        );
-    }
-
-    /**
-     * The font of the text, embedded
-     *
-     * @throws \RuntimeException if the font file can't be read
-     */
-    private function fontFace(): string
-    {
-        $font = Files::read($this->fontFile);
-        if ($font === null) {
-            throw new \RuntimeException("Font file not found: {$this->fontFile}");
-        }
-
-        return (
-            '@font-face { font-family: Minitel; src: url(data:font/ttf;base64,'
-            . base64_encode($font)
-            . ') format("truetype"); }'
         );
     }
 
