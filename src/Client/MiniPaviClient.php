@@ -9,7 +9,10 @@ use MiniPaviService\Gateway\Client;
 use MiniPaviService\Gateway\GatewayRequest;
 use MiniPaviService\Gateway\GatewayResponse;
 use MiniPaviService\Gateway\NoClientState;
+use MiniPaviService\Minitel\FunctionKey;
 use MiniPaviService\Minitel\Terminal;
+use MiniPaviService\Page\InputCommand;
+use MiniPaviService\Page\InputKind;
 use Nyholm\Psr7\Response;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -18,8 +21,8 @@ use Psr\Http\Message\ServerRequestInterface;
  * Client of the MiniPavi gateway, through the static MiniPaviCli, used unchanged: it reads the
  * gateway's request itself (MiniPaviCli::start(), from the body of the HTTP request), and
  * writes the answer itself (MiniPaviCli::send()): what it writes is captured as the body of
- * the HTTP response, which the Kernel sends. With VdtHelper (Videotex helpers) and
- * InputCommand (input commands), the only classes calling MiniPaviCli.
+ * the HTTP response, which the Kernel sends. It sends input commands as MiniPavi's (InputTxt,
+ * InputMsg). With VdtHelper (Videotex helpers), the only class calling MiniPaviCli.
  *
  * @implements Client<NoClientState>
  */
@@ -82,7 +85,7 @@ final class MiniPaviClient implements Client
                 $answer->next ?? $request->serviceUrl,
                 $answer->context,
                 $answer->echo,
-                $answer->command,
+                self::command($answer->command),
                 $answer->directCall->value ?? false,
             );
         } finally {
@@ -90,6 +93,43 @@ final class MiniPaviClient implements Client
         }
 
         return new Response(200, [], $body);
+    }
+
+    /**
+     * The command for the gateway, as MiniPaviCli builds it: InputTxt for a text field,
+     * InputMsg for a message; null for none
+     *
+     * @return ?array<string, mixed>
+     */
+    private static function command(?InputCommand $command): ?array
+    {
+        if ($command === null) {
+            return null;
+        }
+        $validWith = FunctionKey::masks(...$command->validWith);
+
+        return match ($command->kind) {
+            InputKind::Text => MiniPaviCli::createInputTxtCmd(
+                $command->col,
+                $command->row,
+                $command->width,
+                $validWith,
+                $command->cursor,
+                $command->spaceChar,
+                char: '',
+                preFill: $command->prefill[0] ?? '',
+            ),
+            InputKind::Message => MiniPaviCli::createInputMsgCmd(
+                $command->col,
+                $command->row,
+                $command->width,
+                $command->lines,
+                $validWith,
+                $command->cursor,
+                $command->spaceChar,
+                $command->prefill,
+            ),
+        };
     }
 
     /**

@@ -10,6 +10,8 @@ use MiniPaviService\Gateway\GatewayResponse;
 use MiniPaviService\Message\FrameworkMessage;
 use MiniPaviService\Message\Messages;
 use MiniPaviService\Minitel\FunctionKey;
+use MiniPaviService\Page\InputCommand;
+use MiniPaviService\Page\InputKind;
 use MiniPaviService\Vdt\Screen\HtmlRenderer;
 use MiniPaviService\Vdt\Vdt;
 use MiniPaviService\Vdt\VdtHelper;
@@ -60,7 +62,7 @@ final readonly class HtmlClient implements Client
             // What the page showed, posted back with the key
             $state = new HtmlPageState(
                 Vdt::fromString((string) base64_decode(self::text($form, self::SCREEN), strict: true)),
-                self::command(json_decode(self::text($form, self::COMMAND), associative: true)),
+                self::command(self::text($form, self::COMMAND)),
             );
 
             return new GatewayRequest(
@@ -109,7 +111,7 @@ final readonly class HtmlClient implements Client
         return $this->page(
             $page->screen->append($answer->vdt),
             $answer->context,
-            self::command($answer->command),
+            $answer->command,
             $request->serviceUrl,
         );
     }
@@ -120,14 +122,17 @@ final readonly class HtmlClient implements Client
      *
      * @param ?array{name: string, param: array<string, mixed>} $command
      */
-    private function page(Vdt $screen, string $context, ?array $command, string $serviceUrl): ResponseInterface
+    /**
+     * The page showing the screen so far, with the input fields of the command, the keys, and,
+     * hidden, the context and command to post back to the service's URL
+     */
+    private function page(Vdt $screen, string $context, ?InputCommand $command, string $serviceUrl): ResponseInterface
     {
         $screen = $screen->fromLastClear();
 
         $hidden =
             self::hidden(self::CONTEXT, $context)
-            // In MiniPaviCli's structure, as the answer's, to be read back the same way
-            . self::hidden(self::COMMAND, $command === null ? '' : (string) json_encode(['COMMAND' => $command]))
+            . self::hidden(self::COMMAND, $command === null ? '' : self::encoded($command))
             . self::hidden(self::SCREEN, base64_encode($screen->toString()));
 
         return new Response(
@@ -148,34 +153,29 @@ final readonly class HtmlClient implements Client
      *
      * @param ?array{name: string, param: array<string, mixed>} $command
      */
-    private static function fields(?array $command): string
+    /**
+     * Inputs of the command's field, over the screen: one per line (one for a text field),
+     * prefilled as the command says
+     */
+    private static function fields(?InputCommand $command): string
     {
         if ($command === null) {
             return '';
         }
-        $param = $command['param'];
-        $col = self::int($param, name: 'x', default: 1);
-        $row = self::int($param, name: 'y', default: 1);
-        $multiline = $command['name'] === 'InputMsg';
-        $width = $multiline ? self::int($param, name: 'w', default: 1) : self::int($param, name: 'l', default: 1);
-        $lines = $multiline ? self::int($param, name: 'h', default: 1) : 1;
-        $prefill = $param['prefill'] ?? '';
-        $prefill = \is_array($prefill) ? array_values($prefill) : [$prefill];
 
         $fields = '';
-        for ($line = 0; $line < $lines; $line++) {
-            $value = $prefill[$line] ?? '';
+        for ($line = 0; $line < $command->lines; $line++) {
             $fields .=
                 '<input class="field" name="'
                 . self::CONTENT
                 . '[]" maxlength="'
-                . $width
+                . $command->width
                 . '"'
                 . ' value="'
-                . HtmlRenderer::escape(\is_scalar($value) ? (string) $value : '')
+                . HtmlRenderer::escape($command->prefill[$line] ?? '')
                 . '"'
                 . ' style="'
-                . HtmlRenderer::at($col, $row + $line, $width)
+                . HtmlRenderer::at($command->col, $command->row + $line, $command->width)
                 . '"'
                 . ($line === 0 ? ' autofocus' : '')
                 . ' autocomplete="off">';
@@ -188,16 +188,13 @@ final readonly class HtmlClient implements Client
      * The function keys, in the Minitel's 2 × 4 layout (FunctionKey's order): those the
      * command doesn't accept are disabled. Envoi comes first in the form, as the key Enter
      * presses in a field.
-     *
-     * @param ?array{name: string, param: array<string, mixed>} $command
      */
-    private function keys(?array $command): string
+    private function keys(?InputCommand $command): string
     {
-        $validWith = $command === null ? null : self::int($command['param'], name: 'validwith', default: 0);
         $keys = FunctionKey::cases();
         $buttons = [];
         foreach ($keys as $position => $key) {
-            $enabled = $validWith === null || ($validWith & $key->mask()) !== 0;
+            $enabled = $command === null || $command->isValidatedWith($key);
             $button =
                 '<button type="submit" name="'
                 . self::KEY
@@ -223,27 +220,78 @@ final readonly class HtmlClient implements Client
      *
      * @return ?array{name: string, param: array<string, mixed>}
      */
-    private static function command(mixed $command): ?array
+    /**
+     * The command posted back with the page (encoded()), null if there is none or it can't be
+     * read: what the browser posts may be anything
+     */
+    private static function command(string $json): ?InputCommand
     {
-        $command = \is_array($command) ? $command['COMMAND'] ?? null : null;
-        if (
-            !\is_array($command)
-            || !\in_array($command['name'] ?? null, ['InputTxt', 'InputMsg'], strict: true)
-            || !\is_array($command['param'] ?? null)
-        ) {
+        $command = json_decode($json, associative: true);
+        if (!\is_array($command)) {
             return null;
         }
-
-        $param = [];
-        foreach ($command['param'] as $name => $value) {
-            if (!\is_string($name)) {
+        $kind = InputKind::tryFrom(self::text($command, name: 'kind'));
+        $validWith = [];
+        foreach (\is_array($command['validWith'] ?? null) ? $command['validWith'] : [] as $name) {
+            $key = \is_string($name) ? FunctionKey::tryFrom($name) : null;
+            if ($key === null) {
                 continue;
             }
-
-            $param[$name] = $value;
+            $validWith[] = $key;
         }
+        $prefill = array_values(array_map(
+            static fn(mixed $line) => \is_string($line) ? $line : '',
+            \is_array($command['prefill'] ?? null) ? $command['prefill'] : [],
+        ));
+        [$col, $row, $width, $lines] = [
+            self::int($command, name: 'col', default: 1),
+            self::int($command, name: 'row', default: 1),
+            self::int($command, name: 'width', default: 1),
+            self::int($command, name: 'lines', default: 1),
+        ];
+        $cursor = ($command['cursor'] ?? true) === true;
+        $spaceChar = self::text($command, name: 'spaceChar');
 
-        return ['name' => $command['name'], 'param' => $param];
+        return match ($kind) {
+            null => null,
+            InputKind::Text => InputCommand::text(
+                $col,
+                $row,
+                $width,
+                $validWith,
+                $cursor,
+                $spaceChar,
+                $prefill[0] ?? '',
+            ),
+            InputKind::Message => InputCommand::message(
+                $col,
+                $row,
+                $width,
+                $lines,
+                $validWith,
+                $cursor,
+                $spaceChar,
+                $prefill,
+            ),
+        };
+    }
+
+    /**
+     * The command as JSON, posted back with the page, read by command()
+     */
+    private static function encoded(InputCommand $command): string
+    {
+        return (string) json_encode([
+            'kind' => $command->kind->value,
+            'col' => $command->col,
+            'row' => $command->row,
+            'width' => $command->width,
+            'lines' => $command->lines,
+            'validWith' => array_map(static fn(FunctionKey $key) => $key->value, $command->validWith),
+            'cursor' => $command->cursor,
+            'spaceChar' => $command->spaceChar,
+            'prefill' => $command->prefill,
+        ]);
     }
 
     /**
@@ -267,7 +315,7 @@ final readonly class HtmlClient implements Client
     }
 
     /**
-     * @param array<string, mixed> $values
+     * @param array<mixed> $values
      */
     private static function int(array $values, string $name, int $default): int
     {

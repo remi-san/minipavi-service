@@ -9,6 +9,8 @@ use MiniPaviService\Client\MiniPaviClient;
 use MiniPaviService\Gateway\CallMode;
 use MiniPaviService\Gateway\GatewayRequest;
 use MiniPaviService\Gateway\GatewayResponse;
+use MiniPaviService\Minitel\FunctionKey;
+use MiniPaviService\Page\InputCommand;
 use MiniPaviService\Vdt\Vdt;
 use PHPUnit\Framework\TestCase;
 
@@ -101,13 +103,74 @@ final class MiniPaviClientTest extends TestCase
         self::assertArrayNotHasKey('COMMAND', $answer);
     }
 
-    public function testSendsTheCommandWithTheAnswer(): void
+    public function testSendsATextFieldAsInputTxt(): void
     {
-        $answer = $this->sent(new GatewayResponse(new Vdt('Code ?'), '{}', command: [
-            'COMMAND' => ['name' => 'InputTxt', 'param' => ['x' => 1]],
-        ]));
+        $answer = $this->sent(
+            new GatewayResponse(
+                new Vdt('Code ?'),
+                '{}',
+                command: InputCommand::text(
+                    5,
+                    row: 20,
+                    length: 10,
+                    validWith: [FunctionKey::Send, FunctionKey::Next],
+                    prefill: 'abc',
+                ),
+            ),
+        );
 
-        self::assertSame(['name' => 'InputTxt', 'param' => ['x' => 1]], $answer['COMMAND']);
+        self::assertSame(
+            [
+                'name' => 'InputTxt',
+                'param' => [
+                    'x' => 5,
+                    'y' => 20,
+                    'l' => 10,
+                    'char' => '',
+                    'spacechar' => '.',
+                    'prefill' => 'abc',
+                    'cursor' => 'on',
+                    'validwith' => FunctionKey::masks(FunctionKey::Send, FunctionKey::Next),
+                ],
+            ],
+            $answer['COMMAND'],
+        );
+    }
+
+    public function testSendsAMessageFieldAsInputMsg(): void
+    {
+        $answer = $this->sent(
+            new GatewayResponse(
+                new Vdt('Message ?'),
+                '{}',
+                command: InputCommand::message(
+                    1,
+                    row: 13,
+                    width: 40,
+                    height: 2,
+                    validWith: [FunctionKey::Send],
+                    cursor: false,
+                    prefill: ['l1', 'l2'],
+                ),
+            ),
+        );
+
+        self::assertSame(
+            [
+                'name' => 'InputMsg',
+                'param' => [
+                    'x' => 1,
+                    'y' => 13,
+                    'w' => 40,
+                    'h' => 2,
+                    'spacechar' => '.',
+                    'prefill' => ['l1', 'l2'],
+                    'cursor' => 'off',
+                    'validwith' => FunctionKey::Send->mask(),
+                ],
+            ],
+            $answer['COMMAND'],
+        );
     }
 
     public function testSendsTheUserToAnotherService(): void

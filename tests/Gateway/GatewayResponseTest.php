@@ -7,6 +7,8 @@ namespace MiniPaviService\Tests\Gateway;
 use MiniPaviService\Core\Signing\HmacContextSigner;
 use MiniPaviService\Gateway\CallMode;
 use MiniPaviService\Gateway\GatewayResponse;
+use MiniPaviService\Minitel\FunctionKey;
+use MiniPaviService\Page\InputCommand;
 use MiniPaviService\Vdt\Vdt;
 use PHPUnit\Framework\TestCase;
 
@@ -19,7 +21,7 @@ final class GatewayResponseTest extends TestCase
             new Vdt('x'),
             '{"route":"menu"}',
             'https://example.org/',
-            ['name' => 'InputTxt'],
+            InputCommand::text(1, row: 2, length: 4, validWith: [FunctionKey::Send]),
             CallMode::Connect,
             false,
         );
@@ -29,7 +31,7 @@ final class GatewayResponseTest extends TestCase
                 new Vdt('x'),
                 $signer->sign('{"route":"menu"}'),
                 'https://example.org/',
-                ['name' => 'InputTxt'],
+                InputCommand::text(1, row: 2, length: 4, validWith: [FunctionKey::Send]),
                 CallMode::Connect,
                 false,
             ),

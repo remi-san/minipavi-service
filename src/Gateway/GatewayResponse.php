@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MiniPaviService\Gateway;
 
 use MiniPaviService\Core\Signing\ContextSigner;
+use MiniPaviService\Page\InputCommand;
 use MiniPaviService\Vdt\Vdt;
 
 /**
@@ -18,7 +19,7 @@ final readonly class GatewayResponse
      * @param string $context serialized context (Context::serialize()), signed by sign() before
      *                        it goes to the gateway
      * @param ?string $next URL the gateway calls next; null: this service's
-     * @param ?array<string, mixed> $command command for the gateway (e.g. InputCommand::toArray())
+     * @param ?InputCommand $command command reading an input field (Page::inputCommand()); null: none
      * @param ?CallMode $directCall calls next at once, without waiting for the user; null: waits
      * @param bool $echo whether the gateway echoes what the user types
      */
@@ -26,7 +27,7 @@ final readonly class GatewayResponse
         public Vdt $vdt,
         public string $context,
         public ?string $next = null,
-        public ?array $command = null,
+        public ?InputCommand $command = null,
         public ?CallMode $directCall = null,
         public bool $echo = true,
     ) {}

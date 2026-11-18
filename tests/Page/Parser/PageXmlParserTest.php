@@ -12,6 +12,7 @@ use MiniPaviService\Minitel\LocalEcho;
 use MiniPaviService\Minitel\Scroll;
 use MiniPaviService\Minitel\Terminal;
 use MiniPaviService\Page;
+use MiniPaviService\Page\InputCommand;
 use MiniPaviService\Page\Parser\PageXmlException;
 use MiniPaviService\Page\Parser\PageXmlParser;
 use MiniPaviService\Page\StaticPage;
@@ -246,37 +247,20 @@ final class PageXmlParserTest extends TestCase
         );
         $twoLines = $this->parse('<page type="static"><input/></page>');
 
-        self::assertSame(
-            [
-                'name' => 'InputTxt',
-                'param' => [
-                    'x' => 5,
-                    'y' => 20,
-                    'l' => 10,
-                    'char' => '',
-                    'spacechar' => '.',
-                    'prefill' => 'abc',
-                    'cursor' => 'on',
-                    'validwith' => FunctionKey::masks(FunctionKey::Send, FunctionKey::Next),
-                ],
-            ],
-            $oneLine->inputCommand(['abc'])?->toArray()['COMMAND'] ?? null,
+        self::assertEquals(
+            InputCommand::text(
+                5,
+                row: 20,
+                length: 10,
+                validWith: [FunctionKey::Send, FunctionKey::Next],
+                prefill: 'abc',
+            ),
+            $oneLine->inputCommand(['abc']),
         );
-        self::assertSame(
-            [
-                'name' => 'InputMsg',
-                'param' => [
-                    'x' => 1,
-                    'y' => 13,
-                    'w' => 40,
-                    'h' => 2,
-                    'spacechar' => '.',
-                    'prefill' => [],
-                    'cursor' => 'on',
-                    'validwith' => FunctionKey::Send->mask(),
-                ],
-            ],
-            $twoLines->inputCommand()?->toArray()['COMMAND'] ?? null,
+        // By default: two lines from row 13, the whole width, validated with Envoi
+        self::assertEquals(
+            InputCommand::message(1, row: 13, width: 40, height: 2, validWith: [FunctionKey::Send]),
+            $twoLines->inputCommand(),
         );
         self::assertNull($this->parse('<page type="static"/>')->inputCommand());
     }

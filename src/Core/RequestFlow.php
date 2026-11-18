@@ -53,7 +53,7 @@ final class RequestFlow implements Flow
         ?string $next = null,
         ?CallMode $directCall = null,
     ): GatewayResponse {
-        return new GatewayResponse($vdt, $this->context->serialize(), $next, $command?->toArray(), $directCall);
+        return new GatewayResponse($vdt, $this->context->serialize(), $next, $command, $directCall);
     }
 
     public function goTo(string $route, ?Parameters $parameters = null): GatewayResponse

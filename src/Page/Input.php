@@ -59,7 +59,7 @@ final readonly class Input
                 $this->col,
                 $this->row,
                 $this->length,
-                FunctionKey::masks(...$this->validWith),
+                $this->validWith,
                 $this->cursor,
                 $this->spaceChar,
                 $prefill[0] ?? '',
@@ -70,10 +70,10 @@ final readonly class Input
             $this->row,
             $this->length,
             $this->lines,
-            FunctionKey::masks(...$this->validWith),
+            $this->validWith,
             $this->cursor,
             $this->spaceChar,
-            $prefill,
+            array_values($prefill),
         );
     }
 }

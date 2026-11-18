@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MiniPaviService\Client;
 
 use MiniPaviService\Gateway\ClientState;
+use MiniPaviService\Page\InputCommand;
 use MiniPaviService\Vdt\Vdt;
 
 /**
@@ -14,11 +15,10 @@ use MiniPaviService\Vdt\Vdt;
 final readonly class HtmlPageState implements ClientState
 {
     /**
-     * @param ?array{name: string, param: array<string, mixed>} $command input command of the
-     *                                                                   page; null: none
+     * @param ?InputCommand $command input command of the page; null: none
      */
     public function __construct(
         public Vdt $screen = new Vdt(),
-        public ?array $command = null,
+        public ?InputCommand $command = null,
     ) {}
 }

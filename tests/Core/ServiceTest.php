@@ -18,6 +18,7 @@ use MiniPaviService\Gateway\GatewayResponse;
 use MiniPaviService\Message\FrameworkMessage;
 use MiniPaviService\Message\Messages;
 use MiniPaviService\Message\MessagesException;
+use MiniPaviService\Minitel\FunctionKey;
 use MiniPaviService\Minitel\Terminal;
 use MiniPaviService\Page\InputCommand;
 use MiniPaviService\Tests\Support\CallbackController;
@@ -282,12 +283,12 @@ final class ServiceTest extends TestCase
 
     public function testReadInputAnswersWithTheCommand(): void
     {
-        $command = new InputCommand(['COMMAND' => ['name' => 'InputTxt', 'param' => ['x' => 1]]]);
+        $command = InputCommand::text(1, row: 2, length: 4, validWith: [FunctionKey::Send]);
 
         $answer = $this->answerTo(Response::readInput(new Vdt('Code ?'), $command));
 
         self::assertSame('Code ?', $answer->vdt->toString());
-        self::assertSame($command->toArray(), $answer->command);
+        self::assertSame($command, $answer->command);
         self::assertNull($answer->next);
         self::assertNull($answer->directCall);
         // What is typed comes back to the controller, reading it

@@ -60,20 +60,16 @@ final class HtmlClientTest extends TestCase
 
     public function testKeyPressedWithWhatWasTyped(): void
     {
+        // The page the key is pressed on: its hidden values, posted back as they are
         $screen = VdtHelper::setPos(1, row: 1)->append(Vdt::text('Menu'));
-        $command = InputCommand::text(
-            1,
-            row: 2,
-            length: 4,
-            validWith: FunctionKey::masks(FunctionKey::Send),
-        )->toArray();
-        $form = [
-            'key' => 'ENVOI',
-            'content' => ['36', '15'],
-            'context' => '{"route":"menu"}',
-            'screen' => base64_encode($screen->toString()),
-            'command' => (string) json_encode($command),
-        ];
+        $page = self::page(
+            new GatewayResponse(
+                $screen,
+                '{"route":"menu"}',
+                command: InputCommand::text(1, row: 2, length: 4, validWith: [FunctionKey::Send]),
+            ),
+        );
+        $form = ['key' => 'ENVOI', 'content' => ['36', '15']] + self::hiddenValues($page);
 
         $request = self::client()
             ->request(
@@ -89,8 +85,20 @@ final class HtmlClientTest extends TestCase
         ]);
         // With the page posted back: its screen and its input command
         self::assertEquals($screen, $request->clientState->screen);
-        self::assertSame('InputTxt', $request->clientState->command['name'] ?? null);
-        self::assertSame(2, $request->clientState->command['param']['y'] ?? null);
+        self::assertEquals(
+            InputCommand::text(1, row: 2, length: 4, validWith: [FunctionKey::Send]),
+            $request->clientState->command,
+        );
+    }
+
+    public function testCommandPostedBackThatCantBeReadIsNone(): void
+    {
+        $form = ['key' => 'ENVOI', 'command' => '{"kind":"unknown"}'];
+
+        $request = self::client()
+            ->request(HttpRequests::posting('Mozilla/5.0', ['web' => 'true'], $form), self::SERVICE_URL);
+
+        self::assertNull($request->clientState->command);
     }
 
     public function testUnknownKeyIsAConnection(): void
@@ -159,13 +167,7 @@ final class HtmlClientTest extends TestCase
             new GatewayResponse(
                 new Vdt(),
                 '{}',
-                command: InputCommand::text(
-                    16,
-                    row: 24,
-                    length: 2,
-                    validWith: FunctionKey::masks(FunctionKey::Send),
-                    prefill: 'ab',
-                )->toArray(),
+                command: InputCommand::text(16, row: 24, length: 2, validWith: [FunctionKey::Send], prefill: 'ab'),
             ),
         );
 
@@ -189,9 +191,9 @@ final class HtmlClientTest extends TestCase
                     row: 13,
                     width: 40,
                     height: 2,
-                    validWith: FunctionKey::masks(FunctionKey::Send),
+                    validWith: [FunctionKey::Send],
                     prefill: ['l1', 'l2'],
-                )->toArray(),
+                ),
             ),
         );
 
@@ -205,12 +207,7 @@ final class HtmlClientTest extends TestCase
             new GatewayResponse(
                 new Vdt(),
                 '{}',
-                command: InputCommand::text(
-                    1,
-                    row: 1,
-                    length: 1,
-                    validWith: FunctionKey::masks(FunctionKey::Send, FunctionKey::Next),
-                )->toArray(),
+                command: InputCommand::text(1, row: 1, length: 1, validWith: [FunctionKey::Send, FunctionKey::Next]),
             ),
         );
 
@@ -250,12 +247,7 @@ final class HtmlClientTest extends TestCase
             new GatewayResponse(
                 $before,
                 '{"route":"directory"}',
-                command: InputCommand::text(
-                    7,
-                    row: 23,
-                    length: 23,
-                    validWith: FunctionKey::masks(FunctionKey::Send),
-                )->toArray(),
+                command: InputCommand::text(7, row: 23, length: 23, validWith: [FunctionKey::Send]),
             ),
         );
         $form = ['key' => 'ENVOI'] + self::hiddenValues($page);
