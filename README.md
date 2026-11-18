@@ -29,7 +29,7 @@ which depend on nothing above them):
 | `Message\` | the messages shown on screen: `Message`, `FrameworkMessage`, `Messages` and their XML parser |
 | `Minitel\` | the user's terminal: `Terminal`, its `FunctionKey`s, and its settings (`Keyboard`, `LocalEcho`, `Scroll`) |
 | `Vdt\` | Videotex: codes, reading, writing and moving Videotex content (`Vdt`, `VdtHelper`, `Videotex`); in `Screen\`, the Minitel screen it draws (`Screen`, `Cell`) and its HTML rendering (`HtmlRenderer`) |
-| `Gateway\` | the requests and answers the service handles (`GatewayRequest`, `GatewayResponse`, `CallMode`), and the `Client` interface reading and sending them |
+| `Gateway\` | the requests and answers the service handles (`GatewayRequest`, `GatewayResponse`, `CallMode`, the `InputCommand` reading a field), and the `Client` interface reading and sending them |
 | `Client\` | the clients: `MiniPaviClient` for the MiniPavi gateway, `HtmlClient` for a browser (`?web=true`) |
 | `Http\` | the entry point for the web server, on PSR-7 / PSR-15: `Kernel`, `ResponseEmitter`, `ServiceRunner`; in `Dispatch\`, who handles the request (`Dispatcher`, `ConditionalRequestHandler`, `RequestMatcher`s); in `Url\`, the request's URLs (`RequestUrl`, `UrlAttribute`, `WithUrls`); in `Emulator\`, the emulator browsers are sent to (`EmulatorConfig`, `EmulatorRedirect`) |
 | `Testing\` | `ServiceTester`, functional tests of a service (needs PHPUnit) |
