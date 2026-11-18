@@ -215,7 +215,8 @@ KernelBuilder::for($router, $messages)
   (`FrameworkMessage::Error`, from the `$messages` of the constructor; see
   [Messages](#messages)): their next function key starts again at the default route.
 - **`GatewayRequest`** is what the gateway sends: `key` (a `Minitel\Key`: a `FunctionKey` or a
-  `ConnectionCode`, or null for another key; `GatewayRequest::keyOf()` reads it from what the
+  `ConnectionCode`, which its `functionKey()` and `connectionCode()` tell apart, or null for
+  another key; `GatewayRequest::keyOf()` reads it from what the
   gateway sends, `fctn()` gives its name back), `content` (the text typed), `context` (given back from the previous answer) and
   `terminal`. **`GatewayResponse`** is what is sent back: `vdt`, `context`, `next` (the URL the
   gateway calls next, null for this service's), `command` (e.g. an input command),
@@ -241,7 +242,8 @@ KernelBuilder::for($router, $messages)
     `Previous`, `Refresh`, `Summary`, `Guide`, `Cancel`, `Correction`), or null for a
     connection code; `connectionCode()` the `Gateway\ConnectionCode` (`Connect`,
     `DirectConnect`, `Disconnect`, `BackgroundCall`), or null for a function key; `key()` gives
-    the name the gateway sent (`ENVOI`…, or `CNX`, `FIN`…);
+    either, as a `Minitel\Key` (`key()?->value` is the name the gateway sent: `ENVOI`…, or
+    `CNX`, `FIN`…), null when there is none (after a `Response::goTo()`);
   - `content()`: the text typed, one string per line of the input field, and
     `contentAsString()`;
   - `terminal()`: where the user connects from (`remoteAddr()`, `typeSocket()`,
