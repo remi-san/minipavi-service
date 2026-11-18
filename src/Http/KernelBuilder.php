@@ -172,7 +172,7 @@ final readonly class KernelBuilder
             $this->router,
             $this->messages,
             new ContextSerializer($this->router, $this->signer()),
-            $this->logger,
+            logger: $this->logger,
         );
 
         return new WithUrls(

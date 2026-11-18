@@ -47,7 +47,7 @@ final class ServiceRunnerTest extends TestCase
             $router,
             (new MessagesXmlParser())->defaults(),
             new ContextSerializer($router),
-            $this->logger,
+            logger: $this->logger,
         );
     }
 
@@ -191,7 +191,7 @@ final class ServiceRunnerTest extends TestCase
             $router,
             (new MessagesXmlParser())->defaults(),
             new ContextSerializer($router, $signer),
-            $this->logger,
+            logger: $this->logger,
         );
     }
 }

@@ -327,7 +327,7 @@ final class HtmlClientTest extends TestCase
                 $router,
                 (new MessagesXmlParser())->defaults(),
                 new ContextSerializer($router, new HmacContextSigner('secret')),
-                new MemoryLogger(),
+                logger: new MemoryLogger(),
             ),
             self::client(),
         );

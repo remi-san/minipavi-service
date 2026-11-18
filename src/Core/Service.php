@@ -25,10 +25,6 @@ use Psr\Log\NullLogger;
  */
 final class Service
 {
-    // Page changes (ChangePage) allowed in one request: more is taken as controllers changing
-    // to each other endlessly
-    public const MAX_PAGE_CHANGES = 10;
-
     private LoggerInterface $logger;
 
     private Messages $messages;
@@ -38,6 +34,8 @@ final class Service
      *                           (FrameworkMessage::Error), e.g. MessagesXmlParser::defaults()
      * @param ContextSerializer $serializer of the context of the answers and requests, for the
      *                                      same router, signing it (e.g. with HmacContextSigner)
+     * @param int $maxPageChanges page changes (ChangePage) allowed in one request: more is
+     *                            taken as controllers changing to each other endlessly
      * @param ?LoggerInterface $logger where connections, disconnections and errors are logged;
      *                                 none by default
      *
@@ -47,6 +45,7 @@ final class Service
         private Router $router,
         Messages $messages,
         private ContextSerializer $serializer,
+        private int $maxPageChanges = 10,
         ?LoggerInterface $logger = null,
     ) {
         $this->logger = $logger ?? new NullLogger();
@@ -82,14 +81,10 @@ final class Service
         $this->logger->error('Error serving the request: ' . $error->getMessage(), ['exception' => $error]);
         try {
             // The context keeps nothing: the default controller starts at its initial state
-            $flow = new RequestFlow(
+            return $this->flow(
                 new Context($this->router, $this->router->defaultRoute()),
-                $this->serializer,
                 new Terminal(),
-                self::MAX_PAGE_CHANGES,
-            );
-
-            return $flow->answer(Vdt::line0($this->messages->get(FrameworkMessage::Error)));
+            )->answer(Vdt::line0($this->messages->get(FrameworkMessage::Error)));
         } catch (\Throwable $e) {
             $this->logger->critical('Cannot answer the error: ' . $e->getMessage(), ['exception' => $e]);
 
@@ -147,7 +142,7 @@ final class Service
      * the controllers it changes to, until a response answers the gateway. A context whose
      * route is unknown starts again at the default route.
      *
-     * @throws \LogicException after more than MAX_PAGE_CHANGES page changes
+     * @throws \LogicException after more than maxPageChanges page changes
      *
      * @param list<string> $content
      */
@@ -164,6 +159,14 @@ final class Service
             $content = [];
         }
 
-        return (new RequestFlow($context, $this->serializer, $terminal, self::MAX_PAGE_CHANGES))->run($key, $content);
+        return $this->flow($context, $terminal)->run($key, $content);
+    }
+
+    /**
+     * Flow of a request on the context, from the terminal
+     */
+    private function flow(Context $context, Terminal $terminal): RequestFlow
+    {
+        return new RequestFlow($context, $this->serializer, $terminal, $this->maxPageChanges);
     }
 }

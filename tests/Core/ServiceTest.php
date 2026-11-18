@@ -55,6 +55,9 @@ final class ServiceTest extends TestCase
 
     private Terminal $terminal;
 
+    // Page changes the service allows in one request
+    private int $maxPageChanges = 10;
+
     protected function setUp(): void
     {
         $this->logger = new MemoryLogger();
@@ -97,7 +100,7 @@ final class ServiceTest extends TestCase
             $router,
             (new MessagesXmlParser())->defaults(),
             new ContextSerializer($router, new HmacContextSigner('secret')),
-            $this->logger,
+            logger: $this->logger,
         );
 
         self::assertSame(
@@ -115,7 +118,7 @@ final class ServiceTest extends TestCase
             $router,
             (new MessagesXmlParser())->defaults(),
             new ContextSerializer($router, new HmacContextSigner('secret')),
-            $this->logger,
+            logger: $this->logger,
         );
 
         $answer = $service->handle(
@@ -199,7 +202,7 @@ final class ServiceTest extends TestCase
                 ->defaults()
                 ->with(['error' => 'Oops']),
             new ContextSerializer($router),
-            $this->logger,
+            logger: $this->logger,
         );
 
         self::assertStringContainsString(
@@ -225,10 +228,26 @@ final class ServiceTest extends TestCase
         $answer = $this->press($menu, key: FunctionKey::Next, content: ['ping']);
 
         self::assertStringContainsString(self::errorMessage(), self::line0($answer));
-        // The menu, then the page changes allowed, and no more
-        self::assertCount(Service::MAX_PAGE_CHANGES + 1, array_merge(...array_values($this->requests)));
+        // The menu, then the page changes allowed (10 by default), and no more
+        self::assertCount(10 + 1, array_merge(...array_values($this->requests)));
         self::assertStringContainsString(
             'Too many page changes in one request (more than 10): menu → ping → pong → ping',
+            $this->error()[0],
+        );
+    }
+
+    public function testThePageChangesAllowedCanBeGiven(): void
+    {
+        $this->maxPageChanges = 2;
+        $menu = $this->connect();
+        $this->requests = [];
+
+        $answer = $this->press($menu, key: FunctionKey::Next, content: ['ping']);
+
+        self::assertStringContainsString(self::errorMessage(), self::line0($answer));
+        self::assertCount(2 + 1, array_merge(...array_values($this->requests)));
+        self::assertStringContainsString(
+            'Too many page changes in one request (more than 2): menu → ping → pong → ping',
             $this->error()[0],
         );
     }
@@ -475,6 +494,7 @@ final class ServiceTest extends TestCase
             $router,
             (new MessagesXmlParser())->defaults(),
             new ContextSerializer($router),
+            $this->maxPageChanges,
             $this->logger,
         ))->handle($request);
     }
