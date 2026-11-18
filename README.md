@@ -181,10 +181,10 @@ KernelBuilder::for($router, $messages)
       and size, one input per line;
     - the 8 **function keys** under the screen, in the Minitel's 2 × 4 layout, those the
       input doesn't accept (`validwith`) disabled; Enter in a field presses Envoi;
-    - hidden, the context of the answer, its input command (as JSON, `Client\InputCommandJson`),
-      and the **screen so far**: an
-      answer drawing part of the screen (e.g. "Dernière page" on line 0) is drawn over it, as
-      on a Minitel (kept from its last clear screen). The page's screen and command come back
+    - hidden, the context of the answer, its input command (as JSON,
+      `Client\InputCommandJson`), and the **screen so far**: an answer drawing part of the
+      screen (e.g. "Dernière page" on line 0) is drawn over it, as on a Minitel (kept from its
+      last clear screen). The page's screen and command come back
       with the key as the client's state (`HtmlPageState`).
 
     A key that would **leave the service** (an answer whose next URL is another one, as
