@@ -43,7 +43,7 @@ final readonly class ListItems implements PaginatedList
     {
         return match ($request->functionKey()) {
             FunctionKey::Summary => Response::goTo('menu'),
-            FunctionKey::Send => $page->turn(1),
+            FunctionKey::Send => $page->next(),
             default => $page->stay(),
         };
     }

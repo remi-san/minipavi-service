@@ -57,8 +57,8 @@ final class PaginatedController extends AbstractController
         $page = $this->shown($request);
 
         return match ($request->functionKey()) {
-            FunctionKey::Next => $page->turn(1),
-            FunctionKey::Previous => $page->turn(-1),
+            FunctionKey::Next => $page->next(),
+            FunctionKey::Previous => $page->previous(),
             FunctionKey::Refresh => $page->display(),
             default => $this->list->onOtherKey($request, $page),
         };
