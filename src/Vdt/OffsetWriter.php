@@ -77,24 +77,24 @@ final readonly class OffsetWriter implements ScreenListener
 
     private function clearLine(Cursor $cursor): void
     {
-        if ($cursor->row === 0) {
-            $this->out->clearLine(0, $cursor->col, $cursor->attributes);
+        if ($cursor->row() === 0) {
+            $this->out->clearLine(0, $cursor->col(), $cursor->attributes());
             return;
         }
-        $row = $cursor->row + $this->y;
+        $row = $cursor->row() + $this->y;
         if ($row < 1 || $row > Screen::ROWS) {
             return;
         }
         // CAN clears up to the last column: moved left, the cleared cells must stop before the
         // columns that came from beyond the screen, so they are written as spaces instead
         if ($this->x < 0) {
-            for ($col = max(1, $cursor->col + $this->x); $col <= (Screen::COLS + $this->x); $col++) {
-                $this->out->glyph($row, $col, bytes: ' ', width: 1, attributes: $cursor->attributes);
+            for ($col = max(1, $cursor->col() + $this->x); $col <= (Screen::COLS + $this->x); $col++) {
+                $this->out->glyph($row, $col, bytes: ' ', width: 1, attributes: $cursor->attributes());
             }
             return;
         }
-        if (($cursor->col + $this->x) <= Screen::COLS) {
-            $this->out->clearLine($row, $cursor->col + $this->x, $cursor->attributes);
+        if (($cursor->col() + $this->x) <= Screen::COLS) {
+            $this->out->clearLine($row, $cursor->col() + $this->x, $cursor->attributes());
         }
     }
 }

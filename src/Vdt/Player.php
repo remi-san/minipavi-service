@@ -38,8 +38,8 @@ final readonly class Player
                         continue 2;
                     }
                     for ($n = 0; $n < ($repeat ? $token->count : 1); $n++) {
-                        $width = $cursor->attributes->width();
-                        $listener->glyph($cursor->row, $cursor->col, $bytes, $width, $cursor->attributes);
+                        $width = $cursor->attributes()->width();
+                        $listener->glyph($cursor->row(), $cursor->col(), $bytes, $width, $cursor->attributes());
                         $cursor->advance($width);
                     }
                     $last = $bytes;
@@ -47,13 +47,13 @@ final readonly class Player
                 case TokenType::Attribute:
                     // The Minitel discards ESC M and ESC O received on a row without double
                     // height (the size stays as it was); ESC N, and the other attributes, apply
-                    if (!Attributes::allowsDoubleHeight($cursor->row) && Attributes::isTallSize($token->bytes)) {
+                    if (!Attributes::allowsDoubleHeight($cursor->row()) && Attributes::isTallSize($token->bytes)) {
                         break;
                     }
-                    $cursor->attributes = $cursor->attributes->with($token->bytes);
+                    $cursor->setAttribute($token->bytes);
                     break;
                 case TokenType::Charset:
-                    $cursor->attributes = $cursor->attributes->withCharset($token->bytes);
+                    $cursor->setCharset($token->bytes);
                     break;
                 case TokenType::Position:
                     $cursor->reset($token->row, max(1, $token->col));

@@ -11,13 +11,53 @@ use MiniPaviService\Vdt\Videotex;
  */
 final class Cursor
 {
-    public int $row = 1;
-    public int $col = 1;
-    public Attributes $attributes;
+    private int $row = 1;
+    private int $col = 1;
+    private Attributes $attributes;
 
     public function __construct()
     {
         $this->attributes = Attributes::defaults();
+    }
+
+    /**
+     * Row of the cursor: 0 (the status row) to Screen::ROWS
+     */
+    public function row(): int
+    {
+        return $this->row;
+    }
+
+    /**
+     * Column of the cursor, from 1
+     */
+    public function col(): int
+    {
+        return $this->col;
+    }
+
+    /**
+     * Attributes of what the cursor draws next
+     */
+    public function attributes(): Attributes
+    {
+        return $this->attributes;
+    }
+
+    /**
+     * Sets the attribute of ESC byte (Attributes::with())
+     */
+    public function setAttribute(string $byte): void
+    {
+        $this->attributes = $this->attributes->with($byte);
+    }
+
+    /**
+     * Sets the character set of SI or SO (Attributes::withCharset())
+     */
+    public function setCharset(string $byte): void
+    {
+        $this->attributes = $this->attributes->withCharset($byte);
     }
 
     public function reset(int $row, int $col): void
