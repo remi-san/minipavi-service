@@ -6,6 +6,7 @@ namespace MiniPaviService\Http;
 
 use MiniPaviService\Client\HtmlClient;
 use MiniPaviService\Client\MiniPaviClient;
+use MiniPaviService\Core\ContextSerializer;
 use MiniPaviService\Core\Router;
 use MiniPaviService\Core\Service;
 use MiniPaviService\Core\Signing\ContextSigner;
@@ -165,7 +166,12 @@ final readonly class KernelBuilder
      */
     private function handler(): RequestHandlerInterface
     {
-        $service = new Service($this->router, $this->messages, $this->logger, $this->signer());
+        $service = new Service(
+            $this->router,
+            $this->messages,
+            new ContextSerializer($this->router, $this->signer()),
+            $this->logger,
+        );
 
         return new WithUrls(
             new Dispatcher(

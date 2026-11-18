@@ -8,6 +8,7 @@ use MiniPaviService\Client\MiniPaviClient;
 use MiniPaviService\Controller\Parameters\NoParameters;
 use MiniPaviService\Controller\Request;
 use MiniPaviService\Controller\Response;
+use MiniPaviService\Core\ContextSerializer;
 use MiniPaviService\Core\RouterBuilder;
 use MiniPaviService\Core\Service;
 use MiniPaviService\Core\Signing\ContextSigner;
@@ -42,7 +43,7 @@ final class ServiceRunnerTest extends TestCase
         ) => Response::display(new Vdt('home'))));
         $router = $routes->build();
         $this->logger = new MemoryLogger();
-        $this->service = new Service($router, Messages::defaults(), $this->logger);
+        $this->service = new Service($router, Messages::defaults(), new ContextSerializer($router), $this->logger);
     }
 
     public function testGivesTheResponseOfTheClientToTheAnswer(): void
@@ -175,6 +176,6 @@ final class ServiceRunnerTest extends TestCase
             ) => Response::display(new Vdt('home'))))
             ->build();
 
-        return new Service($router, Messages::defaults(), $this->logger, $signer);
+        return new Service($router, Messages::defaults(), new ContextSerializer($router, $signer), $this->logger);
     }
 }

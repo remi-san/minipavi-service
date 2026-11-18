@@ -8,6 +8,7 @@ use MiniPaviService\Controller\ControllerState;
 use MiniPaviService\Controller\Parameters\NoParameters;
 use MiniPaviService\Controller\Request;
 use MiniPaviService\Controller\Response;
+use MiniPaviService\Core\ContextSerializer;
 use MiniPaviService\Core\RouterBuilder;
 use MiniPaviService\Core\Service;
 use MiniPaviService\Gateway\CallMode;
@@ -44,7 +45,7 @@ final class ServiceTesterTest extends TestCase
         $router = $routes->build();
 
         $this->tester = new ServiceTester(
-            new Service($router, Messages::defaults()),
+            new Service($router, Messages::defaults(), new ContextSerializer($router)),
             new Terminal('192.0.2.1', 'websocket', 'Cv5'),
         );
     }

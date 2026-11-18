@@ -8,6 +8,7 @@ use MiniPaviService\Controller\Pagination\PageParameters;
 use MiniPaviService\Controller\Parameters\NoParameters;
 use MiniPaviService\Controller\Request;
 use MiniPaviService\Controller\Response;
+use MiniPaviService\Core\ContextSerializer;
 use MiniPaviService\Core\RouterBuilder;
 use MiniPaviService\Core\Service;
 use MiniPaviService\Gateway\GatewayRequest;
@@ -97,7 +98,8 @@ final class PaginatedControllerTest extends TestCase
         );
         $this->routes->addRoute('list', new ListController($page, ['a', 'b', 'c']));
 
-        (new ServiceTester(new Service($this->routes->build(), Messages::defaults())))
+        $router = $this->routes->build();
+        (new ServiceTester(new Service($router, Messages::defaults(), new ContextSerializer($router))))
             ->connect()
             ->press(FunctionKey::Send)
             ->press(FunctionKey::Next)
@@ -142,7 +144,8 @@ final class PaginatedControllerTest extends TestCase
             ->context;
         $this->routes->addRoute('list', new ListController($this->page(), ['a', 'b', 'c']));
 
-        $answer = (new Service($this->routes->build(), Messages::defaults()))->handle(
+        $router = $this->routes->build();
+        $answer = (new Service($router, Messages::defaults(), new ContextSerializer($router)))->handle(
             new GatewayRequest(FunctionKey::Refresh, [], $context),
         );
 
@@ -165,7 +168,9 @@ final class PaginatedControllerTest extends TestCase
     {
         $this->routes->addRoute('list', new ListController($this->page(), $items));
 
-        return (new ServiceTester(new Service($this->routes->build(), Messages::defaults())))
+        $router = $this->routes->build();
+
+        return (new ServiceTester(new Service($router, Messages::defaults(), new ContextSerializer($router))))
             ->connect()
             ->press(FunctionKey::Send);
     }

@@ -10,6 +10,7 @@ use MiniPaviService\Controller\Parameters\NoParameters;
 use MiniPaviService\Controller\Parameters\Parameters;
 use MiniPaviService\Controller\Request;
 use MiniPaviService\Controller\Response;
+use MiniPaviService\Core\ContextSerializer;
 use MiniPaviService\Core\RouterBuilder;
 use MiniPaviService\Core\Service;
 use MiniPaviService\Core\Signing\ForgedContextException;
@@ -88,11 +89,12 @@ final class ServiceTest extends TestCase
     public function testContextsOfConnectionsAndBackgroundCallsArentChecked(): void
     {
         // Their context isn't read: a service signing its contexts doesn't refuse it
+        $router = $this->routes->build();
         $service = new Service(
-            $this->routes->build(),
+            $router,
             Messages::defaults(),
+            new ContextSerializer($router, new HmacContextSigner('secret')),
             $this->logger,
-            new HmacContextSigner('secret'),
         );
 
         self::assertSame(
@@ -105,11 +107,12 @@ final class ServiceTest extends TestCase
 
     public function testForgedContextIsAnError(): void
     {
+        $router = $this->routes->build();
         $service = new Service(
-            $this->routes->build(),
+            $router,
             Messages::defaults(),
+            new ContextSerializer($router, new HmacContextSigner('secret')),
             $this->logger,
-            new HmacContextSigner('secret'),
         );
 
         $answer = $service->handle(
@@ -186,7 +189,13 @@ final class ServiceTest extends TestCase
 
     public function testErrorMessageCanBeChanged(): void
     {
-        $service = new Service($this->routes->build(), Messages::defaults()->with(['error' => 'Oops']), $this->logger);
+        $router = $this->routes->build();
+        $service = new Service(
+            $router,
+            Messages::defaults()->with(['error' => 'Oops']),
+            new ContextSerializer($router),
+            $this->logger,
+        );
 
         self::assertStringContainsString(
             'Oops',
@@ -199,7 +208,8 @@ final class ServiceTest extends TestCase
         $this->expectException(MessagesException::class);
         $this->expectExceptionMessage('No text for the messages: error, page.first, page.last, endkey, endkey.shift');
 
-        new Service($this->routes->build(), new Messages(['other' => 'x']));
+        $router = $this->routes->build();
+        new Service($router, new Messages(['other' => 'x']), new ContextSerializer($router));
     }
 
     public function testEndlessPageChangesAreStoppedAndAnsweredAsAnError(): void
@@ -251,7 +261,7 @@ final class ServiceTest extends TestCase
         ));
         $previous = $routes->build();
         $context =
-            (new Service($previous, Messages::defaults()))->handle(
+            (new Service($previous, Messages::defaults(), new ContextSerializer($previous)))->handle(
                 new GatewayRequest(ConnectionCode::Connect, terminal: $this->terminal),
             )->context ?? '';
 
@@ -454,7 +464,11 @@ final class ServiceTest extends TestCase
      */
     private function handle(GatewayRequest $request): ?GatewayResponse
     {
-        return (new Service($this->routes->build(), Messages::defaults(), $this->logger))->handle($request);
+        $router = $this->routes->build();
+
+        return (new Service($router, Messages::defaults(), new ContextSerializer($router), $this->logger))->handle(
+            $request,
+        );
     }
 
     private function connect(): GatewayResponse

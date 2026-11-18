@@ -9,6 +9,7 @@ use MiniPaviService\Client\HtmlPageState;
 use MiniPaviService\Controller\Parameters\NoParameters;
 use MiniPaviService\Controller\Request;
 use MiniPaviService\Controller\Response;
+use MiniPaviService\Core\ContextSerializer;
 use MiniPaviService\Core\RouterBuilder;
 use MiniPaviService\Core\Service;
 use MiniPaviService\Core\Signing\HmacContextSigner;
@@ -312,7 +313,12 @@ final class HtmlClientTest extends TestCase
         ))));
         $router = $routes->build();
         $runner = new ServiceRunner(
-            new Service($router, Messages::defaults(), new MemoryLogger(), new HmacContextSigner('secret')),
+            new Service(
+                $router,
+                Messages::defaults(),
+                new ContextSerializer($router, new HmacContextSigner('secret')),
+                new MemoryLogger(),
+            ),
             self::client(),
         );
 
