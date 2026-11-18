@@ -123,6 +123,8 @@ final class ContextSerializerTest extends TestCase
             self::fail('A context at an unknown route was read');
         } catch (UnknownRouteException $e) {
             self::assertSame('removed', $e->route);
+            // Not taken for a context that can't be read (\RuntimeException)
+            self::assertNotInstanceOf(\RuntimeException::class, $e);
         }
     }
 
