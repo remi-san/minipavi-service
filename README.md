@@ -611,7 +611,7 @@ Videotex can't be mixed up:
 
 ```php
 Vdt::text('Déjà vu');                       // text: its accents encoded in G2
-new Vdt("\x0C");                            // raw Videotex (or Vdt::fromString())
+new Vdt("\x0C");                            // raw Videotex
 Vdt::line0('Choix inconnu');               // on the status line (MiniPaviCli's writeLine0())
 $page->display($terminal)->append(Vdt::line0('Bienvenue'));  // one after the other
 Vdt::join($a, $b, $c);
@@ -636,7 +636,7 @@ They replace MiniPaviCli's global `VDT_*` and `PRO_*` constants, which are only 
 ```php
 use MiniPaviService\Vdt\Vdt;
 
-$picture = Vdt::fromString(file_get_contents('octopus.vdt'));
+$picture = new Vdt(file_get_contents('octopus.vdt'));
 $moved = $picture->offset(8, -2);     // 8 columns right, 2 rows up (negative: left, up)
 echo $moved->toString();               // the Videotex content
 echo $moved->screen()->preview();      // the screen, as text
