@@ -23,7 +23,7 @@ which depend on nothing above them):
 | `MiniPaviService` | the `Controller` and `Page` interfaces |
 | `Core\` | the runtime: `Service`, `Router` and its `Route`s, `Context` and its `RouteContext`s, `RequestFlow` |
 | `Controller\` | `AbstractController`, `Request`, `Response` and the response types, `Flow`, the states (`State`, `ControllerState`) |
-| `Controller\Parameters\` | what a controller keeps: `Parameters`, `NoParameters`, and the raw `Values` they are read from |
+| `Controller\Parameters\` | what a controller keeps: `Parameters`, `NoParameters`, their `ParametersType` (what `Controller::parametersType()` returns), and the raw `Values` they are read from |
 | `Controller\Pagination\` | `PaginatedController`, the `PaginatedList` it shows and its `ShownPage`, `Paginator`, `PageParameters` |
 | `Page\` | static and template pages, their display elements, and the page XML parser |
 | `Message\` | the messages shown on screen: `Message`, `FrameworkMessage`, `Messages` and their XML parser |
@@ -302,8 +302,13 @@ KernelBuilder::for($router, $messages)
   {
       public const NAME = 'home';
 
-      // What it keeps besides its state: nothing (AbstractController's parametersType())
       public function __construct(private Page $page) {}
+
+      // What it keeps besides its state: nothing
+      public function parametersType(): ParametersType
+      {
+          return ParametersType::none();
+      }
 
       // Shows the screen (onInit() and onInitInput() do the same, unless overridden)
       protected function onDisplay(Request $request): Response
@@ -388,8 +393,8 @@ KernelBuilder::for($router, $messages)
   - `initialState()`: a case of the string-backed enum of its states, implementing `State`
     (`ControllerState::Init` for an `AbstractController`);
   - `parametersType()`: the type of its parameters, a `ParametersType` of a class implementing
-    `Parameters` (`ParametersType::of(DirectoryParameters::class)`; `ParametersType::none()`
-    for none, what an `AbstractController` has unless it overrides it);
+    `Parameters` (`ParametersType::of(DirectoryParameters::class)`, or `ParametersType::none()`
+    for none);
 
   and gets them typed: `Request<TState, TParameters>`, `$request->state()` and
   `$request->parameters()`. Its responses keep a case of its enum and an object of its class
