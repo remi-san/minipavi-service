@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace MiniPaviService\Page;
+namespace MiniPaviService\Gateway;
 
 use MiniPaviService\Minitel\FunctionKey;
 

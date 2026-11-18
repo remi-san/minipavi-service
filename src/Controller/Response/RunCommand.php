@@ -9,7 +9,7 @@ use MiniPaviService\Controller\Parameters\Parameters;
 use MiniPaviService\Controller\Response;
 use MiniPaviService\Controller\State;
 use MiniPaviService\Gateway\GatewayResponse;
-use MiniPaviService\Page\InputCommand;
+use MiniPaviService\Gateway\InputCommand;
 use MiniPaviService\Vdt\Vdt;
 
 /**

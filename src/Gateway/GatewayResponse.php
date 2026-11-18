@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace MiniPaviService\Gateway;
 
 use MiniPaviService\Core\Signing\ContextSigner;
-use MiniPaviService\Page\InputCommand;
 use MiniPaviService\Vdt\Vdt;
 
 /**

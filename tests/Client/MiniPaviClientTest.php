@@ -9,8 +9,8 @@ use MiniPaviService\Client\MiniPaviClient;
 use MiniPaviService\Gateway\CallMode;
 use MiniPaviService\Gateway\GatewayRequest;
 use MiniPaviService\Gateway\GatewayResponse;
+use MiniPaviService\Gateway\InputCommand;
 use MiniPaviService\Minitel\FunctionKey;
-use MiniPaviService\Page\InputCommand;
 use MiniPaviService\Vdt\Vdt;
 use PHPUnit\Framework\TestCase;
 

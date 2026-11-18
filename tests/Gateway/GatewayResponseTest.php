@@ -7,8 +7,8 @@ namespace MiniPaviService\Tests\Gateway;
 use MiniPaviService\Core\Signing\HmacContextSigner;
 use MiniPaviService\Gateway\CallMode;
 use MiniPaviService\Gateway\GatewayResponse;
+use MiniPaviService\Gateway\InputCommand;
 use MiniPaviService\Minitel\FunctionKey;
-use MiniPaviService\Page\InputCommand;
 use MiniPaviService\Vdt\Vdt;
 use PHPUnit\Framework\TestCase;
 

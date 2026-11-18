@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace MiniPaviService;
 
+use MiniPaviService\Gateway\InputCommand;
 use MiniPaviService\Message\Message;
 use MiniPaviService\Minitel\Terminal;
-use MiniPaviService\Page\InputCommand;
 use MiniPaviService\Vdt\Vdt;
 
 /**

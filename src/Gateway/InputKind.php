@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace MiniPaviService\Page;
+namespace MiniPaviService\Gateway;
 
 /**
  * Kind of field an InputCommand reads
