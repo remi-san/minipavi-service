@@ -25,7 +25,7 @@ readonly class Request
      * @param TState $state
      * @param TParameters $parameters
      * @param ?Key $key function key pressed (FunctionKey), or connection code
-     *                  (ConnectionCode); null for none (e.g. after a Response::goTo())
+     *                  (ConnectionCode); null for none (see key())
      * @param list<string> $content text typed, one string per line of the input field
      */
     public function __construct(
@@ -57,8 +57,13 @@ readonly class Request
     }
 
     /**
-     * Function key pressed (FunctionKey), or connection code (ConnectionCode); null for none
-     * (e.g. after a Response::goTo()). See functionKey() and connectionCode()
+     * Function key pressed (FunctionKey), or connection code (ConnectionCode). See
+     * functionKey() and connectionCode().
+     *
+     * Null when there is none: for the controller a Response::goTo() leads to, for the default
+     * route started again because the context's route is unknown, and for what the gateway
+     * sends that the framework doesn't know as a key (GatewayRequest::keyOf(), e.g. DIRECT
+     * after a CallMode::Direct call). A controller can't tell these cases apart by the key.
      */
     public function key(): ?Key
     {

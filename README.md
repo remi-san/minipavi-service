@@ -243,7 +243,9 @@ KernelBuilder::for($router, $messages)
     connection code; `connectionCode()` the `Gateway\ConnectionCode` (`Connect`,
     `DirectConnect`, `Disconnect`, `BackgroundCall`), or null for a function key; `key()` gives
     either, as a `Minitel\Key` (`key()?->value` is the name the gateway sent: `ENVOI`…, or
-    `CNX`, `FIN`…), null when there is none (after a `Response::goTo()`);
+    `CNX`, `FIN`…), null when there is none: after a `Response::goTo()`, at the default route
+    started again because the context's route is unknown, and for what the gateway sends that
+    isn't a known key (e.g. `DIRECT`, after a `CallMode::Direct` call);
   - `content()`: the text typed, one string per line of the input field, and
     `contentAsString()`;
   - `terminal()`: where the user connects from (`remoteAddr()`, `typeSocket()`,
