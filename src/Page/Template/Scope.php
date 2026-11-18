@@ -32,10 +32,11 @@ final readonly class Scope
     }
 
     /**
-     * Attributes of an element placed by its row attribute, at its row of the page: inside a
-     * <foreach>, its row (0 by default) is relative to the current item
+     * Attributes of an element placed by its row attribute (ElementBuilder::isPlacedByRow():
+     * only for such an element, as it sets row), at its row of the page: inside a <foreach>,
+     * its row (0 by default) is relative to the current item
      */
-    public function placed(AttributeValues $attributes): AttributeValues
+    public function placedByRow(AttributeValues $attributes): AttributeValues
     {
         if ($this->rowOffset === null) {
             return $attributes;

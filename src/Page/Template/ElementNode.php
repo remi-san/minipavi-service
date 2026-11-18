@@ -32,7 +32,7 @@ final readonly class ElementNode implements Node
             $attributes = new AttributeValues(array_map($scope->substitute(...), $this->attributes));
             // Inside a <foreach>, row is relative to the current item
             if ($this->builder->isPlacedByRow()) {
-                $attributes = $scope->placed($attributes);
+                $attributes = $scope->placedByRow($attributes);
             }
 
             return [$this->builder->build($attributes, $scope->substitute($this->text))];

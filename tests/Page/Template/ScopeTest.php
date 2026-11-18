@@ -90,17 +90,19 @@ final class ScopeTest extends TestCase
         self::assertSame([1, 3], [$scope->value('a'), $scope->value('b')]);
         // Rows relative to row 5
         self::assertSame(6, $scope->rowOf(1));
+        // Replaced, not added to: a nested <foreach> gives its item's row of the page
+        self::assertSame(8, $scope->with([], rowOffset: 8)->rowOf(0));
     }
 
     public function testPlacesAnElementByItsRowInsideALoopOnly(): void
     {
         $attributes = new AttributeValues(['row' => '1', 'col' => '3']);
 
-        self::assertSame($attributes, (new Scope())->placed($attributes));
+        self::assertSame($attributes, (new Scope())->placedByRow($attributes));
         self::assertSame(1, (new Scope())->rowOf(1));
         $inLoop = (new Scope())->with([], rowOffset: 5);
-        self::assertSame(6, $inLoop->placed($attributes)->int('row', default: 0));
+        self::assertSame(6, $inLoop->placedByRow($attributes)->int('row', default: 0));
         // Its first row by default
-        self::assertSame(5, $inLoop->placed(new AttributeValues([]))->int('row', default: 0));
+        self::assertSame(5, $inLoop->placedByRow(new AttributeValues([]))->int('row', default: 0));
     }
 }
