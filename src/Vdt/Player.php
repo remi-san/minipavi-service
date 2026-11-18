@@ -17,7 +17,7 @@ final readonly class Player
 {
     /**
      * Plays the content, telling the listener each character drawn (repetitions included),
-     * and the other tokens once the cursor has followed them
+     * and the other tokens once the cursor has followed them (a copy of the cursor)
      */
     public function play(Vdt $vdt, ScreenListener $listener): void
     {
@@ -56,7 +56,8 @@ final readonly class Player
                     $cursor->reset(1, col: 1);
                     break;
             }
-            $listener->sequence($token, $cursor);
+            // A copy: what the listener does with it doesn't move what follows
+            $listener->sequence($token, clone $cursor);
         }
     }
 }
