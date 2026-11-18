@@ -70,15 +70,7 @@ final readonly class KernelBuilder
      */
     public function withLogger(LoggerInterface $logger): self
     {
-        return new self(
-            $this->router,
-            $this->messages,
-            $logger,
-            $this->contextKey,
-            $this->requestUrl,
-            $this->emulator,
-            $this->handlers,
-        );
+        return $this->with(logger: $logger);
     }
 
     /**
@@ -87,15 +79,7 @@ final readonly class KernelBuilder
      */
     public function withContextKey(#[\SensitiveParameter] string $key): self
     {
-        return new self(
-            $this->router,
-            $this->messages,
-            $this->logger,
-            $key,
-            $this->requestUrl,
-            $this->emulator,
-            $this->handlers,
-        );
+        return $this->with(contextKey: $key);
     }
 
     /**
@@ -103,15 +87,7 @@ final readonly class KernelBuilder
      */
     public function withRequestUrl(RequestUrl $requestUrl): self
     {
-        return new self(
-            $this->router,
-            $this->messages,
-            $this->logger,
-            $this->contextKey,
-            $requestUrl,
-            $this->emulator,
-            $this->handlers,
-        );
+        return $this->with(requestUrl: $requestUrl);
     }
 
     /**
@@ -119,15 +95,7 @@ final readonly class KernelBuilder
      */
     public function withEmulator(EmulatorConfig $emulator): self
     {
-        return new self(
-            $this->router,
-            $this->messages,
-            $this->logger,
-            $this->contextKey,
-            $this->requestUrl,
-            $emulator,
-            $this->handlers,
-        );
+        return $this->with(emulator: $emulator);
     }
 
     /**
@@ -136,14 +104,30 @@ final readonly class KernelBuilder
      */
     public function withHandler(ConditionalRequestHandler $handler): self
     {
+        return $this->with(handlers: [...$this->handlers, $handler]);
+    }
+
+    /**
+     * A copy with the values given, the others as they are: what each with...() changes
+     *
+     * @param ?list<ConditionalRequestHandler> $handlers
+     */
+    private function with(
+        ?LoggerInterface $logger = null,
+        #[\SensitiveParameter]
+        ?string $contextKey = null,
+        ?RequestUrl $requestUrl = null,
+        ?EmulatorConfig $emulator = null,
+        ?array $handlers = null,
+    ): self {
         return new self(
             $this->router,
             $this->messages,
-            $this->logger,
-            $this->contextKey,
-            $this->requestUrl,
-            $this->emulator,
-            [...$this->handlers, $handler],
+            $logger ?? $this->logger,
+            $contextKey ?? $this->contextKey,
+            $requestUrl ?? $this->requestUrl,
+            $emulator ?? $this->emulator,
+            $handlers ?? $this->handlers,
         );
     }
 
