@@ -8,9 +8,6 @@ use MiniPaviService\Gateway\InputCommand;
 use MiniPaviService\Message\FrameworkMessage;
 use MiniPaviService\Message\Messages;
 use MiniPaviService\Minitel\FunctionKey;
-use MiniPaviService\Minitel\InputField;
-use MiniPaviService\Minitel\Position;
-use MiniPaviService\Minitel\Span;
 use MiniPaviService\Vdt\Screen\HtmlRenderer;
 use MiniPaviService\Vdt\Vdt;
 use Psr\Http\Message\ServerRequestInterface;
@@ -19,8 +16,8 @@ use Psr\Http\Message\ServerRequestInterface;
  * The form of HtmlClient's page, both ways: render() draws the screen (HtmlRenderer), with the
  * input fields of the command over it, the function keys under it (those the input doesn't
  * accept disabled), and, hidden, the context, the command and the screen so far; read() gives
- * back what the page posted (PostedForm). Its fields, and how the command is posted back, are
- * this class's alone.
+ * back what the page posted (PostedForm). Its fields are this class's alone; the command is
+ * posted back as InputCommandJson writes it.
  */
 final readonly class HtmlForm
 {
@@ -33,10 +30,12 @@ final readonly class HtmlForm
 
     /**
      * @param Messages $messages the service's: the labels of the keys
+     * @param InputCommandJson $commands how the command is posted back with the page
      */
     public function __construct(
         private HtmlRenderer $renderer,
         private Messages $messages,
+        private InputCommandJson $commands = new InputCommandJson(),
     ) {}
 
     /**
@@ -50,7 +49,7 @@ final readonly class HtmlForm
         $screen = $screen->fromLastClear();
         $hidden =
             self::hidden(self::CONTEXT, $context)
-            . self::hidden(self::COMMAND, $command === null ? '' : self::encoded($command))
+            . self::hidden(self::COMMAND, $command === null ? '' : $this->commands->encode($command))
             . self::hidden(self::SCREEN, base64_encode($screen->toString()));
 
         return $this->renderer->render(
@@ -79,7 +78,7 @@ final readonly class HtmlForm
             self::text($form, self::CONTEXT),
             new HtmlPageState(
                 new Vdt((string) base64_decode(self::text($form, self::SCREEN), strict: true)),
-                self::command(self::text($form, self::COMMAND)),
+                $this->commands->decode(self::text($form, self::COMMAND)),
             ),
         );
     }
@@ -147,74 +146,6 @@ final readonly class HtmlForm
     }
 
     /**
-     * The command posted back with the page (encoded()), null if there is none or it can't be
-     * read: what the browser posts may be anything
-     */
-    private static function command(string $json): ?InputCommand
-    {
-        $command = json_decode($json, associative: true);
-        if (!\is_array($command)) {
-            return null;
-        }
-        foreach (['row', 'col', 'length', 'lines'] as $name) {
-            if (!\is_int($command[$name] ?? null)) {
-                return null;
-            }
-        }
-        $validWith = [];
-        foreach (\is_array($command['validWith'] ?? null) ? $command['validWith'] : [] as $name) {
-            $key = \is_string($name) ? FunctionKey::tryFrom($name) : null;
-            if ($key === null) {
-                continue;
-            }
-            $validWith[] = $key;
-        }
-        $prefill = array_values(array_map(
-            static fn(mixed $line) => \is_string($line) ? $line : '',
-            \is_array($command['prefill'] ?? null) ? $command['prefill'] : [],
-        ));
-        try {
-            $field = new InputField(
-                new Span(
-                    new Position(
-                        self::int($command, name: 'row', default: 1),
-                        self::int($command, name: 'col', default: 1),
-                    ),
-                    self::int($command, name: 'length', default: 1),
-                ),
-                self::int($command, name: 'lines', default: 1),
-                $validWith,
-                ($command['cursor'] ?? true) === true,
-                self::text($command, name: 'spaceChar'),
-            );
-        } catch (\InvalidArgumentException) {
-            // Off the screen
-            return null;
-        }
-
-        return new InputCommand($field, $prefill);
-    }
-
-    /**
-     * The command as JSON, posted back with the page, read by command()
-     */
-    private static function encoded(InputCommand $command): string
-    {
-        $field = $command->field;
-
-        return (string) json_encode([
-            'row' => $field->span->start->row,
-            'col' => $field->span->start->col,
-            'length' => $field->span->length,
-            'lines' => $field->lines,
-            'validWith' => array_map(static fn(FunctionKey $key) => $key->value, $field->validWith),
-            'cursor' => $field->cursor,
-            'spaceChar' => $field->spaceChar,
-            'prefill' => $command->prefill,
-        ]);
-    }
-
-    /**
      * @return array<mixed>
      */
     private static function form(ServerRequestInterface $request): array
@@ -232,16 +163,6 @@ final readonly class HtmlForm
         $value = $values[$name] ?? '';
 
         return \is_string($value) ? $value : '';
-    }
-
-    /**
-     * @param array<mixed> $values
-     */
-    private static function int(array $values, string $name, int $default): int
-    {
-        $value = $values[$name] ?? null;
-
-        return is_numeric($value) ? (int) $value : $default;
     }
 
     private static function hidden(string $name, string $value): string
