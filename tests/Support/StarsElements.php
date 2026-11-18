@@ -31,15 +31,16 @@ final readonly class StarsElements implements PageElements
             return [self::builder($this->tag, static fn() => new Background(''))];
         }
 
+        // Keyed by tag, which the parser ignores
         return [
-            self::builder(
+            'stars' => self::builder(
                 'stars',
                 static fn(AttributeValues $attributes) => new Text(
                     str_repeat('*', max(0, $attributes->int('count', default: 1))),
                     new Position($attributes->int('row', default: 1)),
                 ),
             ),
-            self::builder(
+            'picture' => self::builder(
                 'picture',
                 static fn(AttributeValues $attributes, string $text) => new Background($files->read($text)),
             ),

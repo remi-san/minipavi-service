@@ -50,7 +50,10 @@ final readonly class ElementFactory
     {
         $builders = [];
         foreach ($elements as $set) {
-            array_push($builders, ...$set->builders($files, $messages));
+            // Keys ignored: spreading string keys would pass them as named arguments
+            foreach ($set->builders($files, $messages) as $builder) {
+                $builders[] = $builder;
+            }
         }
 
         return new self(...$builders);

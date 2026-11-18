@@ -19,7 +19,7 @@ interface PageElements
      * @param PageFiles $files the files of the page's folder (e.g. for an element drawing a file)
      * @param Messages $messages the page's messages: the service's, with the page's <message>
      *
-     * @return list<ElementBuilder>
+     * @return array<ElementBuilder> its keys are ignored
      */
     public function builders(PageFiles $files, Messages $messages): array;
 }
