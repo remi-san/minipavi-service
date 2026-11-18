@@ -14,28 +14,24 @@ use MiniPaviService\Vdt\Videotex;
  */
 final readonly class Attributes
 {
-    // SI and SO: the charsets
-    private const TEXT = Videotex::TEXT_SET;
-    private const MOSAIC = Videotex::MOSAIC_SET;
-
-    // The byte after ESC of the attributes: the second byte of Videotex's code of each
-    private const SIZE_NORMAL = "\x4C"; // SIZE_NORMAL
-    private const DOUBLE_HEIGHT = "\x4D"; // SIZE_DOUBLE_HEIGHT
-    private const DOUBLE_WIDTH = "\x4E"; // SIZE_DOUBLE_WIDTH
-    private const DOUBLE = "\x4F"; // SIZE_DOUBLE
-    private const BLINK = "\x48"; // BLINK_ON
-    private const FIXED = "\x49"; // BLINK_OFF
-    private const MASK = "\x58"; // MASK_ON
-    private const UNMASK = "\x5F"; // MASK_OFF
-    private const UNDERLINE = "\x5A"; // UNDERLINE_ON
-    private const NO_UNDERLINE = "\x59"; // UNDERLINE_OFF
-    private const INVERSE = "\x5D"; // INVERSE_ON
-    private const NO_INVERSE = "\x5C"; // INVERSE_OFF
+    // The byte after ESC of each attribute, which Videotex's codes are made of
+    public const SIZE_NORMAL = "\x4C";
+    public const DOUBLE_HEIGHT = "\x4D";
+    public const DOUBLE_WIDTH = "\x4E";
+    public const DOUBLE = "\x4F";
+    public const BLINK = "\x48";
+    public const FIXED = "\x49";
+    public const MASK = "\x58";
+    public const UNMASK = "\x5F";
+    public const UNDERLINE = "\x5A";
+    public const NO_UNDERLINE = "\x59";
+    public const INVERSE = "\x5D";
+    public const NO_INVERSE = "\x5C";
 
     // The byte after ESC of each group, as the Minitel starts (the charset: SI): white text
     // (0x40 + 7) on black (0x50 + 0)
     private const DEFAULTS = [
-        'charset' => self::TEXT,
+        'charset' => Videotex::TEXT_SET,
         'fg' => "\x47",
         'bg' => "\x50",
         'size' => self::SIZE_NORMAL,
@@ -83,12 +79,13 @@ final readonly class Attributes
      */
     public function withCharset(string $byte): self
     {
-        return new self(['charset' => $byte === self::MOSAIC ? self::MOSAIC : self::TEXT] + $this->values);
+        return new self(['charset' => $byte === Videotex::MOSAIC_SET ? Videotex::MOSAIC_SET : Videotex::TEXT_SET]
+        + $this->values);
     }
 
     public function isMosaic(): bool
     {
-        return $this->values['charset'] === self::MOSAIC;
+        return $this->values['charset'] === Videotex::MOSAIC_SET;
     }
 
     public function foreground(): Color
@@ -195,19 +192,21 @@ final readonly class Attributes
     private static function group(string $byte): ?string
     {
         $code = \ord($byte);
-
         // The colours: 0x40 + n for the text, 0x50 + n for the background (Color)
-        return match (true) {
-            $code >= 0x40 && $code <= 0x47 => 'fg',
-            $code >= 0x50 && $code <= 0x57 => 'bg',
-            default => match ($byte) {
-                self::SIZE_NORMAL, self::DOUBLE_HEIGHT, self::DOUBLE_WIDTH, self::DOUBLE => 'size',
-                self::BLINK, self::FIXED => 'blink',
-                self::MASK, self::UNMASK => 'mask',
-                self::UNDERLINE, self::NO_UNDERLINE => 'underline',
-                self::INVERSE, self::NO_INVERSE => 'inverse',
-                default => null,
-            },
+        if ($code >= 0x40 && $code <= 0x47) {
+            return 'fg';
+        }
+        if ($code >= 0x50 && $code <= 0x57) {
+            return 'bg';
+        }
+
+        return match ($byte) {
+            self::SIZE_NORMAL, self::DOUBLE_HEIGHT, self::DOUBLE_WIDTH, self::DOUBLE => 'size',
+            self::BLINK, self::FIXED => 'blink',
+            self::MASK, self::UNMASK => 'mask',
+            self::UNDERLINE, self::NO_UNDERLINE => 'underline',
+            self::INVERSE, self::NO_INVERSE => 'inverse',
+            default => null,
         };
     }
 }

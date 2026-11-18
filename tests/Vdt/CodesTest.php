@@ -86,35 +86,31 @@ final class CodesTest extends TestCase
     }
 
     /**
-     * Attributes names the bytes after ESC itself: they are those of Videotex's codes
+     * The Minitel starts with every attribute off, and the codes turning them off are
+     * attributes (Videotex's codes are made of Attributes' bytes)
      */
-    public function testAttributesReadVideotexCodes(): void
+    public function testAttributesStartOffAndTheirOffCodesAreAttributes(): void
     {
-        $set = static fn(string $code) => Attributes::defaults()->with(substr($code, offset: 1));
+        $defaults = Attributes::defaults();
 
-        self::assertTrue($set(Videotex::SIZE_DOUBLE_HEIGHT)->isDoubleHeight());
-        self::assertTrue($set(Videotex::SIZE_DOUBLE_WIDTH)->isDoubleWidth());
-        self::assertTrue($set(Videotex::SIZE_DOUBLE)->isDoubleHeight() && $set(Videotex::SIZE_DOUBLE)->isDoubleWidth());
-        self::assertTrue($set(Videotex::BLINK_ON)->isBlinking());
-        self::assertTrue($set(Videotex::MASK_ON)->isMasked());
-        self::assertTrue($set(Videotex::UNDERLINE_ON)->isUnderlined());
-        self::assertTrue($set(Videotex::INVERSE_ON)->isInverse());
-        // The codes turning them off give the defaults back
-        self::assertEquals(
-            Attributes::defaults(),
-            Attributes::defaults()
-                ->with(substr(Videotex::SIZE_DOUBLE, offset: 1))
-                ->with(substr(Videotex::SIZE_NORMAL, offset: 1))
-                ->with(substr(Videotex::BLINK_ON, offset: 1))
-                ->with(substr(Videotex::BLINK_OFF, offset: 1))
-                ->with(substr(Videotex::MASK_ON, offset: 1))
-                ->with(substr(Videotex::MASK_OFF, offset: 1))
-                ->with(substr(Videotex::UNDERLINE_ON, offset: 1))
-                ->with(substr(Videotex::UNDERLINE_OFF, offset: 1))
-                ->with(substr(Videotex::INVERSE_ON, offset: 1))
-                ->with(substr(Videotex::INVERSE_OFF, offset: 1)),
-        );
-        self::assertSame(Videotex::ESC, Videotex::INVERSE_ON[0]);
+        self::assertFalse($defaults->isDoubleHeight() || $defaults->isDoubleWidth());
+        self::assertFalse($defaults->isBlinking());
+        self::assertFalse($defaults->isMasked());
+        self::assertFalse($defaults->isUnderlined());
+        self::assertFalse($defaults->isInverse());
+        foreach ([
+            Videotex::SIZE_NORMAL,
+            Videotex::BLINK_OFF,
+            Videotex::MASK_OFF,
+            Videotex::UNDERLINE_OFF,
+            Videotex::INVERSE_OFF,
+        ] as $off) {
+            self::assertSame(Videotex::ESC, $off[0]);
+            self::assertTrue(Attributes::isAttribute($off[1]), bin2hex($off));
+        }
+        // Each turns its "on" code off again
+        self::assertEquals($defaults, $defaults->with(Attributes::INVERSE)->with(Attributes::NO_INVERSE));
+        self::assertEquals($defaults, $defaults->with(Attributes::DOUBLE)->with(Attributes::SIZE_NORMAL));
     }
 
     public function testProtocolSequences(): void

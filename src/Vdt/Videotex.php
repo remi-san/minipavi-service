@@ -4,9 +4,13 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Vdt;
 
+use MiniPaviService\Vdt\Screen\Attributes;
+
 /**
- * Videotex codes, to send as they are: the framework's names for the VDT_* constants of
- * MiniPaviCli
+ * Videotex codes, by name: control codes, attributes (ESC and the byte after it, which
+ * Screen\Attributes names) and sequences. Most are MiniPaviCli's VDT_* constants (CodesTest
+ * checks them); HOME, ESC, SEP, SS3 and the mask codes have none. Some are sent as they are;
+ * ESC, POSITION, REPEAT, G2, SEP and SS3 start a sequence, with more bytes after them.
  */
 final class Videotex
 {
@@ -29,23 +33,30 @@ final class Videotex
     public const MOSAIC_SET = "\x0E";
     // ESC: starts an attribute (ESC <byte>) or a protocol sequence
     public const ESC = "\x1B";
+    // SS2: starts a G2 character (e.g. £, or an accent and its letter)
+    public const G2 = "\x19";
+    // SUB: shown as an error character
+    public const SUB = "\x1A";
+    // SEP and SS3: each followed by one byte
+    public const SEP = "\x13";
+    public const SS3 = "\x1D";
     // CAN: clears the row from the cursor to its end, with the current background color
     public const CLEAR_LINE = "\x18";
     public const CURSOR_OFF = "\x14";
     // Background and foreground colors swapped
-    public const INVERSE_ON = "\x1B\x5D";
-    public const INVERSE_OFF = "\x1B\x5C";
-    public const UNDERLINE_ON = "\x1B\x5A";
-    public const UNDERLINE_OFF = "\x1B\x59";
-    public const BLINK_ON = "\x1B\x48";
-    public const BLINK_OFF = "\x1B\x49";
+    public const INVERSE_ON = self::ESC . Attributes::INVERSE;
+    public const INVERSE_OFF = self::ESC . Attributes::NO_INVERSE;
+    public const UNDERLINE_ON = self::ESC . Attributes::UNDERLINE;
+    public const UNDERLINE_OFF = self::ESC . Attributes::NO_UNDERLINE;
+    public const BLINK_ON = self::ESC . Attributes::BLINK;
+    public const BLINK_OFF = self::ESC . Attributes::FIXED;
     // Masked: hidden until revealed
-    public const MASK_ON = "\x1B\x58";
-    public const MASK_OFF = "\x1B\x5F";
-    public const SIZE_NORMAL = "\x1B\x4C";
-    public const SIZE_DOUBLE_HEIGHT = "\x1B\x4D";
-    public const SIZE_DOUBLE_WIDTH = "\x1B\x4E";
-    public const SIZE_DOUBLE = "\x1B\x4F";
+    public const MASK_ON = self::ESC . Attributes::MASK;
+    public const MASK_OFF = self::ESC . Attributes::UNMASK;
+    public const SIZE_NORMAL = self::ESC . Attributes::SIZE_NORMAL;
+    public const SIZE_DOUBLE_HEIGHT = self::ESC . Attributes::DOUBLE_HEIGHT;
+    public const SIZE_DOUBLE_WIDTH = self::ESC . Attributes::DOUBLE_WIDTH;
+    public const SIZE_DOUBLE = self::ESC . Attributes::DOUBLE;
     // Back to the standard character sets G0 and G1, after redefined characters (DRCS)
     public const RESET_CHARSETS = "\x1B\x28\x40\x1B\x29\x63";
 }
