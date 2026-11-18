@@ -6,33 +6,18 @@ namespace MiniPaviService\Message;
 
 /**
  * Texts of the messages shown on the Minitel, by name (Message): the framework's defaults
- * (defaults()), a service's messages file over them (MessagesXmlParser), a page's
+ * (MessagesXmlParser::defaults()), a service's messages file over them (MessagesXmlParser), a page's
  * <message> over those (with()). A text can have {{placeholders}}, replaced by get().
  * Immutable.
  */
 final readonly class Messages
 {
-    private const DEFAULTS = __DIR__ . '/../../config/messages.xml';
-
     /**
      * @param array<string, string> $texts name => text
      */
     public function __construct(
         private array $texts = [],
     ) {}
-
-    /**
-     * The framework's messages (config/messages.xml), read once
-     */
-    public static function defaults(): self
-    {
-        static $defaults = null;
-        if (!$defaults instanceof self) {
-            $defaults = (new MessagesXmlParser())->parseFile(self::DEFAULTS, new self());
-        }
-
-        return $defaults;
-    }
 
     /**
      * These messages, with texts redefining or adding some

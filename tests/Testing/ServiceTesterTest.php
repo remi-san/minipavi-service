@@ -12,7 +12,7 @@ use MiniPaviService\Core\ContextSerializer;
 use MiniPaviService\Core\RouterBuilder;
 use MiniPaviService\Core\Service;
 use MiniPaviService\Gateway\CallMode;
-use MiniPaviService\Message\Messages;
+use MiniPaviService\Message\MessagesXmlParser;
 use MiniPaviService\Minitel\FunctionKey;
 use MiniPaviService\Minitel\Terminal;
 use MiniPaviService\Testing\ServiceTester;
@@ -45,7 +45,7 @@ final class ServiceTesterTest extends TestCase
         $router = $routes->build();
 
         $this->tester = new ServiceTester(
-            new Service($router, Messages::defaults(), new ContextSerializer($router)),
+            new Service($router, (new MessagesXmlParser())->defaults(), new ContextSerializer($router)),
             new Terminal('192.0.2.1', 'websocket', 'Cv5'),
         );
     }

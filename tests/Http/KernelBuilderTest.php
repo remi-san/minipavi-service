@@ -14,7 +14,7 @@ use MiniPaviService\Http\Dispatch\QueryParameterEquals;
 use MiniPaviService\Http\Emulator\EmulatorConfig;
 use MiniPaviService\Http\KernelBuilder;
 use MiniPaviService\Http\Url\RequestUrl;
-use MiniPaviService\Message\Messages;
+use MiniPaviService\Message\MessagesXmlParser;
 use MiniPaviService\Tests\Support\CallbackController;
 use MiniPaviService\Tests\Support\MemoryLogger;
 use MiniPaviService\Tests\Support\RecordingHandler;
@@ -38,7 +38,7 @@ final class KernelBuilderTest extends TestCase
             Request $request,
         ) => Response::display(Vdt::position(1, row: 1)->append(Vdt::text('HOME')))));
         $router = $routes->build();
-        $this->builder = KernelBuilder::for($router, Messages::defaults());
+        $this->builder = KernelBuilder::for($router, (new MessagesXmlParser())->defaults());
     }
 
     #[RunInSeparateProcess]

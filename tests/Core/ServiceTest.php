@@ -23,6 +23,7 @@ use MiniPaviService\Gateway\InputCommand;
 use MiniPaviService\Message\FrameworkMessage;
 use MiniPaviService\Message\Messages;
 use MiniPaviService\Message\MessagesException;
+use MiniPaviService\Message\MessagesXmlParser;
 use MiniPaviService\Minitel\FunctionKey;
 use MiniPaviService\Minitel\InputField;
 use MiniPaviService\Minitel\Terminal;
@@ -92,7 +93,7 @@ final class ServiceTest extends TestCase
         $router = $this->routes->build();
         $service = new Service(
             $router,
-            Messages::defaults(),
+            (new MessagesXmlParser())->defaults(),
             new ContextSerializer($router, new HmacContextSigner('secret')),
             $this->logger,
         );
@@ -110,7 +111,7 @@ final class ServiceTest extends TestCase
         $router = $this->routes->build();
         $service = new Service(
             $router,
-            Messages::defaults(),
+            (new MessagesXmlParser())->defaults(),
             new ContextSerializer($router, new HmacContextSigner('secret')),
             $this->logger,
         );
@@ -192,7 +193,9 @@ final class ServiceTest extends TestCase
         $router = $this->routes->build();
         $service = new Service(
             $router,
-            Messages::defaults()->with(['error' => 'Oops']),
+            (new MessagesXmlParser())
+                ->defaults()
+                ->with(['error' => 'Oops']),
             new ContextSerializer($router),
             $this->logger,
         );
@@ -261,7 +264,7 @@ final class ServiceTest extends TestCase
         ));
         $previous = $routes->build();
         $context =
-            (new Service($previous, Messages::defaults(), new ContextSerializer($previous)))->handle(
+            (new Service($previous, (new MessagesXmlParser())->defaults(), new ContextSerializer($previous)))->handle(
                 new GatewayRequest(ConnectionCode::Connect, terminal: $this->terminal),
             )->context ?? '';
 
@@ -466,9 +469,12 @@ final class ServiceTest extends TestCase
     {
         $router = $this->routes->build();
 
-        return (new Service($router, Messages::defaults(), new ContextSerializer($router), $this->logger))->handle(
-            $request,
-        );
+        return (new Service(
+            $router,
+            (new MessagesXmlParser())->defaults(),
+            new ContextSerializer($router),
+            $this->logger,
+        ))->handle($request);
     }
 
     private function connect(): GatewayResponse
@@ -540,7 +546,7 @@ final class ServiceTest extends TestCase
 
     private static function errorMessage(): string
     {
-        return Messages::defaults()->get(FrameworkMessage::Error);
+        return (new MessagesXmlParser())->defaults()->get(FrameworkMessage::Error);
     }
 
     /**

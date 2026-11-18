@@ -6,7 +6,7 @@ namespace MiniPaviService\Tests\Page\Parser;
 
 use MiniPaviService\Gateway\InputCommand;
 use MiniPaviService\Message\FrameworkMessage;
-use MiniPaviService\Message\Messages;
+use MiniPaviService\Message\MessagesXmlParser;
 use MiniPaviService\Minitel\FunctionKey;
 use MiniPaviService\Minitel\InputField;
 use MiniPaviService\Minitel\Keyboard;
@@ -32,7 +32,7 @@ final class PageXmlParserTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->parser = new PageXmlParser(Messages::defaults());
+        $this->parser = new PageXmlParser((new MessagesXmlParser())->defaults());
     }
 
     public function testStaticPageDrawsItsElements(): void
@@ -110,7 +110,9 @@ final class PageXmlParserTest extends TestCase
 
     public function testPageRedefinesMessagesOfTheService(): void
     {
-        $service = Messages::defaults()->with(['welcome' => 'Bonjour {{name}}']);
+        $service = (new MessagesXmlParser())
+            ->defaults()
+            ->with(['welcome' => 'Bonjour {{name}}']);
         $page = (new PageXmlParser($service))->parse(<<<'XML'
             <page type="static">
               <message name="welcome">Salut {{name}}</message>
@@ -128,10 +130,9 @@ final class PageXmlParserTest extends TestCase
 
     public function testPageWithoutMessagesHasTheServices(): void
     {
-        $page = (new PageXmlParser(Messages::defaults()->with(['welcome' => 'Bonjour'])))->parse(
-            '<page type="template"/>',
-            self::FIXTURES,
-        );
+        $page = (new PageXmlParser((new MessagesXmlParser())
+            ->defaults()
+            ->with(['welcome' => 'Bonjour'])))->parse('<page type="template"/>', self::FIXTURES);
 
         self::assertSame('Bonjour', $page->message(TestMessage::Welcome));
     }

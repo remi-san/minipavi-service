@@ -21,6 +21,7 @@ use MiniPaviService\Gateway\InputCommand;
 use MiniPaviService\Http\ServiceRunner;
 use MiniPaviService\Message\FrameworkMessage;
 use MiniPaviService\Message\Messages;
+use MiniPaviService\Message\MessagesXmlParser;
 use MiniPaviService\Minitel\FunctionKey;
 use MiniPaviService\Minitel\InputField;
 use MiniPaviService\Tests\Support\CallbackController;
@@ -250,9 +251,11 @@ final class HtmlClientTest extends TestCase
 
     public function testKeyLabelsAreMessages(): void
     {
-        $html = self::page(new GatewayResponse(new Vdt(), '{}'), messages: Messages::defaults()->with([
-            'key.send' => 'Valider',
-        ]));
+        $html = self::page(new GatewayResponse(new Vdt(), '{}'), messages: (new MessagesXmlParser())
+            ->defaults()
+            ->with([
+                'key.send' => 'Valider',
+            ]));
 
         self::assertStringContainsString('value="ENVOI" style="order: 7">Valider</button>', $html);
     }
@@ -277,7 +280,10 @@ final class HtmlClientTest extends TestCase
 
         $shown = self::shownText($html);
         self::assertStringContainsString('Annuaire', $shown);
-        self::assertStringContainsString(Messages::defaults()->get(FrameworkMessage::WebLeave), $shown);
+        self::assertStringContainsString(
+            (new MessagesXmlParser())->defaults()->get(FrameworkMessage::WebLeave),
+            $shown,
+        );
         self::assertStringNotContainsString('Cnx en cours', $shown);
         // Where the user was: their context and their input
         self::assertStringContainsString('name="context" value="{&quot;route&quot;:&quot;directory&quot;}"', $html);
@@ -293,7 +299,7 @@ final class HtmlClientTest extends TestCase
 
         self::assertStringContainsString('Ici', self::shownText($html));
         self::assertStringNotContainsString(
-            Messages::defaults()->get(FrameworkMessage::WebLeave),
+            (new MessagesXmlParser())->defaults()->get(FrameworkMessage::WebLeave),
             self::shownText($html),
         );
     }
@@ -316,7 +322,7 @@ final class HtmlClientTest extends TestCase
         $runner = new ServiceRunner(
             new Service(
                 $router,
-                Messages::defaults(),
+                (new MessagesXmlParser())->defaults(),
                 new ContextSerializer($router, new HmacContextSigner('secret')),
                 new MemoryLogger(),
             ),
@@ -350,7 +356,7 @@ final class HtmlClientTest extends TestCase
 
     private static function client(?Messages $messages = null): HtmlClient
     {
-        $messages ??= Messages::defaults();
+        $messages ??= (new MessagesXmlParser())->defaults();
 
         return new HtmlClient(new HtmlForm(new HtmlRenderer(HtmlRenderer::MINITEL_FONT), $messages), $messages);
     }

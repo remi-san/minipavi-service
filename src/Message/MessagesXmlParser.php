@@ -13,6 +13,21 @@ use MiniPaviService\Xml\XmlElements;
  */
 final class MessagesXmlParser
 {
+    // The framework's messages
+    private const DEFAULTS = __DIR__ . '/../../config/messages.xml';
+
+    /**
+     * The framework's messages (config/messages.xml), each a FrameworkMessage: what a
+     * service's messages file is read over, read where the service is built (its container,
+     * KernelBuilder's caller), once
+     *
+     * @throws MessagesException if the file can't be read
+     */
+    public function defaults(): Messages
+    {
+        return $this->parseFile(self::DEFAULTS, new Messages());
+    }
+
     /**
      * @param Messages $base the messages the file redefines and adds to (new Messages() for
      *                       none)

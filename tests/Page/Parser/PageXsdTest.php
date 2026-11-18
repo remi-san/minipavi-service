@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Tests\Page\Parser;
 
-use MiniPaviService\Message\Messages;
+use MiniPaviService\Message\MessagesXmlParser;
 use MiniPaviService\Minitel\FunctionKey;
 use MiniPaviService\Minitel\Keyboard;
 use MiniPaviService\Minitel\LocalEcho;
@@ -88,7 +88,7 @@ final class PageXsdTest extends TestCase
     #[DataProvider('validPages')]
     public function testPageReadByTheParserIsValid(string $xml): void
     {
-        (new PageXmlParser(Messages::defaults()))->parse($xml, self::FIXTURES);
+        (new PageXmlParser((new MessagesXmlParser())->defaults()))->parse($xml, self::FIXTURES);
 
         self::assertSame([], self::errors($xml));
     }
@@ -165,7 +165,7 @@ final class PageXsdTest extends TestCase
             $names[] = $name->nodeValue;
         }
         $expected = [
-            ...ElementFactory::standard(__DIR__, Messages::defaults())->tags(),
+            ...ElementFactory::standard(__DIR__, (new MessagesXmlParser())->defaults())->tags(),
             'input',
             'foreach',
             'if',

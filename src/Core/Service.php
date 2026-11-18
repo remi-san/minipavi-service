@@ -11,6 +11,7 @@ use MiniPaviService\Gateway\GatewayResponse;
 use MiniPaviService\Message\FrameworkMessage;
 use MiniPaviService\Message\Messages;
 use MiniPaviService\Message\MessagesException;
+use MiniPaviService\Message\MessagesXmlParser;
 use MiniPaviService\Minitel\Terminal;
 use MiniPaviService\Vdt\Vdt;
 use Psr\Log\LoggerInterface;
@@ -35,7 +36,7 @@ final class Service
 
     /**
      * @param Messages $messages the service's, for the message of a failed request
-     *                           (FrameworkMessage::Error), e.g. Messages::defaults()
+     *                           (FrameworkMessage::Error), e.g. MessagesXmlParser::defaults()
      * @param ContextSerializer $serializer of the context of the answers and requests, for the
      *                                      same router, signing it (e.g. with HmacContextSigner)
      * @param ?LoggerInterface $logger where connections, disconnections and errors are logged;

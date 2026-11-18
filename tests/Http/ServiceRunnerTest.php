@@ -18,7 +18,7 @@ use MiniPaviService\Gateway\ConnectionCode;
 use MiniPaviService\Gateway\GatewayRequest;
 use MiniPaviService\Http\ServiceRunner;
 use MiniPaviService\Message\FrameworkMessage;
-use MiniPaviService\Message\Messages;
+use MiniPaviService\Message\MessagesXmlParser;
 use MiniPaviService\Minitel\FunctionKey;
 use MiniPaviService\Tests\Support\CallbackController;
 use MiniPaviService\Tests\Support\HttpRequests;
@@ -43,7 +43,12 @@ final class ServiceRunnerTest extends TestCase
         ) => Response::display(new Vdt('home'))));
         $router = $routes->build();
         $this->logger = new MemoryLogger();
-        $this->service = new Service($router, Messages::defaults(), new ContextSerializer($router), $this->logger);
+        $this->service = new Service(
+            $router,
+            (new MessagesXmlParser())->defaults(),
+            new ContextSerializer($router),
+            $this->logger,
+        );
     }
 
     public function testGivesTheResponseOfTheClientToTheAnswer(): void
@@ -66,7 +71,10 @@ final class ServiceRunnerTest extends TestCase
         (new ServiceRunner($this->service, $client))->handle(HttpRequests::to('MiniPAVI'));
 
         [[$request, $answer]] = $client->responded;
-        self::assertEquals(Vdt::line0(Messages::defaults()->get(FrameworkMessage::Error)), $answer->vdt);
+        self::assertEquals(
+            Vdt::line0((new MessagesXmlParser())->defaults()->get(FrameworkMessage::Error)),
+            $answer->vdt,
+        );
         self::assertSame('http://services/Svc/index.php', $request->serviceUrl);
         self::assertSame([LogLevel::ERROR, 'Error serving the request: Not JSON'], [
             $this->logger->records[0][0],
@@ -103,7 +111,10 @@ final class ServiceRunnerTest extends TestCase
         (new ServiceRunner($this->signingService($signer), $client))->handle(HttpRequests::to('MiniPAVI'));
 
         [[, $answer]] = $client->responded;
-        self::assertEquals(Vdt::line0(Messages::defaults()->get(FrameworkMessage::Error)), $answer->vdt);
+        self::assertEquals(
+            Vdt::line0((new MessagesXmlParser())->defaults()->get(FrameworkMessage::Error)),
+            $answer->vdt,
+        );
         self::assertSame('{"route":"home","states":{},"parameters":{}}', $signer->verify($answer->context));
         self::assertInstanceOf(ForgedContextException::class, $this->logger->records[0][2]['exception'] ?? null);
     }
@@ -157,7 +168,7 @@ final class ServiceRunnerTest extends TestCase
         $answer = json_decode((string) $response->getBody(), associative: true);
         self::assertIsArray($answer);
         self::assertSame(
-            base64_encode(Vdt::line0(Messages::defaults()->get(FrameworkMessage::Error))->toString()),
+            base64_encode(Vdt::line0((new MessagesXmlParser())->defaults()->get(FrameworkMessage::Error))->toString()),
             $answer['content'] ?? null,
         );
         self::assertSame('{"route":"home","states":{},"parameters":{}}', $answer['context'] ?? null);
@@ -176,6 +187,11 @@ final class ServiceRunnerTest extends TestCase
             ) => Response::display(new Vdt('home'))))
             ->build();
 
-        return new Service($router, Messages::defaults(), new ContextSerializer($router, $signer), $this->logger);
+        return new Service(
+            $router,
+            (new MessagesXmlParser())->defaults(),
+            new ContextSerializer($router, $signer),
+            $this->logger,
+        );
     }
 }

@@ -12,7 +12,7 @@ use MiniPaviService\Core\ContextSerializer;
 use MiniPaviService\Core\RouterBuilder;
 use MiniPaviService\Core\Service;
 use MiniPaviService\Gateway\GatewayRequest;
-use MiniPaviService\Message\Messages;
+use MiniPaviService\Message\MessagesXmlParser;
 use MiniPaviService\Minitel\FunctionKey;
 use MiniPaviService\Page;
 use MiniPaviService\Page\Parser\PageXmlParser;
@@ -88,7 +88,7 @@ final class PaginatedControllerTest extends TestCase
 
     public function testPageRedefinesTheEndMessages(): void
     {
-        $page = (new PageXmlParser(Messages::defaults()))->parse(
+        $page = (new PageXmlParser((new MessagesXmlParser())->defaults()))->parse(
             str_replace(
                 '<foreach',
                 replace: '<message name="page.last">Fin de la liste</message><foreach',
@@ -99,7 +99,7 @@ final class PaginatedControllerTest extends TestCase
         $this->routes->addRoute('list', new ListController($page, ['a', 'b', 'c']));
 
         $router = $this->routes->build();
-        (new ServiceTester(new Service($router, Messages::defaults(), new ContextSerializer($router))))
+        (new ServiceTester(new Service($router, (new MessagesXmlParser())->defaults(), new ContextSerializer($router))))
             ->connect()
             ->press(FunctionKey::Send)
             ->press(FunctionKey::Next)
@@ -145,7 +145,7 @@ final class PaginatedControllerTest extends TestCase
         $this->routes->addRoute('list', new ListController($this->page(), ['a', 'b', 'c']));
 
         $router = $this->routes->build();
-        $answer = (new Service($router, Messages::defaults(), new ContextSerializer($router)))->handle(
+        $answer = (new Service($router, (new MessagesXmlParser())->defaults(), new ContextSerializer($router)))->handle(
             new GatewayRequest(FunctionKey::Refresh, [], $context),
         );
 
@@ -170,13 +170,15 @@ final class PaginatedControllerTest extends TestCase
 
         $router = $this->routes->build();
 
-        return (new ServiceTester(new Service($router, Messages::defaults(), new ContextSerializer($router))))
+        return (new ServiceTester(
+            new Service($router, (new MessagesXmlParser())->defaults(), new ContextSerializer($router)),
+        ))
             ->connect()
             ->press(FunctionKey::Send);
     }
 
     private function page(): Page
     {
-        return (new PageXmlParser(Messages::defaults()))->parse(self::PAGE, __DIR__);
+        return (new PageXmlParser((new MessagesXmlParser())->defaults()))->parse(self::PAGE, __DIR__);
     }
 }

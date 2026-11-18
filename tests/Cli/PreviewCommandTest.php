@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace MiniPaviService\Tests\Cli;
 
 use MiniPaviService\Cli\PreviewCommand;
-use MiniPaviService\Message\Messages;
+use MiniPaviService\Message\MessagesXmlParser;
 use MiniPaviService\Minitel\Terminal;
 use MiniPaviService\Page\Parser\PageXmlParser;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -40,7 +40,7 @@ final class PreviewCommandTest extends TestCase
 
     public function testPrintsTheScreenOfAPage(): void
     {
-        $page = (new PageXmlParser(Messages::defaults()))->parseFile(self::FIXTURES . '/logo.xml');
+        $page = (new PageXmlParser((new MessagesXmlParser())->defaults()))->parseFile(self::FIXTURES . '/logo.xml');
 
         self::assertSame(Command::SUCCESS, $this->preview([self::FIXTURES . '/logo.xml']));
         self::assertSame($page->display(new Terminal())->screen()->preview(), $this->tester->getDisplay());

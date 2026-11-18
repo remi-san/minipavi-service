@@ -23,6 +23,7 @@ use MiniPaviService\Http\Url\RequestUrl;
 use MiniPaviService\Http\Url\WithUrls;
 use MiniPaviService\Message\Messages;
 use MiniPaviService\Message\MessagesException;
+use MiniPaviService\Message\MessagesXmlParser;
 use MiniPaviService\Vdt\Screen\HtmlRenderer;
 use Nyholm\Psr7\Factory\Psr17Factory;
 use Nyholm\Psr7Server\ServerRequestCreator;
@@ -57,7 +58,7 @@ final readonly class KernelBuilder
     ) {}
 
     /**
-     * @param Messages $messages the service's, e.g. its messages.xml over Messages::defaults()
+     * @param Messages $messages the service's, e.g. its messages.xml over MessagesXmlParser::defaults()
      */
     public static function for(Router $router, Messages $messages): self
     {

@@ -6,6 +6,7 @@ namespace MiniPaviService\Page\Parser;
 
 use MiniPaviService\Io\Files;
 use MiniPaviService\Message\Messages;
+use MiniPaviService\Message\MessagesXmlParser;
 use MiniPaviService\Minitel\Keyboard;
 use MiniPaviService\Minitel\LocalEcho;
 use MiniPaviService\Minitel\Scroll;
@@ -32,7 +33,7 @@ final class PageXmlParser
     private const TYPES = ['static', 'template'];
 
     /**
-     * @param Messages $messages the service's messages (e.g. Messages::defaults() for the
+     * @param Messages $messages the service's messages (e.g. MessagesXmlParser::defaults() for the
      *                           framework's only), which a page's <message> redefine
      */
     public function __construct(

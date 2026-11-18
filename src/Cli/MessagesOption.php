@@ -36,9 +36,8 @@ final readonly class MessagesOption
     public static function messages(InputInterface $input): Messages
     {
         $file = $input->getOption(self::NAME);
+        $parser = new MessagesXmlParser();
 
-        return \is_string($file)
-            ? (new MessagesXmlParser())->parseFile($file, Messages::defaults())
-            : Messages::defaults();
+        return \is_string($file) ? $parser->parseFile($file, $parser->defaults()) : $parser->defaults();
     }
 }

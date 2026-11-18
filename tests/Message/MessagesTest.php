@@ -16,10 +16,11 @@ final class MessagesTest extends TestCase
 {
     public function testTheFrameworkDefinesItsMessages(): void
     {
-        $defaults = Messages::defaults()->check(FrameworkMessage::class);
+        $defaults = (new MessagesXmlParser())
+            ->defaults()
+            ->check(FrameworkMessage::class);
 
         self::assertSame('Dernière page', $defaults->get(FrameworkMessage::LastPage));
-        self::assertSame($defaults, Messages::defaults());
     }
 
     public function testReplacesThePlaceholders(): void
@@ -50,13 +51,15 @@ final class MessagesTest extends TestCase
 
     public function testOthersRedefineOrAdd(): void
     {
-        $messages = Messages::defaults()->with(['page.last' => "Fin de l'article", 'welcome' => 'Bonjour']);
+        $messages = (new MessagesXmlParser())
+            ->defaults()
+            ->with(['page.last' => "Fin de l'article", 'welcome' => 'Bonjour']);
 
         self::assertSame("Fin de l'article", $messages->get(FrameworkMessage::LastPage));
         self::assertSame('Bonjour', $messages->get(TestMessage::Welcome));
         self::assertSame('Première page', $messages->get(FrameworkMessage::FirstPage));
         // Immutable
-        self::assertSame('Dernière page', Messages::defaults()->get(FrameworkMessage::LastPage));
+        self::assertSame('Dernière page', (new MessagesXmlParser())->defaults()->get(FrameworkMessage::LastPage));
     }
 
     public function testCheckNamesTheMessagesWithoutText(): void
@@ -64,7 +67,9 @@ final class MessagesTest extends TestCase
         $this->expectException(MessagesException::class);
         $this->expectExceptionMessage('No text for the messages: welcome, code.unknown');
 
-        Messages::defaults()->check(FrameworkMessage::class, TestMessage::class);
+        (new MessagesXmlParser())
+            ->defaults()
+            ->check(FrameworkMessage::class, TestMessage::class);
     }
 
     public function testFileRedefinesTheBaseMessages(): void
@@ -74,7 +79,7 @@ final class MessagesTest extends TestCase
               <message name="welcome">Bonjour</message>
               <message name="page.last">  Fin  </message>
             </messages>
-            XML, Messages::defaults());
+            XML, (new MessagesXmlParser())->defaults());
 
         self::assertSame('Bonjour', $messages->get(TestMessage::Welcome));
         self::assertSame('Fin', $messages->get(FrameworkMessage::LastPage));
