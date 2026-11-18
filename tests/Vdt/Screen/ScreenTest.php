@@ -6,6 +6,8 @@ namespace MiniPaviService\Tests\Vdt\Screen;
 
 use MiniPaviService\Page\Display\Color;
 use MiniPaviService\Vdt\Vdt;
+use MiniPaviService\Vdt\Videotex;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class ScreenTest extends TestCase
@@ -107,5 +109,97 @@ final class ScreenTest extends TestCase
                 ->screen()
                 ->line(1),
         );
+    }
+
+    /**
+     * What the Minitel shows (checked in MiniPavi's emulator, #172): on row 1, ESC M (double
+     * height) and ESC O (double size) are discarded, the characters drawn at normal size, one
+     * column each; ESC N (double width) is kept
+     *
+     * @return iterable<string, array{string, string, int, string}>
+     */
+    public static function sizesOnRow1(): iterable
+    {
+        yield 'double size' => [Videotex::SIZE_DOUBLE, 'DS end', 1, 'DS end'];
+        yield 'double height' => [Videotex::SIZE_DOUBLE_HEIGHT, 'DH1', 1, 'DH1'];
+        // A character in two cells
+        yield 'double width' => [Videotex::SIZE_DOUBLE_WIDTH, 'W1', 2, 'WW11'];
+    }
+
+    #[DataProvider('sizesOnRow1')]
+    public function testRow1HasNoDoubleHeight(string $size, string $text, int $width, string $shown): void
+    {
+        $screen = Vdt::join(Vdt::position(1, row: 1), new Vdt($size), Vdt::text($text))->screen();
+
+        self::assertSame($shown, rtrim($screen->line(1)));
+        for ($col = 1; $col <= \strlen($shown); $col++) {
+            $attributes = $screen->cell(1, $col)->attributes ?? self::fail("Nothing at row 1, column {$col}");
+            self::assertFalse($attributes->isDoubleHeight());
+            self::assertSame($width, $attributes->width());
+        }
+    }
+
+    public function testDoubleHeightDiscardedOnRow1IsntKeptForTheNextRows(): void
+    {
+        // ESC M, a, six line feeds (LF), b: both at normal size
+        $screen = Vdt::join(
+            Vdt::position(1, row: 1),
+            new Vdt(Videotex::SIZE_DOUBLE_HEIGHT . 'a' . str_repeat("\x0A", times: 6) . 'b'),
+        )->screen();
+
+        self::assertFalse($screen->cell(1, col: 1)?->attributes->isDoubleHeight());
+        self::assertSame('b', $screen->cell(7, col: 2)?->bytes);
+        self::assertFalse($screen->cell(7, col: 2)?->attributes->isDoubleHeight());
+    }
+
+    public function testRow2HasDoubleHeight(): void
+    {
+        // Its top half on row 1
+        $screen = Vdt::join(
+            Vdt::position(30, row: 2),
+            new Vdt(Videotex::SIZE_DOUBLE_HEIGHT),
+            Vdt::text('T2'),
+        )->screen();
+
+        self::assertTrue($screen->cell(2, col: 30)?->attributes->isDoubleHeight());
+    }
+
+    public function testDoubleHeightIsDiscardedOnRow0(): void
+    {
+        $cell = (new Vdt("\x1F\x40\x41\x1B\x4DZ"))
+            ->screen()
+            ->cell(0, col: 1) ?? self::fail('Nothing on row 0');
+
+        self::assertSame('Z', $cell->bytes);
+        self::assertFalse($cell->attributes->isDoubleHeight());
+    }
+
+    /**
+     * Double height already set when a cursor move brings the cursor onto row 1: kept, the
+     * character drawn tall there, over row 0, with the attributes set since (checked in
+     * MiniPavi's emulator, #172)
+     *
+     * @return iterable<string, array{string, int, bool, Color}>
+     */
+    public static function sizeBroughtOntoRow1(): iterable
+    {
+        // Row 24, column 10: ESC M, L, LF to row 1, M
+        yield 'a line feed' => ["\x1F\x58\x4A\x1B\x4DL\x0AM", 11, false, Color::White];
+        // Row 2, column 20: ESC M, V, VT to row 1, red, W
+        yield 'a move up, then a colour' => ["\x1F\x42\x54\x1B\x4DV\x0B\x1B\x41W", 21, false, Color::Red];
+        // Row 3, column 30: ESC O, S (two columns), two VT to row 1, T
+        yield 'double size' => ["\x1F\x43\x5E\x1B\x4FS\x0B\x0BT", 32, true, Color::White];
+    }
+
+    #[DataProvider('sizeBroughtOntoRow1')]
+    public function testSizeBroughtOntoRow1IsKept(string $vdt, int $col, bool $doubleWidth, Color $color): void
+    {
+        $cell = (new Vdt($vdt))
+            ->screen()
+            ->cell(1, $col) ?? self::fail("Nothing at row 1, column {$col}");
+
+        self::assertTrue($cell->attributes->isDoubleHeight());
+        self::assertSame($doubleWidth, $cell->attributes->isDoubleWidth());
+        self::assertSame($color, $cell->attributes->foreground());
     }
 }
