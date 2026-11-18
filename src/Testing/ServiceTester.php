@@ -23,7 +23,7 @@ use PHPUnit\Framework\Assert;
  * gateway does.
  *
  *     $tester = new ServiceTester($service);
- *     $tester->connect()->assertScreenContains('OCTOBLUE')
+ *     $tester->connect()->assertScreenContains('BIENVENUE')
  *         ->type('2')->press(FunctionKey::Send)->assertRoute('games')
  *         ->press(FunctionKey::Next)->assertLine0('Dernière page');
  *

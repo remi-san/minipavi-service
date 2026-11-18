@@ -13,14 +13,14 @@ final class ScopeTest extends TestCase
     public function testSubstitutesPlaceholdersFollowingDots(): void
     {
         $scope = new Scope([
-            'name' => 'Octoblue',
-            'game' => ['title' => 'Alien', 'studio' => (object) ['city' => 'Paris']],
+            'name' => 'Acme',
+            'game' => ['title' => 'Chess', 'studio' => (object) ['city' => 'Paris']],
             'items' => new \ArrayObject(['first' => 'one']),
             'count' => 3,
         ]);
 
         self::assertSame(
-            'Octoblue: Alien (Paris), 3 games, one',
+            'Acme: Chess (Paris), 3 games, one',
             $scope->substitute('{{name}}: {{ game.title }} ({{game.studio.city}}), {{count}} games, {{items.first}}'),
         );
     }
@@ -42,7 +42,7 @@ final class ScopeTest extends TestCase
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('unknown variable {{game.year}}: no "year" in array');
 
-        (new Scope(['game' => ['title' => 'Alien']]))->substitute('{{game.year}}');
+        (new Scope(['game' => ['title' => 'Chess']]))->substitute('{{game.year}}');
     }
 
     public function testValueThatIsNotTextThrows(): void
@@ -58,7 +58,7 @@ final class ScopeTest extends TestCase
         $game = new class {
             public ?string $year = null;
 
-            public string $title = 'Alien';
+            public string $title = 'Chess';
 
             public function __isset(string $name): bool
             {
@@ -67,13 +67,13 @@ final class ScopeTest extends TestCase
 
             public function __get(string $name): string
             {
-                return 'Octoblue';
+                return 'Acme';
             }
         };
         $scope = new Scope(['game' => $game]);
 
         // Declared (even null), or given by __isset() and __get()
-        self::assertSame(['Alien', null, 'Octoblue'], [
+        self::assertSame(['Chess', null, 'Acme'], [
             $scope->value('game.title'),
             $scope->value('game.year'),
             $scope->value('game.studio'),

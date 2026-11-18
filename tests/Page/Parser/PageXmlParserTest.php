@@ -229,8 +229,8 @@ final class PageXmlParserTest extends TestCase
             XML);
 
         self::assertSame(
-            [' 2|Alien                                   |', ' 3|Tetris                                  |'],
-            $this->drawnRows($page->display(new Terminal(), ['games' => ['Alien', 'Tetris']])),
+            [' 2|Chess                                   |', ' 3|Tetris                                  |'],
+            $this->drawnRows($page->display(new Terminal(), ['games' => ['Chess', 'Tetris']])),
         );
     }
 
@@ -250,16 +250,16 @@ final class PageXmlParserTest extends TestCase
         self::assertSame(
             [
                 ' 1|Games (2)                               |',
-                ' 3|  1/2 Twin Pine Falls                   |',
+                ' 3|  1/2 Harbour Pirates                   |',
                 ' 4|  ````                                  |',
-                ' 5|  2/2 Alien Wipeout  new                |',
+                ' 5|  2/2 Rocket Rescue  new                |',
             ],
             $this->drawnRows($page->display(new Terminal(), [
                 'title' => 'Games',
                 'games' => 2,
                 'items' => [
-                    ['name' => 'Twin Pine Falls', 'new' => false],
-                    (object) ['name' => 'Alien Wipeout', 'new' => true],
+                    ['name' => 'Harbour Pirates', 'new' => false],
+                    (object) ['name' => 'Rocket Rescue', 'new' => true],
                 ],
             ])),
         );

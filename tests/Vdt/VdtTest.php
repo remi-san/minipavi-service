@@ -176,7 +176,7 @@ final class VdtTest extends TestCase
     }
 
     /**
-     * background.vdt: a page made with a Videotex editor (Octoblue's); features.vdt: made
+     * background.vdt: a page made with a Videotex editor; features.vdt: made
      * by hand to have every kind of token (status row, CAN with a background color, double
      * width, mosaic and repetitions, G2, wrapping at column 40, BS/LF/CR/HT/VT, US in digits)
      *
