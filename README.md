@@ -250,8 +250,8 @@ KernelBuilder::for($router, $messages)
     isn't a known key (e.g. `DIRECT`, after a `CallMode::Direct` call);
   - `content()`: the text typed, one string per line of the input field, and
     `contentAsString()`;
-  - `terminal()`: where the user connects from (`remoteAddr()`), and how: `isAdapter()` (an ESP32 or Minimit adapter, whose function
-    keys need Shift) and `isTelnetOrPhone()`.
+  - `terminal()`: where the user connects from (`remoteAddr()`), and how: `isAdapter()` (an
+    ESP32 or Minimit adapter, whose function keys need Shift) and `isTelnetOrPhone()`.
 
   `Response`'s named constructors build the responses:
 
@@ -336,8 +336,8 @@ KernelBuilder::for($router, $messages)
   the page, and the page index is kept in `PageParameters`. The list gives the number of items
   and of items per page, the data of a page from its `Paginator`, and handles the other keys
   on the `ShownPage`, with `$page->display()`, `$page->stay($vdt)` (reads the next input on the
-  page, after `$vdt`), `$page->turn(1)` (the next page, or the end message) and
-  `$page->message()` (a message of the page):
+  page, after `$vdt`), `$page->next()` / `previous()` (the next or previous page, or the end
+  message) and `$page->message()` (a message of the page):
 
   ```php
   final readonly class DirectoryList implements PaginatedList
@@ -364,7 +364,7 @@ KernelBuilder::for($router, $messages)
       {
           return match ($request->functionKey()) {
               FunctionKey::Summary => Response::goTo('home'),
-              FunctionKey::Send => $page->turn(1),
+              FunctionKey::Send => $page->next(),
               default => $page->stay(),
           };
       }
