@@ -38,18 +38,24 @@ enum ConnectionCode: string implements Key
     }
 
     /**
-     * Whether the user connects: a new connection, or one from another service
+     * Null: a connection code isn't a function key
      */
     public function functionKey(): ?FunctionKey
     {
         return null;
     }
 
+    /**
+     * The code itself: it is a connection code
+     */
     public function connectionCode(): self
     {
         return $this;
     }
 
+    /**
+     * Whether the user connects: a new connection, or one from another service
+     */
     public function isConnection(): bool
     {
         return $this === self::Connect || $this === self::DirectConnect;

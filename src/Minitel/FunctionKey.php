@@ -23,18 +23,24 @@ enum FunctionKey: string implements Key
     case Send = 'ENVOI';
 
     /**
-     * Key of a name of the page XML format (envoi, suite...), null if there is none
+     * The key itself: it is a function key
      */
     public function functionKey(): self
     {
         return $this;
     }
 
+    /**
+     * Null: a function key isn't a connection code
+     */
     public function connectionCode(): ?ConnectionCode
     {
         return null;
     }
 
+    /**
+     * Key of a name of the page XML format (envoi, suite...), null if there is none
+     */
     public static function fromXmlName(string $name): ?self
     {
         foreach (self::cases() as $key) {
