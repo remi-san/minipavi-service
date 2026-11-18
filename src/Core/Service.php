@@ -115,7 +115,22 @@ final class Service
             );
         }
 
-        $context = $this->restore($request->context);
+        try {
+            $context = $this->restore($request->context);
+        } catch (UnknownRouteException $e) {
+            // E.g. removed in a new version: the input was for a screen that doesn't exist any
+            // more
+            $this->logger->warning('Unknown route in the context, starting again at the default route', [
+                'route' => $e->route,
+            ]);
+
+            return $this->serve(
+                new Context($this->router, $this->router->defaultRoute()),
+                key: null,
+                content: [],
+                terminal: $request->terminal,
+            );
+        }
 
         return $this->serve($context, $request->key, $request->content, $request->terminal);
     }
@@ -143,17 +158,6 @@ final class Service
      */
     private function serve(Context $context, ?Key $key, array $content, Terminal $terminal): GatewayResponse
     {
-        // A route this service doesn't have, e.g. removed in a new version: the input was for
-        // a screen that doesn't exist any more
-        if (!$this->router->has($context->route())) {
-            $this->logger->warning('Unknown route in the context, starting again at the default route', [
-                'route' => $context->route(),
-            ]);
-            $context->restart($this->router->defaultRoute());
-            $key = null;
-            $content = [];
-        }
-
         return $this->flow($context, $terminal)->run($key, $content);
     }
 

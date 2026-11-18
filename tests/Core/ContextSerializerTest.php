@@ -17,6 +17,7 @@ use MiniPaviService\Core\Router;
 use MiniPaviService\Core\RouterBuilder;
 use MiniPaviService\Core\Signing\ForgedContextException;
 use MiniPaviService\Core\Signing\HmacContextSigner;
+use MiniPaviService\Core\UnknownRouteException;
 use MiniPaviService\Tests\Support\CallbackController;
 use MiniPaviService\Tests\Support\FromParameters;
 use MiniPaviService\Tests\Support\SearchController;
@@ -112,6 +113,17 @@ final class ContextSerializerTest extends TestCase
 
         self::assertSame('home', $context->route());
         self::assertSame(ControllerState::Init, $context->state());
+    }
+
+    public function testUnserializeRefusesARouteTheRouterDoesntHave(): void
+    {
+        // E.g. removed in a new version of the service
+        try {
+            $this->serializer()->unserialize('{"route":"removed","states":{"home":"read-input"}}');
+            self::fail('A context at an unknown route was read');
+        } catch (UnknownRouteException $e) {
+            self::assertSame('removed', $e->route);
+        }
     }
 
     public function testUnserializeTypesWhatWasKeptOrFallsBack(): void

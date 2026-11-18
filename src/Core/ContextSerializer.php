@@ -56,16 +56,21 @@ final readonly class ContextSerializer
 
     /**
      * The context serialize() gave, typed by the router's routes: a state their enum doesn't
-     * have is the initial one, invalid parameters get their defaults, and routes the router
-     * doesn't have are dropped. A context without route (e.g. sent by another version of the
-     * service) starts at the default route.
+     * have is the initial one, invalid parameters get their defaults, and kept routes the
+     * router doesn't have are dropped. A context without route (e.g. sent by another version
+     * of the service) starts at the default route.
      *
+     * @throws UnknownRouteException for a context at a route the router doesn't have
      * @throws ForgedContextException if the signer didn't sign it
      * @throws \RuntimeException if it isn't a JSON object
      */
     public function unserialize(string $serialized): Context
     {
         $context = self::decode($this->signer->verify($serialized));
+        $current = \is_string($context['route'] ?? null) ? $context['route'] : $this->router->defaultRoute();
+        if (!$this->router->has($current)) {
+            throw new UnknownRouteException($current);
+        }
         $states = \is_array($context['states'] ?? null) ? $context['states'] : [];
         $parameters = \is_array($context['parameters'] ?? null) ? $context['parameters'] : [];
 
@@ -82,11 +87,7 @@ final readonly class ContextSerializer
             );
         }
 
-        return new Context(
-            $this->router,
-            \is_string($context['route'] ?? null) ? $context['route'] : $this->router->defaultRoute(),
-            $routes,
-        );
+        return new Context($this->router, $current, $routes);
     }
 
     /**

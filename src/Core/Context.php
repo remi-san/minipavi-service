@@ -48,15 +48,6 @@ final class Context
     }
 
     /**
-     * Starts again at route, as a new connection: without what the routes kept
-     */
-    public function restart(string $route): void
-    {
-        $this->route = $route;
-        $this->routes = [];
-    }
-
-    /**
      * Leaves the current route for another (Response::goTo()): the controller left starts
      * again next time (it keeps nothing), and the one of route starts again now, at its initial
      * state, with parameters (null: their defaults), whatever either kept before
