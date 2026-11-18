@@ -10,7 +10,6 @@ use MiniPaviService\Controller\Pagination\PageParameters;
 use MiniPaviService\Controller\Response;
 use MiniPaviService\Gateway\GatewayResponse;
 use MiniPaviService\Vdt\Vdt;
-use MiniPaviService\Vdt\VdtHelper;
 
 /**
  * A response the framework doesn't have: clears the screen, then shows vdt
@@ -25,6 +24,6 @@ final readonly class ClearAndShow extends Response
 
     public function continueWith(Flow $flow): GatewayResponse
     {
-        return $flow->answer(VdtHelper::clearScreen()->append(Vdt::text($this->vdt)));
+        return $flow->answer(Vdt::clearScreen()->append(Vdt::text($this->vdt)));
     }
 }

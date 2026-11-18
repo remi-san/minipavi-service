@@ -12,7 +12,6 @@ use MiniPaviService\Minitel\Terminal;
 use MiniPaviService\Page;
 use MiniPaviService\Page\Display\Display;
 use MiniPaviService\Vdt\Vdt;
-use MiniPaviService\Vdt\VdtHelper;
 use MiniPaviService\Vdt\Videotex;
 
 /**
@@ -37,7 +36,7 @@ final readonly class StaticPage implements Page
     {
         return Vdt::join(
             $this->setup->toVdt(),
-            VdtHelper::clearScreen(),
+            Vdt::clearScreen(),
             new Vdt(Videotex::CURSOR_OFF),
             $this->display->toVdt($terminal),
         );

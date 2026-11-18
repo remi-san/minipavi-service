@@ -17,7 +17,6 @@ use MiniPaviService\Minitel\Terminal;
 use MiniPaviService\Testing\ServiceTester;
 use MiniPaviService\Tests\Support\CallbackController;
 use MiniPaviService\Vdt\Vdt;
-use MiniPaviService\Vdt\VdtHelper;
 use PHPUnit\Framework\AssertionFailedError;
 use PHPUnit\Framework\TestCase;
 
@@ -35,21 +34,13 @@ final class ServiceTesterTest extends TestCase
         $router = new Router();
         $router->addRoute('menu', $this->controller(static fn(Request $request) => match ($request->contentAsString()) {
             '2' => Response::goTo('directory'),
-            'ext' => Response::connectTo('https://example.org/', VdtHelper::writeLine0('Connexion…')),
-            default => Response::display(Vdt::join(
-                VdtHelper::clearScreen(),
-                VdtHelper::setPos(1, row: 1),
-                Vdt::text('MENU'),
-            )),
+            'ext' => Response::connectTo('https://example.org/', Vdt::line0('Connexion…')),
+            default => Response::display(Vdt::join(Vdt::clearScreen(), Vdt::position(1, row: 1), Vdt::text('MENU'))),
         }));
         $router->addRoute('directory', $this->controller(static fn(Request $request) => $request->functionKey()
             === FunctionKey::Next
-                ? Response::display(VdtHelper::writeLine0('Dernière page'))
-                : Response::display(Vdt::join(
-                    VdtHelper::clearScreen(),
-                    VdtHelper::setPos(1, row: 2),
-                    Vdt::text('Annuaire'),
-                ))));
+                ? Response::display(Vdt::line0('Dernière page'))
+                : Response::display(Vdt::join(Vdt::clearScreen(), Vdt::position(1, row: 2), Vdt::text('Annuaire')))));
         $router->setDefaultRoute('menu');
 
         $this->tester = new ServiceTester(

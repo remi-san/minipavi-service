@@ -12,7 +12,7 @@ use MiniPaviService\Message\FrameworkMessage;
 use MiniPaviService\Message\Messages;
 use MiniPaviService\Message\MessagesException;
 use MiniPaviService\Minitel\Terminal;
-use MiniPaviService\Vdt\VdtHelper;
+use MiniPaviService\Vdt\Vdt;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 
@@ -85,9 +85,7 @@ final class Service
                 self::MAX_PAGE_CHANGES,
             );
 
-            return Response::display(VdtHelper::writeLine0($this->messages->get(
-                FrameworkMessage::Error,
-            )))->continueWith($flow);
+            return Response::display(Vdt::line0($this->messages->get(FrameworkMessage::Error)))->continueWith($flow);
         } catch (\Throwable $e) {
             $this->logger->critical('Cannot answer the error: ' . $e->getMessage(), ['exception' => $e]);
 

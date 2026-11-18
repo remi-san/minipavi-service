@@ -6,7 +6,7 @@ namespace MiniPaviService\Page\Display;
 
 use MiniPaviService\Minitel\Terminal;
 use MiniPaviService\Vdt\Screen\Screen;
-use MiniPaviService\Vdt\VdtHelper;
+use MiniPaviService\Vdt\Vdt;
 
 /**
  * Horizontal line made of a repeated character (<line> in the page XML format)
@@ -45,9 +45,9 @@ final readonly class Line implements Element
     public function getContent(Terminal $terminal): string
     {
         return (
-            VdtHelper::setPos($this->col, $this->row)->toString()
+            Vdt::position($this->col, $this->row)->toString()
             . $this->color->text()
-            . VdtHelper::repeatChar($this->char, $this->length)->toString()
+            . Vdt::repeat($this->char, $this->length)->toString()
         );
     }
 }

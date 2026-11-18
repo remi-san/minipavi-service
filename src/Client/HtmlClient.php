@@ -15,7 +15,6 @@ use MiniPaviService\Minitel\FunctionKey;
 use MiniPaviService\Minitel\InputField;
 use MiniPaviService\Vdt\Screen\HtmlRenderer;
 use MiniPaviService\Vdt\Vdt;
-use MiniPaviService\Vdt\VdtHelper;
 use Nyholm\Psr7\Response;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -98,7 +97,7 @@ final readonly class HtmlClient implements Client
         if ($answer->next !== null && $answer->next !== $request->serviceUrl) {
             // Blocked: the user stays where they were
             return $this->page(
-                $page->screen->append(VdtHelper::writeLine0($this->messages->get(FrameworkMessage::WebLeave))),
+                $page->screen->append(Vdt::line0($this->messages->get(FrameworkMessage::WebLeave))),
                 $request->context,
                 $page->command,
                 $request->serviceUrl,

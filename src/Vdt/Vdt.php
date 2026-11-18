@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Vdt;
 
+use MiniPavi\MiniPaviCli;
 use MiniPaviService\Vdt\Screen\Screen;
 
 /**
  * Videotex content: what is sent to the Minitel. The framework and services carry it as this
  * value, and only the gateway client turns it into bytes (toString()). Text is made with
- * text(), which encodes its accents (G2); raw Videotex with new Vdt() or fromString().
+ * text(), which encodes its accents (G2); positions, the status line, a clear screen and
+ * repetitions with position(), line0(), clearScreen() and repeat(), MiniPaviCli's helpers
+ * as Vdt; raw Videotex with new Vdt() or fromString().
  *
  * It keeps the bytes, and doesn't draw them itself: what the content shows is Screen's
  * (screen()), moving it Offset's (offset()), both played by Player. A file is read by its
@@ -38,7 +41,40 @@ final readonly class Vdt
      */
     public static function text(string $text): self
     {
-        return new self(VdtHelper::toG2($text)->toString());
+        return new self(MiniPaviCli::toG2($text));
+    }
+
+    /**
+     * Positions the cursor at col (1 to 40) of row (0, the status line, to 24)
+     */
+    public static function position(int $col, int $row): self
+    {
+        return new self(MiniPaviCli::setPos($col, $row));
+    }
+
+    /**
+     * Text (encoded as text() does) on row 0, the status line, the rest of the row cleared,
+     * then leaves the status line
+     */
+    public static function line0(string $text): self
+    {
+        return new self(MiniPaviCli::writeLine0($text));
+    }
+
+    /**
+     * Clears the screen and the status line, and turns the cursor off, at row 1, column 1
+     */
+    public static function clearScreen(): self
+    {
+        return new self(MiniPaviCli::clearScreen());
+    }
+
+    /**
+     * A character, count times in all, as REP sends it
+     */
+    public static function repeat(string $char, int $count): self
+    {
+        return new self(MiniPaviCli::repeatChar($char, $count));
     }
 
     /**

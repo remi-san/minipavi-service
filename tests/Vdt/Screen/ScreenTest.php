@@ -6,7 +6,6 @@ namespace MiniPaviService\Tests\Vdt\Screen;
 
 use MiniPaviService\Page\Display\Color;
 use MiniPaviService\Vdt\Vdt;
-use MiniPaviService\Vdt\VdtHelper;
 use PHPUnit\Framework\TestCase;
 
 final class ScreenTest extends TestCase
@@ -37,9 +36,9 @@ final class ScreenTest extends TestCase
     public function testLineGivesTheTextOfARowWithItsAccents(): void
     {
         $screen = Vdt::join(
-            VdtHelper::setPos(1, row: 3),
+            Vdt::position(1, row: 3),
             Vdt::text('Dernière page, ça coûte 5£ ½ Œuvre'),
-            VdtHelper::writeLine0('Accès refusé'),
+            Vdt::line0('Accès refusé'),
         )->screen();
 
         $text = 'Dernière page, ça coûte 5£ ½ Œuvre';
@@ -59,7 +58,7 @@ final class ScreenTest extends TestCase
 
     public function testTextGivesEveryRow(): void
     {
-        $text = VdtHelper::setPos(1, row: 1)->append(Vdt::text('Hello'))->screen()->text();
+        $text = Vdt::position(1, row: 1)->append(Vdt::text('Hello'))->screen()->text();
 
         $lines = explode("\n", $text);
         self::assertCount(25, $lines);

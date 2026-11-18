@@ -21,7 +21,6 @@ use MiniPaviService\Page\Template\TemplateException;
 use MiniPaviService\Page\TemplatePage;
 use MiniPaviService\Tests\Support\TestMessage;
 use MiniPaviService\Vdt\Vdt;
-use MiniPaviService\Vdt\VdtHelper;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
@@ -81,7 +80,7 @@ final class PageXmlParserTest extends TestCase
 
         self::assertStringStartsWith(
             Keyboard::Lowercase->sequence() . LocalEcho::Off->sequence() . Scroll::Off->sequence()
-                . VdtHelper::clearScreen()->toString(),
+                . Vdt::clearScreen()->toString(),
             $page->display(new Terminal())->toString(),
         );
         $template = $this->parse(
@@ -89,14 +88,14 @@ final class PageXmlParserTest extends TestCase
         );
         self::assertStringStartsWith(
             Keyboard::Uppercase->sequence() . LocalEcho::On->sequence() . Scroll::On->sequence()
-                . VdtHelper::clearScreen()->toString(),
+                . Vdt::clearScreen()->toString(),
             $template->display(new Terminal(), ['x' => 'y'])->toString(),
         );
     }
 
     public function testWithoutSetupTheMinitelIsLeftAsItIs(): void
     {
-        $clear = VdtHelper::clearScreen()->toString();
+        $clear = Vdt::clearScreen()->toString();
         self::assertSame($clear, substr(
             $this->parse('<page type="static"/>')->display(new Terminal())->toString(),
             offset: 0,
@@ -104,7 +103,7 @@ final class PageXmlParserTest extends TestCase
         ));
         // Only what is given
         self::assertStringStartsWith(
-            Scroll::Off->sequence() . VdtHelper::clearScreen()->toString(),
+            Scroll::Off->sequence() . Vdt::clearScreen()->toString(),
             $this->parse('<page type="static" scroll="off"/>')->display(new Terminal())->toString(),
         );
     }

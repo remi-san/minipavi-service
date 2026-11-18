@@ -9,7 +9,6 @@ use MiniPaviService\Page\Display\Key;
 use MiniPaviService\Vdt\Screen\HtmlRenderer;
 use MiniPaviService\Vdt\Screen\Screen;
 use MiniPaviService\Vdt\Vdt;
-use MiniPaviService\Vdt\VdtHelper;
 use PHPUnit\Framework\TestCase;
 
 final class HtmlRendererTest extends TestCase
@@ -49,7 +48,7 @@ final class HtmlRendererTest extends TestCase
 
     public function testDrawsTextInItsColoursWithItsAccents(): void
     {
-        $html = $this->render(Vdt::join(VdtHelper::setPos(1, row: 1), new Vdt("\x1B\x41"), Vdt::text('é<')));
+        $html = $this->render(Vdt::join(Vdt::position(1, row: 1), new Vdt("\x1B\x41"), Vdt::text('é<')));
 
         self::assertStringContainsString('style="color:#ff0000;background:#000000">é</span>', $html);
         self::assertStringContainsString('>&lt;</span>', $html);
@@ -64,7 +63,7 @@ final class HtmlRendererTest extends TestCase
 
     public function testDoubleWidthTakesTwoColumns(): void
     {
-        $html = $this->render(Vdt::join(VdtHelper::setPos(1, row: 1), new Vdt("\x1B\x4E"), Vdt::text('W')));
+        $html = $this->render(Vdt::join(Vdt::position(1, row: 1), new Vdt("\x1B\x4E"), Vdt::text('W')));
 
         self::assertStringContainsString('class="c w2"', $html);
         // The character's second column is not drawn again
@@ -119,7 +118,7 @@ final class HtmlRendererTest extends TestCase
 
     public function testDrawsTheStatusLine(): void
     {
-        $html = $this->render(VdtHelper::writeLine0('Bonjour'));
+        $html = $this->render(Vdt::line0('Bonjour'));
 
         self::assertStringContainsString(
             '<span class="c status" style="color:#ffffff;background:#000000">B</span>',

@@ -26,7 +26,6 @@ use MiniPaviService\Tests\Support\HttpRequests;
 use MiniPaviService\Tests\Support\MemoryLogger;
 use MiniPaviService\Vdt\Screen\HtmlRenderer;
 use MiniPaviService\Vdt\Vdt;
-use MiniPaviService\Vdt\VdtHelper;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
@@ -63,7 +62,7 @@ final class HtmlClientTest extends TestCase
     public function testKeyPressedWithWhatWasTyped(): void
     {
         // The page the key is pressed on: its hidden values, posted back as they are
-        $screen = VdtHelper::setPos(1, row: 1)->append(Vdt::text('Menu'));
+        $screen = Vdt::position(1, row: 1)->append(Vdt::text('Menu'));
         $page = self::page(
             new GatewayResponse(
                 $screen,
@@ -126,7 +125,7 @@ final class HtmlClientTest extends TestCase
 
     public function testPageKeepsTheContextAndTheScreen(): void
     {
-        $vdt = VdtHelper::clearScreen()->append(VdtHelper::setPos(1, row: 1), Vdt::text('Bonjour <3'));
+        $vdt = Vdt::clearScreen()->append(Vdt::position(1, row: 1), Vdt::text('Bonjour <3'));
         $html = self::page(new GatewayResponse($vdt, '{"route":"home"}'));
 
         self::assertStringStartsWith('<!doctype html>', $html);
@@ -146,9 +145,9 @@ final class HtmlClientTest extends TestCase
 
     public function testAnswerIsDrawnOverTheScreenSoFar(): void
     {
-        $before = VdtHelper::clearScreen()->append(VdtHelper::setPos(1, row: 3), Vdt::text('Page 2/2'));
+        $before = Vdt::clearScreen()->append(Vdt::position(1, row: 3), Vdt::text('Page 2/2'));
 
-        $html = self::page(new GatewayResponse(VdtHelper::writeLine0('Dernière page'), '{}'), [
+        $html = self::page(new GatewayResponse(Vdt::line0('Dernière page'), '{}'), [
             'key' => 'SUITE',
             'screen' => base64_encode($before->toString()),
         ]);
@@ -159,8 +158,8 @@ final class HtmlClientTest extends TestCase
 
     public function testScreenIsKeptFromItsLastClear(): void
     {
-        $before = VdtHelper::clearScreen()->append(VdtHelper::setPos(1, row: 3), Vdt::text('Avant'));
-        $answer = VdtHelper::clearScreen()->append(VdtHelper::setPos(1, row: 3), Vdt::text('Après'));
+        $before = Vdt::clearScreen()->append(Vdt::position(1, row: 3), Vdt::text('Avant'));
+        $answer = Vdt::clearScreen()->append(Vdt::position(1, row: 3), Vdt::text('Après'));
 
         $html = self::page(new GatewayResponse($answer, '{}'), [
             'key' => 'SUITE',
@@ -259,7 +258,7 @@ final class HtmlClientTest extends TestCase
     public function testLeavingTheServiceIsBlocked(): void
     {
         // The page the key is pressed on: its hidden values, posted back as they are
-        $before = VdtHelper::clearScreen()->append(VdtHelper::setPos(1, row: 3), Vdt::text('Annuaire'));
+        $before = Vdt::clearScreen()->append(Vdt::position(1, row: 3), Vdt::text('Annuaire'));
         $page = self::page(
             new GatewayResponse(
                 $before,
@@ -270,7 +269,7 @@ final class HtmlClientTest extends TestCase
         $form = ['key' => 'ENVOI'] + self::hiddenValues($page);
 
         $html = self::page(
-            new GatewayResponse(VdtHelper::writeLine0('Cnx en cours'), '{"route":"elsewhere"}', 'https://example.org/'),
+            new GatewayResponse(Vdt::line0('Cnx en cours'), '{"route":"elsewhere"}', 'https://example.org/'),
             $form,
         );
 
@@ -287,7 +286,7 @@ final class HtmlClientTest extends TestCase
     public function testNextUrlOfTheServiceIsntLeaving(): void
     {
         $html = self::page(
-            new GatewayResponse(VdtHelper::setPos(1, row: 1)->append(Vdt::text('Ici')), '{}', self::SERVICE_URL),
+            new GatewayResponse(Vdt::position(1, row: 1)->append(Vdt::text('Ici')), '{}', self::SERVICE_URL),
         );
 
         self::assertStringContainsString('Ici', self::shownText($html));
@@ -304,11 +303,11 @@ final class HtmlClientTest extends TestCase
             Request $request,
         ) => $request->functionKey() === FunctionKey::Send
             ? Response::goTo('games')
-            : Response::display(VdtHelper::clearScreen()->append(VdtHelper::setPos(1, row: 1), Vdt::text('HOME')))));
+            : Response::display(Vdt::clearScreen()->append(Vdt::position(1, row: 1), Vdt::text('HOME')))));
         $router->addRoute('games', new CallbackController(NoParameters::class, static fn(
             Request $request,
-        ) => Response::display(VdtHelper::clearScreen()->append(
-            VdtHelper::setPos(1, row: 1),
+        ) => Response::display(Vdt::clearScreen()->append(
+            Vdt::position(1, row: 1),
             Vdt::text('GAMES ' . $request->contentAsString()),
         ))));
         $router->setDefaultRoute('home');

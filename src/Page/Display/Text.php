@@ -6,7 +6,7 @@ namespace MiniPaviService\Page\Display;
 
 use MiniPaviService\Minitel\Terminal;
 use MiniPaviService\Vdt\Screen\Screen;
-use MiniPaviService\Vdt\VdtHelper;
+use MiniPaviService\Vdt\Vdt;
 use MiniPaviService\Vdt\Videotex;
 
 /**
@@ -35,7 +35,7 @@ final readonly class Text implements Element
         $attr = ($this->size?->vdt() ?? '') . ($this->bg?->background() ?? '') . $this->color->text();
         // Characters of double width take two columns each
         $charWidth = $this->size?->width() ?? 1;
-        $vdt = $this->placed($attr, VdtHelper::toG2($this->text)->toString(), $charWidth);
+        $vdt = $this->placed($attr, Vdt::text($this->text)->toString(), $charWidth);
 
         // Fills the rest of the row with the background color
         return $this->fill ? $vdt . Videotex::CLEAR_LINE : $vdt;
@@ -47,17 +47,17 @@ final readonly class Text implements Element
     private function placed(string $attr, string $text, int $charWidth): string
     {
         if (!$this->centered) {
-            return VdtHelper::setPos($this->col, $this->row)->toString() . $attr . $text;
+            return Vdt::position($this->col, $this->row)->toString() . $attr . $text;
         }
         if ($this->fill) {
             // Starts at column 1 and pads with spaces up to the text (the spaces having the
             // text's width): the background color only applies from a space onwards
             $pad = max(0, intdiv($this->centeredCol($charWidth) - 1, $charWidth));
 
-            return VdtHelper::setPos(1, $this->row)->toString() . $attr . str_repeat(' ', $pad) . $text;
+            return Vdt::position(1, $this->row)->toString() . $attr . str_repeat(' ', $pad) . $text;
         }
 
-        return VdtHelper::setPos($this->centeredCol($charWidth), $this->row)->toString() . $attr . $text;
+        return Vdt::position($this->centeredCol($charWidth), $this->row)->toString() . $attr . $text;
     }
 
     /**

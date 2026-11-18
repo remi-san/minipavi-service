@@ -24,7 +24,6 @@ use MiniPaviService\Tests\Support\HttpRequests;
 use MiniPaviService\Tests\Support\MemoryClient;
 use MiniPaviService\Tests\Support\MemoryLogger;
 use MiniPaviService\Vdt\Vdt;
-use MiniPaviService\Vdt\VdtHelper;
 use PHPUnit\Framework\Attributes\RunInSeparateProcess;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LogLevel;
@@ -68,7 +67,7 @@ final class ServiceRunnerTest extends TestCase
         (new ServiceRunner($this->service, $client, new UnsignedContext()))->handle(HttpRequests::to('MiniPAVI'));
 
         [[$request, $answer]] = $client->responded;
-        self::assertEquals(VdtHelper::writeLine0(Messages::defaults()->get(FrameworkMessage::Error)), $answer->vdt);
+        self::assertEquals(Vdt::line0(Messages::defaults()->get(FrameworkMessage::Error)), $answer->vdt);
         self::assertSame('http://services/Svc/index.php', $request->serviceUrl);
         self::assertSame([LogLevel::ERROR, 'Error serving the request: Not JSON'], [
             $this->logger->records[0][0],
@@ -105,7 +104,7 @@ final class ServiceRunnerTest extends TestCase
         (new ServiceRunner($this->service, $client, $signer))->handle(HttpRequests::to('MiniPAVI'));
 
         [[, $answer]] = $client->responded;
-        self::assertEquals(VdtHelper::writeLine0(Messages::defaults()->get(FrameworkMessage::Error)), $answer->vdt);
+        self::assertEquals(Vdt::line0(Messages::defaults()->get(FrameworkMessage::Error)), $answer->vdt);
         self::assertSame('{"route":"home","states":{},"parameters":{}}', $signer->verify($answer->context));
         self::assertInstanceOf(ForgedContextException::class, $this->logger->records[0][2]['exception'] ?? null);
     }
@@ -170,7 +169,7 @@ final class ServiceRunnerTest extends TestCase
         $answer = json_decode((string) $response->getBody(), associative: true);
         self::assertIsArray($answer);
         self::assertSame(
-            base64_encode(VdtHelper::writeLine0(Messages::defaults()->get(FrameworkMessage::Error))->toString()),
+            base64_encode(Vdt::line0(Messages::defaults()->get(FrameworkMessage::Error))->toString()),
             $answer['content'] ?? null,
         );
         self::assertSame('{"route":"home","states":{},"parameters":{}}', $answer['context'] ?? null);

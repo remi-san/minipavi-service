@@ -21,7 +21,7 @@ use Psr\Http\Message\ServerRequestInterface;
  * gateway's request itself (MiniPaviCli::start(), from the body of the HTTP request), and
  * writes the answer itself (MiniPaviCli::send()): what it writes is captured as the body of
  * the HTTP response, which the Kernel sends. It sends input commands as MiniPavi's (InputTxt,
- * InputMsg). With VdtHelper (Videotex helpers), the only class calling MiniPaviCli.
+ * InputMsg). With Vdt (its Videotex helpers), the only class calling MiniPaviCli.
  *
  * @implements Client<NoClientState>
  */

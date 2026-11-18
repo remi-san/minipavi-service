@@ -12,7 +12,6 @@ use MiniPaviService\Message\FrameworkMessage;
 use MiniPaviService\Minitel\FunctionKey;
 use MiniPaviService\Page;
 use MiniPaviService\Vdt\Vdt;
-use MiniPaviService\Vdt\VdtHelper;
 
 /**
  * Controller of a screen showing items one page at a time, its page index kept in the context
@@ -127,10 +126,10 @@ abstract class PaginatedController extends AbstractController
         $target = $paginator->index() + $by;
 
         if ($target < 0) {
-            return $this->stay($paginator, VdtHelper::writeLine0($this->page->message(FrameworkMessage::FirstPage)));
+            return $this->stay($paginator, Vdt::line0($this->page->message(FrameworkMessage::FirstPage)));
         }
         if ($target >= $paginator->pageCount()) {
-            return $this->stay($paginator, VdtHelper::writeLine0($this->page->message(FrameworkMessage::LastPage)));
+            return $this->stay($paginator, Vdt::line0($this->page->message(FrameworkMessage::LastPage)));
         }
 
         return $this->display($request, $paginator->at($target));

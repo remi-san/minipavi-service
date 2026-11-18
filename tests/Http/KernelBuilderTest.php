@@ -19,7 +19,6 @@ use MiniPaviService\Tests\Support\CallbackController;
 use MiniPaviService\Tests\Support\MemoryLogger;
 use MiniPaviService\Tests\Support\RecordingHandler;
 use MiniPaviService\Vdt\Vdt;
-use MiniPaviService\Vdt\VdtHelper;
 use PHPUnit\Framework\Attributes\RunInSeparateProcess;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LogLevel;
@@ -37,7 +36,7 @@ final class KernelBuilderTest extends TestCase
         $router = new Router();
         $router->addRoute('home', new CallbackController(NoParameters::class, static fn(
             Request $request,
-        ) => Response::display(VdtHelper::setPos(1, row: 1)->append(Vdt::text('HOME')))));
+        ) => Response::display(Vdt::position(1, row: 1)->append(Vdt::text('HOME')))));
         $router->setDefaultRoute('home');
         $this->builder = KernelBuilder::for($router, Messages::defaults());
     }

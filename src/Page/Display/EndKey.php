@@ -6,7 +6,7 @@ namespace MiniPaviService\Page\Display;
 
 use MiniPaviService\Minitel\Terminal;
 use MiniPaviService\Vdt\Screen\Screen;
-use MiniPaviService\Vdt\VdtHelper;
+use MiniPaviService\Vdt\Vdt;
 
 /**
  * Hint telling how to come back to this screen (<endkey> in the page XML format): the key
@@ -41,14 +41,14 @@ final readonly class EndKey implements Element
             $width += mb_strlen($this->shiftLabel);
 
             return (
-                VdtHelper::setPos(self::centered($width), $this->row ?? (Screen::ROWS - 1))->toString()
+                Vdt::position(self::centered($width), $this->row ?? (Screen::ROWS - 1))->toString()
                 . Color::White->text()
-                . VdtHelper::toG2($this->shiftLabel)->toString()
+                . Vdt::text($this->shiftLabel)->toString()
                 . $badge
             );
         }
 
-        return VdtHelper::setPos(self::centered($width), $this->row ?? Screen::ROWS)->toString() . $badge;
+        return Vdt::position(self::centered($width), $this->row ?? Screen::ROWS)->toString() . $badge;
     }
 
     // Column of the first cell of something width wide, centered on the row

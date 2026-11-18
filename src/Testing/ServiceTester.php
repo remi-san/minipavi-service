@@ -132,7 +132,7 @@ final class ServiceTester
     }
 
     /**
-     * Asserts the status line (row 0) contains text, e.g. a message of VdtHelper::writeLine0()
+     * Asserts the status line (row 0) contains text, e.g. a message of Vdt::line0()
      */
     public function assertLine0(string $text): self
     {

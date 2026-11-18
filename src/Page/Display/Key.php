@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace MiniPaviService\Page\Display;
 
 use MiniPaviService\Minitel\Terminal;
-use MiniPaviService\Vdt\VdtHelper;
+use MiniPaviService\Vdt\Vdt;
 use MiniPaviService\Vdt\Videotex;
 
 /**
@@ -30,7 +30,7 @@ final readonly class Key implements Element
     public function getContent(Terminal $terminal): string
     {
         return (
-            VdtHelper::setPos($this->col, $this->row)->toString()
+            Vdt::position($this->col, $this->row)->toString()
             . ($this->bg?->background() ?? '')
             . self::badge($this->label, $this->color)
         );
@@ -47,7 +47,7 @@ final readonly class Key implements Element
             . ' '
             . $color->text()
             . Videotex::INVERSE_ON
-            . VdtHelper::toG2(' ' . $label . ' ')->toString()
+            . Vdt::text(' ' . $label . ' ')->toString()
             . Color::White->text()
             . Videotex::INVERSE_OFF
             . Videotex::UNDERLINE_OFF
