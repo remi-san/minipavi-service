@@ -140,7 +140,7 @@ final readonly class Vdt
     public function withoutClear(): self
     {
         return new self(implode('', array_map(static fn(Token $token) => $token->type === TokenType::Clear
-            ? "\x1E"
+            ? Videotex::HOME
             : $token->source, (new Parser())->parse($this->bytes))));
     }
 }

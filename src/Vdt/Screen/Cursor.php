@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Vdt\Screen;
 
+use MiniPaviService\Vdt\Videotex;
+
 /**
  * Cursor and attributes of a Minitel screen in page mode, as Videotex content moves them
  */
@@ -43,23 +45,23 @@ final class Cursor
     public function move(string $byte): void
     {
         switch ($byte) {
-            case "\x08":
+            case Videotex::CURSOR_LEFT:
                 $this->col--;
                 if ($this->col < 1) {
                     $this->col = Screen::COLS;
                     $this->row = $this->row <= 1 ? Screen::ROWS : $this->row - 1;
                 }
                 break;
-            case "\x09":
+            case Videotex::CURSOR_RIGHT:
                 $this->advance(1);
                 break;
-            case "\x0A":
+            case Videotex::CURSOR_DOWN:
                 $this->row = $this->row >= Screen::ROWS ? 1 : $this->row + 1;
                 break;
-            case "\x0B":
+            case Videotex::CURSOR_UP:
                 $this->row = $this->row <= 1 ? Screen::ROWS : $this->row - 1;
                 break;
-            case "\x0D":
+            case Videotex::CARRIAGE_RETURN:
                 $this->col = 1;
                 break;
         }

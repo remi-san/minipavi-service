@@ -15,19 +15,34 @@ use MiniPaviService\Vdt\Videotex;
 final readonly class Attributes
 {
     // SI and SO: the charsets
-    private const TEXT = "\x0F";
-    private const MOSAIC = "\x0E";
+    private const TEXT = Videotex::TEXT_SET;
+    private const MOSAIC = Videotex::MOSAIC_SET;
 
-    // The byte after ESC of each group, as the Minitel starts (the charset: SI)
+    // The byte after ESC of the attributes: the second byte of Videotex's code of each
+    private const SIZE_NORMAL = "\x4C"; // SIZE_NORMAL
+    private const DOUBLE_HEIGHT = "\x4D"; // SIZE_DOUBLE_HEIGHT
+    private const DOUBLE_WIDTH = "\x4E"; // SIZE_DOUBLE_WIDTH
+    private const DOUBLE = "\x4F"; // SIZE_DOUBLE
+    private const BLINK = "\x48"; // BLINK_ON
+    private const FIXED = "\x49"; // BLINK_OFF
+    private const MASK = "\x58"; // MASK_ON
+    private const UNMASK = "\x5F"; // MASK_OFF
+    private const UNDERLINE = "\x5A"; // UNDERLINE_ON
+    private const NO_UNDERLINE = "\x59"; // UNDERLINE_OFF
+    private const INVERSE = "\x5D"; // INVERSE_ON
+    private const NO_INVERSE = "\x5C"; // INVERSE_OFF
+
+    // The byte after ESC of each group, as the Minitel starts (the charset: SI): white text
+    // (0x40 + 7) on black (0x50 + 0)
     private const DEFAULTS = [
         'charset' => self::TEXT,
         'fg' => "\x47",
         'bg' => "\x50",
-        'size' => "\x4C",
-        'blink' => "\x49",
-        'mask' => "\x5F",
-        'underline' => "\x59",
-        'inverse' => "\x5C",
+        'size' => self::SIZE_NORMAL,
+        'blink' => self::FIXED,
+        'mask' => self::UNMASK,
+        'underline' => self::NO_UNDERLINE,
+        'inverse' => self::NO_INVERSE,
     ];
 
     /**
@@ -88,32 +103,32 @@ final readonly class Attributes
 
     public function isDoubleHeight(): bool
     {
-        return \in_array($this->values['size'], ["\x4D", "\x4F"], strict: true);
+        return \in_array($this->values['size'], [self::DOUBLE_HEIGHT, self::DOUBLE], strict: true);
     }
 
     public function isDoubleWidth(): bool
     {
-        return \in_array($this->values['size'], ["\x4E", "\x4F"], strict: true);
+        return \in_array($this->values['size'], [self::DOUBLE_WIDTH, self::DOUBLE], strict: true);
     }
 
     public function isBlinking(): bool
     {
-        return $this->values['blink'] === "\x48";
+        return $this->values['blink'] === self::BLINK;
     }
 
     public function isMasked(): bool
     {
-        return $this->values['mask'] === "\x58";
+        return $this->values['mask'] === self::MASK;
     }
 
     public function isUnderlined(): bool
     {
-        return $this->values['underline'] === "\x5A";
+        return $this->values['underline'] === self::UNDERLINE;
     }
 
     public function isInverse(): bool
     {
-        return $this->values['inverse'] === "\x5D";
+        return $this->values['inverse'] === self::INVERSE;
     }
 
     /**
@@ -168,7 +183,7 @@ final readonly class Attributes
             if ($group === 'charset' || $this->values[$group] === $current->values[$group]) {
                 continue;
             }
-            $codes .= "\x1B" . $this->values[$group];
+            $codes .= Videotex::ESC . $this->values[$group];
         }
 
         return $codes;
@@ -181,15 +196,18 @@ final readonly class Attributes
     {
         $code = \ord($byte);
 
+        // The colours: 0x40 + n for the text, 0x50 + n for the background (Color)
         return match (true) {
             $code >= 0x40 && $code <= 0x47 => 'fg',
             $code >= 0x50 && $code <= 0x57 => 'bg',
-            $code >= 0x4C && $code <= 0x4F => 'size',
-            $code === 0x48 || $code === 0x49 => 'blink',
-            $code === 0x58 || $code === 0x5F => 'mask',
-            $code === 0x59 || $code === 0x5A => 'underline',
-            $code === 0x5C || $code === 0x5D => 'inverse',
-            default => null,
+            default => match ($byte) {
+                self::SIZE_NORMAL, self::DOUBLE_HEIGHT, self::DOUBLE_WIDTH, self::DOUBLE => 'size',
+                self::BLINK, self::FIXED => 'blink',
+                self::MASK, self::UNMASK => 'mask',
+                self::UNDERLINE, self::NO_UNDERLINE => 'underline',
+                self::INVERSE, self::NO_INVERSE => 'inverse',
+                default => null,
+            },
         };
     }
 }

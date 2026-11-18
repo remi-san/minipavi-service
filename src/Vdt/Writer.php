@@ -45,12 +45,12 @@ final class Writer
     {
         $this->moveTo($row, $col);
         $this->setAttributes($attributes);
-        $this->send("\x18");
+        $this->send(Videotex::CLEAR_LINE);
     }
 
     public function clear(): void
     {
-        $this->send("\x0C");
+        $this->send(Videotex::CLEAR_SCREEN);
         $this->row = 1;
         $this->col = 1;
         $this->attributes = Attributes::defaults();
@@ -86,7 +86,7 @@ final class Writer
         if ($this->row === $row && $this->col === $col) {
             return;
         }
-        $this->send("\x1F" . chr(0x40 + $row) . chr(0x40 + $col));
+        $this->send(Videotex::POSITION . chr(0x40 + $row) . chr(0x40 + $col));
         $this->row = $row;
         $this->col = $col;
         $this->attributes = Attributes::defaults();
@@ -117,7 +117,7 @@ final class Writer
         if ($this->repeat > 0 && $this->pending !== null) {
             $this->vdt .= ($this->repeat * strlen($this->pending)) <= 2
                 ? str_repeat($this->pending, $this->repeat)
-                : "\x12" . chr(0x40 + $this->repeat);
+                : Videotex::REPEAT . chr(0x40 + $this->repeat);
         }
         $this->pending = null;
         $this->repeat = 0;
