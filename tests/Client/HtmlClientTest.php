@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MiniPaviService\Tests\Client;
 
 use MiniPaviService\Client\HtmlClient;
+use MiniPaviService\Client\HtmlForm;
 use MiniPaviService\Client\HtmlPageState;
 use MiniPaviService\Controller\Parameters\NoParameters;
 use MiniPaviService\Controller\Request;
@@ -349,7 +350,9 @@ final class HtmlClientTest extends TestCase
 
     private static function client(?Messages $messages = null): HtmlClient
     {
-        return new HtmlClient(new HtmlRenderer(HtmlRenderer::MINITEL_FONT), $messages ?? Messages::defaults());
+        $messages ??= Messages::defaults();
+
+        return new HtmlClient(new HtmlForm(new HtmlRenderer(HtmlRenderer::MINITEL_FONT), $messages), $messages);
     }
 
     /**

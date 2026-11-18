@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MiniPaviService\Http;
 
 use MiniPaviService\Client\HtmlClient;
+use MiniPaviService\Client\HtmlForm;
 use MiniPaviService\Client\MiniPaviClient;
 use MiniPaviService\Core\ContextSerializer;
 use MiniPaviService\Core\Router;
@@ -187,7 +188,10 @@ final readonly class KernelBuilder
                         new QueryParameterEquals('web', 'true'),
                         new ServiceRunner(
                             $service,
-                            new HtmlClient(new HtmlRenderer(HtmlRenderer::MINITEL_FONT), $this->messages),
+                            new HtmlClient(
+                                new HtmlForm(new HtmlRenderer(HtmlRenderer::MINITEL_FONT), $this->messages),
+                                $this->messages,
+                            ),
                             $this->logger,
                         ),
                     ),
