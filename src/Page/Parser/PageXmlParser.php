@@ -17,9 +17,7 @@ use MiniPaviService\Page\MinitelPage;
 use MiniPaviService\Page\Parser\Tag\NodesParser;
 use MiniPaviService\Page\Parser\Tag\TagPosition;
 use MiniPaviService\Page\Setup;
-use MiniPaviService\Page\StaticContent;
 use MiniPaviService\Page\Template\Nodes;
-use MiniPaviService\Page\Template\TemplateException;
 use MiniPaviService\Page\TemplateContent;
 use MiniPaviService\Xml\XmlDocument;
 use MiniPaviService\Xml\XmlElements;
@@ -27,15 +25,13 @@ use MiniPaviService\Xml\XmlException;
 
 /**
  * Reads a page XML file (root element <page>, format documented in the framework's README.md)
- * into a MinitelPage, whose content the type attribute of <page> gives: StaticContent for
- * type="static", TemplateContent, with {{placeholders}} and instructions (<foreach>,
- * <if>), for type="template". Anything unknown or invalid throws a PageXmlException
- * giving the file and line.
+ * into a MinitelPage, whose content the type attribute of <page> gives (PageType):
+ * StaticContent for type="static", TemplateContent, with {{placeholders}} and instructions
+ * (<foreach>, <if>), for type="template". Anything unknown or invalid throws a
+ * PageXmlException giving the file and line.
  */
 final class PageXmlParser
 {
-    private const TYPES = ['static', 'template'];
-
     /**
      * @param Messages $messages the service's messages (e.g. MessagesXmlParser::defaults() for the
      *                           framework's only), which a page's <message> redefine
@@ -78,16 +74,7 @@ final class PageXmlParser
         } catch (XmlException $e) {
             throw new PageXmlException($e->getMessage(), 0, $e);
         }
-        $type = trim((string) $root['type']);
-        if (!in_array($type, self::TYPES, strict: true)) {
-            throw new PageXmlException(
-                "{$name}: <page>: "
-                . ($type === '' ? 'type is missing' : "type=\"{$type}\" is unknown")
-                . ' (type="'
-                . implode('" or type="', self::TYPES)
-                . '")',
-            );
-        }
+        $type = PageType::of(trim((string) $root['type']), $name);
 
         $setup = new Setup(
             self::setting($root, attribute: 'keyboard', enum: Keyboard::class, name: $name),
@@ -98,21 +85,15 @@ final class PageXmlParser
         $messages = $this->messages->with($this->messageTexts($root, $name));
         $parsed = NodesParser::standard($this->elementsOf(new PageFiles($baseDir), $messages), $name)->parse(
             $root,
-            TagPosition::page(template: $type === 'template'),
+            TagPosition::page(template: $type->isTemplate()),
         );
-        $template = new TemplateContent(new Nodes($parsed->nodes));
-        if ($type === 'template') {
-            return new MinitelPage($template, $messages, $parsed->input, $setup);
-        }
 
-        // Static page: elements are built now, so that their errors are found now
-        try {
-            $display = $template->display([]);
-        } catch (TemplateException $e) {
-            throw new PageXmlException($e->getMessage(), 0, $e);
-        }
-
-        return new MinitelPage(new StaticContent($display), $messages, $parsed->input, $setup);
+        return new MinitelPage(
+            $type->content(new TemplateContent(new Nodes($parsed->nodes))),
+            $messages,
+            $parsed->input,
+            $setup,
+        );
     }
 
     /**
