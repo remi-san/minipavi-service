@@ -7,6 +7,7 @@ namespace MiniPaviService\Tests\Core;
 use MiniPaviService\Controller\ControllerState;
 use MiniPaviService\Controller\Pagination\PageParameters;
 use MiniPaviService\Controller\Parameters\NoParameters;
+use MiniPaviService\Controller\Parameters\Values;
 use MiniPaviService\Controller\Request;
 use MiniPaviService\Controller\Response;
 use MiniPaviService\Core\Context;
@@ -68,9 +69,9 @@ final class ContextSerializerTest extends TestCase
 
     public function testSurvivesSerializationTyped(): void
     {
-        $context = new Context($this->router, 'home');
-        $context->keep(ControllerState::ReadInput, new PageParameters(2));
-        $context->changeRoute('search');
+        $context = new Context($this->router, 'search', [
+            'home' => $this->router->route('home')->restore('read-input', new Values(['page' => 2])),
+        ]);
         $context->keep(SearchState::ReadQuery, new PageParameters(5));
 
         $restored = $this->serializer()->unserialize($this->serializer()->serialize($context));
@@ -78,9 +79,8 @@ final class ContextSerializerTest extends TestCase
         self::assertSame('search', $restored->route());
         self::assertSame(SearchState::ReadQuery, $restored->state());
         self::assertEquals(new PageParameters(5), $restored->parameters());
-        $restored->changeRoute('home');
-        self::assertSame(ControllerState::ReadInput, $restored->state());
-        self::assertEquals(new PageParameters(2), $restored->parameters());
+        // The other route's too
+        self::assertSame($context->kept(), $restored->kept());
     }
 
     public function testParametersSurviveSerializationAsTheyAre(): void
@@ -134,15 +134,12 @@ final class ContextSerializerTest extends TestCase
 
         self::assertSame(ControllerState::ReadInput, $context->state());
         self::assertEquals(new PageParameters(2), $context->parameters());
+        $kept = $context->kept();
         // A state its enum doesn't have, invalid parameters
-        $context->changeRoute('search');
-        self::assertSame(SearchState::Init, $context->state());
-        self::assertEquals(new PageParameters(), $context->parameters());
-        $context->changeRoute('menu');
-        self::assertSame(ControllerState::Init, $context->state());
+        self::assertSame(['state' => 'init', 'parameters' => ['page' => 0]], $kept['search']);
+        self::assertSame('init', $kept['menu']['state']);
         // A value of another type, coerced when safe
-        $context->changeRoute('origin');
-        self::assertEquals(new FromParameters('12'), $context->parameters());
+        self::assertSame(['from' => '12'], $kept['origin']['parameters']);
         // Routes the router doesn't have are dropped
         self::assertStringNotContainsString('removed', $this->serializer()->serialize($context));
     }

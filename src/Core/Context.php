@@ -28,13 +28,17 @@ final class Context
     ) {}
 
     /**
-     * What each route keeps, by route: those whose controller ran or was restored
+     * What each route keeps, by route (those whose controller ran or was restored): the value
+     * of its state, and its parameters as values (Parameters::toArray()), e.g. to serialize them
      *
-     * @return array<string, RouteContext<State, Parameters>>
+     * @return array<string, array{state: int|string, parameters: array<string, mixed>}>
      */
     public function kept(): array
     {
-        return $this->routes;
+        return array_map(static fn(RouteContext $route) => [
+            'state' => $route->state()->value,
+            'parameters' => $route->parameters()->toArray(),
+        ], $this->routes);
     }
 
     public function route(): string
@@ -52,26 +56,19 @@ final class Context
     }
 
     /**
-     * Goes to route, whose controller starts again: its initial state, and parameters (null:
-     * their defaults), whatever it kept before (e.g. Response::goTo())
+     * Leaves the current route for another (Response::goTo()): the controller left starts
+     * again next time (it keeps nothing), and the one of route starts again now, at its initial
+     * state, with parameters (null: their defaults), whatever either kept before
      *
-     * @param ?Parameters $parameters of the class its controller declares
+     * @param ?Parameters $parameters of the class route's controller declares
      *
      * @throws \LogicException for parameters of another class than the controller's
      */
-    public function enter(string $route, ?Parameters $parameters = null): void
+    public function leaveFor(string $route, ?Parameters $parameters = null): void
     {
-        $this->changeRoute($route);
-        $this->keep(null, $parameters);
-    }
-
-    /**
-     * Goes to route, as it is: with what it kept (or its controller's initial state and the
-     * defaults of its parameters)
-     */
-    public function changeRoute(string $route): void
-    {
+        $this->keep(state: null, parameters: null);
         $this->route = $route;
+        $this->keep(state: null, parameters: $parameters);
     }
 
     /**
@@ -111,7 +108,7 @@ final class Context
      *
      * @param list<string> $content
      */
-    public function run(?Key $key = null, array $content = [], Terminal $terminal = new Terminal()): Response
+    public function run(?Key $key, array $content, Terminal $terminal): Response
     {
         return $this->current()->run($key, $content, $terminal);
     }

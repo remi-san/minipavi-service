@@ -7,6 +7,7 @@ namespace MiniPaviService\Tests\Core;
 use MiniPaviService\Controller\ControllerState;
 use MiniPaviService\Controller\Pagination\PageParameters;
 use MiniPaviService\Controller\Parameters\NoParameters;
+use MiniPaviService\Controller\Parameters\Values;
 use MiniPaviService\Controller\Request;
 use MiniPaviService\Controller\Response;
 use MiniPaviService\Core\Context;
@@ -89,30 +90,35 @@ final class ContextTest extends TestCase
 
     public function testKeepsStateAndParametersPerRoute(): void
     {
-        $context = new Context($this->router, 'home');
+        $context = new Context($this->router, 'home', [
+            'search' => $this->router->route('search')->restore('read-query', new Values(['page' => 5])),
+        ]);
         $context->keep(ControllerState::ReadInput, new PageParameters(2));
-        $context->changeRoute('search');
 
-        self::assertSame(SearchState::Init, $context->state());
-
-        $context->changeRoute('home');
-        self::assertSame(ControllerState::ReadInput, $context->state());
-        self::assertEquals(new PageParameters(2), $context->parameters());
+        self::assertSame(
+            [
+                'search' => ['state' => 'read-query', 'parameters' => ['page' => 5]],
+                'home' => ['state' => 'read-input', 'parameters' => ['page' => 2]],
+            ],
+            $context->kept(),
+        );
     }
 
-    public function testEnteringARouteStartsItsControllerAgain(): void
+    public function testLeavingForARouteStartsBothControllersAgain(): void
     {
-        $context = new Context($this->router, 'home');
-        $context->changeRoute('search');
-        $context->keep(SearchState::ReadQuery, new PageParameters(5));
-        $context->changeRoute('home');
+        $context = new Context($this->router, 'home', [
+            'search' => $this->router->route('search')->restore('read-query', new Values(['page' => 5])),
+        ]);
+        $context->keep(ControllerState::ReadInput, new PageParameters(3));
 
-        $context->enter('search', new PageParameters(2));
+        $context->leaveFor('search', new PageParameters(2));
 
         self::assertSame('search', $context->route());
         // Whatever it kept before
         self::assertSame(SearchState::Init, $context->state());
         self::assertEquals(new PageParameters(2), $context->parameters());
+        // The controller left keeps nothing
+        self::assertSame(['state' => 'init', 'parameters' => ['page' => 0]], $context->kept()['home']);
     }
 
     public function testKeepingNothingResetsTheCurrentRoute(): void

@@ -37,11 +37,8 @@ final readonly class ContextSerializer
             return $this->signer->sign(json_encode(
                 [
                     'route' => $context->route(),
-                    'states' => (object) array_map(static fn(RouteContext $route) => $route->state()->value, $kept),
-                    'parameters' => (object) array_map(
-                        static fn(RouteContext $route) => (object) $route->parameters()->toArray(),
-                        $kept,
-                    ),
+                    'states' => (object) array_map(static fn(array $route) => $route['state'], $kept),
+                    'parameters' => (object) array_map(static fn(array $route) => (object) $route['parameters'], $kept),
                 ],
                 JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES,
             ));

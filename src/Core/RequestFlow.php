@@ -70,9 +70,7 @@ final class RequestFlow implements Flow
             );
         }
 
-        // The controller left starts again
-        $this->context->keep(state: null, parameters: null);
-        $this->context->enter($route, $parameters);
+        $this->context->leaveFor($route, $parameters);
 
         // The input was for the controller left
         return $this->run(null, []);
