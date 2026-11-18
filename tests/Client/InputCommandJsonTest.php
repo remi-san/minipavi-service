@@ -32,6 +32,15 @@ final class InputCommandJsonTest extends TestCase
         self::assertEquals($command, $json->decode($json->encode($command)));
     }
 
+    public function testWritesTextThatIsntUtf8(): void
+    {
+        $json = new InputCommandJson();
+        $command = new InputCommand(new InputField(new Span(new Position(2), length: 5)), ["caf\xE9"]);
+
+        // Not lost: what can't be UTF-8 is replaced
+        self::assertSame(["caf\u{FFFD}"], $json->decode($json->encode($command))?->prefill);
+    }
+
     /**
      * @return iterable<string, array{string}>
      */

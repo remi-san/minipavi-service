@@ -67,12 +67,16 @@ final readonly class InputCommandJson
 
     /**
      * The command as JSON, read back by decode()
+     *
+     * @throws \JsonException if it can't be written
      */
     public function encode(InputCommand $command): string
     {
         $field = $command->field;
 
-        return (string) json_encode([
+        // Text that isn't UTF-8 (e.g. a prefill from a service that isn't) is replaced (U+FFFD)
+        // rather than losing the whole command; any other failure throws
+        return json_encode([
             'row' => $field->span->start->row,
             'col' => $field->span->start->col,
             'length' => $field->span->length,
@@ -81,7 +85,7 @@ final readonly class InputCommandJson
             'cursor' => $field->cursor,
             'spaceChar' => $field->spaceChar,
             'prefill' => $command->prefill,
-        ]);
+        ], JSON_THROW_ON_ERROR | JSON_INVALID_UTF8_SUBSTITUTE);
     }
 
     /**
