@@ -207,8 +207,9 @@ KernelBuilder::for($router, $messages)
   context...), the error is logged, and the user gets a message on line 0
   (`FrameworkMessage::Error`, from the `$messages` of the constructor; see
   [Messages](#messages)): their next function key starts again at the default route.
-- **`GatewayRequest`** is what the gateway sends: `key` (a `FunctionKey`, a `ConnectionCode`,
-  or null for another key; `GatewayRequest::keyOf()` reads it from what the gateway sends), `content` (the text typed), `context` (given back from the previous answer) and
+- **`GatewayRequest`** is what the gateway sends: `key` (a `Minitel\Key`: a `FunctionKey` or a
+  `ConnectionCode`, or null for another key; `GatewayRequest::keyOf()` reads it from what the
+  gateway sends, `fctn()` gives its name back), `content` (the text typed), `context` (given back from the previous answer) and
   `terminal`. **`GatewayResponse`** is what is sent back: `vdt`, `context`, `next` (the URL the
   gateway calls next, null for this service's), `command` (e.g. an input command),
   `directCall` (a `CallMode`, to call `next` at once) and `echo`. Both are plain values, so a
