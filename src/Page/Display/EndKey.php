@@ -31,14 +31,13 @@ final readonly class EndKey implements Element
         }
     }
 
-    // Adapters are websockets with a known Minitel; emulators don't know it
     public function getContent(Terminal $terminal): string
     {
         $badge = Key::badge($this->label, $this->color);
         // The badge is the label with two cells on each side
         $width = mb_strlen($this->label) + 4;
 
-        if ($terminal->versionMinitel() !== '???' && $terminal->typeSocket() === 'websocket') {
+        if ($terminal->isAdapter()) {
             $width += mb_strlen($this->shiftLabel);
 
             return (
