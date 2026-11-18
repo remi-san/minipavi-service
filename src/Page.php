@@ -33,9 +33,10 @@ interface Page
     /**
      * Text of a message for this page: the page's own (<message>), or the service's
      *
-     * @param array<string, string|int> $variables values of its {{placeholders}}
+     * @param array<string, mixed> $variables values of its {{placeholders}} (Messages::get())
      *
-     * @throws \LogicException for a message without text, or a placeholder without variable
+     * @throws \LogicException for a message without text, a placeholder without variable or
+     *                         whose value isn't text, or a {{...}} that isn't a placeholder
      */
     public function message(Message $message, array $variables = []): string;
 }

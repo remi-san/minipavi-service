@@ -33,12 +33,51 @@ final class MessagesTest extends TestCase
         ]));
     }
 
-    public function testPlaceholderWithoutVariableIsAnError(): void
+    public function testPlaceholdersGoThroughArraysAndObjectsAsInTemplates(): void
+    {
+        $messages = new Messages(['welcome' => 'Bonjour {{user.name}}, page {{ page.number }}']);
+
+        self::assertSame('Bonjour Léa, page 2', $messages->get(TestMessage::Welcome, [
+            'user' => ['name' => 'Léa'],
+            'page' => (object) ['number' => 2],
+        ]));
+    }
+
+    /**
+     * @return iterable<string, array{string, array<string, mixed>, string}>
+     */
+    public static function placeholderErrors(): iterable
+    {
+        yield 'no variable' => ['Bonjour {{name}}', [], 'Message "welcome": unknown variable {{name}}'];
+        yield 'a value that isn\'t text' => [
+            'Bonjour {{user}}',
+            ['user' => ['name' => 'Léa']],
+            'Message "welcome": {{user}} is not text (array)',
+        ];
+        // Not placeholders, but not left in the text either: a mistake in the message
+        yield 'a number' => ['Code {{1}}', [], 'Message "welcome": {{1}} is not a placeholder'];
+        yield 'a dash' => [
+            'Bonjour {{user-name}}',
+            ['user' => 'x'],
+            'Message "welcome": {{user-name}} is not a placeholder',
+        ];
+        yield 'a dot at the end' => [
+            'Bonjour {{user.}}',
+            ['user' => 'x'],
+            'Message "welcome": {{user.}} is not a placeholder',
+        ];
+    }
+
+    /**
+     * @param array<string, mixed> $variables
+     */
+    #[DataProvider('placeholderErrors')]
+    public function testPlaceholderErrorsNameTheMessage(string $text, array $variables, string $error): void
     {
         $this->expectException(\LogicException::class);
-        $this->expectExceptionMessage('Message "welcome" needs the variable "name"');
+        $this->expectExceptionMessage($error);
 
-        (new Messages(['welcome' => 'Bonjour {{name}}']))->get(TestMessage::Welcome);
+        (new Messages(['welcome' => $text]))->get(TestMessage::Welcome, $variables);
     }
 
     public function testMessageWithoutTextIsAnError(): void

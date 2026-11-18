@@ -23,6 +23,24 @@ final readonly class Placeholders
     ) {}
 
     /**
+     * The first {{...}} of a text that isn't a placeholder (e.g. {{1}}, {{user-name}}, or
+     * {{user.}}), which substitute() leaves as it is; null if there is none
+     */
+    public static function malformed(string $text): ?string
+    {
+        $candidates = [];
+        preg_match_all('/\{\{.*?\}\}/s', $text, $candidates);
+        foreach ($candidates[0] as $candidate) {
+            $match = [];
+            if (preg_match(self::PLACEHOLDER, $candidate, $match) !== 1 || $match[0] !== $candidate) {
+                return $candidate;
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * Text with its {{placeholders}} replaced by the values of the variables
      */
     public function substitute(string $text): string

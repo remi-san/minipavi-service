@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Message;
 
+use MiniPaviService\Text\Placeholders;
+
 /**
  * Texts of the messages shown on the Minitel, by name (Message): the framework's defaults
  * (MessagesXmlParser::defaults()), a service's messages file over them (MessagesXmlParser), a page's
@@ -35,28 +37,33 @@ final readonly class Messages
     }
 
     /**
-     * Text of a message, its {{placeholders}} replaced by variables
+     * Text of a message, its {{placeholders}} replaced by variables, as in page templates
+     * (Text\Placeholders): {{name}}, or a dotted path through arrays and object properties
      *
-     * @param array<string, string|int> $variables name => value
+     * @param array<string, mixed> $variables name => value: text, number, array or object with
+     *                                    properties
      *
-     * @throws \LogicException for a message without text, or a placeholder without variable
+     * @throws \LogicException naming the message, for a message without text, a placeholder
+     *                         without variable or whose value isn't text, or a {{...}} that
+     *                         isn't a placeholder (e.g. {{1}}). An exception of a variable's own
+     *                         code (e.g. its __toString(), or __get()) goes through as it is.
      */
     public function get(Message $message, array $variables = []): string
     {
         $name = (string) $message->value;
         $text = $this->texts[$name] ?? throw new \LogicException("No text for the message \"{$name}\"");
 
-        return (string) preg_replace_callback(
-            '/\{\{\s*(\w+)\s*\}\}/',
-            static function (array $match) use ($name, $variables): string {
-                if (!\array_key_exists($match[1], $variables)) {
-                    throw new \LogicException("Message \"{$name}\" needs the variable \"{$match[1]}\"");
-                }
+        try {
+            // Unlike in a page, it would be left in the text: a mistake in the message
+            $malformed = Placeholders::malformed($text);
+            if ($malformed !== null) {
+                throw new \InvalidArgumentException("{$malformed} is not a placeholder");
+            }
 
-                return (string) $variables[$match[1]];
-            },
-            $text,
-        );
+            return (new Placeholders($variables))->substitute($text);
+        } catch (\InvalidArgumentException $e) {
+            throw new \LogicException("Message \"{$name}\": " . $e->getMessage(), 0, $e);
+        }
     }
 
     /**

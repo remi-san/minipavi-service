@@ -71,7 +71,7 @@ final readonly class ShownPage
     /**
      * Text of a message for the page: its own (<message>), or the service's
      *
-     * @param array<string, string|int> $variables values of its {{placeholders}}
+     * @param array<string, mixed> $variables values of its {{placeholders}} (Messages::get())
      */
     public function message(Message $message, array $variables = []): string
     {
