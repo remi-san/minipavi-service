@@ -17,7 +17,9 @@ use MiniPaviService\Page\MinitelPage;
 use MiniPaviService\Page\Parser\Tag\NodesParser;
 use MiniPaviService\Page\Parser\Tag\TagPosition;
 use MiniPaviService\Page\Setup;
+use MiniPaviService\Page\StaticContent;
 use MiniPaviService\Page\Template\Nodes;
+use MiniPaviService\Page\Template\TemplateException;
 use MiniPaviService\Page\TemplateContent;
 use MiniPaviService\Xml\XmlDocument;
 use MiniPaviService\Xml\XmlElements;
@@ -95,8 +97,10 @@ final class PageXmlParser
             TagPosition::page(template: $type->isTemplate()),
         );
 
+        $template = new TemplateContent(new Nodes($parsed->nodes));
+
         return new MinitelPage(
-            $type->content(new TemplateContent(new Nodes($parsed->nodes))),
+            $type->isTemplate() ? $template : self::staticContent($template),
             $messages,
             $parsed->input,
             $setup,
@@ -163,6 +167,21 @@ final class PageXmlParser
     private static function at(\SimpleXMLElement $root, string $name): string
     {
         return $name . ' line ' . dom_import_simplexml($root)->getLineNo();
+    }
+
+    /**
+     * The content of a static page: its elements built now, so that their errors are found
+     * when it is parsed
+     *
+     * @throws PageXmlException for an element that can't be built
+     */
+    private static function staticContent(TemplateContent $template): StaticContent
+    {
+        try {
+            return new StaticContent($template->display([]));
+        } catch (TemplateException $e) {
+            throw new PageXmlException($e->getMessage(), 0, $e);
+        }
     }
 
     /**
