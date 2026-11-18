@@ -84,6 +84,9 @@ final readonly class ShownPage
         return $this->page->message($message, $variables);
     }
 
+    /**
+     * The same list and request, at another page
+     */
     private function at(Paginator $paginator): self
     {
         return new self($this->page, $this->list, $this->request, $paginator);
