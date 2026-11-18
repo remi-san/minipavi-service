@@ -203,9 +203,8 @@ KernelBuilder::for($router, $messages)
 - **`Service`** answers a request of the gateway, without I/O:
   `$service->handle(GatewayRequest): ?GatewayResponse` (null for a disconnection or a
   background call of the gateway, `BGCALL-WM-...`, which have nothing to answer). It restores the `Context`, and runs the controller of the current route
-  until a response answers the gateway. `Service` owns the context: it keeps the state and
-  parameters a response gives for its controller, then the response says what comes next,
-  through a `Flow` (see below). A context without route, or
+  until a response answers the gateway. `Service` owns the context: a response says, through
+  a `Flow` (see below), the state and parameters its controller keeps and what comes next. A context without route, or
   whose route the service doesn't have (e.g. removed in a new version), starts again at the
   default route.
   If serving a request fails (an exception or a PHP error, in a controller, a template, the
@@ -261,22 +260,24 @@ KernelBuilder::for($router, $messages)
   others by name, e.g. `Response::readInput($vdt, $command, parameters: new
   DirectoryParameters(2))`. The classes behind them
   (`DisplayPage`, `RunCommand`, `ChangePage`, `RunExternalService`) can also be built directly.
-  They are readonly, and don't change the context. Once `Service` has kept a response's
-  state and parameters, it calls `continueWith(Flow $flow): GatewayResponse`, where the
-  response says what comes next: `$flow->answer($vdt, $command, $next, $directCall)` ends
-  the request with that answer to the gateway, and `$flow->goTo($route, $parameters)` runs
-  another controller and gives its answer. A response of your own extends `Response` and
-  implements `continueWith()`, without a change to `Service`:
+  They are readonly, and don't change the context. `Service` calls the response's
+  `continueWith(Flow $flow): GatewayResponse`, where it says what comes next:
+  `$flow->keep($state, $parameters)` keeps them for this controller,
+  `$flow->answer($vdt, $command, $next, $directCall)` ends the request with that answer to
+  the gateway, and `$flow->goTo($route, $parameters)` resets this controller and runs
+  another one, giving its answer. Every response but `ChangePage` extends
+  `KeepingResponse`, which keeps the state and parameters it is built with, then calls its
+  `next(Flow $flow)`. A response of your own does the same, without a change to `Service`:
 
   ```php
-  final readonly class ClearAndShow extends Response
+  final readonly class ClearAndShow extends KeepingResponse
   {
       public function __construct(private Vdt $vdt)
       {
           parent::__construct(ControllerState::ReadInput, null);
       }
 
-      public function continueWith(Flow $flow): GatewayResponse
+      protected function next(Flow $flow): GatewayResponse
       {
           return $flow->answer(Vdt::clearScreen()->append($this->vdt));
       }
