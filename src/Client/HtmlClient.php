@@ -8,10 +8,10 @@ use MiniPaviService\Gateway\Client;
 use MiniPaviService\Gateway\GatewayRequest;
 use MiniPaviService\Gateway\GatewayResponse;
 use MiniPaviService\Gateway\InputCommand;
-use MiniPaviService\Gateway\InputKind;
 use MiniPaviService\Message\FrameworkMessage;
 use MiniPaviService\Message\Messages;
 use MiniPaviService\Minitel\FunctionKey;
+use MiniPaviService\Minitel\InputField;
 use MiniPaviService\Vdt\Screen\HtmlRenderer;
 use MiniPaviService\Vdt\Vdt;
 use MiniPaviService\Vdt\VdtHelper;
@@ -163,19 +163,20 @@ final readonly class HtmlClient implements Client
             return '';
         }
 
+        $field = $command->field;
         $fields = '';
-        for ($line = 0; $line < $command->lines; $line++) {
+        for ($line = 0; $line < $field->lines; $line++) {
             $fields .=
                 '<input class="field" name="'
                 . self::CONTENT
                 . '[]" maxlength="'
-                . $command->width
+                . $field->length
                 . '"'
                 . ' value="'
                 . HtmlRenderer::escape($command->prefill[$line] ?? '')
                 . '"'
                 . ' style="'
-                . HtmlRenderer::at($command->col, $command->row + $line, $command->width)
+                . HtmlRenderer::at($field->col, $field->row + $line, $field->length)
                 . '"'
                 . ($line === 0 ? ' autofocus' : '')
                 . ' autocomplete="off">';
@@ -194,7 +195,7 @@ final readonly class HtmlClient implements Client
         $keys = FunctionKey::cases();
         $buttons = [];
         foreach ($keys as $position => $key) {
-            $enabled = $command === null || $command->isValidatedWith($key);
+            $enabled = $command === null || $command->field->isValidatedWith($key);
             $button =
                 '<button type="submit" name="'
                 . self::KEY
@@ -230,7 +231,11 @@ final readonly class HtmlClient implements Client
         if (!\is_array($command)) {
             return null;
         }
-        $kind = InputKind::tryFrom(self::text($command, name: 'kind'));
+        foreach (['row', 'col', 'length', 'lines'] as $name) {
+            if (!\is_int($command[$name] ?? null)) {
+                return null;
+            }
+        }
         $validWith = [];
         foreach (\is_array($command['validWith'] ?? null) ? $command['validWith'] : [] as $name) {
             $key = \is_string($name) ? FunctionKey::tryFrom($name) : null;
@@ -243,37 +248,22 @@ final readonly class HtmlClient implements Client
             static fn(mixed $line) => \is_string($line) ? $line : '',
             \is_array($command['prefill'] ?? null) ? $command['prefill'] : [],
         ));
-        [$col, $row, $width, $lines] = [
-            self::int($command, name: 'col', default: 1),
-            self::int($command, name: 'row', default: 1),
-            self::int($command, name: 'width', default: 1),
-            self::int($command, name: 'lines', default: 1),
-        ];
-        $cursor = ($command['cursor'] ?? true) === true;
-        $spaceChar = self::text($command, name: 'spaceChar');
+        try {
+            $field = new InputField(
+                self::int($command, name: 'row', default: 1),
+                self::int($command, name: 'col', default: 1),
+                self::int($command, name: 'length', default: 1),
+                self::int($command, name: 'lines', default: 1),
+                $validWith,
+                ($command['cursor'] ?? true) === true,
+                self::text($command, name: 'spaceChar'),
+            );
+        } catch (\InvalidArgumentException) {
+            // Off the screen
+            return null;
+        }
 
-        return match ($kind) {
-            null => null,
-            InputKind::Text => InputCommand::text(
-                $col,
-                $row,
-                $width,
-                $validWith,
-                $cursor,
-                $spaceChar,
-                $prefill[0] ?? '',
-            ),
-            InputKind::Message => InputCommand::message(
-                $col,
-                $row,
-                $width,
-                $lines,
-                $validWith,
-                $cursor,
-                $spaceChar,
-                $prefill,
-            ),
-        };
+        return new InputCommand($field, $prefill);
     }
 
     /**
@@ -281,15 +271,16 @@ final readonly class HtmlClient implements Client
      */
     private static function encoded(InputCommand $command): string
     {
+        $field = $command->field;
+
         return (string) json_encode([
-            'kind' => $command->kind->value,
-            'col' => $command->col,
-            'row' => $command->row,
-            'width' => $command->width,
-            'lines' => $command->lines,
-            'validWith' => array_map(static fn(FunctionKey $key) => $key->value, $command->validWith),
-            'cursor' => $command->cursor,
-            'spaceChar' => $command->spaceChar,
+            'row' => $field->row,
+            'col' => $field->col,
+            'length' => $field->length,
+            'lines' => $field->lines,
+            'validWith' => array_map(static fn(FunctionKey $key) => $key->value, $field->validWith),
+            'cursor' => $field->cursor,
+            'spaceChar' => $field->spaceChar,
             'prefill' => $command->prefill,
         ]);
     }

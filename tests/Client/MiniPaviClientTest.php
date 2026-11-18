@@ -11,6 +11,7 @@ use MiniPaviService\Gateway\GatewayRequest;
 use MiniPaviService\Gateway\GatewayResponse;
 use MiniPaviService\Gateway\InputCommand;
 use MiniPaviService\Minitel\FunctionKey;
+use MiniPaviService\Minitel\InputField;
 use MiniPaviService\Vdt\Vdt;
 use PHPUnit\Framework\TestCase;
 
@@ -109,12 +110,9 @@ final class MiniPaviClientTest extends TestCase
             new GatewayResponse(
                 new Vdt('Code ?'),
                 '{}',
-                command: InputCommand::text(
-                    5,
-                    row: 20,
-                    length: 10,
-                    validWith: [FunctionKey::Send, FunctionKey::Next],
-                    prefill: 'abc',
+                command: new InputCommand(
+                    new InputField(row: 20, col: 5, length: 10, validWith: [FunctionKey::Send, FunctionKey::Next]),
+                    ['abc'],
                 ),
             ),
         );
@@ -143,14 +141,16 @@ final class MiniPaviClientTest extends TestCase
             new GatewayResponse(
                 new Vdt('Message ?'),
                 '{}',
-                command: InputCommand::message(
-                    1,
-                    row: 13,
-                    width: 40,
-                    height: 2,
-                    validWith: [FunctionKey::Send],
-                    cursor: false,
-                    prefill: ['l1', 'l2'],
+                command: new InputCommand(
+                    new InputField(
+                        row: 13,
+                        col: 1,
+                        length: 40,
+                        lines: 2,
+                        validWith: [FunctionKey::Send],
+                        cursor: false,
+                    ),
+                    ['l1', 'l2'],
                 ),
             ),
         );

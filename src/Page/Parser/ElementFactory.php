@@ -7,6 +7,7 @@ namespace MiniPaviService\Page\Parser;
 use MiniPaviService\Message\FrameworkMessage;
 use MiniPaviService\Message\Messages;
 use MiniPaviService\Minitel\FunctionKey;
+use MiniPaviService\Minitel\InputField;
 use MiniPaviService\Page\Display\Background;
 use MiniPaviService\Page\Display\Color;
 use MiniPaviService\Page\Display\Element;
@@ -16,7 +17,6 @@ use MiniPaviService\Page\Display\Key;
 use MiniPaviService\Page\Display\Line;
 use MiniPaviService\Page\Display\Size;
 use MiniPaviService\Page\Display\Text;
-use MiniPaviService\Page\Input;
 use MiniPaviService\Vdt\Vdt;
 
 /**
@@ -134,7 +134,7 @@ final class ElementFactory
     /**
      * @param array<string, string> $attributes
      */
-    public function input(array $attributes): Input
+    public function input(array $attributes): InputField
     {
         $keys = preg_split('/\s+/', trim($attributes['validwith'] ?? 'envoi'));
         if ($keys === false) {
@@ -149,7 +149,7 @@ final class ElementFactory
                 . ')',
             );
         }
-        return new Input(
+        return new InputField(
             row: $this->int($attributes, attr: 'row', default: 13),
             col: $this->int($attributes, attr: 'col', default: 1),
             length: array_key_exists('length', $attributes)

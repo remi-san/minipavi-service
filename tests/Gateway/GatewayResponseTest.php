@@ -9,6 +9,7 @@ use MiniPaviService\Gateway\CallMode;
 use MiniPaviService\Gateway\GatewayResponse;
 use MiniPaviService\Gateway\InputCommand;
 use MiniPaviService\Minitel\FunctionKey;
+use MiniPaviService\Minitel\InputField;
 use MiniPaviService\Vdt\Vdt;
 use PHPUnit\Framework\TestCase;
 
@@ -21,7 +22,7 @@ final class GatewayResponseTest extends TestCase
             new Vdt('x'),
             '{"route":"menu"}',
             'https://example.org/',
-            InputCommand::text(1, row: 2, length: 4, validWith: [FunctionKey::Send]),
+            new InputCommand(new InputField(row: 2, col: 1, length: 4, validWith: [FunctionKey::Send])),
             CallMode::Connect,
             false,
         );
@@ -31,7 +32,7 @@ final class GatewayResponseTest extends TestCase
                 new Vdt('x'),
                 $signer->sign('{"route":"menu"}'),
                 'https://example.org/',
-                InputCommand::text(1, row: 2, length: 4, validWith: [FunctionKey::Send]),
+                new InputCommand(new InputField(row: 2, col: 1, length: 4, validWith: [FunctionKey::Send])),
                 CallMode::Connect,
                 false,
             ),

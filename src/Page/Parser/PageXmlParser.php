@@ -6,12 +6,12 @@ namespace MiniPaviService\Page\Parser;
 
 use MiniPaviService\Io\Files;
 use MiniPaviService\Message\Messages;
+use MiniPaviService\Minitel\InputField;
 use MiniPaviService\Minitel\Keyboard;
 use MiniPaviService\Minitel\LocalEcho;
 use MiniPaviService\Minitel\Scroll;
 use MiniPaviService\Page;
 use MiniPaviService\Page\Display\Display;
-use MiniPaviService\Page\Input;
 use MiniPaviService\Page\Setup;
 use MiniPaviService\Page\StaticPage;
 use MiniPaviService\Page\Template\ElementNode;
@@ -159,7 +159,7 @@ final class PageXmlParser
      *
      * @param bool $template page of type="template", the only one with placeholders and instructions
      * @param bool $inLoop inside a <foreach>
-     * @param ?Input $input set to the <input> of the page, found at its top level only
+     * @param ?InputField $input set to the <input> of the page, found at its top level only
      *
      * @return Node[]
      */
@@ -169,7 +169,7 @@ final class PageXmlParser
         string $name,
         bool $template,
         bool $inLoop,
-        ?Input &$input,
+        ?InputField &$input,
     ): array {
         $nodes = [];
         foreach (XmlElements::children($parent) as $tag => $elem) {

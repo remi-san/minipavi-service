@@ -9,7 +9,6 @@ use MiniPaviService\Gateway\Client;
 use MiniPaviService\Gateway\GatewayRequest;
 use MiniPaviService\Gateway\GatewayResponse;
 use MiniPaviService\Gateway\InputCommand;
-use MiniPaviService\Gateway\InputKind;
 use MiniPaviService\Gateway\NoClientState;
 use MiniPaviService\Minitel\FunctionKey;
 use MiniPaviService\Minitel\Terminal;
@@ -106,30 +105,31 @@ final class MiniPaviClient implements Client
         if ($command === null) {
             return null;
         }
-        $validWith = FunctionKey::masks(...$command->validWith);
-
-        return match ($command->kind) {
-            InputKind::Text => MiniPaviCli::createInputTxtCmd(
-                $command->col,
-                $command->row,
-                $command->width,
+        $field = $command->field;
+        $validWith = FunctionKey::masks(...$field->validWith);
+        if ($field->isMessage()) {
+            return MiniPaviCli::createInputMsgCmd(
+                $field->col,
+                $field->row,
+                $field->length,
+                $field->lines,
                 $validWith,
-                $command->cursor,
-                $command->spaceChar,
-                char: '',
-                preFill: $command->prefill[0] ?? '',
-            ),
-            InputKind::Message => MiniPaviCli::createInputMsgCmd(
-                $command->col,
-                $command->row,
-                $command->width,
-                $command->lines,
-                $validWith,
-                $command->cursor,
-                $command->spaceChar,
+                $field->cursor,
+                $field->spaceChar,
                 $command->prefill,
-            ),
-        };
+            );
+        }
+
+        return MiniPaviCli::createInputTxtCmd(
+            $field->col,
+            $field->row,
+            $field->length,
+            $validWith,
+            $field->cursor,
+            $field->spaceChar,
+            char: '',
+            preFill: $command->prefill[0] ?? '',
+        );
     }
 
     /**

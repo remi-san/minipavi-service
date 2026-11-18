@@ -12,6 +12,7 @@ use MiniPaviService\Controller\Response\RunExternalService;
 use MiniPaviService\Gateway\CallMode;
 use MiniPaviService\Gateway\InputCommand;
 use MiniPaviService\Minitel\FunctionKey;
+use MiniPaviService\Minitel\InputField;
 use MiniPaviService\Tests\Support\FromParameters;
 use MiniPaviService\Tests\Support\RecordingFlow;
 use MiniPaviService\Vdt\Vdt;
@@ -81,7 +82,7 @@ final class ResponseTest extends TestCase
 
     public function testReadInputAnswersWithTheCommand(): void
     {
-        $command = InputCommand::text(1, row: 2, length: 4, validWith: [FunctionKey::Send]);
+        $command = new InputCommand(new InputField(row: 2, col: 1, length: 4, validWith: [FunctionKey::Send]));
 
         self::assertSame(
             [['answer', ['vdt' => 'Code ?', 'command' => $command, 'next' => null, 'directCall' => null]]],

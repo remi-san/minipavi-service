@@ -20,6 +20,7 @@ use MiniPaviService\Message\FrameworkMessage;
 use MiniPaviService\Message\Messages;
 use MiniPaviService\Message\MessagesException;
 use MiniPaviService\Minitel\FunctionKey;
+use MiniPaviService\Minitel\InputField;
 use MiniPaviService\Minitel\Terminal;
 use MiniPaviService\Tests\Support\CallbackController;
 use MiniPaviService\Tests\Support\ClearAndShow;
@@ -283,7 +284,7 @@ final class ServiceTest extends TestCase
 
     public function testReadInputAnswersWithTheCommand(): void
     {
-        $command = InputCommand::text(1, row: 2, length: 4, validWith: [FunctionKey::Send]);
+        $command = new InputCommand(new InputField(row: 2, col: 1, length: 4, validWith: [FunctionKey::Send]));
 
         $answer = $this->answerTo(Response::readInput(new Vdt('Code ?'), $command));
 

@@ -8,6 +8,7 @@ use MiniPaviService\Gateway\InputCommand;
 use MiniPaviService\Message\FrameworkMessage;
 use MiniPaviService\Message\Messages;
 use MiniPaviService\Minitel\FunctionKey;
+use MiniPaviService\Minitel\InputField;
 use MiniPaviService\Minitel\Keyboard;
 use MiniPaviService\Minitel\LocalEcho;
 use MiniPaviService\Minitel\Scroll;
@@ -248,18 +249,15 @@ final class PageXmlParserTest extends TestCase
         $twoLines = $this->parse('<page type="static"><input/></page>');
 
         self::assertEquals(
-            InputCommand::text(
-                5,
-                row: 20,
-                length: 10,
-                validWith: [FunctionKey::Send, FunctionKey::Next],
-                prefill: 'abc',
+            new InputCommand(
+                new InputField(row: 20, col: 5, length: 10, validWith: [FunctionKey::Send, FunctionKey::Next]),
+                ['abc'],
             ),
             $oneLine->inputCommand(['abc']),
         );
         // By default: two lines from row 13, the whole width, validated with Envoi
         self::assertEquals(
-            InputCommand::message(1, row: 13, width: 40, height: 2, validWith: [FunctionKey::Send]),
+            new InputCommand(new InputField(row: 13, col: 1, length: 40, lines: 2, validWith: [FunctionKey::Send])),
             $twoLines->inputCommand(),
         );
         self::assertNull($this->parse('<page type="static"/>')->inputCommand());

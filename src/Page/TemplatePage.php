@@ -7,6 +7,7 @@ namespace MiniPaviService\Page;
 use MiniPaviService\Gateway\InputCommand;
 use MiniPaviService\Message\Message;
 use MiniPaviService\Message\Messages;
+use MiniPaviService\Minitel\InputField;
 use MiniPaviService\Minitel\Terminal;
 use MiniPaviService\Page;
 use MiniPaviService\Page\Display\Display;
@@ -24,7 +25,7 @@ final readonly class TemplatePage implements Page
     public function __construct(
         private array $nodes,
         private Messages $messages,
-        private ?Input $input = null,
+        private ?InputField $input = null,
         private Setup $setup = new Setup(),
     ) {}
 
@@ -46,7 +47,7 @@ final readonly class TemplatePage implements Page
      */
     public function inputCommand(array $prefill = []): ?InputCommand
     {
-        return $this->input?->toCommand($prefill);
+        return $this->input === null ? null : new InputCommand($this->input, array_values($prefill));
     }
 
     public function message(Message $message, array $variables = []): string

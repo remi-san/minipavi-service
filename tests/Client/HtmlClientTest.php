@@ -19,6 +19,7 @@ use MiniPaviService\Http\ServiceRunner;
 use MiniPaviService\Message\FrameworkMessage;
 use MiniPaviService\Message\Messages;
 use MiniPaviService\Minitel\FunctionKey;
+use MiniPaviService\Minitel\InputField;
 use MiniPaviService\Tests\Support\CallbackController;
 use MiniPaviService\Tests\Support\HttpRequests;
 use MiniPaviService\Tests\Support\MemoryLogger;
@@ -66,7 +67,7 @@ final class HtmlClientTest extends TestCase
             new GatewayResponse(
                 $screen,
                 '{"route":"menu"}',
-                command: InputCommand::text(1, row: 2, length: 4, validWith: [FunctionKey::Send]),
+                command: new InputCommand(new InputField(row: 2, col: 1, length: 4, validWith: [FunctionKey::Send])),
             ),
         );
         $form = ['key' => 'ENVOI', 'content' => ['36', '15']] + self::hiddenValues($page);
@@ -86,14 +87,25 @@ final class HtmlClientTest extends TestCase
         // With the page posted back: its screen and its input command
         self::assertEquals($screen, $request->clientState->screen);
         self::assertEquals(
-            InputCommand::text(1, row: 2, length: 4, validWith: [FunctionKey::Send]),
+            new InputCommand(new InputField(row: 2, col: 1, length: 4, validWith: [FunctionKey::Send])),
             $request->clientState->command,
         );
     }
 
-    public function testCommandPostedBackThatCantBeReadIsNone(): void
+    /**
+     * @return iterable<string, array{string}>
+     */
+    public static function commandsThatCantBeRead(): iterable
     {
-        $form = ['key' => 'ENVOI', 'command' => '{"kind":"unknown"}'];
+        yield 'not JSON' => ['not a command'];
+        yield 'without its field' => ['{"validWith":["ENVOI"]}'];
+        yield 'off the screen' => ['{"row":30,"col":1,"length":4,"lines":1}'];
+    }
+
+    #[DataProvider('commandsThatCantBeRead')]
+    public function testCommandPostedBackThatCantBeReadIsNone(string $command): void
+    {
+        $form = ['key' => 'ENVOI', 'command' => $command];
 
         $request = self::client()
             ->request(HttpRequests::posting('Mozilla/5.0', ['web' => 'true'], $form), self::SERVICE_URL);
@@ -167,7 +179,10 @@ final class HtmlClientTest extends TestCase
             new GatewayResponse(
                 new Vdt(),
                 '{}',
-                command: InputCommand::text(16, row: 24, length: 2, validWith: [FunctionKey::Send], prefill: 'ab'),
+                command: new InputCommand(
+                    new InputField(row: 24, col: 16, length: 2, validWith: [FunctionKey::Send]),
+                    ['ab'],
+                ),
             ),
         );
 
@@ -186,13 +201,9 @@ final class HtmlClientTest extends TestCase
             new GatewayResponse(
                 new Vdt(),
                 '{}',
-                command: InputCommand::message(
-                    1,
-                    row: 13,
-                    width: 40,
-                    height: 2,
-                    validWith: [FunctionKey::Send],
-                    prefill: ['l1', 'l2'],
+                command: new InputCommand(
+                    new InputField(row: 13, col: 1, length: 40, lines: 2, validWith: [FunctionKey::Send]),
+                    ['l1', 'l2'],
                 ),
             ),
         );
@@ -207,7 +218,12 @@ final class HtmlClientTest extends TestCase
             new GatewayResponse(
                 new Vdt(),
                 '{}',
-                command: InputCommand::text(1, row: 1, length: 1, validWith: [FunctionKey::Send, FunctionKey::Next]),
+                command: new InputCommand(new InputField(
+                    row: 1,
+                    col: 1,
+                    length: 1,
+                    validWith: [FunctionKey::Send, FunctionKey::Next],
+                )),
             ),
         );
 
@@ -247,7 +263,7 @@ final class HtmlClientTest extends TestCase
             new GatewayResponse(
                 $before,
                 '{"route":"directory"}',
-                command: InputCommand::text(7, row: 23, length: 23, validWith: [FunctionKey::Send]),
+                command: new InputCommand(new InputField(row: 23, col: 7, length: 23, validWith: [FunctionKey::Send])),
             ),
         );
         $form = ['key' => 'ENVOI'] + self::hiddenValues($page);
