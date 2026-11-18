@@ -36,25 +36,22 @@ which depend on nothing above them):
 
 ## Installing
 
-From this repository, as a `vcs` repository (it isn't on Packagist), at its `main` branch:
+From [Packagist](https://packagist.org/packages/remi-san/minipavi-service), at its `main`
+branch (or a release, e.g. `^0.1`):
 
 ```json
 {
-    "repositories": [{ "type": "vcs", "url": "https://github.com/remi-san/minipavi-service" }],
     "require": { "remi-san/minipavi-service": "dev-main" }
 }
 ```
 
 To work on the framework and a service together, point the service at a local clone with a
-`path` repository listed first (Composer symlinks it into `vendor/`, so edits to the framework
-apply without reinstalling), and don't commit it:
+`path` repository (Composer symlinks it into `vendor/`, so edits to the framework apply without
+reinstalling), and don't commit it:
 
 ```json
 {
-    "repositories": [
-        { "type": "path", "url": "../minipavi-service" },
-        { "type": "vcs", "url": "https://github.com/remi-san/minipavi-service" }
-    ]
+    "repositories": [{ "type": "path", "url": "../minipavi-service" }]
 }
 ```
 
