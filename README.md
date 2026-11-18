@@ -686,7 +686,8 @@ echo $moved->screen()->preview();      // the screen, as text
   wrapping onto the next row, and the cursor is positioned again where needed, with the
   current attributes (character set, colors, size...), which a positioning resets. Row 0,
   the status line, is not moved. A double-height or double-size character moved onto row 1,
-  where the Minitel can't draw it tall, is written as it would draw it there (see `screen()`).
+  where the Minitel discards `ESC M` and `ESC O`, is written without them: at normal size, or
+  double width for double size, in the columns it had.
 - **`withoutClear()`**: the same content without its clear screens (FF), to draw it over
   other content.
 - **`HtmlRenderer::render($screen, $title)`**: the screen as an HTML page (see `HtmlClient`
@@ -694,11 +695,10 @@ echo $moved->screen()->preview();      // the screen, as text
 - **`screen()`**: the `Screen` drawn by the content: a `Cell` (character and attributes) or
   `null` per row and column. `line($row)` and `text()` give the text of a row and of the
   screen, G2 characters decoded (`é`, `£`, `½`, `Œ`...; `Cell::text()`), and `preview()`
-  the same rows framed and numbered, to read in a terminal. As on a Minitel, rows 0 and 1 have
-  no double height: `ESC M` (double height) and `ESC O` (double size) received there are
-  discarded (the size stays as it was), and a character drawn there with double height (e.g.
-  wrapping from row 24) is drawn at normal height, its double width kept
-  (`Attributes::onRow()`).
+  the same rows framed and numbered, to read in a terminal. As on a Minitel, `ESC M` (double
+  height) and `ESC O` (double size) received on rows 0 and 1 are discarded, the size staying
+  as it was; a double height already set when a cursor move (LF, VT) brings the cursor onto
+  row 1 is kept, the character drawn over row 0.
 - **`Vdt\Player::play($vdt, $listener)`** (internal, what `screen()` and `offset()` are
   built on): plays the content on the simulated screen, telling a `Vdt\ScreenListener` each
   character (`glyph()`, with its row, column, width and attributes) and the other `Token`s
