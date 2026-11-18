@@ -62,13 +62,18 @@ final class Context
      *
      * @param ?Parameters $parameters of the class route's controller declares
      *
-     * @throws \LogicException for parameters of another class than the controller's
+     * @throws \LogicException for an unknown route, or parameters of another class than its
+     *                         controller's: the context then stays as it was
      */
     public function leaveFor(string $route, ?Parameters $parameters = null): void
     {
-        $this->keep(state: null, parameters: null);
+        // The target first: if it can't be entered, nothing changes
+        $target = $this->router->route($route)->start();
+        $target->keep(state: null, parameters: $parameters);
+        // The route left keeps nothing: its controller starts again, as with no entry
+        unset($this->routes[$this->route]);
         $this->route = $route;
-        $this->keep(state: null, parameters: $parameters);
+        $this->routes[$route] = $target;
     }
 
     /**

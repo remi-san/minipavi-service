@@ -21,6 +21,7 @@ use MiniPaviService\Tests\Support\RecordingFlow;
 use MiniPaviService\Tests\Support\SearchController;
 use MiniPaviService\Tests\Support\SearchState;
 use MiniPaviService\Vdt\Vdt;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class ContextTest extends TestCase
@@ -118,7 +119,38 @@ final class ContextTest extends TestCase
         self::assertSame(SearchState::Init, $context->state());
         self::assertEquals(new PageParameters(2), $context->parameters());
         // The controller left keeps nothing
-        self::assertSame(['state' => 'init', 'parameters' => ['page' => 0]], $context->kept()['home']);
+        self::assertArrayNotHasKey('home', $context->kept());
+    }
+
+    /**
+     * @return iterable<string, array{string, ?\MiniPaviService\Controller\Parameters\Parameters}>
+     */
+    public static function leavingsThatFail(): iterable
+    {
+        yield 'an unknown route' => ['nope', null];
+        // search takes PageParameters
+        yield 'parameters of another class' => ['search', new FromParameters('x')];
+    }
+
+    #[DataProvider('leavingsThatFail')]
+    public function testLeavingForARouteThatFailsChangesNothing(
+        string $route,
+        ?\MiniPaviService\Controller\Parameters\Parameters $parameters,
+    ): void {
+        $context = new Context($this->router, 'home');
+        $context->keep(ControllerState::ReadInput, new PageParameters(3));
+
+        $refused = false;
+        try {
+            $context->leaveFor($route, $parameters);
+        } catch (\LogicException) {
+            $refused = true;
+        }
+
+        self::assertTrue($refused);
+        self::assertSame('home', $context->route());
+        self::assertSame(ControllerState::ReadInput, $context->state());
+        self::assertEquals(new PageParameters(3), $context->parameters());
     }
 
     public function testKeepingNothingResetsTheCurrentRoute(): void
