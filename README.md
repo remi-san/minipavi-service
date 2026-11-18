@@ -302,13 +302,8 @@ KernelBuilder::for($router, $messages)
   {
       public const NAME = 'home';
 
+      // What it keeps besides its state: nothing (AbstractController's parametersType())
       public function __construct(private Page $page) {}
-
-      // What it keeps besides its state: nothing
-      public function parametersType(): string
-      {
-          return NoParameters::class;
-      }
 
       // Shows the screen (onInit() and onInitInput() do the same, unless overridden)
       protected function onDisplay(Request $request): Response
@@ -392,8 +387,9 @@ KernelBuilder::for($router, $messages)
   from end to end, and the static analysis checks it. A controller declares:
   - `initialState()`: a case of the string-backed enum of its states, implementing `State`
     (`ControllerState::Init` for an `AbstractController`);
-  - `parametersType()`: the class of its parameters, implementing `Parameters`
-    (`NoParameters` for none);
+  - `parametersType()`: the type of its parameters, a `ParametersType` of a class implementing
+    `Parameters` (`ParametersType::of(DirectoryParameters::class)`; `ParametersType::none()`
+    for none, what an `AbstractController` has unless it overrides it);
 
   and gets them typed: `Request<TState, TParameters>`, `$request->state()` and
   `$request->parameters()`. Its responses keep a case of its enum and an object of its class
@@ -430,9 +426,9 @@ KernelBuilder::for($router, $messages)
           return SearchState::Init;
       }
 
-      public function parametersType(): string
+      public function parametersType(): ParametersType
       {
-          return DirectoryParameters::class;
+          return ParametersType::of(DirectoryParameters::class);
       }
 
       public function run(Request $request): Response
