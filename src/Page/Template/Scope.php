@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Page\Template;
 
+use MiniPaviService\Page\Parser\AttributeValues;
 use MiniPaviService\Text\Placeholders;
 
 /**
@@ -17,9 +18,31 @@ final readonly class Scope
      * @param ?int $rowOffset row where relative rows start, or null outside of any <foreach>
      */
     public function __construct(
-        public array $vars = [],
-        public ?int $rowOffset = null,
+        private array $vars = [],
+        private ?int $rowOffset = null,
     ) {}
+
+    /**
+     * Row of the page of a row in the scope: inside a <foreach>, relative to the current item
+     * (0 = its first row); outside, the row itself
+     */
+    public function rowOf(int $row): int
+    {
+        return ($this->rowOffset ?? 0) + $row;
+    }
+
+    /**
+     * Attributes of an element placed by its row attribute, at its row of the page: inside a
+     * <foreach>, its row (0 by default) is relative to the current item
+     */
+    public function placed(AttributeValues $attributes): AttributeValues
+    {
+        if ($this->rowOffset === null) {
+            return $attributes;
+        }
+
+        return $attributes->with('row', (string) $this->rowOf($attributes->int('row', default: 0)));
+    }
 
     /**
      * Scope with more variables, drawn from another row

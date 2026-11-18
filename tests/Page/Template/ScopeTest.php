@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Tests\Page\Template;
 
+use MiniPaviService\Page\Parser\AttributeValues;
 use MiniPaviService\Page\Template\Scope;
 use PHPUnit\Framework\TestCase;
 
@@ -87,6 +88,19 @@ final class ScopeTest extends TestCase
         $scope = (new Scope(['a' => 1, 'b' => 2]))->with(['b' => 3], rowOffset: 5);
 
         self::assertSame([1, 3], [$scope->value('a'), $scope->value('b')]);
-        self::assertSame(5, $scope->rowOffset);
+        // Rows relative to row 5
+        self::assertSame(6, $scope->rowOf(1));
+    }
+
+    public function testPlacesAnElementByItsRowInsideALoopOnly(): void
+    {
+        $attributes = new AttributeValues(['row' => '1', 'col' => '3']);
+
+        self::assertSame($attributes, (new Scope())->placed($attributes));
+        self::assertSame(1, (new Scope())->rowOf(1));
+        $inLoop = (new Scope())->with([], rowOffset: 5);
+        self::assertSame(6, $inLoop->placed($attributes)->int('row', default: 0));
+        // Its first row by default
+        self::assertSame(5, $inLoop->placed(new AttributeValues([]))->int('row', default: 0));
     }
 }
