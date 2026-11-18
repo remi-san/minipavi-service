@@ -611,7 +611,9 @@ The parser takes one `PageElements`: a service with several sets of elements ret
 builders from one.
 
 A tag of the format (`text`, `foreach`, `input`...) can't be taken again, nor one tag by two
-elements: parsing a page then throws a `LogicException`. These elements aren't in the XML
+elements: building the `PageXmlParser` then throws a `LogicException`, at boot. For this check,
+`builders()` is also called once with a placeholder folder: building the builders must not
+read the files. The keys of the array it returns are ignored. These elements aren't in the XML
 Schema, which rejects them, and `minipavi lint` and `minipavi preview` only know the
 framework's.
 
