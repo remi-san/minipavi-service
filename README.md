@@ -150,13 +150,14 @@ KernelBuilder::for($router, $messages)
   gets, is its state (`Gateway\ClientState`): read with the HTTP request, kept in the
   `GatewayRequest` (`$clientState`), and given back to the client with it. A client without
   any uses the null object `NoClientState`, as requests built in memory do. A request that can't be read is answered
-  as an error (see `Service`); nothing to answer (e.g. a disconnection) is a `204`, and an
+  as an error (see `Service`); nothing to answer (a disconnection, a background call of the
+  gateway) is a `204`, and an
   answer the client can't give a `500` (logged as critical).
   **The context is signed** on its way through the gateway (or the browser), so that the user
   can't change it: anyone could otherwise send another route, or other parameters.
   `ServiceRunner` takes a **`Core\Signing\ContextSigner`**: it checks the context of the
-  request before the service gets it (`GatewayRequest::verify()`; a connection's or
-  disconnection's isn't read, so it isn't checked), and signs the context of the answer before
+  request before the service gets it (`GatewayRequest::verify()`; the context of a connection,
+  a disconnection or a background call isn't read, so it isn't checked), and signs the context of the answer before
   the client gets it (`GatewayResponse::sign()`). **`HmacContextSigner`** signs it with an
   HMAC-SHA256 of a secret key (`<signature>.<context>`), **`UnsignedContext`** doesn't. A context
   the signer didn't sign (`ForgedContextException`) is answered as one that can't be read.
@@ -165,8 +166,9 @@ KernelBuilder::for($router, $messages)
   a warning. Changing the key makes the users of sessions in progress start again at the
   default route. `Service` and `ServiceTester` deal with the context unsigned. Two clients:
   - **`MiniPaviClient`**, for the MiniPavi gateway, through `MiniPaviCli` used unchanged: it
-    reads the gateway's request itself, and writes the answer itself: `MiniPaviClient` captures
-    it as the body of the HTTP response;
+    reads the gateway's request itself (background calls included, which the service doesn't
+    answer), and writes the answer itself: `MiniPaviClient` captures it as the body of the
+    HTTP response;
   - **`HtmlClient`**, for a browser: it shows the service's screen as an HTML page
     (`Vdt\Screen\HtmlRenderer`), and lets the user navigate it as on a Minitel. The first request is a
     connection, at the default route, as the gateway's. The page is a form posting back to its URL:
@@ -194,8 +196,8 @@ KernelBuilder::for($router, $messages)
   with the URL the browser asked for. `EmulatorConfig::fromValues()` takes those values, read
   from the environment in the service's container.
 - **`Service`** answers a request of the gateway, without I/O:
-  `$service->handle(GatewayRequest): ?GatewayResponse` (null for a disconnection, which has
-  nothing to answer). It restores the `Context`, and runs the controller of the current route
+  `$service->handle(GatewayRequest): ?GatewayResponse` (null for a disconnection or a
+  background call of the gateway, `BGCALL-WM-...`, which have nothing to answer). It restores the `Context`, and runs the controller of the current route
   until a response answers the gateway. `Service` owns the context: it keeps the state and
   parameters a response gives for its controller, then the response says what comes next,
   through a `Flow` (see below). A context without route, or
@@ -438,7 +440,7 @@ KernelBuilder::for($router, $messages)
   controllers stay unbuilt.
 
 - The `FCTN_*` constants of `GatewayRequest` name the connection codes of `Request::key()`
-  (`CNX`, `DIRECTCNX`, `FIN`).
+  (`CNX`, `DIRECTCNX`, `FIN`, and the start of background calls, `BGCALL-WM-`).
 
 ## Testing a service
 
