@@ -19,7 +19,6 @@ use MiniPaviService\Testing\ServiceTester;
 use MiniPaviService\Tests\Support\CallbackController;
 use MiniPaviService\Tests\Support\ListController;
 use MiniPaviService\Vdt\Vdt;
-use MiniPaviService\Vdt\VdtHelper;
 use PHPUnit\Framework\TestCase;
 
 final class PaginatedControllerTest extends TestCase
@@ -114,9 +113,10 @@ final class PaginatedControllerTest extends TestCase
     {
         $tester = $this->tester(['a', 'b', 'c'])->press(FunctionKey::Next)->press(FunctionKey::Refresh);
 
-        // The whole page again, from a clear screen
-        $clear = VdtHelper::clearScreen()->toString();
-        self::assertSame($clear, substr($tester->answer()->vdt->toString(), offset: 0, length: \strlen($clear)));
+        // The whole page again: the answer alone draws it
+        $redrawn = $tester->answer()->vdt->screen();
+        self::assertStringContainsString('Page 2/2', $redrawn->text());
+        self::assertStringStartsWith('c', $redrawn->line(2));
         $tester->assertScreenContains('Page 2/2')->assertLineContains(2, text: 'c');
         self::assertEquals(new PageParameters(1), $tester->context()->parameters());
     }
