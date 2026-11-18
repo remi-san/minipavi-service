@@ -58,7 +58,7 @@ final readonly class ServiceRunner implements RequestHandlerInterface
         } catch (\Throwable $e) {
             // The request couldn't be read: all that is known of it is where it was sent
             $gatewayRequest = new GatewayRequest(
-                '',
+                null,
                 serviceUrl: $serviceUrl,
                 clientState: $this->client->initialState(),
             );

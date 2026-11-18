@@ -58,7 +58,7 @@ final class ServiceTester
         $this->vdt = new Vdt();
         $this->answer = null;
 
-        return $this->send(new GatewayRequest(ConnectionCode::Connect->value, terminal: $this->terminal));
+        return $this->send(new GatewayRequest(ConnectionCode::Connect, terminal: $this->terminal));
     }
 
     /**
@@ -76,7 +76,7 @@ final class ServiceTester
      */
     public function press(FunctionKey $key): self
     {
-        $request = new GatewayRequest($key->value, $this->typed, $this->answer()->context, $this->terminal);
+        $request = new GatewayRequest($key, $this->typed, $this->answer()->context, $this->terminal);
         $this->typed = [];
 
         return $this->send($request);
@@ -88,7 +88,7 @@ final class ServiceTester
     public function disconnect(): self
     {
         $answer = $this->service->handle(
-            new GatewayRequest(ConnectionCode::Disconnect->value, [], $this->answer->context ?? '', $this->terminal),
+            new GatewayRequest(ConnectionCode::Disconnect, [], $this->answer->context ?? '', $this->terminal),
         );
         Assert::assertNull($answer, self::DISCONNECTION_ANSWERED);
 
@@ -193,7 +193,9 @@ final class ServiceTester
      */
     private function send(GatewayRequest $request): self
     {
-        $this->answer = $this->service->handle($request) ?? throw new \LogicException('No answer to ' . $request->key);
+        $this->answer = $this->service->handle($request) ?? throw new \LogicException(
+            'No answer to ' . ($request->key->value ?? 'no key'),
+        );
         $this->vdt = $this->vdt->append($this->answer->vdt);
 
         return $this;

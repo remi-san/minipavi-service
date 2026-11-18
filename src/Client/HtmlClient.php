@@ -67,7 +67,7 @@ final readonly class HtmlClient implements Client
             );
 
             return new GatewayRequest(
-                $key->value,
+                $key,
                 array_values(array_map(static fn(mixed $line) => \is_string($line) ? $line : '', $content)),
                 self::text($form, self::CONTEXT),
                 serviceUrl: $serviceUrl,
@@ -75,11 +75,7 @@ final readonly class HtmlClient implements Client
             );
         }
 
-        return new GatewayRequest(
-            ConnectionCode::Connect->value,
-            serviceUrl: $serviceUrl,
-            clientState: $this->initialState(),
-        );
+        return new GatewayRequest(ConnectionCode::Connect, serviceUrl: $serviceUrl, clientState: $this->initialState());
     }
 
     /**

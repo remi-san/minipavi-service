@@ -13,6 +13,7 @@ use MiniPaviService\Controller\Response;
 use MiniPaviService\Core\Router;
 use MiniPaviService\Core\Service;
 use MiniPaviService\Gateway\CallMode;
+use MiniPaviService\Gateway\ConnectionCode;
 use MiniPaviService\Gateway\GatewayRequest;
 use MiniPaviService\Gateway\GatewayResponse;
 use MiniPaviService\Gateway\InputCommand;
@@ -113,7 +114,7 @@ final class ServiceTest extends TestCase
     #[DataProvider('contextsOfADisconnection')]
     public function testDisconnectionDoesNotReadTheContext(string $context): void
     {
-        self::assertNull($this->handle(new GatewayRequest('FIN', [], $context)));
+        self::assertNull($this->handle(new GatewayRequest(ConnectionCode::Disconnect, [], $context)));
         self::assertSame([], $this->requests);
         // Nothing went wrong
         self::assertSame([LogLevel::INFO], $this->levels());
@@ -122,7 +123,7 @@ final class ServiceTest extends TestCase
     #[DataProvider('contextsOfADisconnection')]
     public function testBackgroundCallIsNotAnsweredNorReadsTheContext(string $context): void
     {
-        self::assertNull($this->handle(new GatewayRequest('BGCALL-WM-1', [], $context)));
+        self::assertNull($this->handle(new GatewayRequest(ConnectionCode::BackgroundCall, [], $context)));
         self::assertSame([], $this->requests);
         self::assertSame([LogLevel::INFO], $this->levels());
     }
@@ -131,7 +132,9 @@ final class ServiceTest extends TestCase
     {
         self::assertSame(
             'menu',
-            $this->contentOf($this->handle(new GatewayRequest('CNX', ['typed before'], 'not a context'))),
+            $this->contentOf($this->handle(
+                new GatewayRequest(ConnectionCode::Connect, ['typed before'], 'not a context'),
+            )),
         );
         // A new session: at init, and without what was typed before
         self::assertSame(ControllerState::Init, $this->lastRequest('menu')->state());
@@ -142,9 +145,12 @@ final class ServiceTest extends TestCase
 
     public function testKeyRunsTheControllerTheUserIsAt(): void
     {
-        $directory = $this->press($this->connect(), key: 'ENVOI');
+        $directory = $this->press($this->connect(), key: FunctionKey::Send);
 
-        self::assertSame('code 3615', $this->contentOf($this->press($directory, key: 'ENVOI', content: ['36', '15'])));
+        self::assertSame(
+            'code 3615',
+            $this->contentOf($this->press($directory, key: FunctionKey::Send, content: ['36', '15'])),
+        );
     }
 
     public function testErrorIsLoggedAndAnsweredOnLine0(): void
@@ -163,7 +169,7 @@ final class ServiceTest extends TestCase
         // The menu kept its state before the error
         $error = $this->goTo('broken');
 
-        self::assertSame('menu', $this->contentOf($this->press($error, key: 'SOMMAIRE')));
+        self::assertSame('menu', $this->contentOf($this->press($error, key: FunctionKey::Summary)));
         self::assertSame(ControllerState::Init, $this->lastRequest('menu')->state());
         self::assertSame('SOMMAIRE', $this->lastRequest('menu')->key());
     }
@@ -172,7 +178,7 @@ final class ServiceTest extends TestCase
     {
         self::assertStringContainsString(
             self::errorMessage(),
-            self::line0($this->handle(new GatewayRequest('ENVOI', [], 'not a context'))),
+            self::line0($this->handle(new GatewayRequest(FunctionKey::Send, [], 'not a context'))),
         );
         self::assertSame([LogLevel::ERROR], $this->levels());
     }
@@ -192,7 +198,7 @@ final class ServiceTest extends TestCase
 
         self::assertStringContainsString(
             'Oops',
-            self::line0($service->handle(new GatewayRequest('ENVOI', [], 'not a context'))),
+            self::line0($service->handle(new GatewayRequest(FunctionKey::Send, [], 'not a context'))),
         );
     }
 
@@ -209,7 +215,7 @@ final class ServiceTest extends TestCase
         $menu = $this->connect();
         $this->requests = [];
 
-        $answer = $this->press($menu, key: 'SUITE', content: ['ping']);
+        $answer = $this->press($menu, key: FunctionKey::Next, content: ['ping']);
 
         self::assertStringContainsString(self::errorMessage(), self::line0($answer));
         // The menu, then the page changes allowed, and no more
@@ -222,7 +228,7 @@ final class ServiceTest extends TestCase
 
     public function testChangePageStartsTheTargetAtInitWithItsParametersWithoutTheInput(): void
     {
-        $this->press($this->connect(), key: 'ENVOI', content: ['1']);
+        $this->press($this->connect(), key: FunctionKey::Send, content: ['1']);
 
         // The directory must not read the menu's "1" as a code
         $directory = $this->lastRequest('directory');
@@ -236,8 +242,8 @@ final class ServiceTest extends TestCase
     public function testChangePageResetsTheControllerLeft(): void
     {
         // The menu reads the next key, then is left for the directory, which goes back to it
-        $directory = $this->press($this->connect(), key: 'ENVOI');
-        $this->press($directory, key: 'SOMMAIRE');
+        $directory = $this->press($this->connect(), key: FunctionKey::Send);
+        $this->press($directory, key: FunctionKey::Summary);
 
         self::assertSame(ControllerState::Init, $this->lastRequest('menu')->state());
     }
@@ -254,10 +260,10 @@ final class ServiceTest extends TestCase
         $previous->setDefaultRoute('removed');
         $context =
             (new Service($previous, Messages::defaults()))->handle(
-                new GatewayRequest('CNX', terminal: $this->terminal),
+                new GatewayRequest(ConnectionCode::Connect, terminal: $this->terminal),
             )->context ?? '';
 
-        $answer = $this->handle(new GatewayRequest('ENVOI', ['1'], $context, $this->terminal));
+        $answer = $this->handle(new GatewayRequest(FunctionKey::Send, ['1'], $context, $this->terminal));
 
         self::assertSame('menu', $this->contentOf($answer));
         // As a new connection: the input was for a screen that doesn't exist any more
@@ -337,7 +343,7 @@ final class ServiceTest extends TestCase
 
     public function testKeepingParametersOfAnotherClassIsAnError(): void
     {
-        $answer = $this->press($this->connect(), key: 'SUITE', content: ['mistyped']);
+        $answer = $this->press($this->connect(), key: FunctionKey::Next, content: ['mistyped']);
 
         self::assertStringContainsString(self::errorMessage(), self::line0($answer));
         self::assertStringContainsString(
@@ -390,7 +396,7 @@ final class ServiceTest extends TestCase
      */
     private function nextRequest(GatewayResponse $answer): Request
     {
-        $this->press($answer, key: 'ENVOI');
+        $this->press($answer, key: FunctionKey::Send);
 
         return $this->lastRequest('answer');
     }
@@ -407,7 +413,11 @@ final class ServiceTest extends TestCase
 
     private function connect(): GatewayResponse
     {
-        return $this->handle(new GatewayRequest('CNX', terminal: $this->terminal)) ?? self::fail('No answer');
+        return (
+            $this->handle(new GatewayRequest(ConnectionCode::Connect, terminal: $this->terminal)) ?? self::fail(
+                'No answer',
+            )
+        );
     }
 
     /**
@@ -415,7 +425,7 @@ final class ServiceTest extends TestCase
      *
      * @param list<string> $content
      */
-    private function press(GatewayResponse $previous, string $key, array $content = []): GatewayResponse
+    private function press(GatewayResponse $previous, FunctionKey $key, array $content = []): GatewayResponse
     {
         return (
             $this->handle(new GatewayRequest($key, $content, $previous->context, $this->terminal)) ?? self::fail(
@@ -429,7 +439,7 @@ final class ServiceTest extends TestCase
      */
     private function goTo(string $route): GatewayResponse
     {
-        return $this->press($this->connect(), key: 'SUITE', content: [$route]);
+        return $this->press($this->connect(), key: FunctionKey::Next, content: [$route]);
     }
 
     /**

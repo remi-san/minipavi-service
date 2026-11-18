@@ -52,7 +52,7 @@ final class HtmlClientTest extends TestCase
     {
         self::assertEquals(
             new GatewayRequest(
-                ConnectionCode::Connect->value,
+                ConnectionCode::Connect,
                 serviceUrl: self::SERVICE_URL,
                 clientState: new HtmlPageState(),
             ),
@@ -79,7 +79,7 @@ final class HtmlClientTest extends TestCase
                 self::SERVICE_URL,
             );
 
-        self::assertSame(['ENVOI', ['36', '15'], '{"route":"menu"}', self::SERVICE_URL], [
+        self::assertSame([FunctionKey::Send, ['36', '15'], '{"route":"menu"}', self::SERVICE_URL], [
             $request->key,
             $request->content,
             $request->context,
@@ -117,7 +117,7 @@ final class HtmlClientTest extends TestCase
     public function testUnknownKeyIsAConnection(): void
     {
         self::assertSame(
-            ConnectionCode::Connect->value,
+            ConnectionCode::Connect,
             self::client()
                 ->request(HttpRequests::posting('Mozilla/5.0', ['web' => 'true'], ['key' => 'CNX']), self::SERVICE_URL)
                 ->key,

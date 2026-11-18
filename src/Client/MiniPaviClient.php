@@ -53,7 +53,7 @@ final class MiniPaviClient implements Client
         $content = MiniPaviCli::$content ?? [];
 
         return new GatewayRequest(
-            self::text(MiniPaviCli::$fctn),
+            GatewayRequest::keyOf(self::text(MiniPaviCli::$fctn)),
             array_map(self::text(...), array_values(\is_array($content) ? $content : [$content])),
             self::text(MiniPaviCli::$context),
             new Terminal(
