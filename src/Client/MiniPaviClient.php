@@ -83,9 +83,10 @@ final class MiniPaviClient implements Client
                 $answer->vdt->toString(),
                 $answer->next ?? $request->serviceUrl,
                 $answer->context,
-                $answer->echo,
-                self::command($answer->command),
-                $answer->directCall->value ?? false,
+                // The gateway echoes what the user types: no response turns it off
+                echo: true,
+                cmd: self::command($answer->command),
+                directCall: $answer->directCall->value ?? false,
             );
         } finally {
             $body = (string) ob_get_clean();

@@ -179,17 +179,11 @@ final class MiniPaviClientTest extends TestCase
             new GatewayResponse(new Vdt(''), '{}', 'https://example.org/service', directCall: CallMode::Connect),
         );
         $direct = $this->sent(
-            new GatewayResponse(
-                new Vdt(''),
-                '{}',
-                'https://example.org/service',
-                directCall: CallMode::Direct,
-                echo: false,
-            ),
+            new GatewayResponse(new Vdt(''), '{}', 'https://example.org/service', directCall: CallMode::Direct),
         );
 
         self::assertSame(['https://example.org/service', 'yes-cnx'], [$connect['next'], $connect['directcall']]);
-        self::assertSame(['yes', 'off'], [$direct['directcall'], $direct['echo']]);
+        self::assertSame(['yes', 'on'], [$direct['directcall'], $direct['echo']]);
     }
 
     /**

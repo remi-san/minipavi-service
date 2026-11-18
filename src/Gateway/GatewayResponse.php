@@ -19,7 +19,6 @@ final readonly class GatewayResponse
      * @param ?string $next URL the gateway calls next; null: this service's
      * @param ?InputCommand $command command reading an input field (Page::inputCommand()); null: none
      * @param ?CallMode $directCall calls next at once, without waiting for the user; null: waits
-     * @param bool $echo whether the gateway echoes what the user types
      */
     public function __construct(
         public Vdt $vdt,
@@ -27,6 +26,5 @@ final readonly class GatewayResponse
         public ?string $next = null,
         public ?InputCommand $command = null,
         public ?CallMode $directCall = null,
-        public bool $echo = true,
     ) {}
 }

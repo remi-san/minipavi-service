@@ -215,7 +215,7 @@ KernelBuilder::for($router, $messages)
   gateway sends, `fctn()` gives its name back), `content` (the text typed), `context` (given back from the previous answer) and
   `terminal`. **`GatewayResponse`** is what is sent back: `vdt`, `context`, `next` (the URL the
   gateway calls next, null for this service's), `command` (e.g. an input command),
-  `directCall` (a `CallMode`, to call `next` at once) and `echo`. Both are plain values, so a
+  `directCall` (a `CallMode`, to call `next` at once). Both are plain values, so a
   service can be tested, or run elsewhere than PHP's web server, without `MiniPaviCli`.
 - **Pages** are displayed for the user's terminal, which `<endkey>` depends on:
   `$page->display($request->terminal(), $data)`; display elements get it too
