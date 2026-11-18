@@ -32,13 +32,20 @@ final readonly class ContextSerializer
      */
     public function serialize(Context $context): string
     {
-        $kept = $context->kept();
+        // The format, here only: each kept state by its value, each kept parameters by theirs
+        $states = [];
+        $parameters = [];
+        foreach ($context->kept() as $route => $kept) {
+            $states[$route] = $kept->state->value;
+            // An object, even empty: {} rather than []
+            $parameters[$route] = (object) $kept->parameters->toArray();
+        }
         try {
             return $this->signer->sign(json_encode(
                 [
                     'route' => $context->route(),
-                    'states' => (object) array_map(static fn(array $route) => $route['state'], $kept),
-                    'parameters' => (object) array_map(static fn(array $route) => (object) $route['parameters'], $kept),
+                    'states' => (object) $states,
+                    'parameters' => (object) $parameters,
                 ],
                 JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES,
             ));

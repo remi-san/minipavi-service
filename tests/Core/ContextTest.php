@@ -11,6 +11,7 @@ use MiniPaviService\Controller\Parameters\Values;
 use MiniPaviService\Controller\Request;
 use MiniPaviService\Controller\Response;
 use MiniPaviService\Core\Context;
+use MiniPaviService\Core\KeptRoute;
 use MiniPaviService\Core\Router;
 use MiniPaviService\Core\RouterBuilder;
 use MiniPaviService\Minitel\FunctionKey;
@@ -96,10 +97,10 @@ final class ContextTest extends TestCase
         ]);
         $context->keep(ControllerState::ReadInput, new PageParameters(2));
 
-        self::assertSame(
+        self::assertEquals(
             [
-                'search' => ['state' => 'read-query', 'parameters' => ['page' => 5]],
-                'home' => ['state' => 'read-input', 'parameters' => ['page' => 2]],
+                'search' => new KeptRoute(SearchState::ReadQuery, new PageParameters(5)),
+                'home' => new KeptRoute(ControllerState::ReadInput, new PageParameters(2)),
             ],
             $context->kept(),
         );

@@ -12,6 +12,7 @@ use MiniPaviService\Controller\Request;
 use MiniPaviService\Controller\Response;
 use MiniPaviService\Core\Context;
 use MiniPaviService\Core\ContextSerializer;
+use MiniPaviService\Core\KeptRoute;
 use MiniPaviService\Core\Router;
 use MiniPaviService\Core\RouterBuilder;
 use MiniPaviService\Core\Signing\ForgedContextException;
@@ -79,8 +80,8 @@ final class ContextSerializerTest extends TestCase
         self::assertSame('search', $restored->route());
         self::assertSame(SearchState::ReadQuery, $restored->state());
         self::assertEquals(new PageParameters(5), $restored->parameters());
-        // The other route's too
-        self::assertSame($context->kept(), $restored->kept());
+        // The other route's too, typed by its controller
+        self::assertEquals(new KeptRoute(ControllerState::ReadInput, new PageParameters(2)), $restored->kept()['home']);
     }
 
     public function testParametersSurviveSerializationAsTheyAre(): void
@@ -135,11 +136,13 @@ final class ContextSerializerTest extends TestCase
         self::assertSame(ControllerState::ReadInput, $context->state());
         self::assertEquals(new PageParameters(2), $context->parameters());
         $kept = $context->kept();
-        // A state its enum doesn't have, invalid parameters
-        self::assertSame(['state' => 'init', 'parameters' => ['page' => 0]], $kept['search']);
-        self::assertSame('init', $kept['menu']['state']);
+        // A state its enum doesn't have, invalid parameters: its controller's initial state
+        // (of its enum), and its parameters' defaults (of its class)
+        self::assertSame(SearchState::Init, $kept['search']->state);
+        self::assertEquals(new PageParameters(), $kept['search']->parameters);
+        self::assertSame(ControllerState::Init, $kept['menu']->state);
         // A value of another type, coerced when safe
-        self::assertSame(['from' => '12'], $kept['origin']['parameters']);
+        self::assertEquals(new FromParameters('12'), $kept['origin']->parameters);
         // Routes the router doesn't have are dropped
         self::assertStringNotContainsString('removed', $this->serializer()->serialize($context));
     }

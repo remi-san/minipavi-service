@@ -28,17 +28,18 @@ final class Context
     ) {}
 
     /**
-     * What each route keeps, by route (those whose controller ran or was restored): the value
-     * of its state, and its parameters as values (Parameters::toArray()), e.g. to serialize them
+     * What each route keeps (those whose controller ran or was restored), by route: its state
+     * and parameters, typed by its controller, as snapshots the caller can't change the context
+     * with
      *
-     * @return array<string, array{state: int|string, parameters: array<string, mixed>}>
+     * @return array<string, KeptRoute<State, Parameters>>
      */
     public function kept(): array
     {
-        return array_map(static fn(RouteContext $route) => [
-            'state' => $route->state()->value,
-            'parameters' => $route->parameters()->toArray(),
-        ], $this->routes);
+        return array_map(
+            static fn(RouteContext $route) => new KeptRoute($route->state(), $route->parameters()),
+            $this->routes,
+        );
     }
 
     public function route(): string
