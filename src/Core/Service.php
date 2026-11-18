@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Core;
 
-use MiniPaviService\Controller\Response;
 use MiniPaviService\Gateway\ClientState;
 use MiniPaviService\Gateway\GatewayRequest;
 use MiniPaviService\Gateway\GatewayResponse;
@@ -90,7 +89,7 @@ final class Service
                 self::MAX_PAGE_CHANGES,
             );
 
-            return Response::display(Vdt::line0($this->messages->get(FrameworkMessage::Error)))->continueWith($flow);
+            return $flow->answer(Vdt::line0($this->messages->get(FrameworkMessage::Error)));
         } catch (\Throwable $e) {
             $this->logger->critical('Cannot answer the error: ' . $e->getMessage(), ['exception' => $e]);
 

@@ -6,6 +6,7 @@ namespace MiniPaviService\Tests\Support;
 
 use MiniPaviService\Controller\Flow;
 use MiniPaviService\Controller\Parameters\Parameters;
+use MiniPaviService\Controller\State;
 use MiniPaviService\Gateway\CallMode;
 use MiniPaviService\Gateway\GatewayResponse;
 use MiniPaviService\Gateway\InputCommand;
@@ -18,6 +19,11 @@ final class RecordingFlow implements Flow
 {
     /** @var list<array{string, array<string, mixed>}> method and arguments of each call */
     public array $calls = [];
+
+    public function keep(?State $state, ?Parameters $parameters): void
+    {
+        $this->calls[] = ['keep', ['state' => $state, 'parameters' => $parameters]];
+    }
 
     public function answer(
         Vdt $vdt,

@@ -7,14 +7,14 @@ namespace MiniPaviService\Tests\Support;
 use MiniPaviService\Controller\ControllerState;
 use MiniPaviService\Controller\Flow;
 use MiniPaviService\Controller\Pagination\PageParameters;
-use MiniPaviService\Controller\Response;
+use MiniPaviService\Controller\Response\KeepingResponse;
 use MiniPaviService\Gateway\GatewayResponse;
 use MiniPaviService\Vdt\Vdt;
 
 /**
  * A response the framework doesn't have: clears the screen, then shows vdt
  */
-final readonly class ClearAndShow extends Response
+final readonly class ClearAndShow extends KeepingResponse
 {
     public function __construct(
         private string $vdt,
@@ -22,7 +22,7 @@ final readonly class ClearAndShow extends Response
         parent::__construct(ControllerState::Display, new PageParameters(1));
     }
 
-    public function continueWith(Flow $flow): GatewayResponse
+    protected function next(Flow $flow): GatewayResponse
     {
         return $flow->answer(Vdt::clearScreen()->append(Vdt::text($this->vdt)));
     }

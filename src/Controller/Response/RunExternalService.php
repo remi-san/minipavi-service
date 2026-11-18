@@ -6,7 +6,6 @@ namespace MiniPaviService\Controller\Response;
 
 use MiniPaviService\Controller\Flow;
 use MiniPaviService\Controller\Parameters\Parameters;
-use MiniPaviService\Controller\Response;
 use MiniPaviService\Controller\State;
 use MiniPaviService\Gateway\CallMode;
 use MiniPaviService\Gateway\GatewayResponse;
@@ -16,7 +15,7 @@ use MiniPaviService\Vdt\Vdt;
  * Sends the user to another service, at url, after showing vdt; state and parameters are kept
  * for this controller, for when the user comes back
  */
-final readonly class RunExternalService extends Response
+final readonly class RunExternalService extends KeepingResponse
 {
     /**
      * @param Vdt $vdt Videotex content shown before leaving (e.g. a message on line 0)
@@ -33,7 +32,7 @@ final readonly class RunExternalService extends Response
         parent::__construct($state, $parameters);
     }
 
-    public function continueWith(Flow $flow): GatewayResponse
+    protected function next(Flow $flow): GatewayResponse
     {
         return $flow->answer($this->vdt, next: $this->url, directCall: $this->callMode);
     }

@@ -6,6 +6,7 @@ namespace MiniPaviService\Core;
 
 use MiniPaviService\Controller\Flow;
 use MiniPaviService\Controller\Parameters\Parameters;
+use MiniPaviService\Controller\State;
 use MiniPaviService\Gateway\CallMode;
 use MiniPaviService\Gateway\GatewayResponse;
 use MiniPaviService\Gateway\InputCommand;
@@ -42,10 +43,12 @@ final class RequestFlow implements Flow
         $this->routes[] = $this->context->route();
         $response = $this->context->run($key, $content, $this->terminal);
 
-        // What this controller keeps for its next run
-        $this->context->keep($response->state(), $response->parameters());
-
         return $response->continueWith($this);
+    }
+
+    public function keep(?State $state, ?Parameters $parameters): void
+    {
+        $this->context->keep($state, $parameters);
     }
 
     public function answer(
@@ -66,6 +69,8 @@ final class RequestFlow implements Flow
             );
         }
 
+        // The controller left starts again
+        $this->context->keep(state: null, parameters: null);
         $this->context->enter($route, $parameters);
 
         // The input was for the controller left

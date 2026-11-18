@@ -6,7 +6,6 @@ namespace MiniPaviService\Controller\Response;
 
 use MiniPaviService\Controller\Flow;
 use MiniPaviService\Controller\Parameters\Parameters;
-use MiniPaviService\Controller\Response;
 use MiniPaviService\Controller\State;
 use MiniPaviService\Gateway\GatewayResponse;
 use MiniPaviService\Gateway\InputCommand;
@@ -16,7 +15,7 @@ use MiniPaviService\Vdt\Vdt;
  * Sends Videotex content and a command (e.g. reading an input field) to the gateway; what
  * the user types comes back to this controller
  */
-final readonly class RunCommand extends Response
+final readonly class RunCommand extends KeepingResponse
 {
     /**
      * @param Vdt $vdt Videotex content (empty: none)
@@ -31,7 +30,7 @@ final readonly class RunCommand extends Response
         parent::__construct($state, $parameters);
     }
 
-    public function continueWith(Flow $flow): GatewayResponse
+    protected function next(Flow $flow): GatewayResponse
     {
         return $flow->answer($this->vdt, $this->command);
     }

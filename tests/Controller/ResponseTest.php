@@ -26,57 +26,62 @@ final class ResponseTest extends TestCase
 {
     public function testDisplayReadsTheNextKeyWithTheDefaultParameters(): void
     {
-        $response = Response::display(new Vdt('Hello'));
-
-        self::assertSame(ControllerState::ReadInput, $response->state());
         // null: the defaults of the controller's parameters
-        self::assertNull($response->parameters());
+        self::assertSame(
+            ['keep', ['state' => ControllerState::ReadInput, 'parameters' => null]],
+            $this->callsOf(Response::display(new Vdt('Hello')))[0],
+        );
     }
 
     public function testReadInputKeepsItsParameters(): void
     {
-        $response = Response::readInput(new Vdt('Code ?'), command: null, parameters: new PageParameters(2));
+        $parameters = new PageParameters(2);
 
-        self::assertSame(ControllerState::ReadInput, $response->state());
-        self::assertEquals(new PageParameters(2), $response->parameters());
+        self::assertSame(
+            ['keep', ['state' => ControllerState::ReadInput, 'parameters' => $parameters]],
+            $this->callsOf(Response::readInput(new Vdt('Code ?'), command: null, parameters: $parameters))[0],
+        );
     }
 
-    public function testGoToResetsThisController(): void
+    public function testGoToKeepsNothing(): void
     {
-        $response = Response::goTo('menu', new FromParameters('home'));
-
-        // null: the controller's initial state, the defaults of its parameters
-        self::assertNull($response->state());
-        self::assertNull($response->parameters());
+        // The flow resets the controller left
+        self::assertSame(['goTo'], array_column($this->callsOf(Response::goTo('menu')), 0));
     }
 
     public function testConnectToKeepsWhatItIsGivenForWhenTheUserComesBack(): void
     {
-        self::assertNull(Response::connectTo('https://example.org/service')->state());
-
-        $response = Response::connectTo(
-            'https://example.org/service',
-            state: ControllerState::Display,
-            parameters: new PageParameters(4),
+        self::assertSame(
+            ['keep', ['state' => null, 'parameters' => null]],
+            $this->callsOf(Response::connectTo('https://example.org/service'))[0],
         );
 
-        self::assertSame(ControllerState::Display, $response->state());
-        self::assertEquals(new PageParameters(4), $response->parameters());
+        $parameters = new PageParameters(4);
+        self::assertSame(
+            ['keep', ['state' => ControllerState::Display, 'parameters' => $parameters]],
+            $this->callsOf(Response::connectTo(
+                'https://example.org/service',
+                state: ControllerState::Display,
+                parameters: $parameters,
+            ))[0],
+        );
     }
 
     public function testStateAndParametersCanBeGiven(): void
     {
-        $response = Response::display(new Vdt('Hello'), ControllerState::Display, new FromParameters('home'));
+        $parameters = new FromParameters('home');
 
-        self::assertSame(ControllerState::Display, $response->state());
-        self::assertEquals(new FromParameters('home'), $response->parameters());
+        self::assertSame(
+            ['keep', ['state' => ControllerState::Display, 'parameters' => $parameters]],
+            $this->callsOf(Response::display(new Vdt('Hello'), ControllerState::Display, $parameters))[0],
+        );
     }
 
     public function testDisplayAnswersWithItsContent(): void
     {
         self::assertSame(
             [['answer', ['vdt' => 'Hello', 'command' => null, 'next' => null, 'directCall' => null]]],
-            $this->callsOf(Response::display(new Vdt('Hello'))),
+            $this->answersOf(Response::display(new Vdt('Hello'))),
         );
     }
 
@@ -86,12 +91,12 @@ final class ResponseTest extends TestCase
 
         self::assertSame(
             [['answer', ['vdt' => 'Code ?', 'command' => $command, 'next' => null, 'directCall' => null]]],
-            $this->callsOf(Response::readInput(new Vdt('Code ?'), $command)),
+            $this->answersOf(Response::readInput(new Vdt('Code ?'), $command)),
         );
         // Without content: none sent
         self::assertSame(
             [['answer', ['vdt' => '', 'command' => null, 'next' => null, 'directCall' => null]]],
-            $this->callsOf(new RunCommand(ControllerState::ReadInput, null, new Vdt(), null)),
+            $this->answersOf(new RunCommand(ControllerState::ReadInput, null, new Vdt(), null)),
         );
     }
 
@@ -117,7 +122,7 @@ final class ResponseTest extends TestCase
                     'directCall' => CallMode::Connect,
                 ],
             ]],
-            $this->callsOf(Response::connectTo('https://example.org/service', new Vdt('Cnx en cours'))),
+            $this->answersOf(Response::connectTo('https://example.org/service', new Vdt('Cnx en cours'))),
         );
     }
 
@@ -130,12 +135,12 @@ final class ResponseTest extends TestCase
 
         self::assertSame(
             [$answer],
-            $this->callsOf(new RunExternalService(null, null, new Vdt(), 'https://example.org/', CallMode::Direct)),
+            $this->answersOf(new RunExternalService(null, null, new Vdt(), 'https://example.org/', CallMode::Direct)),
         );
     }
 
     /**
-     * What response asks the flow for
+     * What response asks the flow for, in order
      *
      * @return list<array{string, array<string, mixed>}>
      */
@@ -145,5 +150,15 @@ final class ResponseTest extends TestCase
         $response->continueWith($flow);
 
         return $flow->calls;
+    }
+
+    /**
+     * What response asks the flow for once it has kept its state and parameters
+     *
+     * @return list<array{string, array<string, mixed>}>
+     */
+    private function answersOf(Response $response): array
+    {
+        return array_values(array_filter($this->callsOf($response), static fn(array $call) => $call[0] !== 'keep'));
     }
 }

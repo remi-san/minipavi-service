@@ -6,7 +6,6 @@ namespace MiniPaviService\Controller\Response;
 
 use MiniPaviService\Controller\Flow;
 use MiniPaviService\Controller\Parameters\Parameters;
-use MiniPaviService\Controller\Response;
 use MiniPaviService\Controller\State;
 use MiniPaviService\Gateway\GatewayResponse;
 use MiniPaviService\Vdt\Vdt;
@@ -14,7 +13,7 @@ use MiniPaviService\Vdt\Vdt;
 /**
  * Sends Videotex content to the gateway; the next key comes back to this controller
  */
-final readonly class DisplayPage extends Response
+final readonly class DisplayPage extends KeepingResponse
 {
     /**
      * @param Vdt $vdt Videotex content
@@ -27,7 +26,7 @@ final readonly class DisplayPage extends Response
         parent::__construct($state, $parameters);
     }
 
-    public function continueWith(Flow $flow): GatewayResponse
+    protected function next(Flow $flow): GatewayResponse
     {
         return $flow->answer($this->vdt);
     }

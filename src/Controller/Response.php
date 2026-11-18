@@ -15,10 +15,10 @@ use MiniPaviService\Gateway\InputCommand;
 use MiniPaviService\Vdt\Vdt;
 
 /**
- * What a controller returns: the state and parameters it keeps for its next run, in the
- * context, and what comes next (continueWith()). Responses are readonly and don't change the
- * context: the runtime keeps their state and parameters, then they say what comes next
- * through a Flow.
+ * What a controller returns: what comes next (continueWith()), through a Flow. Responses are
+ * readonly and don't change the context: they ask the Flow to keep the state and parameters
+ * of this controller for its next run (KeepingResponse), and to answer the gateway or run
+ * another controller.
  *
  * The named constructors give each response the state it usually keeps: read the next
  * input after showing something, start again after leaving. Pass $state or $parameters
@@ -28,17 +28,6 @@ use MiniPaviService\Vdt\Vdt;
  */
 abstract readonly class Response
 {
-    /**
-     * @param ?State $state state this controller keeps; null: its initial state
-     *                      (Controller::initialState())
-     * @param ?Parameters $parameters parameters this controller keeps, of the class it declares
-     *                                (Controller::parametersType()); null: their defaults
-     */
-    public function __construct(
-        private ?State $state,
-        private ?Parameters $parameters,
-    ) {}
-
     /**
      * Sends Videotex content to the gateway; the next key comes back to this controller
      */
@@ -90,25 +79,9 @@ abstract readonly class Response
     }
 
     /**
-     * What comes next, once the context keeps this response's state and parameters: answer
-     * the gateway (Flow::answer()) or run another controller (Flow::goTo()); gives the answer
-     * the request ends with
+     * What comes next: keep a state and parameters for this controller (Flow::keep()), then
+     * answer the gateway (Flow::answer()) or run another controller (Flow::goTo()); gives the
+     * answer the request ends with
      */
     abstract public function continueWith(Flow $flow): GatewayResponse;
-
-    /**
-     * State this controller keeps; null: its initial state
-     */
-    public function state(): ?State
-    {
-        return $this->state;
-    }
-
-    /**
-     * Parameters this controller keeps; null: their defaults
-     */
-    public function parameters(): ?Parameters
-    {
-        return $this->parameters;
-    }
 }
