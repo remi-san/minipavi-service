@@ -10,6 +10,7 @@ use MiniPaviService\Controller\Pagination\PageParameters;
 use MiniPaviService\Controller\Parameters\NoParameters;
 use MiniPaviService\Controller\Request;
 use MiniPaviService\Controller\Response;
+use MiniPaviService\Tests\Support\RecordingFlow;
 use MiniPaviService\Vdt\Vdt;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
@@ -30,10 +31,7 @@ final class AbstractControllerTest extends TestCase
     #[DataProvider('states')]
     public function testRunsTheMethodOfTheState(ControllerState $state, string $content): void
     {
-        $response = self::controller()->run(new Request($state, new NoParameters()));
-
-        self::assertInstanceOf(Response\DisplayPage::class, $response);
-        self::assertSame($content, $response->vdt->toString());
+        self::assertSame($content, self::vdt(self::controller()->run(new Request($state, new NoParameters()))));
     }
 
     public function testStartsAtInit(): void
@@ -126,12 +124,11 @@ final class AbstractControllerTest extends TestCase
         };
     }
 
+    /**
+     * Videotex content the response answers with
+     */
     private static function vdt(Response $response): string
     {
-        if (!$response instanceof Response\DisplayPage) {
-            self::fail('Not a DisplayPage: ' . $response::class);
-        }
-
-        return $response->vdt->toString();
+        return $response->continueWith(new RecordingFlow())->vdt->toString();
     }
 }
