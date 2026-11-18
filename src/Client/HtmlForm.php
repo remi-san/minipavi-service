@@ -9,6 +9,8 @@ use MiniPaviService\Message\FrameworkMessage;
 use MiniPaviService\Message\Messages;
 use MiniPaviService\Minitel\FunctionKey;
 use MiniPaviService\Minitel\InputField;
+use MiniPaviService\Minitel\Position;
+use MiniPaviService\Minitel\Span;
 use MiniPaviService\Vdt\Screen\HtmlRenderer;
 use MiniPaviService\Vdt\Vdt;
 use Psr\Http\Message\ServerRequestInterface;
@@ -99,13 +101,13 @@ final readonly class HtmlForm
                 '<input class="field" name="'
                 . self::CONTENT
                 . '[]" maxlength="'
-                . $field->length
+                . $field->span->length
                 . '"'
                 . ' value="'
                 . HtmlRenderer::escape($command->prefill[$line] ?? '')
                 . '"'
                 . ' style="'
-                . HtmlRenderer::at($field->col, $field->row + $line, $field->length)
+                . HtmlRenderer::at($field->span->start->col, $field->span->start->row + $line, $field->span->length)
                 . '"'
                 . ($line === 0 ? ' autofocus' : '')
                 . ' autocomplete="off">';
@@ -173,9 +175,13 @@ final readonly class HtmlForm
         ));
         try {
             $field = new InputField(
-                self::int($command, name: 'row', default: 1),
-                self::int($command, name: 'col', default: 1),
-                self::int($command, name: 'length', default: 1),
+                new Span(
+                    new Position(
+                        self::int($command, name: 'row', default: 1),
+                        self::int($command, name: 'col', default: 1),
+                    ),
+                    self::int($command, name: 'length', default: 1),
+                ),
                 self::int($command, name: 'lines', default: 1),
                 $validWith,
                 ($command['cursor'] ?? true) === true,
@@ -197,9 +203,9 @@ final readonly class HtmlForm
         $field = $command->field;
 
         return (string) json_encode([
-            'row' => $field->row,
-            'col' => $field->col,
-            'length' => $field->length,
+            'row' => $field->span->start->row,
+            'col' => $field->span->start->col,
+            'length' => $field->span->length,
             'lines' => $field->lines,
             'validWith' => array_map(static fn(FunctionKey $key) => $key->value, $field->validWith),
             'cursor' => $field->cursor,

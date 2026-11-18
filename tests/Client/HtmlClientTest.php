@@ -23,6 +23,8 @@ use MiniPaviService\Message\FrameworkMessage;
 use MiniPaviService\Message\Messages;
 use MiniPaviService\Minitel\FunctionKey;
 use MiniPaviService\Minitel\InputField;
+use MiniPaviService\Minitel\Position;
+use MiniPaviService\Minitel\Span;
 use MiniPaviService\Tests\Support\CallbackController;
 use MiniPaviService\Tests\Support\HttpRequests;
 use MiniPaviService\Tests\Support\MemoryLogger;
@@ -69,7 +71,9 @@ final class HtmlClientTest extends TestCase
             new GatewayResponse(
                 $screen,
                 '{"route":"menu"}',
-                command: new InputCommand(new InputField(row: 2, col: 1, length: 4, validWith: [FunctionKey::Send])),
+                command: new InputCommand(
+                    new InputField(new Span(new Position(2, 1), 4), validWith: [FunctionKey::Send]),
+                ),
             ),
         );
         $form = ['key' => 'ENVOI', 'content' => ['36', '15']] + self::hiddenValues($page);
@@ -89,7 +93,7 @@ final class HtmlClientTest extends TestCase
         // With the page posted back: its screen and its input command
         self::assertEquals($screen, $request->clientState->screen);
         self::assertEquals(
-            new InputCommand(new InputField(row: 2, col: 1, length: 4, validWith: [FunctionKey::Send])),
+            new InputCommand(new InputField(new Span(new Position(2, 1), 4), validWith: [FunctionKey::Send])),
             $request->clientState->command,
         );
     }
@@ -182,7 +186,7 @@ final class HtmlClientTest extends TestCase
                 new Vdt(),
                 '{}',
                 command: new InputCommand(
-                    new InputField(row: 24, col: 16, length: 2, validWith: [FunctionKey::Send]),
+                    new InputField(new Span(new Position(24, 16), 2), validWith: [FunctionKey::Send]),
                     ['ab'],
                 ),
             ),
@@ -204,7 +208,7 @@ final class HtmlClientTest extends TestCase
                 new Vdt(),
                 '{}',
                 command: new InputCommand(
-                    new InputField(row: 13, col: 1, length: 40, lines: 2, validWith: [FunctionKey::Send]),
+                    new InputField(new Span(new Position(13, 1), 40), lines: 2, validWith: [FunctionKey::Send]),
                     ['l1', 'l2'],
                 ),
             ),
@@ -220,12 +224,9 @@ final class HtmlClientTest extends TestCase
             new GatewayResponse(
                 new Vdt(),
                 '{}',
-                command: new InputCommand(new InputField(
-                    row: 1,
-                    col: 1,
-                    length: 1,
-                    validWith: [FunctionKey::Send, FunctionKey::Next],
-                )),
+                command: new InputCommand(
+                    new InputField(new Span(new Position(1, 1), 1), validWith: [FunctionKey::Send, FunctionKey::Next]),
+                ),
             ),
         );
 
@@ -265,7 +266,9 @@ final class HtmlClientTest extends TestCase
             new GatewayResponse(
                 $before,
                 '{"route":"directory"}',
-                command: new InputCommand(new InputField(row: 23, col: 7, length: 23, validWith: [FunctionKey::Send])),
+                command: new InputCommand(
+                    new InputField(new Span(new Position(23, 7), 23), validWith: [FunctionKey::Send]),
+                ),
             ),
         );
         $form = ['key' => 'ENVOI'] + self::hiddenValues($page);

@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Page\Display;
 
+use MiniPaviService\Minitel\Span;
 use MiniPaviService\Minitel\Terminal;
-use MiniPaviService\Vdt\Screen\Screen;
 use MiniPaviService\Vdt\Vdt;
 
 /**
@@ -18,36 +18,22 @@ final readonly class Line implements Element
     public const MIDDLE = "\x60";
     public const BOTTOM = "\x7E";
 
-    public int $length;
-
-    /**
-     * @param ?int $length defaults to the end of the row
-     */
     public function __construct(
-        public int $row,
-        public int $col = 1,
-        ?int $length = null,
+        public Span $span,
         public string $char = self::MIDDLE,
         public Color $color = Color::White,
     ) {
-        Position::check($row, $col);
         if (strlen($char) !== 1) {
             throw new \InvalidArgumentException("A line is made of a single character, got '{$char}'");
-        }
-        $this->length = $length ?? (Screen::COLS + 1 - $col);
-        if ($this->length < 1 || ($col + $this->length - 1) > Screen::COLS) {
-            throw new \InvalidArgumentException(
-                "Line of length {$this->length} from column {$col} goes past column " . Screen::COLS,
-            );
         }
     }
 
     public function getContent(Terminal $terminal): string
     {
         return (
-            Vdt::position($this->col, $this->row)->toString()
+            Vdt::position($this->span->start->col, $this->span->start->row)->toString()
             . $this->color->text()
-            . Vdt::repeat($this->char, $this->length)->toString()
+            . Vdt::repeat($this->char, $this->span->length)->toString()
         );
     }
 }

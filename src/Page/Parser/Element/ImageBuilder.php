@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Page\Parser\Element;
 
+use MiniPaviService\Minitel\Position;
 use MiniPaviService\Page\Display\Element;
 use MiniPaviService\Page\Display\Image;
 use MiniPaviService\Page\Parser\AttributeValues;
@@ -34,8 +35,7 @@ final class ImageBuilder implements ElementBuilder
 
         return new Image(
             $this->pictures[$path] ??= Vdt::fromString($this->files->read($text)),
-            row: $attributes->int('row', default: 1),
-            col: $attributes->int('col', default: 1),
+            new Position($attributes->int('row', default: 1), $attributes->int('col', default: 1)),
         );
     }
 

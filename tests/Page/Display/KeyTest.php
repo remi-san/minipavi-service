@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Tests\Page\Display;
 
+use MiniPaviService\Minitel\Position;
 use MiniPaviService\Minitel\Terminal;
 use MiniPaviService\Page\Display\Color;
 use MiniPaviService\Page\Display\EndKey;
@@ -15,7 +16,9 @@ final class KeyTest extends TestCase
 {
     public function testKeyIsABadgeInReverseVideo(): void
     {
-        $screen = Vdt::fromString((new Key('Envoi', 20, 30, Color::Red))->getContent(new Terminal()))->screen();
+        $screen = Vdt::fromString((new Key('Envoi', new Position(20, 30), Color::Red))->getContent(
+            new Terminal(),
+        ))->screen();
 
         // An underlined space, then " Envoi " in reverse video, red
         self::assertSame('Envoi', implode('', array_map(
@@ -66,7 +69,7 @@ final class KeyTest extends TestCase
     public function testEndKeyOfAnEmulatorIsOnTheLastRow(): void
     {
         // An emulator is a websocket without a known Minitel
-        $vdt = (new EndKey('Connexion/fin', '[Maj] +', row: 22))->getContent(new Terminal(
+        $vdt = (new EndKey('Connexion/fin', '[Maj] +', position: new Position(22)))->getContent(new Terminal(
             '192.0.2.1',
             'websocket',
             '???',

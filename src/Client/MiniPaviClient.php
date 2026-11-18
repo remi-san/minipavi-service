@@ -109,9 +109,9 @@ final class MiniPaviClient implements Client
         $validWith = FunctionKey::masks(...$field->validWith);
         if ($field->isMessage()) {
             return MiniPaviCli::createInputMsgCmd(
-                $field->col,
-                $field->row,
-                $field->length,
+                $field->span->start->col,
+                $field->span->start->row,
+                $field->span->length,
                 $field->lines,
                 $validWith,
                 $field->cursor,
@@ -121,9 +121,9 @@ final class MiniPaviClient implements Client
         }
 
         return MiniPaviCli::createInputTxtCmd(
-            $field->col,
-            $field->row,
-            $field->length,
+            $field->span->start->col,
+            $field->span->start->row,
+            $field->span->length,
             $validWith,
             $field->cursor,
             $field->spaceChar,

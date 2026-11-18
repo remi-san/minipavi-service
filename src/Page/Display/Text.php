@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Page\Display;
 
+use MiniPaviService\Minitel\Position;
 use MiniPaviService\Minitel\Terminal;
 use MiniPaviService\Vdt\Screen\Screen;
 use MiniPaviService\Vdt\Vdt;
@@ -19,16 +20,13 @@ final readonly class Text implements Element
      */
     public function __construct(
         public string $text,
-        public int $row,
-        public int $col = 1,
+        public Position $position,
         public bool $centered = false,
         public Color $color = Color::White,
         public ?Color $bg = null,
         public ?Size $size = null,
         public bool $fill = false,
-    ) {
-        Position::check($row, $col);
-    }
+    ) {}
 
     public function getContent(Terminal $terminal): string
     {
@@ -47,17 +45,17 @@ final readonly class Text implements Element
     private function placed(string $attr, string $text, int $charWidth): string
     {
         if (!$this->centered) {
-            return Vdt::position($this->col, $this->row)->toString() . $attr . $text;
+            return Vdt::position($this->position->col, $this->position->row)->toString() . $attr . $text;
         }
         if ($this->fill) {
             // Starts at column 1 and pads with spaces up to the text (the spaces having the
             // text's width): the background color only applies from a space onwards
             $pad = max(0, intdiv($this->centeredCol($charWidth) - 1, $charWidth));
 
-            return Vdt::position(1, $this->row)->toString() . $attr . str_repeat(' ', $pad) . $text;
+            return Vdt::position(1, $this->position->row)->toString() . $attr . str_repeat(' ', $pad) . $text;
         }
 
-        return Vdt::position($this->centeredCol($charWidth), $this->row)->toString() . $attr . $text;
+        return Vdt::position($this->centeredCol($charWidth), $this->position->row)->toString() . $attr . $text;
     }
 
     /**

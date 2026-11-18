@@ -14,38 +14,21 @@ use MiniPaviService\Vdt\Screen\Screen;
  */
 final readonly class InputField
 {
-    public int $length;
-
     /**
-     * @param int $row first row of the field, 0 (status line) to Screen::ROWS
-     * @param int $col first column, 1 to Screen::COLS
-     * @param ?int $length columns of each line; defaults to the end of the row
+     * @param Span $span first line of the field
      * @param list<FunctionKey> $validWith keys validating the field
      * @param string $spaceChar shown in the empty cells of the field
      *
      * @throws \InvalidArgumentException for a field off the screen
      */
     public function __construct(
-        public int $row,
-        public int $col = 1,
-        ?int $length = null,
+        public Span $span,
         public int $lines = 1,
         public array $validWith = [FunctionKey::Send],
         public bool $cursor = true,
         public string $spaceChar = '.',
     ) {
-        if ($row < 0 || $row > Screen::ROWS) {
-            throw new \InvalidArgumentException("Row {$row} is off the screen (0 to " . Screen::ROWS . ')');
-        }
-        if ($col < 1 || $col > Screen::COLS) {
-            throw new \InvalidArgumentException("Column {$col} is off the screen (1 to " . Screen::COLS . ')');
-        }
-        $this->length = $length ?? (Screen::COLS + 1 - $col);
-        if ($this->length < 1 || ($col + $this->length - 1) > Screen::COLS) {
-            throw new \InvalidArgumentException(
-                "Input of length {$this->length} from column {$col} goes past column " . Screen::COLS,
-            );
-        }
+        $row = $span->start->row;
         if ($lines < 1 || ($row + $lines - 1) > Screen::ROWS) {
             throw new \InvalidArgumentException(
                 "Input of {$lines} lines from row {$row} goes past row " . Screen::ROWS,

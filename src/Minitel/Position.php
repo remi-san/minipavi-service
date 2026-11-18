@@ -2,20 +2,23 @@
 
 declare(strict_types=1);
 
-namespace MiniPaviService\Page\Display;
+namespace MiniPaviService\Minitel;
 
 use MiniPaviService\Vdt\Screen\Screen;
 
 /**
- * Bounds of the screen (Screen::ROWS and Screen::COLS), shared by the elements
+ * Cell of the Minitel screen: a row, 0 (status line) to Screen::ROWS, and a column, 1 to
+ * Screen::COLS
  */
-final class Position
+final readonly class Position
 {
     /**
-     * Throws if row (0 to 24, 0 = status line) or col (1 to 40) is off the screen
+     * @throws \InvalidArgumentException for a cell off the screen
      */
-    public static function check(int $row, int $col): void
-    {
+    public function __construct(
+        public int $row,
+        public int $col = 1,
+    ) {
         if ($row < 0 || $row > Screen::ROWS) {
             throw new \InvalidArgumentException("Row {$row} is off the screen (0 to " . Screen::ROWS . ')');
         }

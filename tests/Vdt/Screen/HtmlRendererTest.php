@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Tests\Vdt\Screen;
 
+use MiniPaviService\Minitel\Position;
 use MiniPaviService\Minitel\Terminal;
 use MiniPaviService\Page\Display\Key;
 use MiniPaviService\Vdt\Screen\HtmlRenderer;
@@ -84,7 +85,7 @@ final class HtmlRendererTest extends TestCase
     public function testKeyBadgesArentUnderlined(): void
     {
         $html = (new HtmlRenderer(HtmlRenderer::MINITEL_FONT))->render(
-            (new Vdt((new Key('Envoi', 1, 1))->getContent(new Terminal())))->screen(),
+            (new Vdt((new Key('Envoi', new Position(1, 1)))->getContent(new Terminal())))->screen(),
             title: 'test',
         );
 
