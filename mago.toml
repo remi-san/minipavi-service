@@ -38,9 +38,6 @@ minimum-fail-level = "Note"
 baseline = "lint-baseline.toml"
 
 [linter.rules]
-# Named arguments where they help reading (e.g. a display element's row: and col:), not for
-# every literal (assertions, Videotex bytes, MiniPaviCli's arguments)
-literal-named-argument = { enabled = false }
 # Size and complexity metrics are not enforced: display elements take their XML attributes as
 # parameters, parsers have a branch per element, test classes a method per case
 too-many-methods = { enabled = false }
