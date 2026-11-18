@@ -28,7 +28,7 @@ which depend on nothing above them):
 | `Page\` | static and template pages, their display elements, and the page XML parser |
 | `Message\` | the messages shown on screen: `Message`, `FrameworkMessage`, `Messages` and their XML parser |
 | `Minitel\` | the user's terminal: `Terminal`, its `FunctionKey`s, its settings (`Keyboard`, `LocalEcho`, `Scroll`), and the `InputField` where the user types |
-| `Vdt\` | Videotex: codes, reading, writing and moving Videotex content (`Vdt`, `VdtHelper`, `Videotex`); in `Screen\`, the Minitel screen it draws (`Screen`, `Cell`) and its HTML rendering (`HtmlRenderer`) |
+| `Vdt\` | Videotex: codes, reading, writing and moving Videotex content (`Vdt`, `Videotex`); in `Screen\`, the Minitel screen it draws (`Screen`, `Cell`) and its HTML rendering (`HtmlRenderer`) |
 | `Gateway\` | the requests and answers the service handles (`GatewayRequest`, `GatewayResponse`, `CallMode`, the `InputCommand` reading a field), and the `Client` interface reading and sending them |
 | `Client\` | the clients: `MiniPaviClient` for the MiniPavi gateway, `HtmlClient` for a browser (`?web=true`) |
 | `Http\` | the entry point for the web server, on PSR-7 / PSR-15: `Kernel`, `ResponseEmitter`, `ServiceRunner`; in `Dispatch\`, who handles the request (`Dispatcher`, `ConditionalRequestHandler`, `RequestMatcher`s); in `Url\`, the request's URLs (`RequestUrl`, `UrlAttribute`, `WithUrls`); in `Emulator\`, the emulator browsers are sent to (`EmulatorConfig`, `EmulatorRedirect`) |
@@ -273,7 +273,7 @@ KernelBuilder::for($router, $messages)
 
       public function continueWith(Flow $flow): GatewayResponse
       {
-          return $flow->answer(VdtHelper::clearScreen()->append($this->vdt));
+          return $flow->answer(Vdt::clearScreen()->append($this->vdt));
       }
   }
   ```
@@ -308,7 +308,7 @@ KernelBuilder::for($router, $messages)
               return Response::goTo('help');
           }
 
-          return Response::readInput(VdtHelper::writeLine0('Unknown code'), $this->page->inputCommand());
+          return Response::readInput(Vdt::line0('Unknown code'), $this->page->inputCommand());
       }
   }
   ```
@@ -515,7 +515,7 @@ $parser = new PageXmlParser($messages);              // pages redefine them with
 $service = new Service($router, $messages, $logger);  // for its error message
 
 // In a controller: the page's text, its placeholders replaced
-VdtHelper::writeLine0($this->page->message(AccMessage::ConnectedFrom, ['remoteAddr' => $addr]));
+Vdt::line0($this->page->message(AccMessage::ConnectedFrom, ['remoteAddr' => $addr]));
 ```
 
 A message without text, or a placeholder without its variable, is a `LogicException`; a
@@ -601,8 +601,8 @@ Videotex can't be mixed up:
 ```php
 Vdt::text('Déjà vu');                       // text: its accents encoded in G2
 new Vdt("\x0C");                            // raw Videotex (or Vdt::fromString())
-VdtHelper::writeLine0('Choix inconnu');     // MiniPaviCli's helpers give Vdt too
-$page->display($terminal)->append(VdtHelper::writeLine0('Bienvenue'));  // one after the other
+Vdt::line0('Choix inconnu');               // on the status line (MiniPaviCli's writeLine0())
+$page->display($terminal)->append(Vdt::line0('Bienvenue'));  // one after the other
 Vdt::join($a, $b, $c);
 ```
 
@@ -615,8 +615,9 @@ Codes to send as they are have names: `Vdt\Videotex` for Videotex (`CLEAR_LINE`,
 `<page>` (see [Page XML format](#page-xml-format)); `Page\Setup` sends them for other content.
 
 They replace MiniPaviCli's global `VDT_*` and `PRO_*` constants, which are only defined once
-`MiniPaviCli` is loaded. `VdtHelper` gives MiniPaviCli's Videotex helpers (`setPos()`,
-`writeLine0()`, `toG2()`...).
+`MiniPaviCli` is loaded. `Vdt` gives MiniPaviCli's Videotex helpers as its constructors:
+`Vdt::text()` (its `toG2()`), `Vdt::position($col, $row)` (`setPos()`), `Vdt::line0()`
+(`writeLine0()`), `Vdt::clearScreen()` and `Vdt::repeat($char, $count)` (`repeatChar()`).
 
 `Vdt` also reads Videotex content, e.g. of a `.vdt` file, and moves it on the screen;
 `<image>` uses it.
