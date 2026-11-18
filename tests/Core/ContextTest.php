@@ -14,6 +14,7 @@ use MiniPaviService\Core\Router;
 use MiniPaviService\Minitel\Terminal;
 use MiniPaviService\Tests\Support\CallbackController;
 use MiniPaviService\Tests\Support\FromParameters;
+use MiniPaviService\Tests\Support\RecordingFlow;
 use MiniPaviService\Tests\Support\SearchController;
 use MiniPaviService\Tests\Support\SearchState;
 use MiniPaviService\Vdt\Vdt;
@@ -35,7 +36,16 @@ final class ContextTest extends TestCase
                 PageParameters::class,
                 /** @param Request<ControllerState, PageParameters> $request */
                 static fn(Request $request) => Response::display(Vdt::text(
-                    'home ' . $request->state()->value . ' ' . $request->parameters()->page,
+                    'home '
+                        . $request->state()->value
+                        . ' '
+                        . $request->parameters()->page
+                        . ' '
+                        . $request->key()
+                        . ' '
+                        . $request->contentAsString()
+                        . ' '
+                        . $request->terminal()->remoteAddr(),
                 )),
             ),
         );
@@ -60,7 +70,6 @@ final class ContextTest extends TestCase
 
         self::assertSame(SearchState::Init, $context->state());
         self::assertEquals(new PageParameters(), $context->parameters());
-        self::assertSame('{"route":"search","states":{},"parameters":{}}', $context->serialize());
     }
 
     public function testRunsTheControllerOnWhatItKeptAndTheInput(): void
@@ -68,9 +77,12 @@ final class ContextTest extends TestCase
         $context = new Context($this->router, 'home');
         $context->keep(ControllerState::ReadInput, new PageParameters(2));
 
-        self::assertEquals(
-            Response::display(new Vdt('home read-input 2')),
-            $context->run('ENVOI', ['abc'], new Terminal('192.0.2.1')),
+        self::assertSame(
+            'home read-input 2 ENVOI abc 192.0.2.1',
+            $context
+                ->run('ENVOI', ['abc'], new Terminal('192.0.2.1'))
+                ->continueWith(new RecordingFlow())
+                ->vdt->toString(),
         );
     }
 
@@ -107,6 +119,22 @@ final class ContextTest extends TestCase
         $context->keep(ControllerState::ReadInput, parameters: null);
     }
 
+    public function testKeepingParametersOfAnotherClassThanTheControllersIsAnError(): void
+    {
+        $context = new Context($this->router, 'search');
+
+        $this->expectException(\LogicException::class);
+        $this->expectExceptionMessage(
+            SearchController::class
+            . ' keeps parameters of '
+            . PageParameters::class
+            . ', not '
+            . FromParameters::class,
+        );
+
+        $context->keep(null, new FromParameters('home'));
+    }
+
     public function testSurvivesSerializationTyped(): void
     {
         $context = new Context($this->router, 'home');
@@ -124,14 +152,14 @@ final class ContextTest extends TestCase
         self::assertEquals(new PageParameters(2), $restored->parameters());
     }
 
-    public function testSerializesAsJson(): void
+    public function testParametersSurviveSerializationAsTheyAre(): void
     {
         $context = new Context($this->router, 'origin');
-        $context->keep(ControllerState::ReadInput, new FromParameters('café/thé'));
+        $context->keep(ControllerState::ReadInput, new FromParameters('café/thé "1"'));
 
-        self::assertSame(
-            '{"route":"origin","states":{"origin":"read-input"},"parameters":{"origin":{"from":"café/thé"}}}',
-            $context->serialize(),
+        self::assertEquals(
+            new FromParameters('café/thé "1"'),
+            Context::unserialize($context->serialize(), $this->router)->parameters(),
         );
     }
 
@@ -169,6 +197,7 @@ final class ContextTest extends TestCase
                 'parameters' => [
                     'home' => ['page' => '2', 0 => 'no name'],
                     'search' => ['page' => -1],
+                    'origin' => ['from' => 12],
                     'menu' => 'not parameters',
                 ],
             ]),
@@ -183,6 +212,9 @@ final class ContextTest extends TestCase
         self::assertEquals(new PageParameters(), $context->parameters());
         $context->changeRoute('menu');
         self::assertSame(ControllerState::Init, $context->state());
+        // A value of another type, coerced when safe
+        $context->changeRoute('origin');
+        self::assertEquals(new FromParameters('12'), $context->parameters());
         // Routes the router doesn't have are dropped
         self::assertStringNotContainsString('removed', $context->serialize());
     }
