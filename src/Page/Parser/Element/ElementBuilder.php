@@ -11,7 +11,7 @@ use MiniPaviService\Page\Parser\PageXmlException;
 /**
  * Builds the display element of a tag of the page XML format (documented in the framework's
  * README.md, and in schema/page.xsd), from its attributes and text: what ElementFactory has
- * for each tag. A new element is a builder, given to ElementFactory::standard().
+ * for each tag. A new element is a builder, given by a PageElements.
  */
 interface ElementBuilder
 {

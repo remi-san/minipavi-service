@@ -93,7 +93,8 @@ final class PageXmlParser
         );
 
         $messages = $this->messages->with($this->messageTexts($root, $name));
-        $parsed = NodesParser::standard(ElementFactory::standard($baseDir, $messages), $name)->parse(
+        $elements = ElementFactory::of(new PageFiles($baseDir), $messages, new StandardElements());
+        $parsed = NodesParser::standard($elements, $name)->parse(
             $root,
             TagPosition::page(template: $type === 'template'),
         );

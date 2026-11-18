@@ -12,7 +12,9 @@ use MiniPaviService\Minitel\Scroll;
 use MiniPaviService\Page\Display\Color;
 use MiniPaviService\Page\Display\Size;
 use MiniPaviService\Page\Parser\ElementFactory;
+use MiniPaviService\Page\Parser\PageFiles;
 use MiniPaviService\Page\Parser\PageXmlParser;
+use MiniPaviService\Page\Parser\StandardElements;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
@@ -165,7 +167,11 @@ final class PageXsdTest extends TestCase
             $names[] = $name->nodeValue;
         }
         $expected = [
-            ...ElementFactory::standard(__DIR__, (new MessagesXmlParser())->defaults())->tags(),
+            ...ElementFactory::of(
+                new PageFiles(__DIR__),
+                (new MessagesXmlParser())->defaults(),
+                new StandardElements(),
+            )->tags(),
             'input',
             'foreach',
             'if',

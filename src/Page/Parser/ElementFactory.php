@@ -5,13 +5,7 @@ declare(strict_types=1);
 namespace MiniPaviService\Page\Parser;
 
 use MiniPaviService\Message\Messages;
-use MiniPaviService\Page\Parser\Element\BackgroundBuilder;
 use MiniPaviService\Page\Parser\Element\ElementBuilder;
-use MiniPaviService\Page\Parser\Element\EndKeyBuilder;
-use MiniPaviService\Page\Parser\Element\ImageBuilder;
-use MiniPaviService\Page\Parser\Element\KeyBuilder;
-use MiniPaviService\Page\Parser\Element\LineBuilder;
-use MiniPaviService\Page\Parser\Element\TextBuilder;
 
 /**
  * The display elements of the page XML format, by tag: the ElementBuilder of each. Used by
@@ -33,24 +27,19 @@ final readonly class ElementFactory
     }
 
     /**
-     * The framework's elements (<background>, <image>, <text>, <line>, <key>, <endkey>), for a
-     * page
+     * The elements of a page, from those of each set
      *
-     * @param string $baseDir folder of the page, and of its <background> and <image> files
-     * @param Messages $messages of the page, for the texts of <endkey>
+     * @param PageFiles $files the files of the page's folder
+     * @param Messages $messages the page's messages
      */
-    public static function standard(string $baseDir, Messages $messages): self
+    public static function of(PageFiles $files, Messages $messages, PageElements ...$elements): self
     {
-        $files = new PageFiles($baseDir);
+        $builders = [];
+        foreach ($elements as $set) {
+            array_push($builders, ...$set->builders($files, $messages));
+        }
 
-        return new self(
-            new BackgroundBuilder($files),
-            new ImageBuilder($files),
-            new TextBuilder(),
-            new LineBuilder(),
-            new KeyBuilder(),
-            new EndKeyBuilder($messages),
-        );
+        return new self(...$builders);
     }
 
     /**
