@@ -194,6 +194,19 @@ final class HtmlClientTest extends TestCase
         self::assertStringNotContainsString('<script', $html);
     }
 
+    public function testTitleOfThePageIsEscaped(): void
+    {
+        $messages = (new MessagesXmlParser())->defaults();
+        $form = new HtmlForm(new HtmlRenderer(HtmlRenderer::MINITEL_FONT), $messages);
+
+        self::assertStringContainsString('<title>Svc &lt;a &amp; &quot;b&quot;&gt;</title>', $form->render(
+            new Vdt(),
+            context: '',
+            command: null,
+            title: 'Svc <a & "b">',
+        ));
+    }
+
     public function testAnswerIsDrawnOverTheScreenSoFar(): void
     {
         $before = Vdt::clearScreen()->append(Vdt::position(1, row: 3), Vdt::text('Page 2/2'));
