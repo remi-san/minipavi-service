@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Minitel;
 
+use MiniPaviService\Gateway\ConnectionCode;
+
 /**
  * Function keys of the Minitel, by the name the gateway sends (Request::key()), with their
  * mask in input commands (MSK_* of MiniPaviCli) and their name in the page XML format
@@ -19,6 +21,22 @@ enum FunctionKey: string implements Key
     case Correction = 'CORRECTION';
     case Next = 'SUITE';
     case Send = 'ENVOI';
+
+    /**
+     * The key itself: it is a function key
+     */
+    public function functionKey(): self
+    {
+        return $this;
+    }
+
+    /**
+     * Null: a function key isn't a connection code
+     */
+    public function connectionCode(): ?ConnectionCode
+    {
+        return null;
+    }
 
     /**
      * Key of a name of the page XML format (envoi, suite...), null if there is none

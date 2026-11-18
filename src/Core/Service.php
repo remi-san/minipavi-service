@@ -11,6 +11,7 @@ use MiniPaviService\Message\FrameworkMessage;
 use MiniPaviService\Message\Messages;
 use MiniPaviService\Message\MessagesException;
 use MiniPaviService\Message\MessagesXmlParser;
+use MiniPaviService\Minitel\Key;
 use MiniPaviService\Minitel\Terminal;
 use MiniPaviService\Vdt\Vdt;
 use Psr\Log\LoggerInterface;
@@ -114,7 +115,7 @@ final class Service
             // A new session: without what was typed before
             return $this->serve(
                 new Context($this->router, $this->router->defaultRoute()),
-                $request->fctn(),
+                $request->key,
                 [],
                 $request->terminal,
             );
@@ -122,7 +123,7 @@ final class Service
 
         $context = $this->restore($request->context);
 
-        return $this->serve($context, $request->fctn(), $request->content, $request->terminal);
+        return $this->serve($context, $request->key, $request->content, $request->terminal);
     }
 
     /**
@@ -146,7 +147,7 @@ final class Service
      *
      * @param list<string> $content
      */
-    private function serve(Context $context, string $key, array $content, Terminal $terminal): GatewayResponse
+    private function serve(Context $context, ?Key $key, array $content, Terminal $terminal): GatewayResponse
     {
         // A route this service doesn't have, e.g. removed in a new version: the input was for
         // a screen that doesn't exist any more
@@ -155,7 +156,7 @@ final class Service
                 'route' => $context->route(),
             ]);
             $context->restart($this->router->defaultRoute());
-            $key = '';
+            $key = null;
             $content = [];
         }
 

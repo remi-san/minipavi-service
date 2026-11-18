@@ -172,7 +172,7 @@ final class ServiceTest extends TestCase
 
         self::assertSame('menu', $this->contentOf($this->press($error, key: FunctionKey::Summary)));
         self::assertSame(ControllerState::Init, $this->lastRequest('menu')->state());
-        self::assertSame('SOMMAIRE', $this->lastRequest('menu')->key());
+        self::assertSame(FunctionKey::Summary, $this->lastRequest('menu')->key());
     }
 
     public function testInvalidContextIsAnError(): void
@@ -260,7 +260,7 @@ final class ServiceTest extends TestCase
         $directory = $this->lastRequest('directory');
         self::assertSame(ControllerState::Init, $directory->state());
         self::assertEquals(new PageParameters(1), $directory->parameters());
-        self::assertSame('', $directory->key());
+        self::assertNull($directory->key());
         self::assertSame([], $directory->content());
         self::assertSame(self::TERMINAL_ADDRESS, $directory->terminal()->remoteAddr());
     }
@@ -295,7 +295,7 @@ final class ServiceTest extends TestCase
         // As a new connection: the input was for a screen that doesn't exist any more
         $menu = $this->lastRequest('menu');
         self::assertSame(ControllerState::Init, $menu->state());
-        self::assertSame(['', []], [$menu->key(), $menu->content()]);
+        self::assertSame([null, []], [$menu->key(), $menu->content()]);
         self::assertSame([LogLevel::WARNING], $this->levels());
         self::assertSame(['route' => 'removed'], $this->logger->records[0][2]);
     }
@@ -389,9 +389,9 @@ final class ServiceTest extends TestCase
         $routes->addRoute('menu', $this->controller(
             'menu',
             NoParameters::class,
-            static fn(Request $request) => match ($request->key()) {
-                'ENVOI' => Response::goTo('directory', new PageParameters(1)),
-                'SUITE' => Response::goTo($request->contentAsString()),
+            static fn(Request $request) => match ($request->functionKey()) {
+                FunctionKey::Send => Response::goTo('directory', new PageParameters(1)),
+                FunctionKey::Next => Response::goTo($request->contentAsString()),
                 default => Response::display(new Vdt('menu')),
             },
         ));
@@ -399,7 +399,7 @@ final class ServiceTest extends TestCase
             'directory',
             PageParameters::class,
             static fn(Request $request) => match (true) {
-                $request->key() === 'SOMMAIRE' => Response::goTo('menu'),
+                $request->functionKey() === FunctionKey::Summary => Response::goTo('menu'),
                 $request->state() === ControllerState::ReadInput => Response::display(Vdt::text(
                     'code ' . $request->contentAsString(),
                 )),

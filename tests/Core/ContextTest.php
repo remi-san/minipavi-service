@@ -12,6 +12,7 @@ use MiniPaviService\Controller\Response;
 use MiniPaviService\Core\Context;
 use MiniPaviService\Core\Router;
 use MiniPaviService\Core\RouterBuilder;
+use MiniPaviService\Minitel\FunctionKey;
 use MiniPaviService\Minitel\Terminal;
 use MiniPaviService\Tests\Support\CallbackController;
 use MiniPaviService\Tests\Support\FromParameters;
@@ -41,7 +42,7 @@ final class ContextTest extends TestCase
                         . ' '
                         . $request->parameters()->page
                         . ' '
-                        . $request->key()
+                        . (string) $request->key()?->value
                         . ' '
                         . $request->contentAsString()
                         . ' '
@@ -80,7 +81,7 @@ final class ContextTest extends TestCase
         self::assertSame(
             'home read-input 2 ENVOI abc 192.0.2.1',
             $context
-                ->run('ENVOI', ['abc'], new Terminal('192.0.2.1'))
+                ->run(FunctionKey::Send, ['abc'], new Terminal('192.0.2.1'))
                 ->continueWith(new RecordingFlow())
                 ->vdt->toString(),
         );

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Gateway;
 
+use MiniPaviService\Minitel\FunctionKey;
 use MiniPaviService\Minitel\Key;
 
 /**
@@ -34,6 +35,22 @@ enum ConnectionCode: string implements Key
         return str_starts_with($key, self::BackgroundCall->value) && $key !== self::BackgroundCall->value
             ? self::BackgroundCall
             : null;
+    }
+
+    /**
+     * Null: a connection code isn't a function key
+     */
+    public function functionKey(): ?FunctionKey
+    {
+        return null;
+    }
+
+    /**
+     * The code itself: it is a connection code
+     */
+    public function connectionCode(): self
+    {
+        return $this;
     }
 
     /**

@@ -10,6 +10,7 @@ use MiniPaviService\Controller\State;
 use MiniPaviService\Gateway\CallMode;
 use MiniPaviService\Gateway\GatewayResponse;
 use MiniPaviService\Gateway\InputCommand;
+use MiniPaviService\Minitel\Key;
 use MiniPaviService\Minitel\Terminal;
 use MiniPaviService\Vdt\Vdt;
 
@@ -38,7 +39,7 @@ final class RequestFlow implements Flow
      *
      * @param list<string> $content
      */
-    public function run(string $key, array $content): GatewayResponse
+    public function run(?Key $key, array $content): GatewayResponse
     {
         $this->routes[] = $this->context->route();
         $response = $this->context->run($key, $content, $this->terminal);
@@ -74,6 +75,6 @@ final class RequestFlow implements Flow
         $this->context->enter($route, $parameters);
 
         // The input was for the controller left
-        return $this->run('', []);
+        return $this->run(null, []);
     }
 }

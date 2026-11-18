@@ -8,6 +8,7 @@ use MiniPaviService\Controller\Parameters\NoParameters;
 use MiniPaviService\Controller\Parameters\Parameters;
 use MiniPaviService\Gateway\ConnectionCode;
 use MiniPaviService\Minitel\FunctionKey;
+use MiniPaviService\Minitel\Key;
 use MiniPaviService\Minitel\Terminal;
 
 /**
@@ -23,14 +24,14 @@ readonly class Request
     /**
      * @param TState $state
      * @param TParameters $parameters
-     * @param string $key function key pressed (FunctionKey), or connection code
-     *                    (ConnectionCode)
+     * @param ?Key $key function key pressed (FunctionKey), or connection code
+     *                  (ConnectionCode); null for none (see key())
      * @param list<string> $content text typed, one string per line of the input field
      */
     public function __construct(
         private State $state = ControllerState::Init,
         private Parameters $parameters = new NoParameters(),
-        private string $key = '',
+        private ?Key $key = null,
         private array $content = [],
         private Terminal $terminal = new Terminal(),
     ) {}
@@ -56,10 +57,15 @@ readonly class Request
     }
 
     /**
-     * Name of the function key pressed (FunctionKey), or connection code
-     * (ConnectionCode); see functionKey()
+     * Function key pressed (FunctionKey), or connection code (ConnectionCode). See
+     * functionKey() and connectionCode().
+     *
+     * Null when there is none: for the controller a Response::goTo() leads to, for the default
+     * route started again because the context's route is unknown, and for what the gateway
+     * sends that the framework doesn't know as a key (GatewayRequest::keyOf(), e.g. DIRECT
+     * after a CallMode::Direct call). A controller can't tell these cases apart by the key.
      */
-    public function key(): string
+    public function key(): ?Key
     {
         return $this->key;
     }
@@ -69,7 +75,7 @@ readonly class Request
      */
     public function functionKey(): ?FunctionKey
     {
-        return FunctionKey::tryFrom($this->key);
+        return $this->key?->functionKey();
     }
 
     /**
@@ -78,7 +84,7 @@ readonly class Request
      */
     public function connectionCode(): ?ConnectionCode
     {
-        return ConnectionCode::of($this->key);
+        return $this->key?->connectionCode();
     }
 
     /**
