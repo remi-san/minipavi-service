@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Vdt;
 
-use MiniPaviService\Vdt\Screen\Attributes;
 use MiniPaviService\Vdt\Screen\Cursor;
 
 /**
@@ -17,14 +16,10 @@ use MiniPaviService\Vdt\Screen\Cursor;
 final readonly class Player
 {
     /**
-     * Plays the content, calling glyph(row, col, bytes, width, attributes) for each character
-     * (repetitions included), and other(token, cursor) for the other tokens, once the cursor
-     * has followed them
-     *
-     * @param callable(int, int, string, int, Attributes): void $glyph
-     * @param ?callable(Token, Cursor): void $other
+     * Plays the content, telling the listener each character drawn (repetitions included),
+     * and the other tokens once the cursor has followed them
      */
-    public function play(Vdt $vdt, callable $glyph, ?callable $other = null): void
+    public function play(Vdt $vdt, ScreenListener $listener): void
     {
         $cursor = new Cursor();
         $last = null;
@@ -39,7 +34,7 @@ final readonly class Player
                     }
                     for ($n = 0; $n < ($repeat ? $token->count : 1); $n++) {
                         $width = $cursor->attributes->width();
-                        $glyph($cursor->row, $cursor->col, $bytes, $width, $cursor->attributes);
+                        $listener->glyph($cursor->row, $cursor->col, $bytes, $width, $cursor->attributes);
                         $cursor->advance($width);
                     }
                     $last = $bytes;
@@ -61,9 +56,7 @@ final readonly class Player
                     $cursor->reset(1, col: 1);
                     break;
             }
-            if ($other !== null) {
-                $other($token, $cursor);
-            }
+            $listener->sequence($token, $cursor);
         }
     }
 }

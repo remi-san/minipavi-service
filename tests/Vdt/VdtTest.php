@@ -6,7 +6,11 @@ namespace MiniPaviService\Tests\Vdt;
 
 use MiniPaviService\Page\Display\Color;
 use MiniPaviService\Vdt\Player;
+use MiniPaviService\Vdt\Screen\Attributes;
+use MiniPaviService\Vdt\Screen\Cursor;
 use MiniPaviService\Vdt\Screen\Screen;
+use MiniPaviService\Vdt\ScreenListener;
+use MiniPaviService\Vdt\Token;
 use MiniPaviService\Vdt\Vdt;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
@@ -193,16 +197,22 @@ final class VdtTest extends TestCase
      */
     private static function glyphColumns(Vdt $vdt): array
     {
-        $columns = [];
-        (new Player())->play($vdt, static function (int $row, int $col, string $bytes, int $width) use (
-            &$columns,
-        ): void {
-            for ($i = 0; $i < $width; $i++) {
-                $columns[$row][$col + $i] = [$col, $width];
-            }
-        });
+        $listener = new class implements ScreenListener {
+            /** @var array<int, array<int, array{int, int}>> */
+            public array $columns = [];
 
-        return $columns;
+            public function glyph(int $row, int $col, string $bytes, int $width, Attributes $attributes): void
+            {
+                for ($i = 0; $i < $width; $i++) {
+                    $this->columns[$row][$col + $i] = [$col, $width];
+                }
+            }
+
+            public function sequence(Token $sequence, Cursor $cursor): void {}
+        };
+        (new Player())->play($vdt, $listener);
+
+        return $listener->columns;
     }
 
     /**
