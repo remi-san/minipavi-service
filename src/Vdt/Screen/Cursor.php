@@ -45,21 +45,34 @@ final class Cursor
     }
 
     /**
-     * Sets the attribute of ESC byte (Attributes::with())
+     * Sets the attribute of ESC byte (Attributes::with()), as the Minitel does: ESC M and ESC
+     * O received on rows 0 and 1, which can't have double height, are discarded, the size
+     * staying as it was
+     *
+     * @param string $byte the byte after ESC
      */
     public function setAttribute(string $byte): void
     {
+        if (!Attributes::allowsDoubleHeight($this->row) && Attributes::isTallSize($byte)) {
+            return;
+        }
         $this->attributes = $this->attributes->with($byte);
     }
 
     /**
      * Sets the character set of SI or SO (Attributes::withCharset())
+     *
+     * @param string $byte SI (text) or SO (mosaic)
      */
     public function setCharset(string $byte): void
     {
         $this->attributes = $this->attributes->withCharset($byte);
     }
 
+    /**
+     * Positions the cursor (US, or RS / FF at row 1, column 1), which sets the attributes back
+     * to their defaults
+     */
     public function reset(int $row, int $col): void
     {
         $this->row = $row;
@@ -67,7 +80,12 @@ final class Cursor
         $this->attributes = Attributes::defaults();
     }
 
-    // After a character, or a move right: wraps to the next row, from the last one to the first
+    /**
+     * Moves right after a character, or a move right: wraps to the next row, from the last
+     * one to the first (row 0 stays on its last column)
+     *
+     * @param int $columns the width of the character, or 1
+     */
     public function advance(int $columns): void
     {
         $this->col += $columns;
@@ -81,7 +99,11 @@ final class Cursor
         }
     }
 
-    // BS, HT, LF, VT or CR
+    /**
+     * Follows a cursor move: BS, HT, LF, VT or CR (Videotex::CURSOR_*, CARRIAGE_RETURN)
+     *
+     * @param string $byte the code of the move
+     */
     public function move(string $byte): void
     {
         switch ($byte) {
