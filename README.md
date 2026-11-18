@@ -486,7 +486,7 @@ simulated `Screen`, as the Minitel keeps what isn't cleared:
 ```php
 $tester = new ServiceTester(new Service($router, $messages, new ContextSerializer($router)));   // optionally, a Terminal
 
-$tester->connect()->assertRoute('home')->assertScreenContains('OCTOBLUE')
+$tester->connect()->assertRoute('home')->assertScreenContains('BIENVENUE')
     ->type('2')->press(FunctionKey::Send)->assertRoute('games')
     ->press(FunctionKey::Summary)->assertRoute('home');
 ```
@@ -690,7 +690,7 @@ They replace MiniPaviCli's global `VDT_*` and `PRO_*` constants, which are only 
 ```php
 use MiniPaviService\Vdt\Vdt;
 
-$picture = new Vdt(file_get_contents('octopus.vdt'));
+$picture = new Vdt(file_get_contents('picture.vdt'));
 $moved = $picture->offset(8, -2);     // 8 columns right, 2 rows up (negative: left, up)
 echo $moved->toString();               // the Videotex content
 echo $moved->screen()->preview();      // the screen, as text
@@ -748,7 +748,7 @@ vendor/bin/minipavi vdt-offset --preview -- images/background.vdt 8 -2 # move a 
   `composer lint`, in CI.
 - **`preview [--messages <messages.xml>] <page.xml> [<data.json>]`** prints the screen a page
   draws, as text (`Screen::preview()`): a template with the variables of a JSON object (e.g.
-  `{"games": [{"name": "Alien Wipeout"}]}`).
+  `{"games": [{"name": "Rocket Rescue"}]}`).
 - **`vdt-offset [--preview] <input.vdt> <x> <y> [<output.vdt>]`** moves the content of a
   Videotex page by `x` columns and `y` rows (negative: left, up), with `Vdt::offset()` (see
   [Videotex content](#videotex-content)): to the output file, or the standard output; input `-`

@@ -52,13 +52,13 @@ final class PreviewCommandTest extends TestCase
             'list.xml',
             content: '<page type="template"><foreach items="games" as="game" row="3"><text>{{game.name}}</text></foreach></page>',
         );
-        $this->write('data.json', content: '{"games": [{"name": "Alien Wipeout"}, {"name": "Twin Pine Falls"}]}');
+        $this->write('data.json', content: '{"games": [{"name": "Rocket Rescue"}, {"name": "Harbour Pirates"}]}');
 
         self::assertSame(Command::SUCCESS, $this->preview([$this->dir . '/list.xml', $this->dir . '/data.json']));
         $rows = explode("\n", $this->tester->getDisplay());
         self::assertSame([
-            ' 3|Alien Wipeout                           |',
-            ' 4|Twin Pine Falls                         |',
+            ' 3|Rocket Rescue                           |',
+            ' 4|Harbour Pirates                         |',
         ], [$rows[3], $rows[4]]);
     }
 
