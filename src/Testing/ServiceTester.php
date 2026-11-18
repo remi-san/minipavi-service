@@ -8,6 +8,7 @@ use MiniPaviService\Core\Context;
 use MiniPaviService\Core\Service;
 use MiniPaviService\Gateway\CallMode;
 use MiniPaviService\Gateway\ClientState;
+use MiniPaviService\Gateway\ConnectionCode;
 use MiniPaviService\Gateway\GatewayRequest;
 use MiniPaviService\Gateway\GatewayResponse;
 use MiniPaviService\Minitel\FunctionKey;
@@ -57,7 +58,7 @@ final class ServiceTester
         $this->vdt = new Vdt();
         $this->answer = null;
 
-        return $this->send(new GatewayRequest(GatewayRequest::FCTN_CONNECT, terminal: $this->terminal));
+        return $this->send(new GatewayRequest(ConnectionCode::Connect->value, terminal: $this->terminal));
     }
 
     /**
@@ -87,7 +88,7 @@ final class ServiceTester
     public function disconnect(): self
     {
         $answer = $this->service->handle(
-            new GatewayRequest(GatewayRequest::FCTN_DISCONNECT, [], $this->answer->context ?? '', $this->terminal),
+            new GatewayRequest(ConnectionCode::Disconnect->value, [], $this->answer->context ?? '', $this->terminal),
         );
         Assert::assertNull($answer, self::DISCONNECTION_ANSWERED);
 

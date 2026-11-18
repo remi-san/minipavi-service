@@ -16,16 +16,9 @@ use MiniPaviService\Minitel\Terminal;
  */
 final readonly class GatewayRequest
 {
-    // Codes of key() for connections (function keys: see FunctionKey)
-    public const FCTN_CONNECT = 'CNX';
-    public const FCTN_DIRECT_CONNECT = 'DIRECTCNX';
-    public const FCTN_DISCONNECT = 'FIN';
-    // Start of the code of a background call of the gateway (BGCALL-WM-...), e.g. for web
-    // media: nothing to answer
-    public const FCTN_BACKGROUND_CALL = 'BGCALL-WM-';
-
     /**
-     * @param string $key function key pressed (FunctionKey), or connection code (FCTN_*)
+     * @param string $key function key pressed (FunctionKey), or connection code (ConnectionCode), as the
+     *                    gateway sends it
      * @param list<string> $content text typed, one string per line of the input field
      * @param string $context context sent with the previous answer ('' if none), signed as it
      *                        comes from the gateway (see verify())
@@ -69,21 +62,30 @@ final readonly class GatewayRequest
         );
     }
 
+    /**
+     * Connection code of the key, null for a function key
+     */
+    public function connectionCode(): ?ConnectionCode
+    {
+        return ConnectionCode::of($this->key);
+    }
+
     public function isConnecting(): bool
     {
-        return $this->key === self::FCTN_CONNECT || $this->key === self::FCTN_DIRECT_CONNECT;
+        return $this->connectionCode()?->isConnection() ?? false;
     }
 
     public function isDisconnecting(): bool
     {
-        return $this->key === self::FCTN_DISCONNECT;
+        return $this->connectionCode() === ConnectionCode::Disconnect;
     }
 
     /**
-     * A background call of the gateway (FCTN_BACKGROUND_CALL...), which the user didn't make
+     * A background call of the gateway (ConnectionCode::BackgroundCall), which the user didn't
+     * make
      */
     public function isBackgroundCall(): bool
     {
-        return str_starts_with($this->key, self::FCTN_BACKGROUND_CALL);
+        return $this->connectionCode() === ConnectionCode::BackgroundCall;
     }
 }

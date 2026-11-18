@@ -12,6 +12,7 @@ use MiniPaviService\Controller\Response;
 use MiniPaviService\Core\Router;
 use MiniPaviService\Core\Service;
 use MiniPaviService\Core\Signing\HmacContextSigner;
+use MiniPaviService\Gateway\ConnectionCode;
 use MiniPaviService\Gateway\GatewayRequest;
 use MiniPaviService\Gateway\GatewayResponse;
 use MiniPaviService\Gateway\InputCommand;
@@ -51,7 +52,7 @@ final class HtmlClientTest extends TestCase
     {
         self::assertEquals(
             new GatewayRequest(
-                GatewayRequest::FCTN_CONNECT,
+                ConnectionCode::Connect->value,
                 serviceUrl: self::SERVICE_URL,
                 clientState: new HtmlPageState(),
             ),
@@ -116,7 +117,7 @@ final class HtmlClientTest extends TestCase
     public function testUnknownKeyIsAConnection(): void
     {
         self::assertSame(
-            GatewayRequest::FCTN_CONNECT,
+            ConnectionCode::Connect->value,
             self::client()
                 ->request(HttpRequests::posting('Mozilla/5.0', ['web' => 'true'], ['key' => 'CNX']), self::SERVICE_URL)
                 ->key,

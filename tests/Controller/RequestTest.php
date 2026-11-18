@@ -8,7 +8,7 @@ use MiniPaviService\Controller\ControllerState;
 use MiniPaviService\Controller\Pagination\PageParameters;
 use MiniPaviService\Controller\Parameters\NoParameters;
 use MiniPaviService\Controller\Request;
-use MiniPaviService\Gateway\GatewayRequest;
+use MiniPaviService\Gateway\ConnectionCode;
 use MiniPaviService\Minitel\FunctionKey;
 use MiniPaviService\Minitel\Terminal;
 use PHPUnit\Framework\TestCase;
@@ -37,8 +37,14 @@ final class RequestTest extends TestCase
     public function testFunctionKeyIsNullForConnectionCodes(): void
     {
         self::assertSame(FunctionKey::Guide, (new Request(key: 'GUIDE'))->functionKey());
-        self::assertNull((new Request(key: GatewayRequest::FCTN_CONNECT))->functionKey());
+        self::assertNull((new Request(key: ConnectionCode::Connect->value))->functionKey());
         self::assertNull((new Request())->functionKey());
+    }
+
+    public function testConnectionCodeIsNullForFunctionKeys(): void
+    {
+        self::assertSame(ConnectionCode::Connect, (new Request(key: 'CNX'))->connectionCode());
+        self::assertNull((new Request(key: 'GUIDE'))->connectionCode());
     }
 
     public function testWithoutInputNothingWasTyped(): void

@@ -13,6 +13,7 @@ use MiniPaviService\Core\Service;
 use MiniPaviService\Core\Signing\ForgedContextException;
 use MiniPaviService\Core\Signing\HmacContextSigner;
 use MiniPaviService\Core\Signing\UnsignedContext;
+use MiniPaviService\Gateway\ConnectionCode;
 use MiniPaviService\Gateway\GatewayRequest;
 use MiniPaviService\Http\ServiceRunner;
 use MiniPaviService\Message\FrameworkMessage;
@@ -46,7 +47,7 @@ final class ServiceRunnerTest extends TestCase
 
     public function testGivesTheResponseOfTheClientToTheAnswer(): void
     {
-        $client = new MemoryClient(new GatewayRequest(GatewayRequest::FCTN_CONNECT));
+        $client = new MemoryClient(new GatewayRequest(ConnectionCode::Connect->value));
 
         $response = (new ServiceRunner($this->service, $client, new UnsignedContext()))->handle(HttpRequests::to(
             'MiniPAVI',
@@ -108,7 +109,7 @@ final class ServiceRunnerTest extends TestCase
 
     public function testNothingToAnswerToADisconnection(): void
     {
-        $client = new MemoryClient(new GatewayRequest(GatewayRequest::FCTN_DISCONNECT));
+        $client = new MemoryClient(new GatewayRequest(ConnectionCode::Disconnect->value));
 
         $response = (new ServiceRunner($this->service, $client, new UnsignedContext()))->handle(HttpRequests::to(
             'MiniPAVI',
@@ -123,7 +124,7 @@ final class ServiceRunnerTest extends TestCase
     {
         $logger = new MemoryLogger();
         $client = new MemoryClient(
-            new GatewayRequest(GatewayRequest::FCTN_CONNECT),
+            new GatewayRequest(ConnectionCode::Connect->value),
             new \RuntimeException('Connection reset'),
         );
 

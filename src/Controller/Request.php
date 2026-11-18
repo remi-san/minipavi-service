@@ -6,6 +6,7 @@ namespace MiniPaviService\Controller;
 
 use MiniPaviService\Controller\Parameters\NoParameters;
 use MiniPaviService\Controller\Parameters\Parameters;
+use MiniPaviService\Gateway\ConnectionCode;
 use MiniPaviService\Minitel\FunctionKey;
 use MiniPaviService\Minitel\Terminal;
 
@@ -23,7 +24,7 @@ readonly class Request
      * @param TState $state
      * @param TParameters $parameters
      * @param string $key function key pressed (FunctionKey), or connection code
-     *                    (GatewayRequest::FCTN_*)
+     *                    (ConnectionCode)
      * @param list<string> $content text typed, one string per line of the input field
      */
     public function __construct(
@@ -56,7 +57,7 @@ readonly class Request
 
     /**
      * Name of the function key pressed (FunctionKey), or connection code
-     * (GatewayRequest::FCTN_*); see functionKey()
+     * (ConnectionCode); see functionKey()
      */
     public function key(): string
     {
@@ -64,11 +65,20 @@ readonly class Request
     }
 
     /**
-     * Function key pressed, null for a connection code (GatewayRequest::FCTN_*)
+     * Function key pressed, null for a connection code (ConnectionCode)
      */
     public function functionKey(): ?FunctionKey
     {
         return FunctionKey::tryFrom($this->key);
+    }
+
+    /**
+     * Connection code (e.g. ConnectionCode::Connect for a new connection), null for a function
+     * key
+     */
+    public function connectionCode(): ?ConnectionCode
+    {
+        return ConnectionCode::of($this->key);
     }
 
     /**
