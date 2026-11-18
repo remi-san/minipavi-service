@@ -15,7 +15,7 @@ final readonly class GatewayResponse
 {
     /**
      * @param Vdt $vdt Videotex content, stringified by MiniPaviClient only
-     * @param string $context serialized context (Context::serialize()), signed by sign() before
+     * @param string $context serialized context (ContextSerializer::serialize()), signed by sign() before
      *                        it goes to the gateway
      * @param ?string $next URL the gateway calls next; null: this service's
      * @param ?InputCommand $command command reading an input field (Page::inputCommand()); null: none

@@ -26,6 +26,7 @@ final class RequestFlow implements Flow
 
     public function __construct(
         private Context $context,
+        private ContextSerializer $serializer,
         private Terminal $terminal,
         private int $maxPageChanges,
     ) {}
@@ -53,7 +54,7 @@ final class RequestFlow implements Flow
         ?string $next = null,
         ?CallMode $directCall = null,
     ): GatewayResponse {
-        return new GatewayResponse($vdt, $this->context->serialize(), $next, $command, $directCall);
+        return new GatewayResponse($vdt, $this->serializer->serialize($this->context), $next, $command, $directCall);
     }
 
     public function goTo(string $route, ?Parameters $parameters = null): GatewayResponse

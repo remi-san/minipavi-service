@@ -1,0 +1,113 @@
+<?php
+
+declare(strict_types=1);
+
+namespace MiniPaviService\Core;
+
+use MiniPaviService\Controller\Parameters\Values;
+
+/**
+ * The context as it goes to the gateway and comes back, JSON: {"route": ..., "states": {route:
+ * state}, "parameters": {route: {name: value}}}, states as their enum's value, parameters as
+ * Parameters::toArray(). Read back typed by the router's routes (Route::restore()). What the
+ * gateway gives back is signed (ContextSigner) on its way, not here.
+ */
+final readonly class ContextSerializer
+{
+    public function __construct(
+        private Router $router,
+    ) {}
+
+    /**
+     * @throws \RuntimeException if a parameter can't be JSON (e.g. text that isn't UTF-8)
+     */
+    public function serialize(Context $context): string
+    {
+        $kept = $context->kept();
+        try {
+            return json_encode(
+                [
+                    'route' => $context->route(),
+                    'states' => (object) array_map(static fn(RouteContext $route) => $route->state()->value, $kept),
+                    'parameters' => (object) array_map(
+                        static fn(RouteContext $route) => (object) $route->parameters()->toArray(),
+                        $kept,
+                    ),
+                ],
+                JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES,
+            );
+        } catch (\JsonException $e) {
+            throw new \RuntimeException('Cannot serialize context: ' . $e->getMessage(), 0, $e);
+        }
+    }
+
+    /**
+     * The context serialize() gave, typed by the router's routes: a state their enum doesn't
+     * have is the initial one, invalid parameters get their defaults, and routes the router
+     * doesn't have are dropped. A context without route (e.g. sent by another version of the
+     * service) starts at the default route.
+     *
+     * @throws \RuntimeException if it isn't a JSON object
+     */
+    public function unserialize(string $serialized): Context
+    {
+        $context = self::decode($serialized);
+        $states = \is_array($context['states'] ?? null) ? $context['states'] : [];
+        $parameters = \is_array($context['parameters'] ?? null) ? $context['parameters'] : [];
+
+        $routes = [];
+        foreach (array_keys($states + $parameters) as $route) {
+            if (!(\is_string($route) && $this->router->has($route))) {
+                continue;
+            }
+
+            $state = \is_string($states[$route] ?? null) ? $states[$route] : null;
+            $routes[$route] = $this->router->route($route)->restore(
+                $state,
+                new Values(self::values($parameters[$route] ?? null)),
+            );
+        }
+
+        return new Context(
+            $this->router,
+            \is_string($context['route'] ?? null) ? $context['route'] : $this->router->defaultRoute(),
+            $routes,
+        );
+    }
+
+    /**
+     * Values of the parameters of a route: those with a name
+     *
+     * @return array<string, mixed>
+     */
+    private static function values(mixed $parameters): array
+    {
+        $values = [];
+        foreach (\is_array($parameters) ? $parameters : [] as $name => $value) {
+            if (!\is_string($name)) {
+                continue;
+            }
+
+            $values[$name] = $value;
+        }
+
+        return $values;
+    }
+
+    /**
+     * @return array<mixed>
+     */
+    private static function decode(string $serialized): array
+    {
+        try {
+            $context = json_decode($serialized, associative: true, depth: 512, flags: JSON_THROW_ON_ERROR);
+        } catch (\JsonException $e) {
+            throw new \RuntimeException('Cannot unserialize context: ' . $e->getMessage(), 0, $e);
+        }
+        if (!\is_array($context)) {
+            throw new \RuntimeException('Cannot unserialize context: not a JSON object');
+        }
+
+        return $context;
+    }
+}

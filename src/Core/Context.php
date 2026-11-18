@@ -5,15 +5,14 @@ declare(strict_types=1);
 namespace MiniPaviService\Core;
 
 use MiniPaviService\Controller\Parameters\Parameters;
-use MiniPaviService\Controller\Parameters\Values;
 use MiniPaviService\Controller\Response;
 use MiniPaviService\Controller\State;
 use MiniPaviService\Minitel\Terminal;
 
 /**
- * User context, sent to the gateway with each answer and given back with the next request:
- * the current route, and the state and parameters each route keeps, typed as its controller
- * declares them (a RouteContext per route). A route without any has its controller's initial
+ * User context, sent to the gateway with each answer (ContextSerializer) and given back with
+ * the next request: the current route, and the state and parameters each route keeps, typed
+ * as its controller declares them (a RouteContext per route). A route without any has its controller's initial
  * state and the defaults of its parameters.
  */
 final class Context
@@ -28,64 +27,13 @@ final class Context
     ) {}
 
     /**
-     * Context sent with the previous answer (JSON, see serialize()), typed by the router's
-     * routes (Route::restore()): a state their enum doesn't have is the initial one, invalid
-     * parameters get their defaults, and routes the router doesn't have are dropped. A
-     * context without route (e.g. sent by another version of the service) starts at the
-     * default route.
+     * What each route keeps, by route: those whose controller ran or was restored
      *
-     * @throws \RuntimeException if it isn't a JSON object
+     * @return array<string, RouteContext<State, Parameters>>
      */
-    public static function unserialize(string $serialized, Router $router): self
+    public function kept(): array
     {
-        $context = self::decode($serialized);
-        $states = \is_array($context['states'] ?? null) ? $context['states'] : [];
-        $parameters = \is_array($context['parameters'] ?? null) ? $context['parameters'] : [];
-
-        $routes = [];
-        foreach (array_keys($states + $parameters) as $route) {
-            if (!(\is_string($route) && $router->has($route))) {
-                continue;
-            }
-
-            $state = \is_string($states[$route] ?? null) ? $states[$route] : null;
-            $routes[$route] = $router->route($route)->restore(
-                $state,
-                new Values(self::values($parameters[$route] ?? null)),
-            );
-        }
-
-        return new self(
-            $router,
-            \is_string($context['route'] ?? null) ? $context['route'] : $router->defaultRoute(),
-            $routes,
-        );
-    }
-
-    /**
-     * The context as JSON: {"route": ..., "states": {route: state}, "parameters": {route:
-     * {name: value}}}, states as their enum's value, parameters as Parameters::toArray()
-     */
-    public function serialize(): string
-    {
-        try {
-            return json_encode(
-                [
-                    'route' => $this->route,
-                    'states' => (object) array_map(
-                        static fn(RouteContext $route) => $route->state()->value,
-                        $this->routes,
-                    ),
-                    'parameters' => (object) array_map(
-                        static fn(RouteContext $route) => (object) $route->parameters()->toArray(),
-                        $this->routes,
-                    ),
-                ],
-                JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES,
-            );
-        } catch (\JsonException $e) {
-            throw new \RuntimeException('Cannot serialize context: ' . $e->getMessage(), 0, $e);
-        }
+        return $this->routes;
     }
 
     public function route(): string
@@ -155,41 +103,5 @@ final class Context
     private function current(): RouteContext
     {
         return $this->routes[$this->route] ?? $this->router->route($this->route)->start();
-    }
-
-    /**
-     * Values of the parameters of a route: those with a name
-     *
-     * @return array<string, mixed>
-     */
-    private static function values(mixed $parameters): array
-    {
-        $values = [];
-        foreach (\is_array($parameters) ? $parameters : [] as $name => $value) {
-            if (!\is_string($name)) {
-                continue;
-            }
-
-            $values[$name] = $value;
-        }
-
-        return $values;
-    }
-
-    /**
-     * @return array<mixed>
-     */
-    private static function decode(string $serialized): array
-    {
-        try {
-            $context = json_decode($serialized, associative: true, depth: 512, flags: JSON_THROW_ON_ERROR);
-        } catch (\JsonException $e) {
-            throw new \RuntimeException('Cannot unserialize context: ' . $e->getMessage(), 0, $e);
-        }
-        if (!\is_array($context)) {
-            throw new \RuntimeException('Cannot unserialize context: not a JSON object');
-        }
-
-        return $context;
     }
 }

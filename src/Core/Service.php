@@ -33,6 +33,8 @@ final class Service
 
     private Messages $messages;
 
+    private ContextSerializer $serializer;
+
     /**
      * @param Messages $messages the service's, for the message of a failed request
      *                           (FrameworkMessage::Error), e.g. Messages::defaults()
@@ -48,6 +50,7 @@ final class Service
     ) {
         $this->logger = $logger ?? new NullLogger();
         $this->messages = $messages->check(FrameworkMessage::class);
+        $this->serializer = new ContextSerializer($router);
     }
 
     /**
@@ -81,6 +84,7 @@ final class Service
             // The context keeps nothing: the default controller starts at its initial state
             $flow = new RequestFlow(
                 new Context($this->router, $this->router->defaultRoute()),
+                $this->serializer,
                 new Terminal(),
                 self::MAX_PAGE_CHANGES,
             );
@@ -128,13 +132,13 @@ final class Service
 
     /**
      * Context sent with a previous answer (GatewayResponse::$context), typed with the
-     * declarations of this service's controllers (Context::unserialize())
+     * declarations of this service's controllers (ContextSerializer::unserialize())
      *
      * @throws \RuntimeException if it isn't a JSON object
      */
     public function restore(string $serialized): Context
     {
-        return Context::unserialize($serialized, $this->router);
+        return $this->serializer->unserialize($serialized);
     }
 
     /**
@@ -159,6 +163,6 @@ final class Service
             $content = [];
         }
 
-        return (new RequestFlow($context, $terminal, self::MAX_PAGE_CHANGES))->run($key, $content);
+        return (new RequestFlow($context, $this->serializer, $terminal, self::MAX_PAGE_CHANGES))->run($key, $content);
     }
 }
