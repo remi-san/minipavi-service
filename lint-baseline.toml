@@ -29,9 +29,3 @@ file = "tests/Page/Parser/PageXsdTest.php"
 code = "no-boolean-flag-parameter"
 message = "Avoid boolean flag parameters."
 count = 1
-
-[[issues]]
-file = "tests/Vdt/ParserTest.php"
-code = "sensitive-parameter"
-message = "Parameters that may contain sensitive information should be marked with the `#[SensitiveParameter]` attribute."
-count = 2

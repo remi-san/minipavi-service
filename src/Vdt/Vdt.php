@@ -108,6 +108,8 @@ final readonly class Vdt
     /**
      * The content read as tokens (characters, positions, attributes...)
      *
+     * @internal
+     *
      * @return list<Token>
      */
     public function tokens(): array

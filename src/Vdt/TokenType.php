@@ -6,6 +6,8 @@ namespace MiniPaviService\Vdt;
 
 /**
  * What a Token of Videotex content does
+ *
+ * @internal
  */
 enum TokenType
 {
