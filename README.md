@@ -235,7 +235,8 @@ KernelBuilder::for($router, $messages)
   - `content()`: the text typed, one string per line of the input field, and
     `contentAsString()`;
   - `terminal()`: where the user connects from (`remoteAddr()`, `typeSocket()`,
-    `versionMinitel()`).
+    `versionMinitel()`), and how: `isAdapter()` (an ESP32 or Minimit adapter, whose function
+    keys need Shift) and `isTelnetOrPhone()`.
 
   `Response`'s named constructors build the responses:
 
