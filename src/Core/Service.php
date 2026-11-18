@@ -107,17 +107,17 @@ final class Service
         }
 
         if ($request->isBackgroundCall()) {
-            $this->logger->info('Background call, not answered', ['fctn' => $request->key?->value]);
+            $this->logger->info('Background call, not answered', ['fctn' => $request->fctn()]);
             return null;
         }
 
         if ($request->isConnecting()) {
-            $this->logger->info('Connection', ['fctn' => $request->key?->value]);
+            $this->logger->info('Connection', ['fctn' => $request->fctn()]);
 
             // A new session: without what was typed before
             return $this->serve(
                 new Context($this->router, $this->router->defaultRoute()),
-                $request->key->value ?? '',
+                $request->fctn(),
                 [],
                 $request->terminal,
             );
@@ -125,7 +125,7 @@ final class Service
 
         $context = $this->restore($request->context);
 
-        return $this->serve($context, $request->key->value ?? '', $request->content, $request->terminal);
+        return $this->serve($context, $request->fctn(), $request->content, $request->terminal);
     }
 
     /**

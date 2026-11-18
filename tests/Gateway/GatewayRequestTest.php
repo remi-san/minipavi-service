@@ -37,6 +37,13 @@ final class GatewayRequestTest extends TestCase
         self::assertNull(GatewayRequest::keyOf(''));
     }
 
+    public function testFctnIsTheNameOfTheKeyAsTheGatewaySendsIt(): void
+    {
+        self::assertSame('ENVOI', (new GatewayRequest(FunctionKey::Send))->fctn());
+        self::assertSame('CNX', (new GatewayRequest(ConnectionCode::Connect))->fctn());
+        self::assertSame('', (new GatewayRequest(null))->fctn());
+    }
+
     public function testRecognizesBackgroundCalls(): void
     {
         self::assertTrue((new GatewayRequest(ConnectionCode::BackgroundCall))->isBackgroundCall());

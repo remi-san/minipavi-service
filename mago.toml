@@ -19,8 +19,9 @@ ignore = [
     # A class-string of an interface (Parameters, Message, BackedEnum) is always a concrete
     # class's here: the type a controller declares, an enum of messages or of settings
     "possibly-static-access-on-interface",
-    # Interfaces of enums (a controller's states, messages): PHP allows them to extend BackedEnum
-    { code = "invalid-extend", in = ["src/Controller/State.php", "src/Message/Message.php"] },
+    # Interfaces of enums (a controller's states, messages, a request's keys): PHP allows them to
+    # extend BackedEnum
+    { code = "invalid-extend", in = ["src/Controller/State.php", "src/Message/Message.php", "src/Minitel/Key.php"] },
     # The state is narrowed to the controller's type with instanceof on its initial state, or
     # found among its cases(), which Mago doesn't follow
     { code = "invalid-return-statement", in = ["src/Core/Route.php"] },

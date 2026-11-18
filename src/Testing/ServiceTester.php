@@ -194,7 +194,7 @@ final class ServiceTester
     private function send(GatewayRequest $request): self
     {
         $this->answer = $this->service->handle($request) ?? throw new \LogicException(
-            'No answer to ' . ($request->key->value ?? 'no key'),
+            'No answer to ' . $request->fctn(),
         );
         $this->vdt = $this->vdt->append($this->answer->vdt);
 
