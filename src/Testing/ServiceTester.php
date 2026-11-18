@@ -206,15 +206,6 @@ final class ServiceTester
      */
     private function failure(string $message): string
     {
-        $lines = explode("\n", $this->screen()->text());
-
-        return (
-            "{$message}. Screen:\n"
-            . implode("\n", array_map(
-                static fn(int $row, string $line) => sprintf('%2d|%s|', $row, $line),
-                array_keys($lines),
-                $lines,
-            ))
-        );
+        return "{$message}. Screen:\n" . rtrim($this->screen()->preview(), characters: "\n");
     }
 }
