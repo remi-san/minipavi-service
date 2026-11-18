@@ -14,16 +14,35 @@ use MiniPaviService\Xml\XmlElements;
  */
 final readonly class NodesParser
 {
+    private TagParser $elements;
+
     /**
      * @param array<string, TagParser> $parsers by tag
-     * @param TagParser $elements the display elements, and the unknown tags
+     * @param ElementFactory $elements the display elements, read for the other tags (and the
+     *                                 unknown ones)
      * @param string $file name of the file, in error messages
+     *
+     * @throws \LogicException for a display element of the tag of a parser (e.g. <if>), which
+     *                         the parser would read instead
      */
     public function __construct(
         private array $parsers,
-        private TagParser $elements,
+        ElementFactory $elements,
         private string $file,
-    ) {}
+    ) {
+        foreach ($elements->tags() as $tag) {
+            if (!array_key_exists($tag, $parsers)) {
+                continue;
+            }
+            throw new \LogicException(\sprintf(
+                '%s: <%s> (%s) is a tag of the page format, not a display element',
+                $file,
+                $tag,
+                get_debug_type($elements->builder($tag)),
+            ));
+        }
+        $this->elements = new ElementTagParser($elements);
+    }
 
     /**
      * The parsers of the page XML format, for a page whose display elements are factory's
@@ -32,18 +51,16 @@ final readonly class NodesParser
      */
     public static function standard(ElementFactory $factory, string $file): self
     {
-        $parsers = [
-            'message' => new MessageTagParser(),
-            'input' => new InputTagParser(),
-            'foreach' => new ForeachTagParser(),
-            'if' => new IfTagParser(),
-        ];
-        $taken = array_values(array_intersect($factory->tags(), array_keys($parsers)));
-        if ($taken !== []) {
-            throw new \LogicException('No display element <' . implode('>, <', $taken) . '>: a tag of the page format');
-        }
-
-        return new self($parsers, new ElementTagParser($factory), $file);
+        return new self(
+            [
+                'message' => new MessageTagParser(),
+                'input' => new InputTagParser(),
+                'foreach' => new ForeachTagParser(),
+                'if' => new IfTagParser(),
+            ],
+            $factory,
+            $file,
+        );
     }
 
     /**
