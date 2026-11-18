@@ -14,7 +14,10 @@ final class XmlDocumentTest extends TestCase
     {
         $root = XmlDocument::withRoot('<page><text><![CDATA[a < b]]></text></page>', name: 'home.xml', root: 'page');
 
-        self::assertSame('a < b', (string) ($root->children()[0] ?? ''));
+        $text = $root->children()[0] ?? self::fail('No <text>');
+        self::assertSame('a < b', (string) $text);
+        // A text node, not a CDATA section, which the page parser wouldn't read as text
+        self::assertSame(XML_TEXT_NODE, dom_import_simplexml($text)->firstChild?->nodeType);
     }
 
     public function testMalformedXmlGivesTheFileAndLine(): void
