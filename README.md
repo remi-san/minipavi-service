@@ -224,7 +224,7 @@ KernelBuilder::for($router, $messages)
   service can be tested, or run elsewhere than PHP's web server, without `MiniPaviCli`.
 - **Pages** are displayed for the user's terminal, which `<endkey>` depends on:
   `$page->display($request->terminal(), $data)`; display elements get it too
-  (`Element::getContent(Terminal $terminal)`).
+  (`Element::toVdt(Terminal $terminal): Vdt`).
 - **Logging:** `Service`, `ServiceRunner`, `Dispatcher` and `EmulatorRedirect` take an optional PSR-3 logger (`KernelBuilder::withLogger()` gives it to all of them; e.g.
   Monolog, with its `ErrorLogHandler` for PHP's error log, as the services of this repository do) and log
   connections, disconnections and browsers sent to the emulator at info level, the handler
