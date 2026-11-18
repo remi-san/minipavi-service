@@ -66,8 +66,7 @@ final class RequestFlow implements Flow
             );
         }
 
-        $this->context->changeRoute($route);
-        $this->context->keep(null, $parameters);
+        $this->context->enter($route, $parameters);
 
         // The input was for the controller left
         return $this->run('', []);
