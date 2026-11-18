@@ -483,8 +483,6 @@ final class ServiceTest extends TestCase
 
     /**
      * Answer of the service to the request of the gateway
-     *
-     * @param GatewayRequest<\MiniPaviService\Gateway\ClientState> $request
      */
     private function handle(GatewayRequest $request): ?GatewayResponse
     {

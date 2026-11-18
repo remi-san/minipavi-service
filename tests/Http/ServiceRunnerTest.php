@@ -60,8 +60,9 @@ final class ServiceRunnerTest extends TestCase
         self::assertSame('home', (string) $response->getBody());
         [[$request, $answer]] = $client->responded;
         self::assertEquals(new Vdt('home'), $answer->vdt);
-        // The URL of the service, computed by WithUrls, is in the request
-        self::assertSame('http://services/Svc/index.php', $request->serviceUrl);
+        // The URL of the service, computed by WithUrls, goes to the client
+        self::assertSame(['http://services/Svc/index.php'], $client->serviceUrls);
+        self::assertEquals(new GatewayRequest(ConnectionCode::Connect), $request);
     }
 
     public function testAnswersARequestThatCantBeReadAsAnError(): void
@@ -75,11 +76,32 @@ final class ServiceRunnerTest extends TestCase
             Vdt::line0((new MessagesXmlParser())->defaults()->get(FrameworkMessage::Error)),
             $answer->vdt,
         );
-        self::assertSame('http://services/Svc/index.php', $request->serviceUrl);
+        // Answered through the client, for a request it couldn't read: at the service's URL
+        self::assertEquals(new GatewayRequest(null), $request);
+        self::assertSame(['http://services/Svc/index.php', 'http://services/Svc/index.php'], $client->serviceUrls);
         self::assertSame([LogLevel::ERROR, 'Error serving the request: Not JSON'], [
             $this->logger->records[0][0],
             $this->logger->records[0][1],
         ]);
+    }
+
+    public function testAFailureAfterTheRequestWasReadIsAnsweredThroughTheExchangeRead(): void
+    {
+        $client = new MemoryClient(
+            new GatewayRequest(FunctionKey::Send, [], 'context'),
+            requestFailure: new \RuntimeException('Gone'),
+        );
+
+        (new ServiceRunner($this->service, $client))->handle(HttpRequests::to('MiniPAVI'));
+
+        // Not an exchange of a request that couldn't be read: the one read, e.g. with its page
+        self::assertSame(['http://services/Svc/index.php'], $client->serviceUrls);
+        [[$request, $answer]] = $client->responded;
+        self::assertEquals(new GatewayRequest(FunctionKey::Send, [], 'context'), $request);
+        self::assertEquals(
+            Vdt::line0((new MessagesXmlParser())->defaults()->get(FrameworkMessage::Error)),
+            $answer->vdt,
+        );
     }
 
     public function testTheServiceChecksTheContextOfTheRequestAndSignsTheOneOfTheAnswer(): void

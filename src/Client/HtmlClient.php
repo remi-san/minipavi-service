@@ -7,12 +7,7 @@ namespace MiniPaviService\Client;
 use MiniPaviService\Gateway\Client;
 use MiniPaviService\Gateway\ConnectionCode;
 use MiniPaviService\Gateway\GatewayRequest;
-use MiniPaviService\Gateway\GatewayResponse;
-use MiniPaviService\Message\FrameworkMessage;
 use MiniPaviService\Message\Messages;
-use MiniPaviService\Vdt\Vdt;
-use Nyholm\Psr7\Response;
-use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 
 /**
@@ -23,8 +18,6 @@ use Psr\Http\Message\ServerRequestInterface;
  * blocked: the screen stays, with FrameworkMessage::WebLeave on line 0.
  *
  * The first request (no key posted) is a connection, as the gateway's: at the default route.
- *
- * @implements Client<HtmlPageState>
  */
 final readonly class HtmlClient implements Client
 {
@@ -38,61 +31,39 @@ final readonly class HtmlClient implements Client
     ) {}
 
     /**
-     * The key posted, with the lines typed and the context of the last answer; without one, a
-     * connection
+     * The key posted, with the lines typed and the context of the last answer, and the page
+     * they were posted from; without a key, a connection
      */
-    public function request(ServerRequestInterface $request, string $serviceUrl): GatewayRequest
+    public function exchange(ServerRequestInterface $request, string $serviceUrl): HtmlExchange
     {
         $posted = $this->form->read($request);
         if ($posted === null) {
-            return new GatewayRequest(
-                ConnectionCode::Connect,
-                serviceUrl: $serviceUrl,
-                clientState: $this->initialState(),
-            );
+            return $this->blankPage(new GatewayRequest(ConnectionCode::Connect), $serviceUrl);
         }
 
-        return new GatewayRequest(
-            $posted->key,
-            $posted->content,
-            $posted->context,
-            serviceUrl: $serviceUrl,
-            clientState: $posted->page,
+        return new HtmlExchange(
+            new GatewayRequest($posted->key, $posted->content, $posted->context),
+            $posted->page,
+            $serviceUrl,
+            $this->form,
+            $this->messages,
         );
     }
 
     /**
      * No page yet: an empty screen, no input
      */
-    public function initialState(): HtmlPageState
+    public function unreadable(string $serviceUrl): HtmlExchange
     {
-        return new HtmlPageState();
+        return $this->blankPage(new GatewayRequest(null), $serviceUrl);
     }
 
     /**
-     * The page of the answer: its screen drawn over the screen so far, its input fields and the
-     * function keys; or, for an answer leaving the service, the page as it was, with the error
-     * on line 0
+     * The exchange of a request without a page posted (the first one, or one that couldn't be
+     * read): an empty screen, no input
      */
-    public function response(GatewayRequest $request, GatewayResponse $answer): ResponseInterface
+    private function blankPage(GatewayRequest $request, string $serviceUrl): HtmlExchange
     {
-        $page = $request->clientState;
-        $html =
-            $answer->next !== null && $answer->next !== $request->serviceUrl
-                // Blocked: the user stays where they were
-                ? $this->form->render(
-                    $page->screen->append(Vdt::line0($this->messages->get(FrameworkMessage::WebLeave))),
-                    $request->context,
-                    $page->command,
-                    $request->serviceUrl,
-                )
-                : $this->form->render(
-                    $page->screen->append($answer->vdt),
-                    $answer->context,
-                    $answer->command,
-                    $request->serviceUrl,
-                );
-
-        return new Response(200, ['Content-Type' => 'text/html; charset=utf-8'], $html);
+        return new HtmlExchange($request, new HtmlPageState(), $serviceUrl, $this->form, $this->messages);
     }
 }

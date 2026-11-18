@@ -7,13 +7,7 @@ namespace MiniPaviService\Client;
 use MiniPavi\MiniPaviCli;
 use MiniPaviService\Gateway\Client;
 use MiniPaviService\Gateway\GatewayRequest;
-use MiniPaviService\Gateway\GatewayResponse;
-use MiniPaviService\Gateway\InputCommand;
-use MiniPaviService\Gateway\NoClientState;
-use MiniPaviService\Minitel\FunctionKey;
 use MiniPaviService\Minitel\Terminal;
-use Nyholm\Psr7\Response;
-use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 
 /**
@@ -22,8 +16,6 @@ use Psr\Http\Message\ServerRequestInterface;
  * writes the answer itself (MiniPaviCli::send()): what it writes is captured as the body of
  * the HTTP response, which the Kernel sends. It sends input commands as MiniPavi's (InputTxt,
  * InputMsg). With Vdt (its Videotex helpers), the only class calling MiniPaviCli.
- *
- * @implements Client<NoClientState>
  */
 final class MiniPaviClient implements Client
 {
@@ -34,20 +26,23 @@ final class MiniPaviClient implements Client
      *
      * @throws \Exception if it is not valid JSON
      */
-    public function request(ServerRequestInterface $request, string $serviceUrl): GatewayRequest
+    public function exchange(ServerRequestInterface $request, string $serviceUrl): MiniPaviExchange
     {
         MiniPaviCli::start(ignoreWMState: false);
 
-        return $this->decoded($serviceUrl);
+        return new MiniPaviExchange($this->decoded(), $serviceUrl);
+    }
+
+    public function unreadable(string $serviceUrl): MiniPaviExchange
+    {
+        return new MiniPaviExchange(new GatewayRequest(null), $serviceUrl);
     }
 
     /**
      * The request read by MiniPaviCli::start(), as it decoded it: values that aren't text
      * become empty
-     *
-     * @return GatewayRequest<NoClientState>
      */
-    public function decoded(string $serviceUrl = ''): GatewayRequest
+    public function decoded(): GatewayRequest
     {
         // As (array) would: no content is an empty list, a single value a list of one
         $content = MiniPaviCli::$content ?? [];
@@ -61,75 +56,6 @@ final class MiniPaviClient implements Client
                 self::textOrNull(MiniPaviCli::$typeSocket),
                 self::textOrNull(MiniPaviCli::$versionMinitel),
             ),
-            $serviceUrl,
-        );
-    }
-
-    public function initialState(): NoClientState
-    {
-        return new NoClientState();
-    }
-
-    /**
-     * The answer to the gateway, as MiniPaviCli::send() writes it, captured as the body of the
-     * HTTP response: an answer without next URL calls the service again, at the URL of the
-     * request
-     */
-    public function response(GatewayRequest $request, GatewayResponse $answer): ResponseInterface
-    {
-        ob_start();
-        try {
-            MiniPaviCli::send(
-                $answer->vdt->toString(),
-                $answer->next ?? $request->serviceUrl,
-                $answer->context,
-                // The gateway echoes what the user types: no response turns it off
-                echo: true,
-                cmd: self::command($answer->command),
-                directCall: $answer->directCall->value ?? false,
-            );
-        } finally {
-            $body = (string) ob_get_clean();
-        }
-
-        return new Response(200, [], $body);
-    }
-
-    /**
-     * The command for the gateway, as MiniPaviCli builds it: InputTxt for a text field,
-     * InputMsg for a message; null for none
-     *
-     * @return ?array<string, mixed>
-     */
-    private static function command(?InputCommand $command): ?array
-    {
-        if ($command === null) {
-            return null;
-        }
-        $field = $command->field;
-        $validWith = FunctionKey::masks(...$field->validWith);
-        if ($field->isMessage()) {
-            return MiniPaviCli::createInputMsgCmd(
-                $field->span->start->col,
-                $field->span->start->row,
-                $field->span->length,
-                $field->lines,
-                $validWith,
-                $field->cursor,
-                $field->spaceChar,
-                $command->prefill,
-            );
-        }
-
-        return MiniPaviCli::createInputTxtCmd(
-            $field->span->start->col,
-            $field->span->start->row,
-            $field->span->length,
-            $validWith,
-            $field->cursor,
-            $field->spaceChar,
-            char: '',
-            preFill: $command->prefill[0] ?? '',
         );
     }
 

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Core;
 
-use MiniPaviService\Gateway\ClientState;
 use MiniPaviService\Gateway\GatewayRequest;
 use MiniPaviService\Gateway\GatewayResponse;
 use MiniPaviService\Message\FrameworkMessage;
@@ -57,8 +56,6 @@ final class Service
      * Answer to a request of the gateway, null for a disconnection or a background call
      * (nothing to answer). An
      * error (exception or PHP error) is logged and answered: see error()
-     *
-     * @param GatewayRequest<ClientState> $request
      */
     public function handle(GatewayRequest $request): ?GatewayResponse
     {
@@ -93,9 +90,6 @@ final class Service
         }
     }
 
-    /**
-     * @param GatewayRequest<ClientState> $request
-     */
     private function answer(GatewayRequest $request): ?GatewayResponse
     {
         // Nothing to answer, nor to do with the context, which may be missing

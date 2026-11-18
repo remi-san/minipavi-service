@@ -4,43 +4,29 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Gateway;
 
-use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 
 /**
- * Translates between HTTP and what the service handles: the HTTP request into a
- * GatewayRequest, the GatewayResponse into an HTTP response. What the client needs to answer,
- * besides what the service gets, is its state (TState), read with the request and given back
- * in it. Implemented in Client\: MiniPaviClient for the MiniPavi gateway, HtmlClient for a
- * browser.
- *
- * @template TState of ClientState
+ * Translates between HTTP and what the service handles: reads an HTTP request into a
+ * ClientExchange, which gives the GatewayRequest to the service and its GatewayResponse back
+ * as an HTTP response. Implemented in Client\: MiniPaviClient for the MiniPavi gateway,
+ * HtmlClient for a browser.
  */
 interface Client
 {
     /**
-     * The request the HTTP request asks the service to answer, with the client's state
+     * The exchange of an HTTP request
      *
-     * @param string $serviceUrl URL of the service (Http\Url\UrlAttribute::Service), kept in
-     *                           the GatewayRequest
+     * @param string $serviceUrl URL of the service (Http\Url\UrlAttribute::Service), e.g. the
+     *                           next URL of answers without one
      *
-     * @return GatewayRequest<TState>
-     *
-     * @throws \Exception if it can't be read
+     * @throws \Exception if the request can't be read
      */
-    public function request(ServerRequestInterface $request, string $serviceUrl): GatewayRequest;
+    public function exchange(ServerRequestInterface $request, string $serviceUrl): ClientExchange;
 
     /**
-     * State of the client for a request it couldn't read (request() threw)
-     *
-     * @return TState
+     * The exchange of a request it couldn't read (exchange() threw): all that is known of it is
+     * where it was sent
      */
-    public function initialState(): ClientState;
-
-    /**
-     * The HTTP response giving the answer to the request
-     *
-     * @param GatewayRequest<TState> $request
-     */
-    public function response(GatewayRequest $request, GatewayResponse $answer): ResponseInterface;
+    public function unreadable(string $serviceUrl): ClientExchange;
 }
