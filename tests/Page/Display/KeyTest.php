@@ -16,7 +16,9 @@ final class KeyTest extends TestCase
 {
     public function testKeyIsABadgeInReverseVideo(): void
     {
-        $screen = (new Vdt((new Key('Envoi', new Position(20, 30), Color::Red))->getContent(new Terminal())))->screen();
+        $screen = (new Key('Envoi', new Position(20, 30), Color::Red))
+            ->toVdt(new Terminal())
+            ->screen();
 
         // An underlined space, then " Envoi " in reverse video, red
         self::assertSame('Envoi', implode('', array_map(
@@ -33,47 +35,43 @@ final class KeyTest extends TestCase
 
     public function testEndKeyIsOnTheLastRowForAMinitel(): void
     {
-        $vdt = (new EndKey('Connexion/fin', '[Maj] +'))->getContent(new Terminal(
-            'CALLFROM 0102030405',
-            'other',
-            '???',
-        ));
+        $vdt = (new EndKey('Connexion/fin', '[Maj] +'))->toVdt(new Terminal('CALLFROM 0102030405', 'other', '???'));
 
-        self::assertStringNotContainsString('[Maj] +', $vdt);
-        self::assertSame('Connexion/fin', self::text(new Vdt($vdt), row: 24, col: 14, length: 13));
+        self::assertStringNotContainsString('[Maj] +', $vdt->toString());
+        self::assertSame('Connexion/fin', self::text($vdt, row: 24, col: 14, length: 13));
     }
 
     public function testEndKeyTellsAdaptersToPressShift(): void
     {
         // ESP32 / Minimit adapters: a websocket with a known Minitel
-        $vdt = (new EndKey('Connexion/fin', '[Maj] +'))->getContent(new Terminal('192.0.2.1', 'websocket', 'Cv5'));
+        $vdt = (new EndKey('Connexion/fin', '[Maj] +'))->toVdt(new Terminal('192.0.2.1', 'websocket', 'Cv5'));
 
-        self::assertSame('[Maj] +', self::text(new Vdt($vdt), row: 23, col: 9, length: 7));
-        self::assertSame('Connexion/fin', self::text(new Vdt($vdt), row: 23, col: 18, length: 13));
+        self::assertSame('[Maj] +', self::text($vdt, row: 23, col: 9, length: 7));
+        self::assertSame('Connexion/fin', self::text($vdt, row: 23, col: 18, length: 13));
     }
 
     public function testEndKeyIsCenteredWhateverItsLabels(): void
     {
-        $minitel = (new EndKey('Fin', 'Shift'))->getContent(new Terminal('CALLFROM 0102030405', 'other', '???'));
-        $adapter = (new EndKey('Fin', 'Shift'))->getContent(new Terminal('192.0.2.1', 'websocket', 'Cv5'));
+        $minitel = (new EndKey('Fin', 'Shift'))->toVdt(new Terminal('CALLFROM 0102030405', 'other', '???'));
+        $adapter = (new EndKey('Fin', 'Shift'))->toVdt(new Terminal('192.0.2.1', 'websocket', 'Cv5'));
 
         // The badge " Fin " has a cell on each side: 7 cells, from column 17
-        self::assertSame('Fin', self::text(new Vdt($minitel), row: 24, col: 19, length: 3));
+        self::assertSame('Fin', self::text($minitel, row: 24, col: 19, length: 3));
         // "Shift" and the badge: 12 cells, from column 15
-        self::assertSame('Shift', self::text(new Vdt($adapter), row: 23, col: 15, length: 5));
-        self::assertSame('Fin', self::text(new Vdt($adapter), row: 23, col: 22, length: 3));
+        self::assertSame('Shift', self::text($adapter, row: 23, col: 15, length: 5));
+        self::assertSame('Fin', self::text($adapter, row: 23, col: 22, length: 3));
     }
 
     public function testEndKeyOfAnEmulatorIsOnTheLastRow(): void
     {
         // An emulator is a websocket without a known Minitel
-        $vdt = (new EndKey('Connexion/fin', '[Maj] +', position: new Position(22)))->getContent(new Terminal(
+        $vdt = (new EndKey('Connexion/fin', '[Maj] +', position: new Position(22)))->toVdt(new Terminal(
             '192.0.2.1',
             'websocket',
             '???',
         ));
 
-        self::assertSame('Connexion/fin', self::text(new Vdt($vdt), row: 22, col: 14, length: 13));
+        self::assertSame('Connexion/fin', self::text($vdt, row: 22, col: 14, length: 13));
     }
 
     private static function text(Vdt $vdt, int $row, int $col, int $length): string

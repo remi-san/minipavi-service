@@ -28,7 +28,7 @@ final readonly class EndKey implements Element
         public Color $color = Color::Green,
     ) {}
 
-    public function getContent(Terminal $terminal): string
+    public function toVdt(Terminal $terminal): Vdt
     {
         $badge = Key::badge($this->label, $this->color);
         // The badge is the label with two cells on each side
@@ -37,15 +37,15 @@ final readonly class EndKey implements Element
         if ($terminal->isAdapter()) {
             $width += mb_strlen($this->shiftLabel);
 
-            return (
-                Vdt::position(self::centered($width), $this->position->row ?? (Screen::ROWS - 1))->toString()
-                . Color::White->text()
-                . Vdt::text($this->shiftLabel)->toString()
-                . $badge
+            return Vdt::join(
+                Vdt::position(self::centered($width), $this->position->row ?? (Screen::ROWS - 1)),
+                Color::White->text(),
+                Vdt::text($this->shiftLabel),
+                $badge,
             );
         }
 
-        return Vdt::position(self::centered($width), $this->position->row ?? Screen::ROWS)->toString() . $badge;
+        return Vdt::position(self::centered($width), $this->position->row ?? Screen::ROWS)->append($badge);
     }
 
     // Column of the first cell of something width wide, centered on the row

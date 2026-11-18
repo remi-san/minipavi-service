@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MiniPaviService\Page\Display;
 
 use MiniPaviService\Minitel\Terminal;
+use MiniPaviService\Vdt\Vdt;
 
 /**
  * Videotex content sent as is, e.g. a page made with a Videotex editor
@@ -13,10 +14,10 @@ use MiniPaviService\Minitel\Terminal;
 final readonly class Background implements Element
 {
     public function __construct(
-        public string $vdt,
+        private Vdt $vdt,
     ) {}
 
-    public function getContent(Terminal $terminal): string
+    public function toVdt(Terminal $terminal): Vdt
     {
         return $this->vdt;
     }

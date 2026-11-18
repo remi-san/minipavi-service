@@ -13,6 +13,7 @@ use MiniPaviService\Page\Parser\AttributeValues;
 use MiniPaviService\Page\Parser\Element\ElementBuilder;
 use MiniPaviService\Page\Parser\PageElements;
 use MiniPaviService\Page\Parser\PageFiles;
+use MiniPaviService\Vdt\Vdt;
 
 /**
  * Display elements of a service: <stars count="n" row="r"/>, a row of n stars, and
@@ -28,7 +29,7 @@ final readonly class StarsElements implements PageElements
     public function builders(PageFiles $files, Messages $messages): array
     {
         if ($this->tag !== null) {
-            return [self::builder($this->tag, static fn() => new Background(''))];
+            return [self::builder($this->tag, static fn() => new Background(new Vdt()))];
         }
 
         // Keyed by tag, which the parser ignores
@@ -42,7 +43,7 @@ final readonly class StarsElements implements PageElements
             ),
             'picture' => self::builder(
                 'picture',
-                static fn(AttributeValues $attributes, string $text) => new Background($files->read($text)),
+                static fn(AttributeValues $attributes, string $text) => new Background(new Vdt($files->read($text))),
             ),
         ];
     }

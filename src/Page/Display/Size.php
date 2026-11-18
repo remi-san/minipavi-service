@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Page\Display;
 
+use MiniPaviService\Vdt\Vdt;
 use MiniPaviService\Vdt\Videotex;
 
 /**
@@ -19,14 +20,14 @@ enum Size: string
     /**
      * Videotex attribute for this size
      */
-    public function vdt(): string
+    public function toVdt(): Vdt
     {
-        return match ($this) {
+        return new Vdt(match ($this) {
             self::Normal => Videotex::SIZE_NORMAL,
             self::DoubleHeight => Videotex::SIZE_DOUBLE_HEIGHT,
             self::DoubleWidth => Videotex::SIZE_DOUBLE_WIDTH,
             self::Double => Videotex::SIZE_DOUBLE,
-        };
+        });
     }
 
     /**

@@ -86,7 +86,9 @@ final class HtmlRendererTest extends TestCase
     public function testKeyBadgesArentUnderlined(): void
     {
         $html = (new HtmlRenderer(HtmlRenderer::MINITEL_FONT))->render(
-            (new Vdt((new Key('Envoi', new Position(1, 1)))->getContent(new Terminal())))->screen(),
+            (new Key('Envoi', new Position(1, 1)))
+                ->toVdt(new Terminal())
+                ->screen(),
             title: 'test',
         );
 

@@ -25,31 +25,30 @@ final readonly class Key implements Element
         public ?Color $bg = null,
     ) {}
 
-    public function getContent(Terminal $terminal): string
+    public function toVdt(Terminal $terminal): Vdt
     {
-        return (
-            Vdt::position($this->position->col, $this->position->row)->toString()
-            . ($this->bg?->background() ?? '')
-            . self::badge($this->label, $this->color)
+        return Vdt::join(
+            Vdt::position($this->position->col, $this->position->row),
+            $this->bg?->background() ?? new Vdt(),
+            self::badge($this->label, $this->color),
         );
     }
 
     /**
      * Badge of a key, at the cursor position (also used by EndKey)
      */
-    public static function badge(string $label, Color $color): string
+    public static function badge(string $label, Color $color): Vdt
     {
-        return (
-            Color::White->text()
-            . Videotex::UNDERLINE_ON
-            . ' '
-            . $color->text()
-            . Videotex::INVERSE_ON
-            . Vdt::text(' ' . $label . ' ')->toString()
-            . Color::White->text()
-            . Videotex::INVERSE_OFF
-            . Videotex::UNDERLINE_OFF
-            . ' '
+        return Vdt::join(
+            Color::White->text(),
+            new Vdt(Videotex::UNDERLINE_ON),
+            Vdt::text(' '),
+            $color->text(),
+            new Vdt(Videotex::INVERSE_ON),
+            Vdt::text(' ' . $label . ' '),
+            Color::White->text(),
+            new Vdt(Videotex::INVERSE_OFF . Videotex::UNDERLINE_OFF),
+            Vdt::text(' '),
         );
     }
 }
