@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MiniPaviService\Vdt\Screen;
 
 use MiniPaviService\Page\Display\Color;
+use MiniPaviService\Vdt\Player;
 use MiniPaviService\Vdt\Token;
 use MiniPaviService\Vdt\TokenType;
 use MiniPaviService\Vdt\Vdt;
@@ -28,26 +29,30 @@ final readonly class Screen
     public static function of(Vdt $vdt): self
     {
         $cells = array_fill(0, self::ROWS + 1, array_fill(1, self::COLS, value: null));
-        $vdt->play(static function (int $row, int $col, string $bytes, int $width, Attributes $attributes) use (
-            &$cells,
-        ): void {
-            if ($row >= 0 && $row <= self::ROWS) {
-                for ($i = 0; $i < $width && ($col + $i) <= self::COLS; $i++) {
-                    $cells[$row][$col + $i] = new Cell($bytes, $attributes);
+        (new Player())->play(
+            $vdt,
+            static function (int $row, int $col, string $bytes, int $width, Attributes $attributes) use (
+                &$cells,
+            ): void {
+                if ($row >= 0 && $row <= self::ROWS) {
+                    for ($i = 0; $i < $width && ($col + $i) <= self::COLS; $i++) {
+                        $cells[$row][$col + $i] = new Cell($bytes, $attributes);
+                    }
                 }
-            }
-        }, static function (Token $token, Cursor $cursor) use (&$cells): void {
-            if ($token->type === TokenType::Clear) {
-                for ($row = 1; $row <= self::ROWS; $row++) {
-                    $cells[$row] = array_fill(1, self::COLS, value: null);
+            },
+            static function (Token $token, Cursor $cursor) use (&$cells): void {
+                if ($token->type === TokenType::Clear) {
+                    for ($row = 1; $row <= self::ROWS; $row++) {
+                        $cells[$row] = array_fill(1, self::COLS, value: null);
+                    }
                 }
-            }
-            if ($token->type === TokenType::ClearLine && $cursor->row >= 0 && $cursor->row <= self::ROWS) {
-                for ($col = $cursor->col; $col <= self::COLS; $col++) {
-                    $cells[$cursor->row][$col] = new Cell(' ', $cursor->attributes);
+                if ($token->type === TokenType::ClearLine && $cursor->row >= 0 && $cursor->row <= self::ROWS) {
+                    for ($col = $cursor->col; $col <= self::COLS; $col++) {
+                        $cells[$cursor->row][$col] = new Cell(' ', $cursor->attributes);
+                    }
                 }
-            }
-        });
+            },
+        );
         return new self($cells);
     }
 

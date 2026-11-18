@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MiniPaviService\Tests\Vdt;
 
 use MiniPaviService\Page\Display\Color;
+use MiniPaviService\Vdt\Player;
 use MiniPaviService\Vdt\Screen\Screen;
 use MiniPaviService\Vdt\Vdt;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -146,7 +147,7 @@ final class VdtTest extends TestCase
     #[DataProvider('offsets')]
     public function testOffsetDrawsTheSameScreenMoved(string $file, int $x, int $y): void
     {
-        $original = Vdt::fromFile(self::FIXTURES . "/{$file}.vdt");
+        $original = self::fixture($file);
         $before = $original->screen();
         $after = $original->offset($x, $y)->screen();
         $glyphs = self::glyphColumns($original);
@@ -179,7 +180,9 @@ final class VdtTest extends TestCase
     private static function glyphColumns(Vdt $vdt): array
     {
         $columns = [];
-        $vdt->play(static function (int $row, int $col, string $bytes, int $width) use (&$columns): void {
+        (new Player())->play($vdt, static function (int $row, int $col, string $bytes, int $width) use (
+            &$columns,
+        ): void {
             for ($i = 0; $i < $width; $i++) {
                 $columns[$row][$col + $i] = [$col, $width];
             }
@@ -195,9 +198,7 @@ final class VdtTest extends TestCase
     public function testOffsetMatchesTheGoldenFile(string $file, int $x, int $y): void
     {
         $golden = self::FIXTURES . "/{$file}.offset_{$x}_{$y}.vdt";
-        $vdt = Vdt::fromFile(self::FIXTURES . "/{$file}.vdt")
-            ->offset($x, $y)
-            ->toString();
+        $vdt = self::fixture($file)->offset($x, $y)->toString();
 
         if (getenv('UPDATE_GOLDEN') === '1') {
             file_put_contents($golden, $vdt);
@@ -206,11 +207,11 @@ final class VdtTest extends TestCase
         self::assertSame((string) file_get_contents($golden), $vdt);
     }
 
-    public function testFromFileThrowsWhenTheFileIsMissing(): void
+    /**
+     * Content of a .vdt file of the fixtures
+     */
+    private static function fixture(string $name): Vdt
     {
-        $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('Videotex file not found');
-
-        Vdt::fromFile(self::FIXTURES . '/missing.vdt');
+        return Vdt::fromString((string) file_get_contents(self::FIXTURES . "/{$name}.vdt"));
     }
 }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Page\Parser;
 
+use MiniPaviService\Io\Files;
 use MiniPaviService\Message\FrameworkMessage;
 use MiniPaviService\Message\Messages;
 use MiniPaviService\Minitel\FunctionKey;
@@ -55,7 +56,7 @@ final class ElementFactory
     public function element(string $tag, array $attributes, string $text): Element
     {
         return match ($tag) {
-            'background' => Background::fromFile($this->file($text)),
+            'background' => new Background(self::read($this->file($text))),
             'image' => new Image(
                 $this->image(trim($text)),
                 row: $this->int($attributes, attr: 'row', default: 1),
@@ -108,7 +109,17 @@ final class ElementFactory
     private function image(string $file): Vdt
     {
         $file = $this->file($file);
-        return $this->images[$file] ??= Vdt::fromFile($file);
+        return $this->images[$file] ??= Vdt::fromString(self::read($file));
+    }
+
+    /**
+     * Videotex content of a <background> or <image> file
+     *
+     * @throws \InvalidArgumentException if it can't be read
+     */
+    private static function read(string $file): string
+    {
+        return Files::read($file) ?? throw new \InvalidArgumentException("Videotex file not found: {$file}");
     }
 
     /**

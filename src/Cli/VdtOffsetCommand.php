@@ -59,13 +59,13 @@ final class VdtOffsetCommand extends Command
         [$x, $y] = [self::int($input, name: 'x'), self::int($input, name: 'y')];
         $errors = (new SymfonyStyle($input, $output))->getErrorStyle();
 
-        try {
-            $vdt = Vdt::fromFile($file === '-' ? 'php://stdin' : $file);
-        } catch (\InvalidArgumentException) {
+        $bytes = Files::read($file === '-' ? 'php://stdin' : $file);
+        if ($bytes === null) {
             $errors->writeln(Input::escape("cannot read {$file}"));
 
             return self::FAILURE;
         }
+        $vdt = Vdt::fromString($bytes);
         $moved = $vdt->offset($x, $y);
 
         if ($input->getOption('preview') === true) {

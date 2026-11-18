@@ -56,7 +56,7 @@ final class VdtOffsetCommandTest extends TestCase
 
     public function testPreviewsTheScreenBeforeAndAfter(): void
     {
-        $vdt = Vdt::fromFile(self::FIXTURES . '/background.vdt');
+        $vdt = Vdt::fromString((string) file_get_contents(self::FIXTURES . '/background.vdt'));
 
         self::assertSame(Command::SUCCESS, $this->tester->execute([
             'input' => self::FIXTURES . '/background.vdt',
