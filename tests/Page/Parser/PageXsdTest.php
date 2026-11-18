@@ -164,7 +164,13 @@ final class PageXsdTest extends TestCase
         foreach ($nodes === false ? [] : $nodes as $name) {
             $names[] = $name->nodeValue;
         }
-        $expected = [...ElementFactory::TAGS, 'input', 'foreach', 'if', 'message'];
+        $expected = [
+            ...ElementFactory::standard(__DIR__, Messages::defaults())->tags(),
+            'input',
+            'foreach',
+            'if',
+            'message',
+        ];
         sort($expected);
         $names = array_values(array_unique($names));
         sort($names);

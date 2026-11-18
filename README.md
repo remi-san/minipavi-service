@@ -709,5 +709,10 @@ property that the moved screen is the original one moved, and byte for byte agai
 files (`tests/fixtures/vdt/*.offset_*.vdt`). Run `UPDATE_GOLDEN=1 composer test` to rewrite
 the golden files after an intended change.
 
+A new display element of the page XML format is a `Page\Parser\Element\ElementBuilder`
+(its tag, how it is built from its attributes and text, whether its `row` is relative inside a
+`<foreach>`, whether it can be in one), added to `ElementFactory::standard()`; then the XML
+Schema (`schema/page.xsd`) and the [Page XML format](#page-xml-format) above.
+
 GitHub Actions runs the three checks on PHP 8.2, 8.3, 8.4 and 8.5 for every change to the
 framework.

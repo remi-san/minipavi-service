@@ -6,12 +6,14 @@ namespace MiniPaviService\Page\Parser;
 
 use MiniPaviService\Io\Files;
 use MiniPaviService\Message\Messages;
+use MiniPaviService\Minitel\FunctionKey;
 use MiniPaviService\Minitel\InputField;
 use MiniPaviService\Minitel\Keyboard;
 use MiniPaviService\Minitel\LocalEcho;
 use MiniPaviService\Minitel\Scroll;
 use MiniPaviService\Page;
 use MiniPaviService\Page\Display\Display;
+use MiniPaviService\Page\Parser\Element\ElementBuilder;
 use MiniPaviService\Page\Setup;
 use MiniPaviService\Page\StaticPage;
 use MiniPaviService\Page\Template\ElementNode;
@@ -96,7 +98,7 @@ final class PageXmlParser
         );
 
         $messages = $this->messages->with($this->messageTexts($root, $name));
-        $factory = new ElementFactory($baseDir, $messages);
+        $factory = ElementFactory::standard($baseDir, $messages);
         $input = null;
         $nodes = $this->nodes($root, $factory, $name, $type === 'template', inLoop: false, input: $input);
 
@@ -202,17 +204,12 @@ final class PageXmlParser
                         if ($hasPlaceholder) {
                             throw new PageXmlException('no {{placeholders}} in <input>');
                         }
-                        return $factory->input($attributes);
+                        return self::input(new AttributeValues($attributes));
                     });
                     break;
 
                 case 'foreach':
-                    [$row, $step] = $this->check($at, $tag, static function () use (
-                        $attributes,
-                        $factory,
-                        $inLoop,
-                        $template,
-                    ) {
+                    [$row, $step] = $this->check($at, $tag, static function () use ($attributes, $inLoop, $template) {
                         if (!$template) {
                             throw new PageXmlException('only in a page of type="template"');
                         }
@@ -227,10 +224,9 @@ final class PageXmlParser
                             );
                         }
                         // Absolute outside of any <foreach>, relative to the enclosing item inside
-                        return [
-                            $factory->int($attributes, attr: 'row', default: $inLoop ? 0 : 1),
-                            $factory->int($attributes, attr: 'step', default: 1),
-                        ];
+                        $values = new AttributeValues($attributes);
+
+                        return [$values->int('row', default: $inLoop ? 0 : 1), $values->int('step', default: 1)];
                     });
                     $children = $this->nodes($elem, $factory, $name, $template, inLoop: true, input: $input);
                     $nodes[] = new ForeachNode(
@@ -258,7 +254,7 @@ final class PageXmlParser
                     break;
 
                 default:
-                    $this->check($at, $tag, static function () use (
+                    $builder = $this->check($at, $tag, static function () use (
                         $tag,
                         $inLoop,
                         $template,
@@ -266,11 +262,9 @@ final class PageXmlParser
                         $factory,
                         $attributes,
                         $elem,
-                    ) {
-                        if (!in_array($tag, ElementFactory::TAGS, strict: true)) {
-                            throw new PageXmlException('unknown element');
-                        }
-                        if ($tag === 'endkey' && $inLoop) {
+                    ): ElementBuilder {
+                        $builder = $factory->builder($tag) ?? throw new PageXmlException('unknown element');
+                        if ($inLoop && !$builder->isAllowedInLoop()) {
                             throw new PageXmlException('not inside <foreach>');
                         }
                         if ($hasPlaceholder && !$template) {
@@ -280,17 +274,46 @@ final class PageXmlParser
                             // Without placeholders, its errors (e.g. a missing file) are found now,
                             // as in a static page, rather than when it is displayed. In a <foreach>,
                             // its row is relative to the item: checked when displayed
-                            $factory->element(
-                                $tag,
-                                $inLoop ? array_diff_key($attributes, ['row' => '']) : $attributes,
-                                (string) $elem,
-                            );
+                            $values = new AttributeValues($attributes);
+                            $builder->build($inLoop ? $values->without('row') : $values, (string) $elem);
                         }
+
+                        return $builder;
                     });
-                    $nodes[] = new ElementNode($factory, $tag, $attributes, (string) $elem, $at);
+                    $nodes[] = new ElementNode($builder, $attributes, (string) $elem, $at);
             }
         }
         return $nodes;
+    }
+
+    /**
+     * Field of the <input> of the page
+     *
+     * @throws PageXmlException for an invalid attribute
+     */
+    private static function input(AttributeValues $attributes): InputField
+    {
+        $keys = preg_split('/\s+/', trim($attributes->string('validwith', default: 'envoi')));
+        if ($keys === false) {
+            throw new PageXmlException('validwith: ' . preg_last_error_msg());
+        }
+        // Keys for the validwith attribute of <input>, separated by spaces
+        $validWith = [];
+        foreach ($keys as $name) {
+            $validWith[] = FunctionKey::fromXmlName($name) ?? throw new PageXmlException(
+                "unknown validwith key \"{$name}\" ("
+                . implode(', ', array_map(static fn(FunctionKey $key) => $key->xmlName(), FunctionKey::cases()))
+                . ')',
+            );
+        }
+
+        return new InputField(
+            row: $attributes->int('row', default: 13),
+            col: $attributes->int('col', default: 1),
+            length: $attributes->optionalInt('length'),
+            lines: $attributes->int('lines', default: 2),
+            validWith: $validWith,
+        );
     }
 
     /**
