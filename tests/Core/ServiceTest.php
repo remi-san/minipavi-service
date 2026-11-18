@@ -117,6 +117,14 @@ final class ServiceTest extends TestCase
         self::assertSame([LogLevel::INFO], $this->levels());
     }
 
+    #[DataProvider('contextsOfADisconnection')]
+    public function testBackgroundCallIsNotAnsweredNorReadsTheContext(string $context): void
+    {
+        self::assertNull($this->handle(new GatewayRequest('BGCALL-WM-1', [], $context)));
+        self::assertSame([], $this->requests);
+        self::assertSame([LogLevel::INFO], $this->levels());
+    }
+
     public function testConnectionStartsAtTheDefaultRoute(): void
     {
         self::assertSame(

@@ -9,7 +9,6 @@ use MiniPaviService\Client\MiniPaviClient;
 use MiniPaviService\Gateway\CallMode;
 use MiniPaviService\Gateway\GatewayRequest;
 use MiniPaviService\Gateway\GatewayResponse;
-use MiniPaviService\Minitel\Terminal;
 use MiniPaviService\Vdt\Vdt;
 use PHPUnit\Framework\TestCase;
 
@@ -41,16 +40,16 @@ final class MiniPaviClientTest extends TestCase
         MiniPaviCli::$typeSocket = 'websocket';
         MiniPaviCli::$versionMinitel = 'Cv5';
 
-        self::assertEquals(
-            new GatewayRequest(
-                'ENVOI',
-                ['ab', 'cd'],
-                '{"route":"home"}',
-                new Terminal('CALLFROM 0102030405', 'websocket', 'Cv5'),
-                self::SERVICE_URL,
-            ),
-            (new MiniPaviClient())->decoded(self::SERVICE_URL),
-        );
+        $request = (new MiniPaviClient())->decoded(self::SERVICE_URL);
+
+        self::assertSame('ENVOI', $request->key);
+        self::assertSame(['ab', 'cd'], $request->content);
+        self::assertSame('{"route":"home"}', $request->context);
+        self::assertSame('CALLFROM 0102030405', $request->terminal->remoteAddr());
+        self::assertSame('websocket', $request->terminal->typeSocket());
+        self::assertSame('Cv5', $request->terminal->versionMinitel());
+        // The next URL of answers without one
+        self::assertSame(self::SERVICE_URL, $request->serviceUrl);
     }
 
     public function testValuesThatAreNotTextBecomeEmpty(): void
@@ -61,10 +60,19 @@ final class MiniPaviClientTest extends TestCase
         MiniPaviCli::$typeSocket = new \stdClass();
         MiniPaviCli::$versionMinitel = null;
 
-        self::assertEquals(
-            new GatewayRequest('', [], '', new Terminal('', null, null)),
-            (new MiniPaviClient())->decoded(),
-        );
+        $request = (new MiniPaviClient())->decoded();
+
+        self::assertSame(['', ''], [$request->key, $request->context]);
+        self::assertSame('', $request->terminal->remoteAddr());
+        self::assertNull($request->terminal->typeSocket());
+        self::assertNull($request->terminal->versionMinitel());
+    }
+
+    public function testReadsABackgroundCallForTheServiceToAnswerNothing(): void
+    {
+        MiniPaviCli::$fctn = 'BGCALL-WM-1';
+
+        self::assertTrue((new MiniPaviClient())->decoded()->isBackgroundCall());
     }
 
     public function testContentIsAListOfTexts(): void

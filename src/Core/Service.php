@@ -51,7 +51,8 @@ final class Service
     }
 
     /**
-     * Answer to a request of the gateway, null for a disconnection (nothing to answer). An
+     * Answer to a request of the gateway, null for a disconnection or a background call
+     * (nothing to answer). An
      * error (exception or PHP error) is logged and answered: see error()
      *
      * @param GatewayRequest<ClientState> $request
@@ -102,6 +103,11 @@ final class Service
         // Nothing to answer, nor to do with the context, which may be missing
         if ($request->isDisconnecting()) {
             $this->logger->info('Disconnection');
+            return null;
+        }
+
+        if ($request->isBackgroundCall()) {
+            $this->logger->info('Background call, not answered', ['fctn' => $request->key]);
             return null;
         }
 

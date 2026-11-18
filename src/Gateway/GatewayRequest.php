@@ -20,6 +20,9 @@ final readonly class GatewayRequest
     public const FCTN_CONNECT = 'CNX';
     public const FCTN_DIRECT_CONNECT = 'DIRECTCNX';
     public const FCTN_DISCONNECT = 'FIN';
+    // Start of the code of a background call of the gateway (BGCALL-WM-...), e.g. for web
+    // media: nothing to answer
+    public const FCTN_BACKGROUND_CALL = 'BGCALL-WM-';
 
     /**
      * @param string $key function key pressed (FunctionKey), or connection code (FCTN_*)
@@ -44,7 +47,7 @@ final readonly class GatewayRequest
     /**
      * The request with its context checked by signer, and without its signature: the context
      * the service sent with the previous answer (GatewayResponse::sign()). Unchanged for a
-     * connection or a disconnection, whose context isn't read.
+     * connection, a disconnection or a background call, whose context isn't read.
      *
      * @return self<TState>
      *
@@ -52,7 +55,7 @@ final readonly class GatewayRequest
      */
     public function verify(ContextSigner $signer): self
     {
-        if ($this->isConnecting() || $this->isDisconnecting()) {
+        if ($this->isConnecting() || $this->isDisconnecting() || $this->isBackgroundCall()) {
             return $this;
         }
 
@@ -74,5 +77,13 @@ final readonly class GatewayRequest
     public function isDisconnecting(): bool
     {
         return $this->key === self::FCTN_DISCONNECT;
+    }
+
+    /**
+     * A background call of the gateway (FCTN_BACKGROUND_CALL...), which the user didn't make
+     */
+    public function isBackgroundCall(): bool
+    {
+        return str_starts_with($this->key, self::FCTN_BACKGROUND_CALL);
     }
 }
