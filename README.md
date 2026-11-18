@@ -55,7 +55,8 @@ reinstalling), and don't commit it:
 }
 ```
 
-The services of [minipavi-stack](https://github.com/remi-san/minipavi-stack) (MiniPaviAcc, Octoblue) and its skeleton use it this way.
+The services of [minipavi-stack](https://github.com/remi-san/minipavi-stack) (MiniPaviAcc,
+Octoblue) and the skeleton, [remi-san/minipavi-service-skeleton](https://github.com/remi-san/minipavi-service-skeleton), use it this way.
 
 ## Writing a service
 

@@ -16,17 +16,19 @@ require its `dev-main`, so **whatever is merged into `main` is what they get** o
 
 ## Its users
 
-The framework's real users are in
-[remi-san/minipavi-stack](https://github.com/remi-san/minipavi-stack): the services
-(`services/MiniPaviAcc`, `services/Octoblue`) and the skeleton (`skeleton/`, the service to
-start from), along with the local MiniPavi stack (gateway, emulator) to run them. It has no
-other users: change its API freely, without deprecation shims, but:
+The framework's real users are the services of
+[remi-san/minipavi-stack](https://github.com/remi-san/minipavi-stack)
+(`services/MiniPaviAcc`, `services/Octoblue`, with the local MiniPavi stack, gateway and
+emulator, to run them) and the skeleton, [remi-san/minipavi-service-skeleton](https://github.com/remi-san/minipavi-service-skeleton) (the service to start from). It has no other
+users: change its API freely, without deprecation shims, but:
 
-1. Before changing an API, check how they call it (`grep -rn` in a clone of minipavi-stack:
-   `services/*/src`, `services/*/public`, `services/*/config`, `skeleton/`).
-2. When a change breaks them, update them in a PR on minipavi-stack, in step: once the
+1. Before changing an API, check how they call it (`grep -rn` in clones of minipavi-stack:
+   `services/*/src`, `services/*/public`, `services/*/config`; and of the skeleton: `src/`,
+   `public/`, `config/`).
+2. When a change breaks them, update them in step: in a PR on minipavi-stack, once the
    framework's PR is merged, the services' lock files get the new `main`
-   (`composer update remi-san/minipavi-service` in each), with their code changes.
+   (`composer update remi-san/minipavi-service` in each), with their code changes; and in a PR
+   on the skeleton, whose CI checks it against the framework's `main`.
 3. To try a change in a service before it is merged, point the service at a local clone with
    a `path` repository (see "Installing" in the README), without committing that.
 
