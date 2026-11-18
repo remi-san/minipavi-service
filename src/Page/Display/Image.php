@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Page\Display;
 
+use MiniPaviService\Minitel\Position;
 use MiniPaviService\Minitel\Terminal;
 use MiniPaviService\Vdt\Vdt;
 
@@ -20,16 +21,14 @@ final readonly class Image implements Element
 
     public function __construct(
         public Vdt $image,
-        public int $row = 1,
-        public int $col = 1,
+        public Position $position = new Position(1),
     ) {
-        Position::check($row, $col);
-        if ($row < 1) {
+        if ($position->row < 1) {
             throw new \InvalidArgumentException('An image starts at row 1 at least');
         }
         $this->vdt = $image
             ->withoutClear()
-            ->offset($col - 1, $row - 1)
+            ->offset($position->col - 1, $position->row - 1)
             ->toString();
     }
 

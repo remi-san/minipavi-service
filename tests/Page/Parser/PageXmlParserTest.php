@@ -11,7 +11,9 @@ use MiniPaviService\Minitel\FunctionKey;
 use MiniPaviService\Minitel\InputField;
 use MiniPaviService\Minitel\Keyboard;
 use MiniPaviService\Minitel\LocalEcho;
+use MiniPaviService\Minitel\Position;
 use MiniPaviService\Minitel\Scroll;
+use MiniPaviService\Minitel\Span;
 use MiniPaviService\Minitel\Terminal;
 use MiniPaviService\Page;
 use MiniPaviService\Page\Parser\PageXmlException;
@@ -246,14 +248,16 @@ final class PageXmlParserTest extends TestCase
 
         self::assertEquals(
             new InputCommand(
-                new InputField(row: 20, col: 5, length: 10, validWith: [FunctionKey::Send, FunctionKey::Next]),
+                new InputField(new Span(new Position(20, 5), 10), validWith: [FunctionKey::Send, FunctionKey::Next]),
                 ['abc'],
             ),
             $oneLine->inputCommand(['abc']),
         );
         // By default: two lines from row 13, the whole width, validated with Envoi
         self::assertEquals(
-            new InputCommand(new InputField(row: 13, col: 1, length: 40, lines: 2, validWith: [FunctionKey::Send])),
+            new InputCommand(
+                new InputField(new Span(new Position(13, 1), 40), lines: 2, validWith: [FunctionKey::Send]),
+            ),
             $twoLines->inputCommand(),
         );
         self::assertNull($this->parse('<page type="static"/>')->inputCommand());

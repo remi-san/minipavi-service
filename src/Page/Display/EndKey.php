@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Page\Display;
 
+use MiniPaviService\Minitel\Position;
 use MiniPaviService\Minitel\Terminal;
 use MiniPaviService\Vdt\Screen\Screen;
 use MiniPaviService\Vdt\Vdt;
@@ -23,13 +24,9 @@ final readonly class EndKey implements Element
     public function __construct(
         public string $label,
         public string $shiftLabel,
-        public ?int $row = null,
+        public ?Position $position = null,
         public Color $color = Color::Green,
-    ) {
-        if ($row !== null) {
-            Position::check($row, col: 1);
-        }
-    }
+    ) {}
 
     public function getContent(Terminal $terminal): string
     {
@@ -41,14 +38,14 @@ final readonly class EndKey implements Element
             $width += mb_strlen($this->shiftLabel);
 
             return (
-                Vdt::position(self::centered($width), $this->row ?? (Screen::ROWS - 1))->toString()
+                Vdt::position(self::centered($width), $this->position->row ?? (Screen::ROWS - 1))->toString()
                 . Color::White->text()
                 . Vdt::text($this->shiftLabel)->toString()
                 . $badge
             );
         }
 
-        return Vdt::position(self::centered($width), $this->row ?? Screen::ROWS)->toString() . $badge;
+        return Vdt::position(self::centered($width), $this->position->row ?? Screen::ROWS)->toString() . $badge;
     }
 
     // Column of the first cell of something width wide, centered on the row

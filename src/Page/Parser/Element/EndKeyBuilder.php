@@ -6,6 +6,7 @@ namespace MiniPaviService\Page\Parser\Element;
 
 use MiniPaviService\Message\FrameworkMessage;
 use MiniPaviService\Message\Messages;
+use MiniPaviService\Minitel\Position;
 use MiniPaviService\Page\Display\Color;
 use MiniPaviService\Page\Display\Element;
 use MiniPaviService\Page\Display\EndKey;
@@ -34,7 +35,7 @@ final readonly class EndKeyBuilder implements ElementBuilder
         return new EndKey(
             $this->messages->get(FrameworkMessage::EndKey),
             $this->messages->get(FrameworkMessage::EndKeyShift),
-            row: $attributes->optionalInt('row'),
+            self::position($attributes->optionalInt('row')),
             color: $attributes->enum('color', Color::class) ?? Color::Green,
         );
     }
@@ -47,5 +48,13 @@ final readonly class EndKeyBuilder implements ElementBuilder
     public function isAllowedInLoop(): bool
     {
         return false;
+    }
+
+    /**
+     * Row of the key; without one, the bottom of the screen (EndKey)
+     */
+    private static function position(?int $row): ?Position
+    {
+        return $row === null ? null : new Position($row);
     }
 }

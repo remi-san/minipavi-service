@@ -6,6 +6,8 @@ namespace MiniPaviService\Page\Parser\Tag;
 
 use MiniPaviService\Minitel\FunctionKey;
 use MiniPaviService\Minitel\InputField;
+use MiniPaviService\Minitel\Position;
+use MiniPaviService\Minitel\Span;
 use MiniPaviService\Page\Parser\AttributeValues;
 use MiniPaviService\Page\Parser\PageXmlException;
 
@@ -49,9 +51,10 @@ final readonly class InputTagParser implements TagParser
         }
 
         return new InputField(
-            row: $attributes->int('row', default: 13),
-            col: $attributes->int('col', default: 1),
-            length: $attributes->optionalInt('length'),
+            new Span(
+                new Position($attributes->int('row', default: 13), $attributes->int('col', default: 1)),
+                $attributes->optionalInt('length'),
+            ),
             lines: $attributes->int('lines', default: 2),
             validWith: $validWith,
         );

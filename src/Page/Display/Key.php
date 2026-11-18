@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Page\Display;
 
+use MiniPaviService\Minitel\Position;
 use MiniPaviService\Minitel\Terminal;
 use MiniPaviService\Vdt\Vdt;
 use MiniPaviService\Vdt\Videotex;
@@ -19,18 +20,15 @@ final readonly class Key implements Element
      */
     public function __construct(
         public string $label,
-        public int $row,
-        public int $col = 1,
+        public Position $position,
         public Color $color = Color::Green,
         public ?Color $bg = null,
-    ) {
-        Position::check($row, $col);
-    }
+    ) {}
 
     public function getContent(Terminal $terminal): string
     {
         return (
-            Vdt::position($this->col, $this->row)->toString()
+            Vdt::position($this->position->col, $this->position->row)->toString()
             . ($this->bg?->background() ?? '')
             . self::badge($this->label, $this->color)
         );
