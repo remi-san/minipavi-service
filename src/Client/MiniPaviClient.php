@@ -26,13 +26,15 @@ use Psr\Http\Message\ServerRequestInterface;
 final class MiniPaviClient implements Client
 {
     /**
-     * Reads the request of the gateway (the body of the HTTP request)
+     * Reads the request of the gateway (the body of the HTTP request). A background call
+     * (GatewayRequest::isBackgroundCall()) is read too, rather than MiniPaviCli exiting on it:
+     * the service answers it with nothing
      *
      * @throws \Exception if it is not valid JSON
      */
     public function request(ServerRequestInterface $request, string $serviceUrl): GatewayRequest
     {
-        MiniPaviCli::start();
+        MiniPaviCli::start(ignoreWMState: false);
 
         return $this->decoded($serviceUrl);
     }

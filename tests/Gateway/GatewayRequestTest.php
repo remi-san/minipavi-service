@@ -26,6 +26,13 @@ final class GatewayRequestTest extends TestCase
         }
     }
 
+    public function testRecognizesBackgroundCalls(): void
+    {
+        self::assertTrue((new GatewayRequest('BGCALL-WM-1'))->isBackgroundCall());
+        self::assertFalse((new GatewayRequest('ENVOI'))->isBackgroundCall());
+        self::assertFalse((new GatewayRequest('FIN'))->isBackgroundCall());
+    }
+
     public function testVerifyGivesTheContextWithoutItsSignature(): void
     {
         $signer = new HmacContextSigner('secret');
