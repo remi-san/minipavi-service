@@ -18,22 +18,19 @@ use MiniPaviService\Vdt\Vdt;
  */
 final readonly class RunExternalService extends Response
 {
-    public CallMode $callMode;
-
     /**
      * @param Vdt $vdt Videotex content shown before leaving (e.g. a message on line 0)
      * @param string $url URL of the other service
-     * @param CallMode|string $callMode a CallMode, or its value ('yes-cnx', 'yes')
+     * @param CallMode $callMode as a new connection, or as the continuation of the session
      */
     public function __construct(
         ?State $state,
         ?Parameters $parameters,
         public Vdt $vdt,
         public string $url,
-        CallMode|string $callMode,
+        public CallMode $callMode,
     ) {
         parent::__construct($state, $parameters);
-        $this->callMode = \is_string($callMode) ? CallMode::from($callMode) : $callMode;
     }
 
     public function continueWith(Flow $flow): GatewayResponse

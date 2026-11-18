@@ -132,11 +132,6 @@ final class ResponseTest extends TestCase
             [$answer],
             $this->callsOf(new RunExternalService(null, null, new Vdt(), 'https://example.org/', CallMode::Direct)),
         );
-        // The call mode can also be given by its value
-        self::assertSame(
-            [$answer],
-            $this->callsOf(new RunExternalService(null, null, new Vdt(), 'https://example.org/', 'yes')),
-        );
     }
 
     /**
