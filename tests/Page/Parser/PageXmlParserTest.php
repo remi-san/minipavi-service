@@ -178,6 +178,9 @@ final class PageXmlParserTest extends TestCase
         yield 'a framework element' => ['text'];
         yield 'an instruction' => ['foreach'];
         yield 'the input' => ['input'];
+        yield 'a condition' => ['if'];
+        // Also read by the parser for the page's messages
+        yield 'a message' => ['message'];
     }
 
     #[DataProvider('takenTags')]
