@@ -28,12 +28,12 @@ final readonly class Line implements Element
         }
     }
 
-    public function getContent(Terminal $terminal): string
+    public function toVdt(Terminal $terminal): Vdt
     {
-        return (
-            Vdt::position($this->span->start->col, $this->span->start->row)->toString()
-            . $this->color->text()
-            . Vdt::repeat($this->char, $this->span->length)->toString()
+        return Vdt::join(
+            Vdt::position($this->span->start->col, $this->span->start->row),
+            new Vdt($this->color->text()),
+            Vdt::repeat($this->char, $this->span->length),
         );
     }
 }

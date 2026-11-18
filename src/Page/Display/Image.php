@@ -17,7 +17,7 @@ use MiniPaviService\Vdt\Vdt;
 final readonly class Image implements Element
 {
     // The picture, moved to its place
-    private string $vdt;
+    private Vdt $vdt;
 
     public function __construct(
         public Vdt $image,
@@ -26,13 +26,10 @@ final readonly class Image implements Element
         if ($position->row < 1) {
             throw new \InvalidArgumentException('An image starts at row 1 at least');
         }
-        $this->vdt = $image
-            ->withoutClear()
-            ->offset($position->col - 1, $position->row - 1)
-            ->toString();
+        $this->vdt = $image->withoutClear()->offset($position->col - 1, $position->row - 1);
     }
 
-    public function getContent(Terminal $terminal): string
+    public function toVdt(Terminal $terminal): Vdt
     {
         return $this->vdt;
     }

@@ -8,6 +8,7 @@ use MiniPaviService\Page\Display\Background;
 use MiniPaviService\Page\Display\Element;
 use MiniPaviService\Page\Parser\AttributeValues;
 use MiniPaviService\Page\Parser\PageFiles;
+use MiniPaviService\Vdt\Vdt;
 
 /**
  * <background>file.vdt</background>: Videotex content sent as is, from a file of the page's folder
@@ -25,7 +26,7 @@ final readonly class BackgroundBuilder implements ElementBuilder
 
     public function build(AttributeValues $attributes, string $text): Element
     {
-        return new Background($this->files->read($text));
+        return new Background(new Vdt($this->files->read($text)));
     }
 
     // Its content positions itself

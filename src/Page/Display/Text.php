@@ -28,34 +28,34 @@ final readonly class Text implements Element
         public bool $fill = false,
     ) {}
 
-    public function getContent(Terminal $terminal): string
+    public function toVdt(Terminal $terminal): Vdt
     {
-        $attr = ($this->size?->vdt() ?? '') . ($this->bg?->background() ?? '') . $this->color->text();
+        $attr = new Vdt(($this->size?->vdt() ?? '') . ($this->bg?->background() ?? '') . $this->color->text());
         // Characters of double width take two columns each
         $charWidth = $this->size?->width() ?? 1;
-        $vdt = $this->placed($attr, Vdt::text($this->text)->toString(), $charWidth);
+        $vdt = $this->placed($attr, Vdt::text($this->text), $charWidth);
 
         // Fills the rest of the row with the background color
-        return $this->fill ? $vdt . Videotex::CLEAR_LINE : $vdt;
+        return $this->fill ? $vdt->append(new Vdt(Videotex::CLEAR_LINE)) : $vdt;
     }
 
     /**
      * The text, after its attributes, at its position, or centered on its row
      */
-    private function placed(string $attr, string $text, int $charWidth): string
+    private function placed(Vdt $attr, Vdt $text, int $charWidth): Vdt
     {
         if (!$this->centered) {
-            return Vdt::position($this->position->col, $this->position->row)->toString() . $attr . $text;
+            return Vdt::join(Vdt::position($this->position->col, $this->position->row), $attr, $text);
         }
         if ($this->fill) {
             // Starts at column 1 and pads with spaces up to the text (the spaces having the
             // text's width): the background color only applies from a space onwards
             $pad = max(0, intdiv($this->centeredCol($charWidth) - 1, $charWidth));
 
-            return Vdt::position(1, $this->position->row)->toString() . $attr . str_repeat(' ', $pad) . $text;
+            return Vdt::join(Vdt::position(1, $this->position->row), $attr, new Vdt(str_repeat(' ', $pad)), $text);
         }
 
-        return Vdt::position($this->centeredCol($charWidth), $this->position->row)->toString() . $attr . $text;
+        return Vdt::join(Vdt::position($this->centeredCol($charWidth), $this->position->row), $attr, $text);
     }
 
     /**

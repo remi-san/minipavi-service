@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MiniPaviService\Page\Display;
 
 use MiniPaviService\Minitel\Terminal;
+use MiniPaviService\Vdt\Vdt;
 
 /**
  * Something drawn on the screen by a Display. The screen is 40 columns x 24 rows,
@@ -16,5 +17,5 @@ interface Element
      * Videotex content drawing the element, for the user's terminal (which only some
      * elements depend on, e.g. EndKey)
      */
-    public function getContent(Terminal $terminal): string;
+    public function toVdt(Terminal $terminal): Vdt;
 }
