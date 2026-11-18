@@ -425,8 +425,15 @@ final class PageXmlParserTest extends TestCase
     {
         yield 'invalid XML' => ['<page type="static"><text>', 'f.xml line 1: Premature end of data in tag text line 1'];
         yield 'other root' => ['<pages/>', 'f.xml: root element must be <page>, not <pages>'];
-        yield 'no type' => ['<page/>', 'f.xml: <page>: type is missing (type="static" or type="template")'];
-        yield 'unknown type' => ['<page type="dynamic"/>', 'f.xml: <page>: type="dynamic" is unknown'];
+        // With the line of <page>, as its other attributes
+        yield 'no type' => [
+            "<!-- a page -->\n<page/>",
+            'f.xml line 2: <page>: type is missing (type="static" or type="template")',
+        ];
+        yield 'unknown type' => [
+            '<page type="dynamic"/>',
+            'f.xml line 1: <page>: type="dynamic" is unknown (type="static" or type="template")',
+        ];
         yield 'message of no service' => [
             "<page type=\"static\">\n<message name=\"welcom\">x</message></page>",
             'f.xml line 2: <message>: name="welcom" is not a message of the service',

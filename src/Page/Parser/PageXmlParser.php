@@ -74,7 +74,14 @@ final class PageXmlParser
         } catch (XmlException $e) {
             throw new PageXmlException($e->getMessage(), 0, $e);
         }
-        $type = PageType::of(trim((string) $root['type']), $name);
+        $type = self::setting(
+            $root,
+            attribute: 'type',
+            enum: PageType::class,
+            name: $name,
+        ) ?? throw new PageXmlException(
+            self::at($root, $name) . ': <page>: type is missing (' . self::choices('type', PageType::class) . ')',
+        );
 
         $setup = new Setup(
             self::setting($root, attribute: 'keyboard', enum: Keyboard::class, name: $name),
@@ -128,18 +135,34 @@ final class PageXmlParser
         }
 
         return (
-            $enum::tryFrom($value) ?? throw new PageXmlException(\sprintf(
-                '%s line %d: <page>: %s="%s" is unknown (%s)',
-                $name,
-                dom_import_simplexml($root)->getLineNo(),
-                $attribute,
-                $value,
-                implode(' or ', array_map(
-                    static fn(\BackedEnum $case) => "{$attribute}=\"{$case->value}\"",
-                    $enum::cases(),
-                )),
-            ))
+            $enum::tryFrom($value) ?? throw new PageXmlException(
+                self::at($root, $name)
+                . ": <page>: {$attribute}=\"{$value}\" is unknown ("
+                . self::choices($attribute, $enum)
+                . ')',
+            )
         );
+    }
+
+    /**
+     * The values an attribute of <page> can have, for its errors: attribute="a" or attribute="b"
+     *
+     * @param class-string<\BackedEnum> $enum
+     */
+    private static function choices(string $attribute, string $enum): string
+    {
+        return implode(' or ', array_map(
+            static fn(\BackedEnum $case) => "{$attribute}=\"{$case->value}\"",
+            $enum::cases(),
+        ));
+    }
+
+    /**
+     * Where <page> is, in its errors: "file line n"
+     */
+    private static function at(\SimpleXMLElement $root, string $name): string
+    {
+        return $name . ' line ' . dom_import_simplexml($root)->getLineNo();
     }
 
     /**
