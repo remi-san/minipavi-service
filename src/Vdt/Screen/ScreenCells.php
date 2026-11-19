@@ -54,7 +54,7 @@ final class ScreenCells implements ScreenListener
         }
         for ($i = 0; $i < $width && ($col + $i) <= ScreenSize::COLS; $i++) {
             $this->cells[$row][$col + $i] = new Cell($bytes, $attributes);
-            $this->drawZone($row, $col + $i, $attributes);
+            $this->zones->draw($row, $col + $i, width: 1, attributes: $attributes);
         }
     }
 
@@ -104,16 +104,6 @@ final class ScreenCells implements ScreenListener
         }
 
         return $cells;
-    }
-
-    // A cell drawn at row, col with these attributes, in the zones: text or mosaic
-    private function drawZone(int $row, int $col, Attributes $attributes): void
-    {
-        if ($attributes->isMosaic()) {
-            $this->zones->mosaic($row, $col);
-            return;
-        }
-        $this->zones->text($row, $col, width: 1);
     }
 
     /**

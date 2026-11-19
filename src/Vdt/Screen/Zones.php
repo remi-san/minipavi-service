@@ -37,6 +37,19 @@ final class Zones
     }
 
     /**
+     * Draws a character at row, col, width cells wide, with these attributes: a text one
+     * (text()), or a mosaic one (mosaic())
+     */
+    public function draw(int $row, int $col, int $width, Attributes $attributes): void
+    {
+        if ($attributes->isMosaic()) {
+            $this->mosaic($row, $col);
+            return;
+        }
+        $this->text($row, $col, $width);
+    }
+
+    /**
      * Draws a mosaic character at row, col, which ends a zone
      */
     public function mosaic(int $row, int $col): void
