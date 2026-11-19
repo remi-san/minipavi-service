@@ -69,7 +69,9 @@ final class Context
     }
 
     /**
-     * State of the current route: the one kept, or its controller's initial state
+     * State of the current route: the one kept, or its controller's initial state. The first
+     * call starts the current route if it kept nothing, and keeps it (in kept(), and so in the
+     * serialized context)
      */
     public function state(): State
     {
@@ -77,7 +79,9 @@ final class Context
     }
 
     /**
-     * Parameters of the current route: the ones kept, or the defaults of its controller's
+     * Parameters of the current route: the ones kept, or the defaults of its controller's. The
+     * first call starts the current route if it kept nothing, and keeps it (in kept(), and so in
+     * the serialized context)
      */
     public function parameters(): Parameters
     {
