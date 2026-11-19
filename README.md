@@ -253,7 +253,9 @@ KernelBuilder::for($router, $messages)
 - **Logging:** `Service`, `ServiceRunner`, `Dispatcher` and `EmulatorRedirect` take an optional PSR-3 logger (`KernelBuilder::withLogger()` gives it to all of them; e.g.
   Monolog, with its `ErrorLogHandler` for PHP's error log, as [the skeleton](https://github.com/remi-san/minipavi-service-skeleton) does) and log
   connections, disconnections and browsers sent to the emulator at info level, the handler
-  of each request at debug level, and errors at error level (with the exception):
+  of each request at debug level, and errors at error level. Each message is always the same,
+  what varies being in its context (the exception, the function key, the route...), so that
+  a log analyzer can group them:
   `new Service($router, $messages, $serializer, logger: $logger)`, `new ServiceRunner($service, $client, $logger)`,
   `new Dispatcher($handlers, $fallback, $logger)`, `new EmulatorRedirect($emulator, $logger)`.
   Without one, nothing is logged.
