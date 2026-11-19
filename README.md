@@ -178,8 +178,9 @@ KernelBuilder::for($router, $messages)
   `ServiceTester`) doesn't sign it (`UnsignedContext`). Two clients:
   - **`MiniPaviClient`**, for the MiniPavi gateway, through `MiniPaviCli` used unchanged: it
     reads the gateway's request itself (background calls included, which the service doesn't
-    response), and writes the response itself: `MiniPaviClient` captures it as the body of the
-    HTTP response;
+    respond to), and writes the response itself: `MiniPaviClient` captures it as the body of
+    the HTTP response. It is the only class calling `MiniPaviCli`, besides `Vdt`'s Videotex
+    helpers: its exchange and the commands it sends go through it;
   - **`HtmlClient`**, for a browser: it shows the service's screen as an HTML page
     (`Vdt\Screen\HtmlRenderer`), and lets the user navigate it as on a Minitel. The first request is a
     connection, at the default route, as the gateway's. The page is a form posting back to its URL,
