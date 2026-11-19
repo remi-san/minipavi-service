@@ -7,16 +7,15 @@ namespace MiniPaviService\Client;
 use MiniPaviService\Gateway\ClientExchange;
 use MiniPaviService\Gateway\GatewayRequest;
 use MiniPaviService\Gateway\GatewayResponse;
-use MiniPaviService\Message\FrameworkMessage;
 use MiniPaviService\Message\Messages;
-use MiniPaviService\Vdt\Vdt;
 use Nyholm\Psr7\Response;
 use Psr\Http\Message\ResponseInterface;
 
 /**
- * A request of HtmlClient's page, answered with the next page: the answer's screen drawn over
- * the screen the page showed, its input fields and the function keys; or, for an answer
- * leaving the service, the page as it was, with FrameworkMessage::WebLeave on line 0
+ * A request of HtmlClient's page, responded to with the next page: the response's screen drawn
+ * over the screen the page showed, its input fields and the function keys; or, for a response
+ * calling another service (ServiceCallCommand), the page as it was, with
+ * FrameworkMessage::WebLeave on line 0
  */
 final readonly class HtmlExchange implements ClientExchange
 {
@@ -44,27 +43,20 @@ final readonly class HtmlExchange implements ClientExchange
     }
 
     /**
-     * The next page: the answer's screen drawn over the one the page showed, its input fields
-     * and the keys; for an answer leaving the service (another next URL), the page as it was,
-     * with FrameworkMessage::WebLeave on line 0
+     * The next page (HtmlCommandRenderer): the response's screen drawn over the one the page
+     * showed, its input fields and the keys; for a response calling another service, the page
+     * as it was, with FrameworkMessage::WebLeave on line 0
      */
-    public function respond(GatewayResponse $answer): ResponseInterface
+    public function respond(GatewayResponse $response): ResponseInterface
     {
-        $html =
-            $answer->next !== null && $answer->next !== $this->serviceUrl
-                // Blocked: the user stays where they were
-                ? $this->form->render(
-                    $this->page->screen->append(Vdt::line0($this->messages->get(FrameworkMessage::WebLeave))),
-                    $this->request->context,
-                    $this->page->command,
-                    $this->serviceUrl,
-                )
-                : $this->form->render(
-                    $this->page->screen->append($answer->vdt),
-                    $answer->context,
-                    $answer->command,
-                    $this->serviceUrl,
-                );
+        $html = (new HtmlCommandRenderer(
+            $response,
+            $this->page,
+            $this->request->context,
+            $this->serviceUrl,
+            $this->form,
+            $this->messages,
+        ))->html();
 
         return new Response(200, ['Content-Type' => 'text/html; charset=utf-8'], $html);
     }

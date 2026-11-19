@@ -126,7 +126,7 @@ final class AbstractControllerTest extends TestCase
     }
 
     /**
-     * Videotex content the response answers with
+     * Videotex content the response responds with
      */
     private static function vdt(Response $response): string
     {

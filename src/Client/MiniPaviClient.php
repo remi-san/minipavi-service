@@ -13,7 +13,7 @@ use Psr\Http\Message\ServerRequestInterface;
 /**
  * Client of the MiniPavi gateway, through the static MiniPaviCli, used unchanged: it reads the
  * gateway's request itself (MiniPaviCli::start(), from the body of the HTTP request), and
- * writes the answer itself (MiniPaviCli::send()): what it writes is captured as the body of
+ * writes the response itself (MiniPaviCli::send()): what it writes is captured as the body of
  * the HTTP response, which the Kernel sends. It sends input commands as MiniPavi's (InputTxt,
  * InputMsg). With Vdt (its Videotex helpers), the only class calling MiniPaviCli.
  */
@@ -22,7 +22,7 @@ final class MiniPaviClient implements Client
     /**
      * Reads the request of the gateway (the body of the HTTP request). A background call
      * (GatewayRequest::isBackgroundCall()) is read too, rather than MiniPaviCli exiting on it:
-     * the service answers it with nothing
+     * the service gives it no response
      *
      * @throws \Exception if it is not valid JSON
      */

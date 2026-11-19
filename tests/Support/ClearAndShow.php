@@ -24,6 +24,6 @@ final readonly class ClearAndShow extends KeepingResponse
 
     protected function next(Flow $flow): GatewayResponse
     {
-        return $flow->answer(Vdt::clearScreen()->append(Vdt::text($this->vdt)));
+        return $flow->respond(Vdt::clearScreen()->append(Vdt::text($this->vdt)));
     }
 }

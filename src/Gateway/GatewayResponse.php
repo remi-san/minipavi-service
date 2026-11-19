@@ -7,7 +7,7 @@ namespace MiniPaviService\Gateway;
 use MiniPaviService\Vdt\Vdt;
 
 /**
- * Answer to a request of the MiniPavi gateway: the Videotex content to show, the context to
+ * Response to a request of the MiniPavi gateway: the Videotex content to show, the context to
  * give back with the next request, and what the gateway does next
  */
 final readonly class GatewayResponse
@@ -16,15 +16,13 @@ final readonly class GatewayResponse
      * @param Vdt $vdt Videotex content, stringified by MiniPaviClient only
      * @param string $context serialized and signed context (ContextSerializer::serialize()),
      *                        given back with the next request
-     * @param ?string $next URL the gateway calls next; null: this service's
-     * @param ?InputCommand $command command reading an input field (Page::inputCommand()); null: none
-     * @param ?CallMode $directCall calls next at once, without waiting for the user; null: waits
+     * @param Command $command what the gateway does next (e.g. reading an input field,
+     *                         Page::inputCommand()); by default, waits for a key, then calls
+     *                         this service
      */
     public function __construct(
         public Vdt $vdt,
         public string $context,
-        public ?string $next = null,
-        public ?InputCommand $command = null,
-        public ?CallMode $directCall = null,
+        public Command $command = new WaitForKeyCommand(),
     ) {}
 }

@@ -51,32 +51,32 @@ final class ServiceRunnerTest extends TestCase
         );
     }
 
-    public function testGivesTheResponseOfTheClientToTheAnswer(): void
+    public function testGivesTheHttpResponseOfTheClientForTheResponse(): void
     {
         $client = new MemoryClient(new GatewayRequest(ConnectionCode::Connect));
 
-        $response = (new ServiceRunner($this->service, $client))->handle(HttpRequests::to('MiniPAVI'));
+        $httpResponse = (new ServiceRunner($this->service, $client))->handle(HttpRequests::to('MiniPAVI'));
 
-        self::assertSame('home', (string) $response->getBody());
-        [[$request, $answer]] = $client->responded;
-        self::assertEquals(new Vdt('home'), $answer->vdt);
+        self::assertSame('home', (string) $httpResponse->getBody());
+        [[$request, $response]] = $client->responded;
+        self::assertEquals(new Vdt('home'), $response->vdt);
         // The URL of the service, computed by WithUrls, goes to the client
         self::assertSame(['http://services/Svc/index.php'], $client->serviceUrls);
         self::assertEquals(new GatewayRequest(ConnectionCode::Connect), $request);
     }
 
-    public function testAnswersARequestThatCantBeReadAsAnError(): void
+    public function testRespondsToARequestThatCantBeReadWithAnError(): void
     {
         $client = new MemoryClient(new \RuntimeException('Not JSON'));
 
         (new ServiceRunner($this->service, $client))->handle(HttpRequests::to('MiniPAVI'));
 
-        [[$request, $answer]] = $client->responded;
+        [[$request, $response]] = $client->responded;
         self::assertEquals(
             Vdt::line0((new MessagesXmlParser())->defaults()->get(FrameworkMessage::Error)),
-            $answer->vdt,
+            $response->vdt,
         );
-        // Answered through the client, for a request it couldn't read: at the service's URL
+        // Responded to through the client, for a request it couldn't read: at the service's URL
         self::assertEquals(new GatewayRequest(null), $request);
         self::assertSame(['http://services/Svc/index.php', 'http://services/Svc/index.php'], $client->serviceUrls);
         self::assertSame([LogLevel::ERROR, 'Error serving the request: Not JSON'], [
@@ -85,7 +85,7 @@ final class ServiceRunnerTest extends TestCase
         ]);
     }
 
-    public function testAFailureAfterTheRequestWasReadIsAnsweredThroughTheExchangeRead(): void
+    public function testAFailureAfterTheRequestWasReadIsRespondedToThroughTheExchangeRead(): void
     {
         $client = new MemoryClient(
             new GatewayRequest(FunctionKey::Send, [], 'context'),
@@ -96,15 +96,15 @@ final class ServiceRunnerTest extends TestCase
 
         // Not an exchange of a request that couldn't be read: the one read, e.g. with its page
         self::assertSame(['http://services/Svc/index.php'], $client->serviceUrls);
-        [[$request, $answer]] = $client->responded;
+        [[$request, $response]] = $client->responded;
         self::assertEquals(new GatewayRequest(FunctionKey::Send, [], 'context'), $request);
         self::assertEquals(
             Vdt::line0((new MessagesXmlParser())->defaults()->get(FrameworkMessage::Error)),
-            $answer->vdt,
+            $response->vdt,
         );
     }
 
-    public function testTheServiceChecksTheContextOfTheRequestAndSignsTheOneOfTheAnswer(): void
+    public function testTheServiceChecksTheContextOfTheRequestAndSignsTheOneOfTheResponse(): void
     {
         $signer = new HmacContextSigner('secret');
         $client = new MemoryClient(
@@ -113,17 +113,17 @@ final class ServiceRunnerTest extends TestCase
 
         (new ServiceRunner($this->signingService($signer), $client))->handle(HttpRequests::to('MiniPAVI'));
 
-        [[$request, $answer]] = $client->responded;
-        self::assertEquals(new Vdt('home'), $answer->vdt);
+        [[$request, $response]] = $client->responded;
+        self::assertEquals(new Vdt('home'), $response->vdt);
         self::assertSame(
             '{"route":"home","states":{"home":"read-input"},"parameters":{"home":{}}}',
-            $signer->verify($answer->context),
+            $signer->verify($response->context),
         );
         // The client gets the request it read, its context still signed
         self::assertSame($signer->sign('{"route":"home","states":{},"parameters":{}}'), $request->context);
     }
 
-    public function testTheServiceAnswersAForgedContextAsAnErrorWithASignedContext(): void
+    public function testTheServiceRespondsToAForgedContextWithAnErrorWithASignedContext(): void
     {
         $signer = new HmacContextSigner('secret');
         $client = new MemoryClient(
@@ -132,27 +132,27 @@ final class ServiceRunnerTest extends TestCase
 
         (new ServiceRunner($this->signingService($signer), $client))->handle(HttpRequests::to('MiniPAVI'));
 
-        [[, $answer]] = $client->responded;
+        [[, $response]] = $client->responded;
         self::assertEquals(
             Vdt::line0((new MessagesXmlParser())->defaults()->get(FrameworkMessage::Error)),
-            $answer->vdt,
+            $response->vdt,
         );
-        self::assertSame('{"route":"home","states":{},"parameters":{}}', $signer->verify($answer->context));
+        self::assertSame('{"route":"home","states":{},"parameters":{}}', $signer->verify($response->context));
         self::assertInstanceOf(ForgedContextException::class, $this->logger->records[0][2]['exception'] ?? null);
     }
 
-    public function testNothingToAnswerToADisconnection(): void
+    public function testNoResponseToADisconnection(): void
     {
         $client = new MemoryClient(new GatewayRequest(ConnectionCode::Disconnect));
 
-        $response = (new ServiceRunner($this->service, $client))->handle(HttpRequests::to('MiniPAVI'));
+        $httpResponse = (new ServiceRunner($this->service, $client))->handle(HttpRequests::to('MiniPAVI'));
 
-        self::assertSame(204, $response->getStatusCode());
-        self::assertSame('', (string) $response->getBody());
+        self::assertSame(204, $httpResponse->getStatusCode());
+        self::assertSame('', (string) $httpResponse->getBody());
         self::assertSame([], $client->responded);
     }
 
-    public function testLogsAnAnswerThatCantBeGiven(): void
+    public function testLogsAResponseThatCantBeGiven(): void
     {
         $logger = new MemoryLogger();
         $client = new MemoryClient(
@@ -160,10 +160,10 @@ final class ServiceRunnerTest extends TestCase
             new \RuntimeException('Connection reset'),
         );
 
-        $response = (new ServiceRunner($this->service, $client, $logger))->handle(HttpRequests::to('MiniPAVI'));
+        $httpResponse = (new ServiceRunner($this->service, $client, $logger))->handle(HttpRequests::to('MiniPAVI'));
 
-        self::assertSame(500, $response->getStatusCode());
-        self::assertSame([LogLevel::CRITICAL, 'Cannot send the answer: Connection reset'], [
+        self::assertSame(500, $httpResponse->getStatusCode());
+        self::assertSame([LogLevel::CRITICAL, 'Cannot send the response: Connection reset'], [
             $logger->records[0][0],
             $logger->records[0][1],
         ]);
@@ -171,30 +171,32 @@ final class ServiceRunnerTest extends TestCase
 
     /**
      * With the gateway's client. In a separate process: MiniPaviCli::start() reads the body of
-     * the request (empty here, so not JSON), and MiniPaviCli::send() writes the answer, captured
-     * as the body of the response
+     * the request (empty here, so not JSON), and MiniPaviCli::send() writes the response,
+     * captured as the body of the HTTP response
      */
     #[RunInSeparateProcess]
-    public function testAnswersAnUnreadableRequestOfTheGatewayAsAnError(): void
+    public function testRespondsToAnUnreadableRequestOfTheGatewayWithAnError(): void
     {
         $_SERVER['HTTP_USER_AGENT'] = 'MiniPAVI';
 
         ob_start();
         try {
-            $response = (new ServiceRunner($this->service, new MiniPaviClient()))->handle(HttpRequests::to('MiniPAVI'));
+            $httpResponse = (new ServiceRunner($this->service, new MiniPaviClient()))->handle(HttpRequests::to(
+                'MiniPAVI',
+            ));
         } finally {
             $output = (string) ob_get_clean();
         }
 
         self::assertSame('', $output);
-        $answer = json_decode((string) $response->getBody(), associative: true);
-        self::assertIsArray($answer);
+        $response = json_decode((string) $httpResponse->getBody(), associative: true);
+        self::assertIsArray($response);
         self::assertSame(
             base64_encode(Vdt::line0((new MessagesXmlParser())->defaults()->get(FrameworkMessage::Error))->toString()),
-            $answer['content'] ?? null,
+            $response['content'] ?? null,
         );
-        self::assertSame('{"route":"home","states":{},"parameters":{}}', $answer['context'] ?? null);
-        self::assertSame('http://services/Svc/index.php', $answer['next'] ?? null);
+        self::assertSame('{"route":"home","states":{},"parameters":{}}', $response['context'] ?? null);
+        self::assertSame('http://services/Svc/index.php', $response['next'] ?? null);
         self::assertSame(LogLevel::ERROR, $this->logger->records[0][0] ?? null);
     }
 

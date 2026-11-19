@@ -10,7 +10,7 @@ use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 
 /**
- * Handler keeping the requests it handles, answering them with its name
+ * Handler keeping the requests it handles, responding to them with its name
  */
 final class RecordingHandler implements RequestHandlerInterface
 {

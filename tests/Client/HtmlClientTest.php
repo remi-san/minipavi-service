@@ -13,10 +13,12 @@ use MiniPaviService\Core\ContextSerializer;
 use MiniPaviService\Core\RouterBuilder;
 use MiniPaviService\Core\Service;
 use MiniPaviService\Core\Signing\HmacContextSigner;
+use MiniPaviService\Gateway\CallMode;
 use MiniPaviService\Gateway\ConnectionCode;
 use MiniPaviService\Gateway\GatewayRequest;
 use MiniPaviService\Gateway\GatewayResponse;
 use MiniPaviService\Gateway\InputCommand;
+use MiniPaviService\Gateway\ServiceCallCommand;
 use MiniPaviService\Http\ServiceRunner;
 use MiniPaviService\Message\FrameworkMessage;
 use MiniPaviService\Message\Messages;
@@ -90,9 +92,9 @@ final class HtmlClientTest extends TestCase
             new GatewayRequest(FunctionKey::Send, ['36', '15'], '{"route":"menu"}'),
             $exchange->request(),
         );
-        // With the page posted back: an answer leaving the service shows it again, its screen
+        // With the page posted back: a response leaving the service shows it again, its screen
         // and its input field
-        $html = (string) $exchange->respond(new GatewayResponse(new Vdt(), '{}', 'https://example.org/'))->getBody();
+        $html = (string) $exchange->respond(new GatewayResponse(new Vdt(), '{}', self::leaving()))->getBody();
         self::assertStringContainsString('Menu', self::shownText($html));
         self::assertStringContainsString(
             'value="ab" style="' . (new HtmlRenderer(HtmlRenderer::MINITEL_FONT))->place(1, row: 2, length: 4) . '"',
@@ -123,11 +125,11 @@ final class HtmlClientTest extends TestCase
             ->exchange(HttpRequests::posting('Mozilla/5.0', ['web' => 'true'], $form), self::SERVICE_URL);
 
         // Shown again when leaving the service is blocked: no field
-        $html = (string) $exchange->respond(new GatewayResponse(new Vdt(), '{}', 'https://example.org/'))->getBody();
+        $html = (string) $exchange->respond(new GatewayResponse(new Vdt(), '{}', self::leaving()))->getBody();
         self::assertStringNotContainsString('class="field"', $html);
     }
 
-    public function testARequestItCouldntReadIsAnsweredOnABlankPageOfThisService(): void
+    public function testARequestItCouldntReadGetsABlankPageOfThisService(): void
     {
         $html = (string) self::client()
             ->unreadable('http://services/Other/index.php')
@@ -140,7 +142,7 @@ final class HtmlClientTest extends TestCase
         self::assertStringNotContainsString('class="field"', $html);
     }
 
-    public function testConnectionIsAnsweredAtTheUrlItWasSentTo(): void
+    public function testConnectionIsRespondedToAtTheUrlItWasSentTo(): void
     {
         $html = (string) self::client()
             ->exchange(HttpRequests::to('Mozilla/5.0', [
@@ -210,7 +212,7 @@ final class HtmlClientTest extends TestCase
         ));
     }
 
-    public function testAnswerIsDrawnOverTheScreenSoFar(): void
+    public function testResponseIsDrawnOverTheScreenSoFar(): void
     {
         $before = Vdt::clearScreen()->append(Vdt::position(1, row: 3), Vdt::text('Page 2/2'));
 
@@ -226,15 +228,15 @@ final class HtmlClientTest extends TestCase
     public function testScreenIsKeptFromItsLastClear(): void
     {
         $before = Vdt::clearScreen()->append(Vdt::position(1, row: 3), Vdt::text('Avant'));
-        $answer = Vdt::clearScreen()->append(Vdt::position(1, row: 3), Vdt::text('Après'));
+        $response = Vdt::clearScreen()->append(Vdt::position(1, row: 3), Vdt::text('Après'));
 
-        $html = self::page(new GatewayResponse($answer, '{}'), [
+        $html = self::page(new GatewayResponse($response, '{}'), [
             'key' => 'SUITE',
             'screen' => base64_encode($before->toString()),
         ]);
 
         self::assertStringContainsString(
-            '<input type="hidden" name="screen" value="' . base64_encode($answer->fromLastClear()->toString()) . '">',
+            '<input type="hidden" name="screen" value="' . base64_encode($response->fromLastClear()->toString()) . '">',
             $html,
         );
         self::assertStringNotContainsString('Avant', self::shownText($html));
@@ -343,7 +345,7 @@ final class HtmlClientTest extends TestCase
         $form = ['key' => 'ENVOI'] + self::hiddenValues($page);
 
         $html = self::page(
-            new GatewayResponse(Vdt::line0('Cnx en cours'), '{"route":"elsewhere"}', 'https://example.org/'),
+            new GatewayResponse(Vdt::line0('Cnx en cours'), '{"route":"elsewhere"}', self::leaving()),
             $form,
         );
 
@@ -363,10 +365,14 @@ final class HtmlClientTest extends TestCase
         self::assertSame(7, substr_count($html, needle: ' disabled>'));
     }
 
-    public function testNextUrlOfTheServiceIsntLeaving(): void
+    public function testCallingTheServiceIsntLeaving(): void
     {
         $html = self::page(
-            new GatewayResponse(Vdt::position(1, row: 1)->append(Vdt::text('Ici')), '{}', self::SERVICE_URL),
+            new GatewayResponse(
+                Vdt::position(1, row: 1)->append(Vdt::text('Ici')),
+                '{}',
+                new ServiceCallCommand(self::SERVICE_URL, CallMode::Direct),
+            ),
         );
 
         self::assertStringContainsString('Ici', self::shownText($html));
@@ -434,17 +440,17 @@ final class HtmlClientTest extends TestCase
     }
 
     /**
-     * Page the client gives for an answer, to a form posted with values: the request is read
+     * Page the client gives for a response, to a form posted with values: the request is read
      * by the client, with its state, as ServiceRunner does
      *
      * @param array<string, mixed> $form
      */
-    private static function page(GatewayResponse $answer, array $form = [], ?Messages $messages = null): string
+    private static function page(GatewayResponse $response, array $form = [], ?Messages $messages = null): string
     {
         $exchange = self::client($messages)
             ->exchange(HttpRequests::posting('Mozilla/5.0', ['web' => 'true'], $form), self::SERVICE_URL);
 
-        return (string) $exchange->respond($answer)->getBody();
+        return (string) $exchange->respond($response)->getBody();
     }
 
     /**
@@ -479,5 +485,13 @@ final class HtmlClientTest extends TestCase
         );
 
         return html_entity_decode(strip_tags($html));
+    }
+
+    /**
+     * A command calling another service, which the HTML view blocks
+     */
+    private static function leaving(): ServiceCallCommand
+    {
+        return new ServiceCallCommand('https://example.org/', CallMode::Connect);
     }
 }

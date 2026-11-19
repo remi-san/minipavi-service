@@ -19,17 +19,18 @@ use Psr\Log\NullLogger;
 /**
  * Runs the service for an HTTP request, through a client translating between HTTP and the
  * service's values (MiniPaviClient for the gateway, HtmlClient for a browser): the client
- * reads the request, the service answers it, and the client gives the response. The URL of
- * the service (UrlAttribute::Service, from WithUrls) goes to the client, for its answers.
- * The context the client carries is signed and checked by the service (ContextSerializer).
- * Nothing to answer (e.g. a disconnection) is a 204, an answer that can't be given a 500.
+ * reads the request, the service responds to it, and the client gives the HTTP response. The
+ * URL of the service (UrlAttribute::Service, from WithUrls) goes to the client, for its
+ * responses. The context the client carries is signed and checked by the service
+ * (ContextSerializer). Nothing to respond to (e.g. a disconnection) is a 204, a response that
+ * can't be given a 500.
  */
 final readonly class ServiceRunner implements RequestHandlerInterface
 {
     private LoggerInterface $logger;
 
     /**
-     * @param ?LoggerInterface $logger where answers that can't be given are logged; none by
+     * @param ?LoggerInterface $logger where responses that can't be given are logged; none by
      *                                 default
      */
     public function __construct(
@@ -52,30 +53,30 @@ final readonly class ServiceRunner implements RequestHandlerInterface
             return $this->respond($exchange, $this->service->error($e));
         }
         try {
-            $answer = $this->service->handle($exchange->request());
+            $response = $this->service->handle($exchange->request());
         } catch (\Throwable $e) {
-            // Answered through the exchange read (e.g. over the page the browser showed)
-            $answer = $this->service->error($e);
+            // Responded to through the exchange read (e.g. over the page the browser showed)
+            $response = $this->service->error($e);
         }
 
-        return $this->respond($exchange, $answer);
+        return $this->respond($exchange, $response);
     }
 
     /**
-     * The HTTP response of an answer: 204 for none (e.g. a disconnection), 500 if the client
-     * can't give it
+     * The HTTP response for a gateway response: 204 for none (e.g. a disconnection), 500 if
+     * the client can't give it
      */
-    private function respond(ClientExchange $exchange, ?GatewayResponse $answer): ResponseInterface
+    private function respond(ClientExchange $exchange, ?GatewayResponse $response): ResponseInterface
     {
-        if ($answer === null) {
+        if ($response === null) {
             // E.g. a disconnection
             return new Response(204);
         }
 
         try {
-            return $exchange->respond($answer);
+            return $exchange->respond($response);
         } catch (\Throwable $e) {
-            $this->logger->critical('Cannot send the answer: ' . $e->getMessage(), ['exception' => $e]);
+            $this->logger->critical('Cannot send the response: ' . $e->getMessage(), ['exception' => $e]);
 
             return new Response(500);
         }

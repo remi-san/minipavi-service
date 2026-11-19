@@ -11,7 +11,6 @@ use MiniPaviService\Controller\Response;
 use MiniPaviService\Core\ContextSerializer;
 use MiniPaviService\Core\RouterBuilder;
 use MiniPaviService\Core\Service;
-use MiniPaviService\Gateway\CallMode;
 use MiniPaviService\Message\MessagesXmlParser;
 use MiniPaviService\Minitel\FunctionKey;
 use MiniPaviService\Minitel\Terminal;
@@ -67,7 +66,7 @@ final class ServiceTesterTest extends TestCase
         self::assertEquals(new Terminal('192.0.2.1', 'websocket', 'Cv5'), $this->requests[1]->terminal());
     }
 
-    public function testScreenKeepsWhatAnswersDontClear(): void
+    public function testScreenKeepsWhatResponsesDontClear(): void
     {
         $this->tester
             ->connect()
@@ -101,13 +100,32 @@ final class ServiceTesterTest extends TestCase
     public function testAssertsTheUserIsSentToAnotherService(): void
     {
         $this->tester->connect()->type('ext')->press(FunctionKey::Send)->assertConnectsTo('https://example.org/');
-
-        self::assertSame(CallMode::Connect, $this->tester->answer()->directCall);
     }
 
-    public function testDisconnectIsNotAnswered(): void
+    public function testFailsWhenTheUserIsSentToAnotherService(): void
     {
-        // Fails if the service answers it
+        $this->tester->connect()->type('ext')->press(FunctionKey::Send);
+
+        try {
+            $this->tester->assertConnectsTo('https://example.org/other');
+        } catch (AssertionFailedError $e) {
+            self::assertStringContainsString('Not connected at once to the expected service', $e->getMessage());
+
+            return;
+        }
+        self::fail('The assertion passed');
+    }
+
+    public function testFailsWhenTheUserStaysInTheService(): void
+    {
+        $this->expectException(AssertionFailedError::class);
+
+        $this->tester->connect()->assertConnectsTo('https://example.org/');
+    }
+
+    public function testDisconnectGetsNoResponse(): void
+    {
+        // Fails if the service responds to it
         $this->tester->connect()->disconnect();
     }
 

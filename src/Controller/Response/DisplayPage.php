@@ -28,6 +28,6 @@ final readonly class DisplayPage extends KeepingResponse
 
     protected function next(Flow $flow): GatewayResponse
     {
-        return $flow->answer($this->vdt);
+        return $flow->respond($this->vdt);
     }
 }

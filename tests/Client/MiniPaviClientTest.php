@@ -12,6 +12,7 @@ use MiniPaviService\Gateway\ClientExchange;
 use MiniPaviService\Gateway\GatewayRequest;
 use MiniPaviService\Gateway\GatewayResponse;
 use MiniPaviService\Gateway\InputCommand;
+use MiniPaviService\Gateway\ServiceCallCommand;
 use MiniPaviService\Minitel\FunctionKey;
 use MiniPaviService\Minitel\InputField;
 use MiniPaviService\Minitel\Position;
@@ -21,7 +22,7 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * The gateway's request: MiniPaviCli::start() puts the decoded JSON in its static properties,
- * set here directly. The answer: what MiniPaviCli::send() writes.
+ * set here directly. The response: what MiniPaviCli::send() writes.
  */
 final class MiniPaviClientTest extends TestCase
 {
@@ -82,7 +83,7 @@ final class MiniPaviClientTest extends TestCase
         self::assertFalse((new MiniPaviClient())->decoded()->terminal->isTelnetOrPhone());
     }
 
-    public function testReadsABackgroundCallForTheServiceToAnswerNothing(): void
+    public function testReadsABackgroundCallTheServiceDoesntRespondTo(): void
     {
         MiniPaviCli::$fctn = 'BGCALL-WM-1';
 
@@ -103,31 +104,31 @@ final class MiniPaviClientTest extends TestCase
         self::assertSame([], $client->decoded()->content);
     }
 
-    public function testAnswersARequestItCouldntReadToThisService(): void
+    public function testRespondsToARequestItCouldntReadAtThisService(): void
     {
-        $answer = $this->sent(
+        $response = $this->sent(
             new GatewayResponse(new Vdt('Erreur'), '{}'),
             (new MiniPaviClient())->unreadable('http://services/Other/index.php'),
         );
 
-        self::assertSame('http://services/Other/index.php', $answer['next']);
+        self::assertSame('http://services/Other/index.php', $response['next']);
     }
 
-    public function testSendsTheAnswerToThisService(): void
+    public function testSendsTheResponseToThisService(): void
     {
-        $answer = $this->sent(new GatewayResponse(new Vdt('Hello'), '{"route":"home"}'));
+        $response = $this->sent(new GatewayResponse(new Vdt('Hello'), '{"route":"home"}'));
 
-        self::assertSame(base64_encode('Hello'), $answer['content']);
-        self::assertSame('{"route":"home"}', $answer['context']);
-        self::assertSame('http://services/Svc/index.php', $answer['next']);
-        self::assertSame('no', $answer['directcall']);
-        self::assertSame('on', $answer['echo']);
-        self::assertArrayNotHasKey('COMMAND', $answer);
+        self::assertSame(base64_encode('Hello'), $response['content']);
+        self::assertSame('{"route":"home"}', $response['context']);
+        self::assertSame('http://services/Svc/index.php', $response['next']);
+        self::assertSame('no', $response['directcall']);
+        self::assertSame('on', $response['echo']);
+        self::assertArrayNotHasKey('COMMAND', $response);
     }
 
     public function testSendsATextFieldAsInputTxt(): void
     {
-        $answer = $this->sent(
+        $response = $this->sent(
             new GatewayResponse(
                 new Vdt('Code ?'),
                 '{}',
@@ -155,13 +156,13 @@ final class MiniPaviClientTest extends TestCase
                     'validwith' => FunctionKey::masks(FunctionKey::Send, FunctionKey::Next),
                 ],
             ],
-            $answer['COMMAND'],
+            $response['COMMAND'],
         );
     }
 
     public function testSendsAMessageFieldAsInputMsg(): void
     {
-        $answer = $this->sent(
+        $response = $this->sent(
             new GatewayResponse(
                 new Vdt('Message ?'),
                 '{}',
@@ -191,43 +192,53 @@ final class MiniPaviClientTest extends TestCase
                     'validwith' => FunctionKey::Send->mask(),
                 ],
             ],
-            $answer['COMMAND'],
+            $response['COMMAND'],
         );
     }
 
     public function testSendsTheUserToAnotherService(): void
     {
         $connect = $this->sent(
-            new GatewayResponse(new Vdt(''), '{}', 'https://example.org/service', directCall: CallMode::Connect),
+            new GatewayResponse(
+                new Vdt(''),
+                '{}',
+                new ServiceCallCommand('https://example.org/service', CallMode::Connect),
+            ),
         );
         $direct = $this->sent(
-            new GatewayResponse(new Vdt(''), '{}', 'https://example.org/service', directCall: CallMode::Direct),
+            new GatewayResponse(
+                new Vdt(''),
+                '{}',
+                new ServiceCallCommand('https://example.org/service', CallMode::Direct),
+            ),
         );
 
         self::assertSame(['https://example.org/service', 'yes-cnx'], [$connect['next'], $connect['directcall']]);
         self::assertSame(['yes', 'on'], [$direct['directcall'], $direct['echo']]);
+        // Not a command of MiniPavi's: its next URL and directcall
+        self::assertArrayNotHasKey('COMMAND', $connect);
     }
 
     /**
-     * What the client writes for the answer, decoded
+     * What the client writes for the response, decoded
      *
      * @return array<mixed>
      */
-    private function sent(GatewayResponse $answer, ?ClientExchange $exchange = null): array
+    private function sent(GatewayResponse $response, ?ClientExchange $exchange = null): array
     {
         $exchange ??= new MiniPaviExchange(new GatewayRequest(FunctionKey::Send), self::SERVICE_URL);
         ob_start();
         try {
-            $response = $exchange->respond($answer);
+            $httpResponse = $exchange->respond($response);
         } finally {
             $output = (string) ob_get_clean();
         }
         // What MiniPaviCli writes is the body of the response, not output
         self::assertSame('', $output);
-        self::assertSame(200, $response->getStatusCode());
-        $body = (string) $response->getBody();
+        self::assertSame(200, $httpResponse->getStatusCode());
+        $body = (string) $httpResponse->getBody();
         $sent = json_decode($body, associative: true);
 
-        return \is_array($sent) ? $sent : self::fail("Not an answer: {$body}");
+        return \is_array($sent) ? $sent : self::fail("Not a response: {$body}");
     }
 }

@@ -7,9 +7,9 @@ namespace MiniPaviService\Core;
 use MiniPaviService\Controller\Flow;
 use MiniPaviService\Controller\Parameters\Parameters;
 use MiniPaviService\Controller\State;
-use MiniPaviService\Gateway\CallMode;
+use MiniPaviService\Gateway\Command;
 use MiniPaviService\Gateway\GatewayResponse;
-use MiniPaviService\Gateway\InputCommand;
+use MiniPaviService\Gateway\WaitForKeyCommand;
 use MiniPaviService\Minitel\Key;
 use MiniPaviService\Minitel\Terminal;
 use MiniPaviService\Vdt\Vdt;
@@ -35,7 +35,7 @@ final class RequestFlow implements Flow
 
     /**
      * Runs the controller of the context's route on what the user did (key, content), and
-     * gives the answer the request ends with
+     * gives the gateway response the request ends with
      *
      * @param list<string> $content
      */
@@ -52,13 +52,9 @@ final class RequestFlow implements Flow
         $this->context->keep($state, $parameters);
     }
 
-    public function answer(
-        Vdt $vdt,
-        ?InputCommand $command = null,
-        ?string $next = null,
-        ?CallMode $directCall = null,
-    ): GatewayResponse {
-        return new GatewayResponse($vdt, $this->serializer->serialize($this->context), $next, $command, $directCall);
+    public function respond(Vdt $vdt, Command $command = new WaitForKeyCommand()): GatewayResponse
+    {
+        return new GatewayResponse($vdt, $this->serializer->serialize($this->context), $command);
     }
 
     public function goTo(string $route, ?Parameters $parameters = null): GatewayResponse

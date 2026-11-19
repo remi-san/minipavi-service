@@ -18,7 +18,7 @@ interface Client
      * The exchange of an HTTP request
      *
      * @param string $serviceUrl URL of the service (Http\Url\UrlAttribute::Service), e.g. the
-     *                           next URL of answers without one
+     *                           next URL of responses without one
      *
      * @throws \Exception if the request can't be read
      */

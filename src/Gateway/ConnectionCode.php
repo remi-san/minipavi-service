@@ -19,7 +19,7 @@ enum ConnectionCode: string implements Key
     case DirectConnect = 'DIRECTCNX';
     case Disconnect = 'FIN';
     // The start of the code of a background call of the gateway (BGCALL-WM-..., e.g. for web
-    // media), which the user didn't make: nothing to answer
+    // media), which the user didn't make: nothing to respond to
     case BackgroundCall = 'BGCALL-WM-';
 
     /**

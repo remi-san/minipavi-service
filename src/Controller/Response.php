@@ -8,16 +8,17 @@ use MiniPaviService\Controller\Parameters\Parameters;
 use MiniPaviService\Controller\Response\ChangePage;
 use MiniPaviService\Controller\Response\DisplayPage;
 use MiniPaviService\Controller\Response\RunCommand;
-use MiniPaviService\Controller\Response\RunExternalService;
 use MiniPaviService\Gateway\CallMode;
 use MiniPaviService\Gateway\GatewayResponse;
 use MiniPaviService\Gateway\InputCommand;
+use MiniPaviService\Gateway\ServiceCallCommand;
+use MiniPaviService\Gateway\WaitForKeyCommand;
 use MiniPaviService\Vdt\Vdt;
 
 /**
  * What a controller returns: what comes next (continueWith()), through a Flow. Responses are
  * readonly and don't change the context: they ask the Flow to keep the state and parameters
- * of this controller for its next run (KeepingResponse), and to answer the gateway or run
+ * of this controller for its next run (KeepingResponse), and to respond to the gateway or run
  * another controller.
  *
  * The named constructors give each response the state it usually keeps: read the next
@@ -49,7 +50,7 @@ abstract readonly class Response
         State $state = ControllerState::ReadInput,
         ?Parameters $parameters = null,
     ): RunCommand {
-        return new RunCommand($state, $parameters, $vdt, $command);
+        return new RunCommand($state, $parameters, $vdt, $command ?? new WaitForKeyCommand());
     }
 
     /**
@@ -74,14 +75,14 @@ abstract readonly class Response
         Vdt $vdt = new Vdt(),
         ?State $state = null,
         ?Parameters $parameters = null,
-    ): RunExternalService {
-        return new RunExternalService($state, $parameters, $vdt, $url, CallMode::Connect);
+    ): RunCommand {
+        return new RunCommand($state, $parameters, $vdt, new ServiceCallCommand($url, CallMode::Connect));
     }
 
     /**
      * What comes next: keep a state and parameters for this controller (Flow::keep()), then
-     * answer the gateway (Flow::answer()) or run another controller (Flow::goTo()); gives the
-     * answer the request ends with
+     * respond to the gateway (Flow::respond()) or run another controller (Flow::goTo()); gives
+     * the gateway response the request ends with
      */
     abstract public function continueWith(Flow $flow): GatewayResponse;
 }

@@ -8,9 +8,10 @@ use MiniPaviService\Controller\ControllerState;
 use MiniPaviService\Controller\Pagination\PageParameters;
 use MiniPaviService\Controller\Response;
 use MiniPaviService\Controller\Response\RunCommand;
-use MiniPaviService\Controller\Response\RunExternalService;
 use MiniPaviService\Gateway\CallMode;
 use MiniPaviService\Gateway\InputCommand;
+use MiniPaviService\Gateway\ServiceCallCommand;
+use MiniPaviService\Gateway\WaitForKeyCommand;
 use MiniPaviService\Minitel\FunctionKey;
 use MiniPaviService\Minitel\InputField;
 use MiniPaviService\Minitel\Position;
@@ -79,26 +80,27 @@ final class ResponseTest extends TestCase
         );
     }
 
-    public function testDisplayAnswersWithItsContent(): void
+    public function testDisplayRespondsWithItsContent(): void
     {
-        self::assertSame(
-            [['answer', ['vdt' => 'Hello', 'command' => null, 'next' => null, 'directCall' => null]]],
-            $this->answersOf(Response::display(new Vdt('Hello'))),
-        );
+        [[$method, $arguments]] = $this->respondCallsOf(Response::display(new Vdt('Hello')));
+
+        self::assertSame(['respond', 'Hello'], [$method, $arguments['vdt']]);
+        self::assertEquals(new WaitForKeyCommand(), $arguments['command']);
     }
 
-    public function testReadInputAnswersWithTheCommand(): void
+    public function testReadInputRespondsWithTheCommand(): void
     {
         $command = new InputCommand(new InputField(new Span(new Position(2, 1), 4), validWith: [FunctionKey::Send]));
 
         self::assertSame(
-            [['answer', ['vdt' => 'Code ?', 'command' => $command, 'next' => null, 'directCall' => null]]],
-            $this->answersOf(Response::readInput(new Vdt('Code ?'), $command)),
+            [['respond', ['vdt' => 'Code ?', 'command' => $command]]],
+            $this->respondCallsOf(Response::readInput(new Vdt('Code ?'), $command)),
         );
         // Without content: none sent
+        $wait = new WaitForKeyCommand();
         self::assertSame(
-            [['answer', ['vdt' => '', 'command' => null, 'next' => null, 'directCall' => null]]],
-            $this->answersOf(new RunCommand(ControllerState::ReadInput, null, new Vdt(), null)),
+            [['respond', ['vdt' => '', 'command' => $wait]]],
+            $this->respondCallsOf(new RunCommand(ControllerState::ReadInput, null, new Vdt(), $wait)),
         );
     }
 
@@ -112,32 +114,28 @@ final class ResponseTest extends TestCase
         );
     }
 
-    public function testConnectToAnswersWithTheOtherService(): void
+    public function testConnectToRespondsWithTheOtherService(): void
     {
-        self::assertSame(
-            [[
-                'answer',
-                [
-                    'vdt' => 'Cnx en cours',
-                    'command' => null,
-                    'next' => 'https://example.org/service',
-                    'directCall' => CallMode::Connect,
-                ],
-            ]],
-            $this->answersOf(Response::connectTo('https://example.org/service', new Vdt('Cnx en cours'))),
+        [[$method, $arguments]] = $this->respondCallsOf(Response::connectTo(
+            'https://example.org/service',
+            new Vdt('Cnx en cours'),
+        ));
+
+        self::assertSame(['respond', 'Cnx en cours'], [$method, $arguments['vdt']]);
+        self::assertEquals(
+            new ServiceCallCommand('https://example.org/service', CallMode::Connect),
+            $arguments['command'],
         );
     }
 
-    public function testRunExternalServiceCanCallTheOtherServiceDirectly(): void
+    public function testRunCommandSendsAnyCommand(): void
     {
-        $answer = [
-            'answer',
-            ['vdt' => '', 'command' => null, 'next' => 'https://example.org/', 'directCall' => CallMode::Direct],
-        ];
+        // A direct call, as the continuation of the session: no named constructor gives one
+        $command = new ServiceCallCommand('https://example.org/', CallMode::Direct);
 
         self::assertSame(
-            [$answer],
-            $this->answersOf(new RunExternalService(null, null, new Vdt(), 'https://example.org/', CallMode::Direct)),
+            [['respond', ['vdt' => '', 'command' => $command]]],
+            $this->respondCallsOf(new RunCommand(null, null, new Vdt(), $command)),
         );
     }
 
@@ -159,7 +157,7 @@ final class ResponseTest extends TestCase
      *
      * @return list<array{string, array<string, mixed>}>
      */
-    private function answersOf(Response $response): array
+    private function respondCallsOf(Response $response): array
     {
         return array_values(array_filter($this->callsOf($response), static fn(array $call) => $call[0] !== 'keep'));
     }
