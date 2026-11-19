@@ -16,7 +16,8 @@ use MiniPaviService\Gateway\GatewayResponse;
  * the next input after showing something (new DisplayPage(), RunCommand::readInput()), start
  * again after leaving (new ChangePage(), which resets this controller, and
  * RunCommand::connectTo()). A KeepingResponse takes $state or $parameters after the content
- * and the command (by name to give only one) to keep others: a case of the controller's State
+ * and the command to keep others (by name to give only one, except for new RunCommand(),
+ * which requires its state): a case of the controller's State
  * enum (ControllerState for an AbstractController: a controller with its own enum gives its
  * state, as the defaults are ControllerState's), and a Parameters object of the class it
  * declares (null: the defaults). ChangePage's parameters are the target controller's. A
