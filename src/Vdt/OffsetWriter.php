@@ -42,22 +42,11 @@ final readonly class OffsetWriter implements ScreenListener
 
     public function glyph(int $row, int $col, string $bytes, int $width, Attributes $attributes): void
     {
-        // Row 0 stays where it is; the other rows stay within rows 1 to ROWS
-        if ($row !== 0) {
-            $row += $this->y;
-            $col += $this->x;
-            if ($row < 1 || $row > ScreenSize::ROWS) {
-                return;
-            }
-            // Written with a size the Minitel accepts on the row it is moved to (no ESC M or ESC O
-            // on row 1)
-            $attributes = $attributes->writableOn($row);
-            $width = $attributes->width();
+        $moved = $this->moved($row, $col, $attributes);
+        if ($moved !== null) {
+            [$row, $col, $attributes] = $moved;
+            $this->out->glyph($row, $col, $bytes, $attributes->width(), $attributes);
         }
-        if ($col < 1 || ($col + $width - 1) > ScreenSize::COLS) {
-            return;
-        }
-        $this->out->glyph($row, $col, $bytes, $width, $attributes);
     }
 
     public function sequence(Token $sequence, Cursor $cursor): void
@@ -73,6 +62,31 @@ final readonly class OffsetWriter implements ScreenListener
                 $this->out->raw($sequence->bytes);
                 break;
         }
+    }
+
+    /**
+     * Where a character drawn at row, col goes, and the attributes it is written with; null if
+     * off the screen. Row 0 stays where it is; the other rows stay within rows 1 to ROWS, the
+     * character written with a size the Minitel accepts on the row it is moved to (no ESC M or
+     * ESC O on row 1)
+     *
+     * @return ?array{int, int, Attributes} the row, the column and the attributes
+     */
+    private function moved(int $row, int $col, Attributes $attributes): ?array
+    {
+        if ($row !== 0) {
+            $row += $this->y;
+            $col += $this->x;
+            if ($row < 1 || $row > ScreenSize::ROWS) {
+                return null;
+            }
+            $attributes = $attributes->writableOn($row);
+        }
+        if ($col < 1 || ($col + $attributes->width() - 1) > ScreenSize::COLS) {
+            return null;
+        }
+
+        return [$row, $col, $attributes];
     }
 
     private function clearLine(Cursor $cursor): void

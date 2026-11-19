@@ -32,13 +32,7 @@ final class Writer
         $this->moveTo($row, $col);
         $this->setAttributes($attributes);
         $this->put($bytes);
-        // At col since moveTo()
-        $this->col = $col + $width;
-        if ($this->col > ScreenSize::COLS) {
-            // The screen wraps there, but the next character may be elsewhere
-            $this->row = null;
-            $this->col = null;
-        }
+        $this->movePast($col, $width);
     }
 
     public function clearLine(int $row, int $col, Attributes $attributes): void
@@ -78,6 +72,17 @@ final class Writer
         $this->flush();
         $this->vdt .= $bytes;
         $this->pending = $bytes;
+    }
+
+    // Where the next character goes, after one at col, width cells wide (at col since moveTo())
+    private function movePast(int $col, int $width): void
+    {
+        $this->col = $col + $width;
+        if ($this->col > ScreenSize::COLS) {
+            // The screen wraps there, but the next character may be elsewhere
+            $this->row = null;
+            $this->col = null;
+        }
     }
 
     // Positions the cursor if needed, which resets the attributes
