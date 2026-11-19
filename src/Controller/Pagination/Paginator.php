@@ -24,7 +24,7 @@ final readonly class Paginator
      */
     public function __construct(
         public int $itemCount,
-        public int $perPage,
+        private int $perPage,
         int $index = 0,
     ) {
         if ($itemCount < 0) {
@@ -69,7 +69,8 @@ final readonly class Paginator
     }
 
     /**
-     * Number of items to retrieve for the page, from offset(): perPage
+     * Number of items to retrieve for the page, from offset(): the number per page (also in
+     * toArray())
      */
     public function limit(): int
     {
