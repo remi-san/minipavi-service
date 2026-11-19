@@ -22,7 +22,8 @@ use MiniPaviService\Minitel\ScreenSize;
  * It draws the screen only: the page around it (e.g. Client\HtmlForm's) puts render() in its
  * body, and style() in its <style>. style() sets, for the whole page, --w and --h, the size
  * of a cell, --pad, the screen's padding, and --font, the Minitel font at the cell's size
- * (e.g. for the page's other controls); place() places an element over the screen.
+ * (e.g. for the page's other controls); place() gives all the geometry of an element over the
+ * screen (position, size, stacking), so the page's style only says how it looks.
  */
 final readonly class HtmlRenderer
 {
@@ -60,7 +61,7 @@ final readonly class HtmlRenderer
 
     /**
      * The screen (a <div class="minitel">), with what overlay puts over it (e.g. input fields,
-     * positioned with --w, --h and --pad)
+     * placed with place())
      *
      * @param string $overlay HTML over the screen
      */
@@ -82,11 +83,18 @@ final readonly class HtmlRenderer
 
     /**
      * Style placing an element over the screen (e.g. an input field of the overlay) at a cell,
-     * length cells wide: the screen's geometry, kept with its CSS
+     * length cells wide and a cell high, its border included, and above the screen's double
+     * height cells: all of the screen's geometry, kept with its CSS, so the element's own style
+     * needn't know it
+     *
+     * @param Position $position the cell of the element's first character
+     * @param int $length the element's width, in cells
+     * @return string an inline style (style="..."): it takes over the element's own position,
+     *                size, box-sizing and z-index
      */
     public function place(Position $position, int $length): string
     {
-        return "left: calc(var(--pad) + {$position->col}*var(--w) - var(--w)); top: calc(var(--pad) + {$position->row}*var(--h)); width: calc({$length}*var(--w));";
+        return "position: absolute; left: calc(var(--pad) + {$position->col}*var(--w) - var(--w)); top: calc(var(--pad) + {$position->row}*var(--h)); width: calc({$length}*var(--w)); height: var(--h); box-sizing: border-box; z-index: 2;";
     }
 
     /**

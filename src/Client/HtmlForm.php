@@ -33,14 +33,18 @@ final readonly class HtmlForm
     private const COMMAND = 'command';
     private const SCREEN = 'screen';
 
-    // The page around the screen (HtmlRenderer::style() styles the screen)
+    // The page around the screen: HtmlRenderer::style() styles the screen, and sets --font,
+    // which the page uses; HtmlRenderer::place() places the fields over it. A field is
+    // underlined with its background, not a border, which would take a pixel of the cell
+    // from its text (the Minitel font's glyphs fill the cell)
     private const STYLE = <<<'CSS'
         :root { color-scheme: dark; }
         body { margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center; background: #1c1c1c; }
         .page { font: var(--font); }
-        .field { position: absolute; height: var(--h); padding: 0; border: 0; border-bottom: 1px dotted #888; background: transparent;
-            color: #fff; caret-color: #fff; font: inherit; letter-spacing: 0; outline: none; z-index: 2; }
-        .field:focus { border-bottom-color: #fff; }
+        .field { --underline: #888; padding: 0; border: 0;
+            background: repeating-linear-gradient(90deg, var(--underline) 0 1px, transparent 1px 2px) bottom / 100% 1px no-repeat;
+            color: #fff; caret-color: #fff; font: inherit; letter-spacing: 0; outline: none; }
+        .field:focus { --underline: #fff; }
         .keys { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 10px; }
         .keys button { padding: 6px 0; border: 0; border-radius: 3px; background: #6b4b32; color: #fff; font: inherit; cursor: pointer; }
         .keys button:disabled { opacity: .35; cursor: default; }
