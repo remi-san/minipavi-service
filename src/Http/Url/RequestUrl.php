@@ -95,8 +95,8 @@ final readonly class RequestUrl
         return false;
     }
 
-    // Packed IP address (inet_pton()), null for what isn't one (checked first: inet_pton() would
-    // warn)
+    // Packed IP address (inet_pton()), null for what isn't one. Checked first, as inet_pton()
+    // follows the system's: macOS's takes leading zeros (010.0.0.1) and zone indexes (fe80::1%en0)
     private static function packed(string $ip): ?string
     {
         if (filter_var($ip, FILTER_VALIDATE_IP) === false) {

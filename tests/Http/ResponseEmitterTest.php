@@ -30,6 +30,22 @@ final class ResponseEmitterTest extends TestCase
         self::assertSame('moved', $output);
     }
 
+    /**
+     * Without a Location header: PHP would set 302 for it
+     */
+    #[RunInSeparateProcess]
+    public function testSendsTheStatusOfTheResponse(): void
+    {
+        ob_start();
+        try {
+            (new ResponseEmitter())->emit(new Response(404, [], 'missing'));
+        } finally {
+            ob_end_clean();
+        }
+
+        self::assertSame(404, http_response_code());
+    }
+
     #[RunInSeparateProcess]
     public function testSendsALongBodyWhole(): void
     {

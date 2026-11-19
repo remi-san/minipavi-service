@@ -43,6 +43,9 @@ final class RequestUrlTest extends TestCase
         yield 'plain' => [[], 'http'];
         yield 'HTTPS on' => [['HTTPS' => 'on'], 'https'];
         yield 'HTTPS off' => [['HTTPS' => 'off'], 'http'];
+        // Whatever its case (IIS sends "OFF" without TLS)
+        yield 'HTTPS OFF' => [['HTTPS' => 'OFF'], 'http'];
+        yield 'HTTPS 0' => [['HTTPS' => '0'], 'http'];
         yield 'port 443' => [['SERVER_PORT' => '443'], 'https'];
         yield 'port 8080' => [['SERVER_PORT' => '8080'], 'http'];
         // Headers any client can send: ignored without a trusted proxy
@@ -71,8 +74,19 @@ final class RequestUrlTest extends TestCase
         yield 'IPv6' => ['::1', '::1', 'https'];
         yield 'IPv6 range' => ['fd00::/8', 'fd12:3456::1', 'https'];
         yield 'IPv6 address, IPv4 range' => ['10.0.0.0/8', '::1', 'http'];
+        // A range of every IPv4 address doesn't take in IPv6 ones
+        yield 'IPv6 address, every IPv4 address' => ['0.0.0.0/0', '::1', 'http'];
+        yield 'every IPv4 address' => ['0.0.0.0/0', '203.0.113.9', 'https'];
+        // A prefix ending inside a byte: 10.0.0.0 to 10.1.255.255
+        yield 'in a /15' => ['10.0.0.0/15', '10.1.200.1', 'https'];
+        yield 'outside a /15' => ['10.0.0.0/15', '10.2.0.1', 'http'];
+        yield 'a /32' => ['10.0.0.5/32', '10.0.0.5', 'https'];
+        yield 'a /128' => ['::1/128', '::1', 'https'];
+        yield 'empty entries' => [' , 10.0.0.5 ,', '10.0.0.5', 'https'];
         // E.g. a Unix socket: not trusted
         yield 'not an IP address' => ['10.0.0.0/8', 'unix:/run/php.sock', 'http'];
+        // Taken by some systems' inet_pton() (macOS) as 10.0.0.1
+        yield 'leading zeros' => ['10.0.0.0/8', '010.0.0.1', 'http'];
     }
 
     #[DataProvider('proxies')]
@@ -86,6 +100,16 @@ final class RequestUrlTest extends TestCase
         );
     }
 
+    public function testForwardedProtoIsReadWhateverItsCase(): void
+    {
+        $request = self::request(['REMOTE_ADDR' => '10.0.0.5', 'HTTP_X_FORWARDED_PROTO' => 'HTTPS']);
+
+        self::assertSame(
+            'https://example.org/Svc/index.php',
+            (new RequestUrl(trustedProxies: '10.0.0.5'))->script($request),
+        );
+    }
+
     public function testServiceUrlReplacesTheSchemeAndHost(): void
     {
         $request = self::request(['HTTP_HOST' => 'attacker.example', 'HTTP_X_FORWARDED_PROTO' => 'http']);
@@ -93,6 +117,14 @@ final class RequestUrlTest extends TestCase
 
         self::assertSame('https://minitel.example.org:8443/Svc/index.php', $url->script($request));
         self::assertSame('https://minitel.example.org:8443/Svc/?code=1', $url->current($request));
+    }
+
+    public function testServiceUrlSchemeIsLowercased(): void
+    {
+        self::assertSame(
+            'https://minitel.example.org/Svc/index.php',
+            (new RequestUrl('HTTPS://minitel.example.org'))->script(self::request()),
+        );
     }
 
     /**
@@ -104,6 +136,11 @@ final class RequestUrlTest extends TestCase
         yield 'other scheme' => ['ftp://minitel.example.org'];
         yield 'with a path' => ['https://minitel.example.org/Svc'];
         yield 'with a query' => ['https://minitel.example.org/?a=1'];
+        yield 'with a fragment' => ['https://minitel.example.org/#top'];
+        yield 'with credentials' => ['https://user:secret@minitel.example.org'];
+        yield 'without host' => ['https:/minitel'];
+        // parse_url() can't read it
+        yield 'malformed' => ['http:///minitel.example.org'];
     }
 
     #[DataProvider('invalidServiceUrls')]
@@ -115,11 +152,30 @@ final class RequestUrlTest extends TestCase
         new RequestUrl($serviceUrl);
     }
 
-    public function testInvalidTrustedProxyIsRefused(): void
+    /**
+     * @return iterable<string, array{string}>
+     */
+    public static function invalidProxies(): iterable
+    {
+        yield 'a host name' => ['proxy.local'];
+        yield 'an IPv4 prefix too long' => ['10.0.0.0/33'];
+        yield 'an IPv6 prefix too long' => ['fd00::/129'];
+        yield 'a prefix not a number' => ['10.0.0.0/eight'];
+        yield 'a negative prefix' => ['10.0.0.0/-1'];
+        yield 'an empty prefix' => ['10.0.0.0/'];
+        yield 'two prefixes' => ['10.0.0.0/8/16'];
+        yield 'a malformed address' => ['10.0.0/8'];
+        // Taken by some systems' inet_pton() (macOS), not by others (Linux)
+        yield 'leading zeros' => ['010.0.0.1'];
+        yield 'a zone index' => ['fe80::1%en0'];
+    }
+
+    #[DataProvider('invalidProxies')]
+    public function testInvalidTrustedProxyIsRefused(string $proxy): void
     {
         $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('TRUSTED_PROXIES: "proxy.local" is not an IP address or range');
+        $this->expectExceptionMessage("TRUSTED_PROXIES: \"{$proxy}\" is not an IP address or range");
 
-        new RequestUrl(trustedProxies: '10.0.0.1, proxy.local');
+        new RequestUrl(trustedProxies: "10.0.0.1, {$proxy}");
     }
 }

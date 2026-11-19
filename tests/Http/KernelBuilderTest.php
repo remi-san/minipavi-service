@@ -81,6 +81,30 @@ final class KernelBuilderTest extends TestCase
         self::assertSame('', $page);
     }
 
+    /**
+     * The emulator last given: logged, as the redirection's Location isn't kept from the command
+     * line
+     */
+    #[RunInSeparateProcess]
+    public function testTheEmulatorLastGivenIsUsed(): void
+    {
+        $logger = new MemoryLogger();
+        self::serve(
+            $this->builder
+                ->withEmulator(new EmulatorConfig('http://first:8081/', 'ws://first:8182/', 'services'))
+                ->withEmulator(new EmulatorConfig('http://second:8081/', 'ws://second:8182/', 'services'))
+                ->withLogger($logger),
+            query: '',
+        );
+
+        $urls = array_column(
+            array_filter($logger->records, static fn(array $record) => $record[1] === 'Browser sent to the emulator'),
+            2,
+        );
+        self::assertCount(1, $urls);
+        self::assertStringStartsWith('http://second:8081/', (string) ($urls[0]['url'] ?? ''));
+    }
+
     #[RunInSeparateProcess]
     public function testHandlersOfTheServiceAreTriedFirst(): void
     {
@@ -95,6 +119,31 @@ final class KernelBuilderTest extends TestCase
 
         self::assertSame('api', $page);
         self::assertCount(1, $api->requests);
+    }
+
+    #[RunInSeparateProcess]
+    public function testEveryHandlerGivenIsKept(): void
+    {
+        $page = self::serve(
+            $this->builder
+                ->withHandler(
+                    new ConditionalRequestHandler(
+                        'first',
+                        new QueryParameterEquals('api', 'first'),
+                        new RecordingHandler('first'),
+                    ),
+                )
+                ->withHandler(
+                    new ConditionalRequestHandler(
+                        'second',
+                        new QueryParameterEquals('api', 'second'),
+                        new RecordingHandler('second'),
+                    ),
+                ),
+            query: 'api=first',
+        );
+
+        self::assertSame('first', $page);
     }
 
     #[RunInSeparateProcess]
@@ -192,6 +241,14 @@ final class KernelBuilderTest extends TestCase
         $this->expectExceptionMessage('Font file not found: /missing.ttf');
 
         $this->builder->withFont('/missing.ttf');
+    }
+
+    public function testAFolderIsRefusedAsFont(): void
+    {
+        $this->expectException(InvalidValueException::class);
+        $this->expectExceptionMessage('Font file not found: ' . __DIR__);
+
+        $this->builder->withFont(__DIR__);
     }
 
     /**
