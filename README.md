@@ -696,7 +696,7 @@ Codes to send as they are have names: `Vdt\Videotex` for Videotex (`CLEAR_LINE`,
 
 They replace MiniPaviCli's global `VDT_*` and `PRO_*` constants, which are only defined once
 `MiniPaviCli` is loaded. `Vdt` gives MiniPaviCli's Videotex helpers as its constructors:
-`Vdt::text()` (its `toG2()`), `Vdt::position($col, $row)` (`setPos()`), `Vdt::line0()`
+`Vdt::text()` (its `toG2()`), `Vdt::position($position)` (a `Minitel\Position`, `setPos()`), `Vdt::line0()`
 (`writeLine0()`), `Vdt::clearScreen()` and `Vdt::repeat($char, $count)` (`repeatChar()`).
 
 `Vdt` also reads Videotex content, e.g. of a `.vdt` file, and moves it on the screen;
@@ -728,7 +728,7 @@ echo $moved->screen()->preview();      // the screen, as text
   other content.
 - **`HtmlRenderer::render($screen, $overlay)`**: the screen in HTML (a `<div class="minitel">`,
   with `$overlay` over it), `style()` its CSS (the cell size in `--w`, `--h`, the Minitel font
-  in `--font`) with the font embedded, and `place($col, $row, $length)` the style placing an
+  in `--font`) with the font embedded, and `place($position, $length)` the style placing an
   element over a cell; the page around it is the HTML client's (`Client\HtmlForm`, see
   `HtmlClient` above).
 - **`screen()`**: the `Screen` drawn by the content: a `Cell` (character and attributes) or
