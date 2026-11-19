@@ -581,6 +581,19 @@ array, an object without `__toString()`), or a `{{...}}` that isn't a placeholde
 message; a messages file that can't be read is a `MessagesException` with the file and line.
 `schema/messages.xsd` describes messages files.
 
+### Reading files
+
+`PageXmlParser` (pages and their `.vdt` files, through `PageFiles`), `MessagesXmlParser`
+(messages files, the framework's included) and `HtmlRenderer` (the font of the HTML client)
+read files through an `Io\FileReader`: `read($file)` gives the content, or `null` if it can't
+be read. By default it is `Io\Files`, which reads them from disk. Give another as their last
+argument to read them from elsewhere, e.g. from memory in a test:
+
+```php
+$parser = new PageXmlParser($messages, files: $files);   // $files implements FileReader
+$messages = (new MessagesXmlParser($files))->defaults();
+```
+
 ## Page XML format
 
 A page file has a `<page>` root, read by `PageXmlParser`. Errors throw a `PageXmlException`
