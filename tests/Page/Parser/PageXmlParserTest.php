@@ -20,6 +20,7 @@ use MiniPaviService\Page\Parser\PageXmlException;
 use MiniPaviService\Page\Parser\PageXmlParser;
 use MiniPaviService\Page\Template\TemplateException;
 use MiniPaviService\Tests\Support\FailingProperties;
+use MiniPaviService\Tests\Support\MemoryFiles;
 use MiniPaviService\Tests\Support\PrivateProperties;
 use MiniPaviService\Tests\Support\StarsElements;
 use MiniPaviService\Tests\Support\TestMessage;
@@ -293,6 +294,33 @@ final class PageXmlParserTest extends TestCase
                 'rows' => [['name' => 'A', 'cells' => ['a1', 'a2']], ['name' => 'B', 'cells' => ['b1']]],
             ])),
         );
+    }
+
+    public function testReadsThePageAndItsVideotexFilesThroughItsFileReader(): void
+    {
+        $files = new MemoryFiles([
+            '/pages/home.xml' => '<page type="static"><image row="3" col="2">images/logo.vdt</image></page>',
+            '/pages/images/logo.vdt' => 'ok',
+        ]);
+        $parser = new PageXmlParser((new MessagesXmlParser())->defaults(), files: $files);
+
+        $page = $parser->parseFile('/pages/home.xml');
+
+        self::assertSame(
+            [' 3| ok                                     |'],
+            $this->drawnRows($page->display(new Terminal())),
+        );
+        self::assertSame(['/pages/home.xml', '/pages/images/logo.vdt'], $files->read);
+    }
+
+    public function testPageItsFileReaderDoesntHaveIsNotFound(): void
+    {
+        $parser = new PageXmlParser((new MessagesXmlParser())->defaults(), files: new MemoryFiles([]));
+
+        $this->expectException(PageXmlException::class);
+        $this->expectExceptionMessage('/pages/home.xml: file not found');
+
+        $parser->parseFile('/pages/home.xml');
     }
 
     public function testTemplateImageCanComeFromTheData(): void

@@ -61,7 +61,7 @@ final class VdtOffsetCommand extends Command
         [$x, $y] = [self::int($input, name: 'x'), self::int($input, name: 'y')];
         $errors = (new SymfonyStyle($input, $output))->getErrorStyle();
 
-        $bytes = Files::read($file === '-' ? 'php://stdin' : $file);
+        $bytes = (new Files())->read($file === '-' ? 'php://stdin' : $file);
         if ($bytes === null) {
             $errors->writeln(Input::escape("cannot read {$file}"));
 
@@ -85,7 +85,7 @@ final class VdtOffsetCommand extends Command
 
             return self::SUCCESS;
         }
-        if (!Files::write($target, $moved->toString())) {
+        if (!(new Files())->write($target, $moved->toString())) {
             $errors->writeln(Input::escape("cannot write {$target}"));
 
             return self::FAILURE;

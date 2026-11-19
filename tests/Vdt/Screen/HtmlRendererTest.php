@@ -8,6 +8,7 @@ use MiniPaviService\Minitel\Position;
 use MiniPaviService\Minitel\ScreenSize;
 use MiniPaviService\Minitel\Terminal;
 use MiniPaviService\Page\Display\Key;
+use MiniPaviService\Tests\Support\MemoryFiles;
 use MiniPaviService\Vdt\Screen\HtmlRenderer;
 use MiniPaviService\Vdt\Screen\Screen;
 use MiniPaviService\Vdt\Vdt;
@@ -38,6 +39,13 @@ final class HtmlRendererTest extends TestCase
         );
         self::assertStringContainsString('--font: var(--w)/var(--h) Minitel,', $html);
         self::assertStringContainsString('.minitel { font: var(--font);', $html);
+    }
+
+    public function testReadsTheFontThroughItsFileReader(): void
+    {
+        $html = (new HtmlRenderer('/fonts/font.ttf', new MemoryFiles(['/fonts/font.ttf' => 'FONT'])))->style();
+
+        self::assertStringContainsString('src: url(data:font/ttf;base64,' . base64_encode('FONT') . ')', $html);
     }
 
     public function testMissingFontIsAnErrorOfItsStyleOnly(): void
