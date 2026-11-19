@@ -203,7 +203,7 @@ KernelBuilder::for($router, $messages)
       with the key as the client's state (`HtmlPageState`).
 
     A key that would **leave the service** (a response calling another service, a
-    `ServiceCallCommand`, as `Response::connectTo()` gives) is blocked: the page stays as it was, with
+    `ServiceCallCommand`, as `RunCommand::connectTo()` gives) is blocked: the page stays as it was, with
     `FrameworkMessage::WebLeave` on line 0. The key labels and that error are messages
     (`key.send`, `key.next`…, `web.leave`). The screen is drawn in the Minitel's colours, with
     double sizes, inverse video, underlining, blinking and mosaic pixels, as MiniPavi's
@@ -225,7 +225,7 @@ KernelBuilder::for($router, $messages)
   starts at the default route. One whose route the service doesn't have (e.g. removed in a new
   version) starts again there too, without what the user typed, which was for a screen that
   doesn't exist any more (the serializer refuses it with an `UnknownRouteException`).
-  More than 10 page changes (`Response::goTo()`) in one request are taken as controllers
+  More than 10 page changes (`ChangePage`) in one request are taken as controllers
   changing to each other endlessly, and responded to with an error; give another limit with
   `KernelBuilder::withMaxPageChanges(20)` (or `new Service(..., maxPageChanges: 20)`), 0 to
   forbid page changes.
@@ -268,7 +268,7 @@ KernelBuilder::for($router, $messages)
     connection code; `connectionCode()` the `Gateway\ConnectionCode` (`Connect`,
     `DirectConnect`, `Disconnect`, `BackgroundCall`), or null for a function key; `key()` gives
     either, as a `Minitel\Key` (`key()?->value` is the name the gateway sent: `ENVOI`…, or
-    `CNX`, `FIN`…), null when there is none: after a `Response::goTo()`, at the default route
+    `CNX`, `FIN`…), null when there is none: after a `ChangePage`, at the default route
     started again because the context's route is unknown, and for what the gateway sends that
     isn't a known key (e.g. `DIRECT`, after a `CallMode::Direct` call);
   - `content()`: the text typed, one string per line of the input field, and
@@ -276,21 +276,22 @@ KernelBuilder::for($router, $messages)
   - `terminal()`: where the user connects from (`remoteAddr()`), and how: `isAdapter()` (an
     ESP32 or Minimit adapter, whose function keys need Shift) and `isTelnetOrPhone()`.
 
-  `Response`'s named constructors build the responses:
+  Each response is built from its own class, in `Controller\Response\`:
 
   | Response | Effect | State kept by default |
   |---|---|---|
-  | `Response::display($vdt)` | sends Videotex content to the gateway; the next key comes back to this controller | `ControllerState::ReadInput` |
-  | `Response::readInput($vdt, $command)` | sends content and the command reading the page's input field (`Page::inputCommand()`, an `InputCommand`: the page's `Minitel\InputField`, where it is, its size and the keys validating it, and its prefill) to the gateway | `ControllerState::ReadInput` |
-  | `Response::goTo($route, $parameters)` | switches to another controller, which runs at once: at `ControllerState::Init`, with `$parameters` (a `Parameters` object, or none), without the user's input; this controller is reset | `ControllerState::Init` |
-  | `Response::connectTo($url, $vdt)` | sends the user to another service, as a new connection (a `ServiceCallCommand` with `CallMode::Connect`) | `ControllerState::Init` |
+  | `new DisplayPage($vdt)` | sends Videotex content to the gateway; the next key comes back to this controller | `ControllerState::ReadInput` |
+  | `RunCommand::readInput($vdt, $command)` | sends content and the command reading the page's input field (`Page::inputCommand()`, an `InputCommand`: the page's `Minitel\InputField`, where it is, its size and the keys validating it, and its prefill) to the gateway | `ControllerState::ReadInput` |
+  | `new ChangePage($route, $parameters)` | switches to another controller, which runs at once: at `ControllerState::Init`, with `$parameters` (a `Parameters` object, or none), without the user's input; this controller is reset | `ControllerState::Init` |
+  | `RunCommand::connectTo($url, $vdt)` | sends the user to another service, as a new connection (a `ServiceCallCommand` with `CallMode::Connect`) | `ControllerState::Init` |
 
-  Every response but `goTo()` responds to the gateway and ends the request. The state and
+  Every response but `ChangePage` responds to the gateway and ends the request. The state and
   parameters are what this controller keeps for its next run (for `connectTo()`, when the
   user comes back to it): a `State`, and a `Parameters` object (none by default). Give
-  others by name, e.g. `Response::readInput($vdt, $command, parameters: new
-  DirectoryParameters(2))`. The classes behind them
-  (`DisplayPage`, `RunCommand` for any `Command`, `ChangePage`) can also be built directly.
+  others by name, e.g. `RunCommand::readInput($vdt, $command, parameters: new
+  DirectoryParameters(2))`. `new RunCommand($vdt, $command)` sends any other `Command`.
+  `Response` doesn't know these classes: a response of your own (see below) is built the
+  same way.
   They are readonly, and don't change the context. `Service` calls the response's
   `continueWith(Flow $flow): GatewayResponse`, where it says what comes next:
   `$flow->keep($state, $parameters)` keeps them for this controller,
@@ -335,17 +336,17 @@ KernelBuilder::for($router, $messages)
       // Shows the screen (onInit() and onInitInput() do the same, unless overridden)
       protected function onDisplay(Request $request): Response
       {
-          return Response::readInput($this->page->display($request->terminal()), $this->page->inputCommand());
+          return RunCommand::readInput($this->page->display($request->terminal()), $this->page->inputCommand());
       }
 
       // Handles the key pressed and what was typed
       protected function onReadInput(Request $request): Response
       {
           if ($request->functionKey() === FunctionKey::Guide) {
-              return Response::goTo('help');
+              return new ChangePage('help');
           }
 
-          return Response::readInput(Vdt::line0('Unknown code'), $this->page->inputCommand());
+          return RunCommand::readInput(Vdt::line0('Unknown code'), $this->page->inputCommand());
       }
   }
   ```
@@ -386,7 +387,7 @@ KernelBuilder::for($router, $messages)
       public function onOtherKey(Request $request, ShownPage $page): Response
       {
           return match ($request->functionKey()) {
-              FunctionKey::Summary => Response::goTo('home'),
+              FunctionKey::Summary => new ChangePage('home'),
               FunctionKey::Send => $page->next(),
               default => $page->stay(),
           };
@@ -467,7 +468,7 @@ KernelBuilder::for($router, $messages)
               // ...
           }
 
-          return Response::readInput($vdt, $command, SearchState::ReadQuery, new DirectoryParameters($page + 1));
+          return RunCommand::readInput($vdt, $command, SearchState::ReadQuery, new DirectoryParameters($page + 1));
       }
   }
   ```
@@ -514,7 +515,7 @@ $tester->connect()->assertRoute('home')->assertScreenContains('BIENVENUE')
 - `assertScreenContains()`, `assertScreenNotContains()`, `assertLineContains($row, ...)` and
   `assertLine0()` check the screen as text, accented characters included
   (`Screen::text()`); `assertRoute()` the route the user's next key goes to, and
-  `assertConnectsTo($url)` a connection to another service (`Response::connectTo()`). A
+  `assertConnectsTo($url)` a connection to another service (`RunCommand::connectTo()`). A
   failed assertion shows the screen.
 - `screen()`, `response()` (the last `GatewayResponse`) and `context()` give the rest, for
   other assertions.
