@@ -730,8 +730,10 @@ echo $moved->screen()->preview();      // the screen, as text
 - **`HtmlRenderer::render($screen, $overlay)`**: the screen in HTML (a `<div class="minitel">`,
   with `$overlay` over it), `style()` its CSS (the cell size in `--w`, `--h`, the Minitel font
   in `--font`) with the font embedded, and `place($position, $length)` the style placing an
-  element over a cell, with all of its geometry (position, size), so the element's own style
-  only says how it looks; the page around it is the HTML client's (`Client\HtmlForm`, see
+  element over a cell, with all of its geometry (position, size, its border included, and
+  stacking above double-height cells), so the element's own style only says how it looks (it
+  is inline, so it takes over the element's own `position`, `height`, `box-sizing` and
+  `z-index`); the page around it is the HTML client's (`Client\HtmlForm`, see
   `HtmlClient` above).
 - **`screen()`**: the `Screen` drawn by the content: a `Cell` (character and attributes) or
   `null` per row and column. `line($row)` and `text()` give the text of a row and of the
