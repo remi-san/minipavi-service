@@ -718,7 +718,12 @@ echo $moved->screen()->preview();      // the screen, as text
   current attributes (character set, colors, size...), which a positioning resets. Row 0,
   the status line, is not moved. A double-height or double-size character moved onto row 1,
   where the Minitel discards `ESC M` and `ESC O`, is written without them: at normal size, or
-  double width for double size, in the columns it had.
+  double width for double size, in the columns it had. Text keeps its zone (see `screen()`):
+  each delimiter is written with `ESC Z` or `ESC Y` before it, and a space that would
+  otherwise start another zone (a background colour sent again waits for it) or lose its own
+  (its delimiter went off the screen) is written as a delimiter of its zone. That space isn't
+  underlined, as a delimiter isn't. Text moved to column 1 before such a space has no column
+  left for its delimiter, and loses its zone.
 - **`withoutClear()`**: the same content without its clear screens (FF), to draw it over
   other content.
 - **`HtmlRenderer::render($screen, $overlay)`**: the screen in HTML (a `<div class="minitel">`,
@@ -738,11 +743,20 @@ echo $moved->screen()->preview();      // the screen, as text
   40 goes 1 row down, as BS, LF and VT move 1 row. SO and SI set the size back to normal
   and turn off inverse video and separated mosaic, SO also underline; a size (`ESC L` to
   `ESC O`) or inverse video (`ESC ]`) received in mosaic is discarded: mosaic characters are
-  never tall, wide or inverse.
+  never tall, wide or inverse. Underline in text is a zone attribute: `ESC Z` and `ESC Y`
+  wait for a delimiter, a space drawn while a zone attribute (underline, background colour,
+  masking) waits. The delimiter isn't underlined, and starts a zone running along its row up
+  to the next delimiter, mosaic or empty cell, over what is already there too: write
+  `ESC Z`, a space, then the text (as `Page\Display\Key` does). A positioning drops what waits,
+  and SO ends the zone. CAN clears with spaces, so while a zone attribute waits, the first one
+  is a delimiter. A mosaic character uses up nothing that waits. Background colour and masking
+  are still applied at once.
 - **`Vdt\Player::play($vdt, $listener)`** (internal, what `screen()` and `offset()` are
   built on): plays the content on the simulated screen, telling a `Vdt\ScreenListener` each
-  character (`glyph()`, with its row, column, width and attributes) and the other `Token`s
-  (`sequence()`, with a copy of the cursor). `Screen\ScreenCells::of()` collects the cells of
+  character (`glyph()`, with its row, column, width and attributes), each delimiter
+  (`delimiter()`, with the `Screen\Zone` it starts), each CAN (`clearLine()`, with the zone
+  its first space starts if it is a delimiter) and the other `Token`s (`sequence()`, with a
+  copy of the cursor). `Screen\ScreenCells::of()` collects the cells of
   `screen()`, `Vdt\OffsetWriter::write()` writes the content moved by `offset()`: each listens
   to one content, built by that static method only.
 

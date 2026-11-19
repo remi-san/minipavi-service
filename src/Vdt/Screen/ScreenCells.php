@@ -13,6 +13,8 @@ use MiniPaviService\Vdt\Vdt;
 
 /**
  * The cells of the screen as content draws them: what Screen::of() collects while playing it.
+ * As the Minitel shows them, a text cell is underlined when its zone is (Zone): one started,
+ * on its row, by the last delimiter before it, with no mosaic or empty cell between them.
  *
  * It fills its cells as it listens (so it isn't readonly), for one content only: it is only
  * built, and played to, by of().
@@ -24,9 +26,12 @@ final class ScreenCells implements ScreenListener
     /** @var array<int, array<int, ?Cell>> by row, then column (from 1); null if empty */
     private array $cells;
 
+    private Zones $zones;
+
     private function __construct()
     {
         $this->cells = array_fill(0, ScreenSize::ROWS + 1, self::emptyRow());
+        $this->zones = new Zones();
     }
 
     /**
@@ -39,7 +44,7 @@ final class ScreenCells implements ScreenListener
         $cells = new self();
         (new Player())->play($vdt, $cells);
 
-        return $cells->cells;
+        return array_map($cells->inZones(...), $cells->cells, array_keys($cells->cells));
     }
 
     public function glyph(int $row, int $col, string $bytes, int $width, Attributes $attributes): void
@@ -49,6 +54,25 @@ final class ScreenCells implements ScreenListener
         }
         for ($i = 0; $i < $width && ($col + $i) <= ScreenSize::COLS; $i++) {
             $this->cells[$row][$col + $i] = new Cell($bytes, $attributes);
+            $this->zones->draw($row, $col + $i, width: 1, attributes: $attributes);
+        }
+    }
+
+    public function delimiter(int $row, int $col, int $width, Attributes $attributes, Zone $zone): void
+    {
+        $this->glyph($row, $col, bytes: ' ', width: $width, attributes: $attributes);
+        if ($row >= 0 && $row <= ScreenSize::ROWS) {
+            $this->zones->text($row, $col, $width, delimiter: $zone);
+        }
+    }
+
+    public function clearLine(int $row, int $col, Attributes $attributes, ?Zone $delimiter): void
+    {
+        for ($cleared = $col; $cleared <= ScreenSize::COLS; $cleared++) {
+            $this->glyph($row, $cleared, bytes: ' ', width: 1, attributes: $attributes);
+        }
+        if ($delimiter !== null) {
+            $this->delimiter($row, $col, width: 1, attributes: $attributes, zone: $delimiter);
         }
     }
 
@@ -59,14 +83,27 @@ final class ScreenCells implements ScreenListener
             for ($row = 1; $row <= ScreenSize::ROWS; $row++) {
                 $this->cells[$row] = self::emptyRow();
             }
+            $this->zones->clear();
         }
-        $row = $cursor->row();
-        if ($sequence->type === TokenType::ClearLine && $row >= 0 && $row <= ScreenSize::ROWS) {
-            $attributes = $cursor->attributes();
-            for ($col = $cursor->col(); $col <= ScreenSize::COLS; $col++) {
-                $this->cells[$row][$col] = new Cell(' ', $attributes);
+    }
+
+    /**
+     * The cells of a row, each text cell underlined as its zone is (Zones::of())
+     *
+     * @param array<int, ?Cell> $cells by column
+     *
+     * @return array<int, ?Cell>
+     */
+    private function inZones(array $cells, int $row): array
+    {
+        foreach ($cells as $col => $cell) {
+            if ($cell === null || $cell->attributes->isMosaic()) {
+                continue;
             }
+            $cells[$col] = $cell->inZone($this->zones->of($row, $col));
         }
+
+        return $cells;
     }
 
     /**

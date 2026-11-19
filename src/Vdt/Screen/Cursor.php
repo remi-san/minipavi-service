@@ -8,17 +8,20 @@ use MiniPaviService\Minitel\ScreenSize;
 use MiniPaviService\Vdt\Videotex;
 
 /**
- * Cursor and attributes of a Minitel screen in page mode, as Videotex content moves them
+ * Cursor and attributes of a Minitel screen in page mode, as Videotex content moves them: the
+ * attributes of the characters, and the zone attributes (Zone)
  */
 final class Cursor
 {
     private int $row = 1;
     private int $col = 1;
     private Attributes $attributes;
+    private Zone $zone;
 
     public function __construct()
     {
         $this->attributes = Attributes::defaults();
+        $this->zone = Zone::none();
     }
 
     /**
@@ -46,10 +49,19 @@ final class Cursor
     }
 
     /**
+     * Zone attributes: the zone the last delimiter started, and what waits for the next one
+     */
+    public function zone(): Zone
+    {
+        return $this->zone;
+    }
+
+    /**
      * Sets the attribute of ESC byte (Attributes::with()), as the Minitel does: ESC M and ESC
      * O received on rows 0 and 1, which can't have double height, are discarded, the size
      * staying as it was, and so are a size and inverse video received in mosaic (MiniPavi's
-     * emulator, setSize() and setInvert())
+     * emulator, setSize() and setInvert()). Underline in text waits for a delimiter instead
+     * (Zone), as background colour and masking also do there
      *
      * @param string $byte the byte after ESC
      */
@@ -58,7 +70,12 @@ final class Cursor
         if (!Attributes::allowsDoubleHeight($this->row) && Attributes::isTallSize($byte)) {
             return;
         }
-        if ($this->attributes->isMosaic() && !Attributes::appliesInMosaic($byte)) {
+        $mosaic = $this->attributes->isMosaic();
+        if ($mosaic && !Attributes::appliesInMosaic($byte)) {
+            return;
+        }
+        $this->zone = $this->zone->with($byte, $this->attributes);
+        if (!$mosaic && Attributes::isUnderline($byte)) {
             return;
         }
         $this->attributes = $this->attributes->with($byte);
@@ -72,17 +89,36 @@ final class Cursor
     public function setCharset(string $byte): void
     {
         $this->attributes = $this->attributes->withCharset($byte);
+        $this->zone = $this->zone->withCharset($byte);
+    }
+
+    /**
+     * Whether drawing bytes now draws a delimiter: a space, in text, while a zone attribute
+     * waits (Zone)
+     */
+    public function delimits(string $bytes): bool
+    {
+        return $bytes === ' ' && !$this->attributes->isMosaic() && $this->zone->isWaiting();
+    }
+
+    /**
+     * Draws a delimiter (delimits()): starts the zone of what waited
+     */
+    public function delimit(): void
+    {
+        $this->zone = $this->zone->delimited();
     }
 
     /**
      * Positions the cursor (US, or RS / FF at row 1, column 1), which sets the attributes back
-     * to their defaults
+     * to their defaults, and drops the zone attributes
      */
     public function reset(int $row, int $col): void
     {
         $this->row = $row;
         $this->col = $col;
         $this->attributes = Attributes::defaults();
+        $this->zone = Zone::none();
     }
 
     /**

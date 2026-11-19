@@ -314,8 +314,8 @@ final class ScreenTest extends TestCase
 
     /**
      * Inverse video and underline (separation, in mosaic) after SO and SI, which the Minitel
-     * turns off: inverse and separation on SO and SI, underline on SO only (MiniPavi's
-     * emulator, setCharType(), #26)
+     * turns off: inverse and separation on SO and SI; an underlined zone ends at a mosaic cell
+     * (MiniPavi's emulator, setCharType(), #26)
      *
      * @return iterable<string, array{string, int, bool, bool}>
      */
@@ -325,8 +325,8 @@ final class ScreenTest extends TestCase
         $si = Videotex::TEXT_SET;
         yield 'inverse after SO and SI' => [Videotex::INVERSE_ON . "A{$so}\x7F{$si}B", 3, false, false];
         yield 'inverse after SI alone' => [Videotex::INVERSE_ON . "A{$si}B", 2, false, false];
-        yield 'underline after SO and SI' => [Videotex::UNDERLINE_ON . "C{$so}\x7F{$si}D", 3, false, false];
-        yield 'underline kept by SI alone' => [Videotex::UNDERLINE_ON . "C{$si}D", 2, false, true];
+        yield 'underline after SO and SI' => [Videotex::UNDERLINE_ON . " C{$so}\x7F{$si}D", 4, false, false];
+        yield 'underline kept by SI alone' => [Videotex::UNDERLINE_ON . " C{$si}D", 3, false, true];
         yield 'separation after SO' => ["{$so}" . Videotex::UNDERLINE_ON . "\x7F{$so}\x7F", 2, false, false];
         yield 'separation after SI, then SO' => [
             "{$so}" . Videotex::UNDERLINE_ON . "\x7F{$si}{$so}\x7F",
@@ -349,5 +349,62 @@ final class ScreenTest extends TestCase
         $cell = $screen->cell(10, $col) ?? self::fail("Nothing at row 10, column {$col}");
         self::assertSame($inverse, $cell->attributes->isInverse(), "Inverse at column {$col}");
         self::assertSame($underlined, $cell->attributes->isUnderlined(), "Underlined at column {$col}");
+    }
+
+    /**
+     * Underline in text, a zone attribute: ESC Z and ESC Y wait for a delimiter, a space drawn
+     * while an attribute waits, which isn't underlined itself and starts a zone running along
+     * its row up to the next delimiter, mosaic or empty cell (MiniPavi's emulator,
+     * setUnderline(), printDelimiter(), drawRow(), #28)
+     *
+     * @return iterable<string, array{string, string}> what is sent, and each cell from
+     *                                                 column 1: U underlined, . not, ' ' empty
+     */
+    public static function underlineZones(): iterable
+    {
+        $on = Videotex::UNDERLINE_ON;
+        $off = Videotex::UNDERLINE_OFF;
+        $so = Videotex::MOSAIC_SET;
+        $si = Videotex::TEXT_SET;
+        $blue = Videotex::backgroundColor(Color::Blue);
+        // Row 10, column 3
+        $col3 = "\x1F\x4A\x43";
+
+        yield 'waiting for a delimiter' => ["{$on}AB", '..'];
+        yield 'from a delimiter' => ["{$on} AB", '.UU'];
+        yield 'ESC Y waiting too' => ["{$on} AB{$off}CD", '.UUUU'];
+        yield 'up to a delimiter' => ["{$on} A{$off} B", '.U..'];
+        yield 'spaces in the zone' => ["{$on} A B", '.UUU'];
+        yield 'up to a mosaic cell' => ["{$on} A{$so}\x7F{$si}B", '.U..'];
+        yield 'up to an empty cell' => ["{$on} A" . Videotex::CURSOR_RIGHT . 'B', '.U .'];
+        yield 'waiting after SO' => ["{$on}{$so}{$si} B", '.U'];
+        yield 'not waiting after a positioning' => ["{$on}\x1F\x4A\x41 B", '..'];
+        yield 'ESC Z in mosaic not waiting' => ["{$so}{$on}{$si} B", '..'];
+        yield 'a background delimiting the same zone' => ["{$on} A{$blue} B", '.U.U'];
+        yield 'a positioning ending the zone a background delimits' => ["{$on} A{$col3}{$blue} B", '.U..'];
+        yield 'over what is already drawn' => ["ABCD{$col3}{$on} ", '...U'];
+        $can = Videotex::CLEAR_LINE;
+        $ht = Videotex::CURSOR_RIGHT;
+        yield 'CAN drawing a delimiter' => ["A{$on}{$can}{$ht}BC", '..UUU'];
+        yield 'CAN using up what waits' => ["{$on}{$can}{$ht}A B", '.UUU'];
+    }
+
+    /**
+     * @param string $sent after positioning the cursor at row 10, column 1
+     */
+    #[DataProvider('underlineZones')]
+    public function testUnderlineIsAZoneStartedByADelimiter(string $sent, string $expected): void
+    {
+        $screen = Vdt::join(Vdt::position(1, row: 10), new Vdt($sent))->screen();
+
+        $cells = '';
+        for ($col = 1; $col <= \strlen($expected); $col++) {
+            $cells .= match ($screen->cell(10, $col)?->attributes->isUnderlined()) {
+                null => ' ',
+                true => 'U',
+                false => '.',
+            };
+        }
+        self::assertSame($expected, $cells);
     }
 }

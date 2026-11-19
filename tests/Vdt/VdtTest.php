@@ -9,9 +9,11 @@ use MiniPaviService\Minitel\ScreenSize;
 use MiniPaviService\Vdt\Player;
 use MiniPaviService\Vdt\Screen\Attributes;
 use MiniPaviService\Vdt\Screen\Cursor;
+use MiniPaviService\Vdt\Screen\Zone;
 use MiniPaviService\Vdt\ScreenListener;
 use MiniPaviService\Vdt\Token;
 use MiniPaviService\Vdt\Vdt;
+use MiniPaviService\Vdt\Videotex;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
@@ -108,16 +110,93 @@ final class VdtTest extends TestCase
 
     public function testOffsetKeepsInverseAndUnderlineSetAfterSi(): void
     {
-        // Row 10: ESC ], ESC Z, A, SO, a mosaic character, SI, ESC ], ESC Z, B: SO and SI
-        // turn them off, so offset() must send them after the SI again (#26)
-        $moved = (new Vdt("\x1F\x4A\x41\x1B\x5D\x1B\x5AA\x0E\x7F\x0F\x1B\x5D\x1B\x5AB"))
+        // Row 10: ESC ], ESC Z, a space, A, SO, a mosaic character, SI, ESC ], ESC Z, a space,
+        // B: SO and SI turn them off, so offset() must send them after the SI again (#26), and
+        // the mosaic cell ends the zone, so the space after it must start it again (#28)
+        $moved = (new Vdt("\x1F\x4A\x41\x1B\x5D\x1B\x5A A\x0E\x7F\x0F\x1B\x5D\x1B\x5A B"))
             ->offset(x: 0, y: 2)
             ->screen();
 
-        $b = $moved->cell(row: 12, col: 3) ?? self::fail('Nothing at row 12, column 3');
+        $b = $moved->cell(row: 12, col: 5) ?? self::fail('Nothing at row 12, column 5');
         self::assertSame('B', $b->bytes);
         self::assertTrue($b->attributes->isInverse());
         self::assertTrue($b->attributes->isUnderlined());
+    }
+
+    public function testOffsetWritesDelimitersAgain(): void
+    {
+        // Row 10: ESC Z, a space, A, B, ESC Y, C, a space (ending the zone), D: moved, each
+        // delimiter is sent again with its ESC Z or ESC Y just before it (#28)
+        $vdt = new Vdt("\x1F\x4A\x41\x1B\x5A AB\x1B\x59C D");
+
+        self::assertSame("\x1F\x4A\x41\x1B\x5A ABC\x1B\x59 D", $vdt->offset(x: 0, y: 0)->toString());
+        $moved = $vdt->offset(x: 2, y: 1)->screen();
+        $underlined = array_map(
+            static fn(int $col): bool => $moved->cell(row: 11, col: $col)?->attributes->isUnderlined() === true,
+            range(3, end: 8),
+        );
+        // Columns 3 to 8: the delimiter, A, B, C, the delimiter, D
+        self::assertSame([false, true, true, true, false, false], $underlined);
+    }
+
+    /**
+     * @return iterable<string, array{string, int, string}> content (after positioning at row
+     *                                                     10, column 1), x, and the underline
+     *                                                     of columns 1 to 6 once moved by x
+     */
+    public static function spacesKeepingTheirZone(): iterable
+    {
+        $red = Videotex::backgroundColor(Color::Red);
+        $green = Videotex::backgroundColor(Color::Green);
+        $back = str_repeat(Videotex::CURSOR_LEFT, times: 3);
+
+        // Written again after a positioning, the background waits: the space is a delimiter,
+        // of the zone it was in
+        yield 'a background sent again after a positioning' => ["{$red}\x1B\x5A ABCD{$back} ", 0, '.U.UU '];
+        // A background set in mosaic is sent in text
+        yield 'a background set in mosaic' => ["\x1B\x5A AB\x0E{$green}\x0F CD", 0, '.UU.UU'];
+        // The delimiter goes off the screen: the first space after it starts its zone again,
+        // what is before that space can't be (no column left for a delimiter)
+        yield 'a delimiter off the screen' => ["\x1B\x5A AB CD", -1, '...UU '];
+    }
+
+    #[DataProvider('spacesKeepingTheirZone')]
+    public function testOffsetWritesASpaceAsADelimiterWhenItWouldLoseItsZone(
+        string $sent,
+        int $x,
+        string $expected,
+    ): void {
+        $moved = Vdt::join(Vdt::position(1, row: 10), new Vdt($sent))->offset($x, y: 0)->screen();
+
+        $cells = '';
+        for ($col = 1; $col <= 6; $col++) {
+            $cells .= match ($moved->cell(10, $col)?->attributes->isUnderlined()) {
+                null => ' ',
+                true => 'U',
+                false => '.',
+            };
+        }
+        self::assertSame($expected, $cells);
+    }
+
+    public function testOffsetWritesTheDelimiterOfAClearLine(): void
+    {
+        // Row 10: A, ESC Z, CAN (its first space a delimiter), HT, B, C (#28)
+        $vdt = new Vdt("\x1F\x4A\x41A\x1B\x5A\x18\x09BC");
+
+        foreach ([[0, 0], [2, 1], [-1, 0]] as [$x, $y]) {
+            $moved = $vdt->offset($x, $y)->screen();
+            $underlined = array_map(
+                static fn(int $col): bool => $moved->cell(10 + $y, $col + $x)?->attributes->isUnderlined() === true,
+                range(max(1, 1 - $x), end: 5),
+            );
+            // Columns 1 to 5: A, the delimiter, B, C, a cleared space
+            self::assertSame(
+                \array_slice([false, false, true, true, true], max(0, -$x)),
+                $underlined,
+                "offset {$x}, {$y}",
+            );
+        }
     }
 
     public function testOffsetDropsWhatGoesOffTheScreenInsteadOfWrapping(): void
@@ -282,6 +361,13 @@ final class VdtTest extends TestCase
                     $this->columns[$row][$col + $i] = [$col, $width];
                 }
             }
+
+            public function delimiter(int $row, int $col, int $width, Attributes $attributes, Zone $zone): void
+            {
+                $this->glyph($row, $col, bytes: ' ', width: $width, attributes: $attributes);
+            }
+
+            public function clearLine(int $row, int $col, Attributes $attributes, ?Zone $delimiter): void {}
 
             public function sequence(Token $sequence, Cursor $cursor): void {}
         };

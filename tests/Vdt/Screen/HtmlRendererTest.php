@@ -90,11 +90,14 @@ final class HtmlRendererTest extends TestCase
         // On row 2: row 1 has no double height
         self::assertStringContainsString('class="c h2"', $this->render(new Vdt("\x1F\x42\x41\x1B\x4Dx")));
         self::assertStringContainsString('class="c blink"', $this->renderCell("\x1B\x48x"));
-        self::assertStringContainsString('class="c u"', $this->renderCell("\x1B\x5Ax"));
+        // Underlined from a delimiter, a space (Screen\Zone)
+        self::assertStringContainsString('class="c u"', $this->renderCell("\x1B\x5A x"));
         // Not in inverse video: the key badges, as in MiniPavi's emulator
-        self::assertStringNotContainsString('class="c u"', $this->renderCell("\x1B\x5A\x1B\x5Dx"));
-        // Not an underlined space, as in MiniPavi's emulator
+        self::assertStringNotContainsString('class="c u"', $this->renderCell("\x1B\x5A \x1B\x5Dx"));
+        // Not the delimiter itself
         self::assertStringNotContainsString('class="c u"', $this->renderCell("\x1B\x5A "));
+        // But the spaces in the zone, as MiniPavi's emulator draws them: x, a space, y
+        self::assertSame(3, substr_count($this->renderCell("\x1B\x5A x y"), needle: 'class="c u"'));
     }
 
     public function testMosaicIsNeverDoubleHeight(): void

@@ -11,6 +11,9 @@ use MiniPaviService\Vdt\Videotex;
  * Character attributes of a cell, as Videotex content sets them: the charset (text or mosaic),
  * the colours, the size, blinking, masking, underlining and inverse video. A positioning (US),
  * a home (RS) or a clear screen (FF) sets them back to defaults(). Immutable.
+ *
+ * Underlining is the separation of mosaic characters. In text, it is a zone's (Zone): the
+ * cursor doesn't set it, and the Screen's cells have it when their zone is underlined.
  */
 final readonly class Attributes
 {
@@ -82,19 +85,16 @@ final readonly class Attributes
     /**
      * These attributes, in the charset SO (mosaic) or SI (text) selects, as the Minitel sets
      * them on every SO and SI, even one that doesn't change the charset (MiniPavi's emulator,
-     * setCharType(), #26): normal size, no inverse video, no separated mosaic, and on SO no
-     * underline. Underline kept by an SI is the text's: in mosaic, ESC Z separates instead
-     * (and SO already turned underline off)
+     * setCharType(), #26): normal size, no inverse video, and no separated mosaic. Underline in
+     * text is a zone's (Zone), never a character attribute, so neither SO nor SI keeps one
      */
     public function withCharset(string $byte): self
     {
-        $keepsUnderline = $byte === Videotex::TEXT_SET && !$this->isMosaic();
-
         return new self([
             'charset' => $byte === Videotex::MOSAIC_SET ? Videotex::MOSAIC_SET : Videotex::TEXT_SET,
             'size' => self::SIZE_NORMAL,
             'inverse' => self::NO_INVERSE,
-            'underline' => $keepsUnderline ? $this->values['underline'] : self::NO_UNDERLINE,
+            'underline' => self::NO_UNDERLINE,
         ] + $this->values);
     }
 
@@ -175,6 +175,30 @@ final readonly class Attributes
     public static function appliesInMosaic(string $byte): bool
     {
         return !\in_array(self::group($byte), ['size', 'inverse'], strict: true);
+    }
+
+    /**
+     * Whether ESC byte sets underlining, or separation in mosaic: ESC Z or ESC Y
+     */
+    public static function isUnderline(string $byte): bool
+    {
+        return self::group($byte) === 'underline';
+    }
+
+    /**
+     * Whether ESC byte sets the background colour: ESC P to ESC W
+     */
+    public static function isBackground(string $byte): bool
+    {
+        return self::group($byte) === 'bg';
+    }
+
+    /**
+     * Whether ESC byte sets masking: ESC X or ESC _
+     */
+    public static function isMask(string $byte): bool
+    {
+        return self::group($byte) === 'mask';
     }
 
     /**
