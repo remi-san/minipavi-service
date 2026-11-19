@@ -60,7 +60,7 @@ final class HtmlRendererTest extends TestCase
 
     public function testDrawsTextInItsColoursWithItsAccents(): void
     {
-        $html = $this->render(Vdt::join(Vdt::position(1, row: 1), new Vdt("\x1B\x41"), Vdt::text('é<')));
+        $html = $this->render(Vdt::join(Vdt::position(new Position(row: 1)), new Vdt("\x1B\x41"), Vdt::text('é<')));
 
         self::assertStringContainsString('style="color:#ff0000;background:#000000">é</span>', $html);
         self::assertStringContainsString('>&lt;</span>', $html);
@@ -75,7 +75,7 @@ final class HtmlRendererTest extends TestCase
 
     public function testDoubleWidthTakesTwoColumns(): void
     {
-        $html = $this->render(Vdt::join(Vdt::position(1, row: 1), new Vdt("\x1B\x4E"), Vdt::text('W')));
+        $html = $this->render(Vdt::join(Vdt::position(new Position(row: 1)), new Vdt("\x1B\x4E"), Vdt::text('W')));
 
         self::assertStringContainsString('class="c w2"', $html);
         // The character's second column is not drawn again

@@ -34,7 +34,7 @@ final readonly class Line implements Element
     public function toVdt(Terminal $terminal): Vdt
     {
         return Vdt::join(
-            Vdt::position($this->span->start->col, $this->span->start->row),
+            Vdt::position($this->span->start),
             new Vdt(Videotex::textColor($this->color)),
             Vdt::repeat($this->char, $this->span->length),
         );

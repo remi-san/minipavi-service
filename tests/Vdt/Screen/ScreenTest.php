@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MiniPaviService\Tests\Vdt\Screen;
 
 use MiniPaviService\Minitel\Color;
+use MiniPaviService\Minitel\Position;
 use MiniPaviService\Vdt\Vdt;
 use MiniPaviService\Vdt\Videotex;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -39,7 +40,7 @@ final class ScreenTest extends TestCase
     public function testLineGivesTheTextOfARowWithItsAccents(): void
     {
         $screen = Vdt::join(
-            Vdt::position(1, row: 3),
+            Vdt::position(new Position(row: 3)),
             Vdt::text('Dernière page, ça coûte 5£ ½ Œuvre'),
             Vdt::line0('Accès refusé'),
         )->screen();
@@ -61,7 +62,7 @@ final class ScreenTest extends TestCase
 
     public function testTextGivesEveryRow(): void
     {
-        $text = Vdt::position(1, row: 1)->append(Vdt::text('Hello'))->screen()->text();
+        $text = Vdt::position(new Position(row: 1))->append(Vdt::text('Hello'))->screen()->text();
 
         $lines = explode("\n", $text);
         self::assertCount(25, $lines);
@@ -129,7 +130,7 @@ final class ScreenTest extends TestCase
     #[DataProvider('sizesOnRow1')]
     public function testRow1HasNoDoubleHeight(string $size, string $text, int $width, string $shown): void
     {
-        $screen = Vdt::join(Vdt::position(1, row: 1), new Vdt($size), Vdt::text($text))->screen();
+        $screen = Vdt::join(Vdt::position(new Position(row: 1)), new Vdt($size), Vdt::text($text))->screen();
 
         self::assertSame($shown, rtrim($screen->line(1)));
         for ($col = 1; $col <= \strlen($shown); $col++) {
@@ -143,7 +144,7 @@ final class ScreenTest extends TestCase
     {
         // ESC M, a, six line feeds (LF), b: both at normal size
         $screen = Vdt::join(
-            Vdt::position(1, row: 1),
+            Vdt::position(new Position(row: 1)),
             new Vdt(Videotex::SIZE_DOUBLE_HEIGHT . 'a' . str_repeat("\x0A", times: 6) . 'b'),
         )->screen();
 
@@ -156,7 +157,7 @@ final class ScreenTest extends TestCase
     {
         // Its top half on row 1
         $screen = Vdt::join(
-            Vdt::position(30, row: 2),
+            Vdt::position(new Position(row: 2, col: 30)),
             new Vdt(Videotex::SIZE_DOUBLE_HEIGHT),
             Vdt::text('T2'),
         )->screen();
@@ -240,7 +241,7 @@ final class ScreenTest extends TestCase
     #[DataProvider('tallWraps')]
     public function testTallCharacterWrapsTwoRowsDown(int $row, int $col, string $sent, array $drawn): void
     {
-        $screen = Vdt::join(Vdt::position($col, $row), new Vdt($sent))->screen();
+        $screen = Vdt::join(Vdt::position(new Position($row, $col)), new Vdt($sent))->screen();
 
         foreach ($drawn as [$atRow, $atCol, $char]) {
             $cell = $screen->cell($atRow, $atCol) ?? self::fail("Nothing at row {$atRow}, column {$atCol}");
@@ -253,7 +254,7 @@ final class ScreenTest extends TestCase
     {
         // Row 10, column 40: ESC M, SO, then two mosaic characters, which are never tall
         $screen = Vdt::join(
-            Vdt::position(40, row: 10),
+            Vdt::position(new Position(row: 10, col: 40)),
             new Vdt(Videotex::SIZE_DOUBLE_HEIGHT . Videotex::MOSAIC_SET . "\x7F\x21"),
         )->screen();
 
@@ -267,7 +268,7 @@ final class ScreenTest extends TestCase
         // 11, SI, then text: SO and SI set the size back to normal, as the Minitel does, so F
         // wraps to row 12 (checked in MiniPavi's emulator, #26)
         $screen = Vdt::join(
-            Vdt::position(39, row: 10),
+            Vdt::position(new Position(row: 10, col: 39)),
             new Vdt(
                 Videotex::SIZE_DOUBLE_HEIGHT
                 . 'A'
@@ -290,7 +291,7 @@ final class ScreenTest extends TestCase
         // Row 10, column 40: SO, ESC M, SI, then AB: the Minitel ignores the size in mosaic,
         // so B is at normal size, 1 row down (checked in MiniPavi's emulator)
         $screen = Vdt::join(
-            Vdt::position(40, row: 10),
+            Vdt::position(new Position(row: 10, col: 40)),
             new Vdt(Videotex::MOSAIC_SET . Videotex::SIZE_DOUBLE_HEIGHT . Videotex::TEXT_SET . 'AB'),
         )->screen();
 
@@ -304,7 +305,7 @@ final class ScreenTest extends TestCase
     {
         // Row 20, column 39: ESC M, O, HT from column 40 to row 21 (not 22), Q
         $screen = Vdt::join(
-            Vdt::position(39, row: 20),
+            Vdt::position(new Position(row: 20, col: 39)),
             new Vdt(Videotex::SIZE_DOUBLE_HEIGHT . 'O' . Videotex::CURSOR_RIGHT . 'Q'),
         )->screen();
 
@@ -344,7 +345,7 @@ final class ScreenTest extends TestCase
     #[DataProvider('charsetResets')]
     public function testSoAndSiTurnOffInverseAndUnderline(string $sent, int $col, bool $inverse, bool $underlined): void
     {
-        $screen = Vdt::join(Vdt::position(1, row: 10), new Vdt($sent))->screen();
+        $screen = Vdt::join(Vdt::position(new Position(row: 10)), new Vdt($sent))->screen();
 
         $cell = $screen->cell(10, $col) ?? self::fail("Nothing at row 10, column {$col}");
         self::assertSame($inverse, $cell->attributes->isInverse(), "Inverse at column {$col}");
@@ -395,7 +396,7 @@ final class ScreenTest extends TestCase
     #[DataProvider('underlineZones')]
     public function testUnderlineIsAZoneStartedByADelimiter(string $sent, string $expected): void
     {
-        $screen = Vdt::join(Vdt::position(1, row: 10), new Vdt($sent))->screen();
+        $screen = Vdt::join(Vdt::position(new Position(row: 10)), new Vdt($sent))->screen();
 
         $cells = '';
         for ($col = 1; $col <= \strlen($expected); $col++) {

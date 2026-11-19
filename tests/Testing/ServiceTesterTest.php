@@ -13,6 +13,7 @@ use MiniPaviService\Core\RouterBuilder;
 use MiniPaviService\Core\Service;
 use MiniPaviService\Message\MessagesXmlParser;
 use MiniPaviService\Minitel\FunctionKey;
+use MiniPaviService\Minitel\Position;
 use MiniPaviService\Minitel\Terminal;
 use MiniPaviService\Testing\ServiceTester;
 use MiniPaviService\Tests\Support\CallbackController;
@@ -35,12 +36,20 @@ final class ServiceTesterTest extends TestCase
         $routes->addRoute('menu', $this->controller(static fn(Request $request) => match ($request->contentAsString()) {
             '2' => Response::goTo('directory'),
             'ext' => Response::connectTo('https://example.org/', Vdt::line0('Connexion…')),
-            default => Response::display(Vdt::join(Vdt::clearScreen(), Vdt::position(1, row: 1), Vdt::text('MENU'))),
+            default => Response::display(Vdt::join(
+                Vdt::clearScreen(),
+                Vdt::position(new Position(row: 1)),
+                Vdt::text('MENU'),
+            )),
         }));
         $routes->addRoute('directory', $this->controller(static fn(Request $request) => $request->functionKey()
             === FunctionKey::Next
                 ? Response::display(Vdt::line0('Dernière page'))
-                : Response::display(Vdt::join(Vdt::clearScreen(), Vdt::position(1, row: 2), Vdt::text('Annuaire')))));
+                : Response::display(Vdt::join(
+                    Vdt::clearScreen(),
+                    Vdt::position(new Position(row: 2)),
+                    Vdt::text('Annuaire'),
+                ))));
         $router = $routes->build();
 
         $this->tester = new ServiceTester(

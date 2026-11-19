@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MiniPaviService\Vdt;
 
 use MiniPavi\MiniPaviCli;
+use MiniPaviService\Minitel\Position;
 use MiniPaviService\Vdt\Screen\Screen;
 
 /**
@@ -37,11 +38,11 @@ final readonly class Vdt
     }
 
     /**
-     * Positions the cursor at col (1 to 40) of row (0, the status line, to 24)
+     * Positions the cursor at a cell (row 0 is the status line)
      */
-    public static function position(int $col, int $row): self
+    public static function position(Position $position): self
     {
-        return new self(MiniPaviCli::setPos($col, $row));
+        return new self(MiniPaviCli::setPos($position->col, $position->row));
     }
 
     /**

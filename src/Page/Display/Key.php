@@ -29,7 +29,7 @@ final readonly class Key implements Element
     public function toVdt(Terminal $terminal): Vdt
     {
         return Vdt::join(
-            Vdt::position($this->position->col, $this->position->row),
+            Vdt::position($this->position),
             $this->bg === null ? new Vdt() : new Vdt(Videotex::backgroundColor($this->bg)),
             self::badge($this->label, $this->color),
         );
