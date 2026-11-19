@@ -41,13 +41,12 @@ final class Service
      *                                      HmacContextSigner)
      * @param int $maxPageChanges page changes (Response::goTo()) allowed in one request:
      *                            more is taken as controllers changing to each other
-     *                            endlessly
+     *                            endlessly; 0 forbids them
      * @param ?LoggerInterface $logger where connections, disconnections and errors are logged;
      *                                 none by default
      *
      * @throws MessagesException if the messages miss some of the framework's
-     * @throws InvalidValueException if maxPageChanges is below 1: no page change could be
-     *                               made
+     * @throws InvalidValueException if maxPageChanges is negative
      */
     public function __construct(
         private Router $router,
@@ -56,9 +55,9 @@ final class Service
         private int $maxPageChanges = self::MAX_PAGE_CHANGES,
         ?LoggerInterface $logger = null,
     ) {
-        if ($maxPageChanges < 1) {
+        if ($maxPageChanges < 0) {
             throw new InvalidValueException(
-                "At least 1 page change must be allowed in one request, not {$maxPageChanges}",
+                "The page changes allowed in one request can't be negative: {$maxPageChanges}",
             );
         }
         $this->logger = $logger ?? new NullLogger();

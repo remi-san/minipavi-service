@@ -255,23 +255,29 @@ final class ServiceTest extends TestCase
         );
     }
 
-    #[DataProvider('noPageChanges')]
-    public function testThePageChangesAllowedMustBeOneAtLeast(int $maxPageChanges): void
+    public function testNoPageChangeCanBeAllowed(): void
     {
-        $this->expectException(InvalidValueException::class);
-        $this->expectExceptionMessage("At least 1 page change must be allowed in one request, not {$maxPageChanges}");
+        $this->maxPageChanges = 0;
+        $menu = $this->connect();
+        $this->requests = [];
 
-        $router = $this->routes->build();
-        new Service($router, (new MessagesXmlParser())->defaults(), new ContextSerializer($router), $maxPageChanges);
+        $response = $this->press($menu, key: FunctionKey::Next, content: ['ping']);
+
+        self::assertStringContainsString(self::errorMessage(), self::line0($response));
+        self::assertCount(1, array_merge(...array_values($this->requests)));
+        self::assertStringContainsString(
+            'Too many page changes in one request (more than 0): menu → ping',
+            $this->error()[0],
+        );
     }
 
-    /**
-     * @return iterable<string, array{int}>
-     */
-    public static function noPageChanges(): iterable
+    public function testThePageChangesAllowedCantBeNegative(): void
     {
-        yield 'none' => [0];
-        yield 'negative' => [-1];
+        $this->expectException(InvalidValueException::class);
+        $this->expectExceptionMessage('The page changes allowed in one request can\'t be negative: -1');
+
+        $router = $this->routes->build();
+        new Service($router, (new MessagesXmlParser())->defaults(), new ContextSerializer($router), -1);
     }
 
     public function testChangePageStartsTheTargetAtInitWithItsParametersWithoutTheInput(): void

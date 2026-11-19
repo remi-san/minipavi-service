@@ -122,7 +122,8 @@ final readonly class KernelBuilder
 
     /**
      * Page changes (Response::goTo()) allowed in one request, more being taken as controllers
-     * changing to each other endlessly (Service); at least 1, or build() throws
+     * changing to each other endlessly (Service); 0 forbids them, and a negative number
+     * makes build() throw
      */
     public function withMaxPageChanges(int $maxPageChanges): self
     {
