@@ -22,6 +22,7 @@ in the PR), so that it shows when a service updates.
 
 ## Workflow for fixing an issue
 
+The developer agent follows these steps (see [Working with agents](#working-with-agents)).
 Work is tracked in GitHub issues on this repository. The framework's open issues were moved
 here from remi-san/minipavi-stack; its closed ones (prefixed `framework:`) stay there, and the
 moved ones link to them as `remi-san/minipavi-stack#<n>`. For each issue:
@@ -48,6 +49,35 @@ moved ones link to them as `remi-san/minipavi-stack#<n>`. For each issue:
    The PR body states what changed and why, how it was checked, and any follow-up. It ends with
    `Closes #<n>`. Don't merge the PR:
    the user reviews and merges it.
+
+## Working with agents
+
+The issues are worked on by two agents, defined in `.claude/agents/`, each in its own git
+worktree: a **developer**, who resolves the issue and opens its PR, and a **reviewer**, who
+reviews that PR. Both are strong in architecture, OOP and testing, and follow this file. The
+main session doesn't write the code: it starts the agents, carries messages between them,
+and keeps the user informed. The order of the issues is the pinned roadmap, #80.
+
+1. **Start on the user's word.** When the user says to start an issue (or the next one on
+   the roadmap), start a new developer: the `Agent` tool with `subagent_type: "developer"`
+   and `isolation: "worktree"`, giving it the issue number and any decision the user has
+   already made. One issue at a time.
+2. **Questions go to the user.** When the developer reports a question or an ambiguity, ask
+   the user (with the developer's options and recommendation), and send the answer back with
+   `SendMessage`, to the same developer.
+3. **Review once the PR is pushed.** When the developer reports its PR, start a new reviewer
+   (`subagent_type: "reviewer"`, `isolation: "worktree"`) with the PR and issue numbers.
+4. **Relay every round.** Give the user each review's verdict and findings (numbered,
+   blocking or not, and the developer's answer to each from round 2 on), then carry on
+   without waiting, unless the user steps in.
+5. **Loop until approved.** On `CHANGES REQUESTED`, send the findings, unedited, to the same
+   developer (`SendMessage`). When it has pushed, send its answer to the same reviewer for
+   the next round. Keep both agents for the whole issue, so they keep their context.
+6. **Three rounds at most.** A round is one review. If the reviewer hasn't approved after the
+   third, stop and ask the user what to do: list each open finding with both sides'
+   arguments, and your own view.
+7. **Approved: hand over.** Tell the user the PR is ready, with its link and a summary of the
+   rounds. The user reviews and merges it; the agents never merge.
 
 ## Commit messages: Karma convention
 
