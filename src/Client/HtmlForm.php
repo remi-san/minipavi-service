@@ -9,6 +9,7 @@ use MiniPaviService\Html\Html;
 use MiniPaviService\Message\FrameworkMessage;
 use MiniPaviService\Message\Messages;
 use MiniPaviService\Minitel\FunctionKey;
+use MiniPaviService\Minitel\Position;
 use MiniPaviService\Vdt\Screen\HtmlRenderer;
 use MiniPaviService\Vdt\Vdt;
 use Psr\Http\Message\ServerRequestInterface;
@@ -131,8 +132,7 @@ final readonly class HtmlForm
                 . '"'
                 . ' style="'
                 . $this->renderer->place(
-                    $field->span->start->col,
-                    $field->span->start->row + $line,
+                    new Position($field->span->start->row + $line, $field->span->start->col),
                     $field->span->length,
                 )
                 . '"'

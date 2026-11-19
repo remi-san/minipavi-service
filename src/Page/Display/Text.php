@@ -50,17 +50,26 @@ final readonly class Text implements Element
     private function placed(Vdt $attr, Vdt $text, int $charWidth): Vdt
     {
         if (!$this->centered) {
-            return Vdt::join(Vdt::position($this->position->col, $this->position->row), $attr, $text);
+            return Vdt::join(Vdt::position($this->position), $attr, $text);
         }
         if ($this->fill) {
             // Starts at column 1 and pads with spaces up to the text (the spaces having the
             // text's width): the background color only applies from a space onwards
             $pad = max(0, intdiv($this->centeredCol($charWidth) - 1, $charWidth));
 
-            return Vdt::join(Vdt::position(1, $this->position->row), $attr, new Vdt(str_repeat(' ', $pad)), $text);
+            return Vdt::join(
+                Vdt::position(new Position($this->position->row)),
+                $attr,
+                new Vdt(str_repeat(' ', $pad)),
+                $text,
+            );
         }
 
-        return Vdt::join(Vdt::position($this->centeredCol($charWidth), $this->position->row), $attr, $text);
+        return Vdt::join(
+            Vdt::position(new Position($this->position->row, $this->centeredCol($charWidth))),
+            $attr,
+            $text,
+        );
     }
 
     /**

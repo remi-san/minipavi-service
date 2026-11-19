@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MiniPaviService\Tests\Vdt;
 
 use MiniPaviService\Minitel\Color;
+use MiniPaviService\Minitel\Position;
 use MiniPaviService\Minitel\ScreenSize;
 use MiniPaviService\Vdt\Player;
 use MiniPaviService\Vdt\Screen\Attributes;
@@ -166,7 +167,9 @@ final class VdtTest extends TestCase
         int $x,
         string $expected,
     ): void {
-        $moved = Vdt::join(Vdt::position(1, row: 10), new Vdt($sent))->offset($x, y: 0)->screen();
+        $moved = Vdt::join(Vdt::position(new Position(row: 10)), new Vdt($sent))
+            ->offset($x, y: 0)
+            ->screen();
 
         $cells = '';
         for ($col = 1; $col <= 6; $col++) {

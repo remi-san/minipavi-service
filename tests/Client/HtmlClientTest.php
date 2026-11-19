@@ -64,7 +64,7 @@ final class HtmlClientTest extends TestCase
     public function testKeyPressedWithWhatWasTyped(): void
     {
         // The page the key is pressed on: its hidden values, posted back as they are
-        $screen = Vdt::position(1, row: 1)->append(Vdt::text('Menu'));
+        $screen = Vdt::position(new Position(row: 1))->append(Vdt::text('Menu'));
         $page = self::page(
             new GatewayResponse(
                 $screen,
@@ -97,7 +97,9 @@ final class HtmlClientTest extends TestCase
         $html = (string) $exchange->respond(new GatewayResponse(new Vdt(), '{}', self::leaving()))->getBody();
         self::assertStringContainsString('Menu', self::shownText($html));
         self::assertStringContainsString(
-            'value="ab" style="' . (new HtmlRenderer(HtmlRenderer::MINITEL_FONT))->place(1, row: 2, length: 4) . '"',
+            'value="ab" style="'
+            . (new HtmlRenderer(HtmlRenderer::MINITEL_FONT))->place(new Position(row: 2), length: 4)
+            . '"',
             $html,
         );
         // Its keys: Envoi and Suite only
@@ -167,7 +169,7 @@ final class HtmlClientTest extends TestCase
 
     public function testPageKeepsTheContextAndTheScreen(): void
     {
-        $vdt = Vdt::clearScreen()->append(Vdt::position(1, row: 1), Vdt::text('Bonjour <3'));
+        $vdt = Vdt::clearScreen()->append(Vdt::position(new Position(row: 1)), Vdt::text('Bonjour <3'));
         $html = self::page(new GatewayResponse($vdt, '{"route":"home"}'));
 
         self::assertStringStartsWith('<!doctype html>', $html);
@@ -214,7 +216,7 @@ final class HtmlClientTest extends TestCase
 
     public function testResponseIsDrawnOverTheScreenSoFar(): void
     {
-        $before = Vdt::clearScreen()->append(Vdt::position(1, row: 3), Vdt::text('Page 2/2'));
+        $before = Vdt::clearScreen()->append(Vdt::position(new Position(row: 3)), Vdt::text('Page 2/2'));
 
         $html = self::page(new GatewayResponse(Vdt::line0('Dernière page'), '{}'), [
             'key' => 'SUITE',
@@ -227,8 +229,8 @@ final class HtmlClientTest extends TestCase
 
     public function testScreenIsKeptFromItsLastClear(): void
     {
-        $before = Vdt::clearScreen()->append(Vdt::position(1, row: 3), Vdt::text('Avant'));
-        $response = Vdt::clearScreen()->append(Vdt::position(1, row: 3), Vdt::text('Après'));
+        $before = Vdt::clearScreen()->append(Vdt::position(new Position(row: 3)), Vdt::text('Avant'));
+        $response = Vdt::clearScreen()->append(Vdt::position(new Position(row: 3)), Vdt::text('Après'));
 
         $html = self::page(new GatewayResponse($response, '{}'), [
             'key' => 'SUITE',
@@ -258,7 +260,7 @@ final class HtmlClientTest extends TestCase
         self::assertSame(1, substr_count($html, needle: 'class="field"'));
         self::assertStringContainsString(
             'name="content[]" maxlength="2" value="ab" style="'
-            . (new HtmlRenderer(HtmlRenderer::MINITEL_FONT))->place(16, row: 24, length: 2)
+            . (new HtmlRenderer(HtmlRenderer::MINITEL_FONT))->place(new Position(row: 24, col: 16), length: 2)
             . '" autofocus',
             $html,
         );
@@ -278,11 +280,15 @@ final class HtmlClientTest extends TestCase
         );
 
         self::assertStringContainsString(
-            'value="l1" style="' . (new HtmlRenderer(HtmlRenderer::MINITEL_FONT))->place(1, row: 13, length: 40) . '"',
+            'value="l1" style="'
+            . (new HtmlRenderer(HtmlRenderer::MINITEL_FONT))->place(new Position(row: 13), length: 40)
+            . '"',
             $html,
         );
         self::assertStringContainsString(
-            'value="l2" style="' . (new HtmlRenderer(HtmlRenderer::MINITEL_FONT))->place(1, row: 14, length: 40) . '"',
+            'value="l2" style="'
+            . (new HtmlRenderer(HtmlRenderer::MINITEL_FONT))->place(new Position(row: 14), length: 40)
+            . '"',
             $html,
         );
     }
@@ -332,7 +338,7 @@ final class HtmlClientTest extends TestCase
     public function testLeavingTheServiceIsBlocked(): void
     {
         // The page the key is pressed on: its hidden values, posted back as they are
-        $before = Vdt::clearScreen()->append(Vdt::position(1, row: 3), Vdt::text('Annuaire'));
+        $before = Vdt::clearScreen()->append(Vdt::position(new Position(row: 3)), Vdt::text('Annuaire'));
         $page = self::page(
             new GatewayResponse(
                 $before,
@@ -359,7 +365,9 @@ final class HtmlClientTest extends TestCase
         // Where the user was: their context and their input
         self::assertStringContainsString('name="context" value="{&quot;route&quot;:&quot;directory&quot;}"', $html);
         self::assertStringContainsString(
-            'style="' . (new HtmlRenderer(HtmlRenderer::MINITEL_FONT))->place(7, row: 23, length: 23) . '"',
+            'style="'
+            . (new HtmlRenderer(HtmlRenderer::MINITEL_FONT))->place(new Position(row: 23, col: 7), length: 23)
+            . '"',
             $html,
         );
         self::assertSame(7, substr_count($html, needle: ' disabled>'));
@@ -369,7 +377,7 @@ final class HtmlClientTest extends TestCase
     {
         $html = self::page(
             new GatewayResponse(
-                Vdt::position(1, row: 1)->append(Vdt::text('Ici')),
+                Vdt::position(new Position(row: 1))->append(Vdt::text('Ici')),
                 '{}',
                 new ServiceCallCommand(self::SERVICE_URL, CallMode::Direct),
             ),
@@ -389,11 +397,11 @@ final class HtmlClientTest extends TestCase
             Request $request,
         ) => $request->functionKey() === FunctionKey::Send
             ? Response::goTo('games')
-            : Response::display(Vdt::clearScreen()->append(Vdt::position(1, row: 1), Vdt::text('HOME')))));
+            : Response::display(Vdt::clearScreen()->append(Vdt::position(new Position(row: 1)), Vdt::text('HOME')))));
         $routes->addRoute('games', new CallbackController(NoParameters::class, static fn(
             Request $request,
         ) => Response::display(Vdt::clearScreen()->append(
-            Vdt::position(1, row: 1),
+            Vdt::position(new Position(row: 1)),
             Vdt::text('GAMES ' . $request->contentAsString()),
         ))));
         $router = $routes->build();

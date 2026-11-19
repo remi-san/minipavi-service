@@ -15,6 +15,7 @@ use MiniPaviService\Http\Emulator\EmulatorConfig;
 use MiniPaviService\Http\KernelBuilder;
 use MiniPaviService\Http\Url\RequestUrl;
 use MiniPaviService\Message\MessagesXmlParser;
+use MiniPaviService\Minitel\Position;
 use MiniPaviService\Tests\Support\CallbackController;
 use MiniPaviService\Tests\Support\MemoryLogger;
 use MiniPaviService\Tests\Support\RecordingHandler;
@@ -36,7 +37,7 @@ final class KernelBuilderTest extends TestCase
         $routes = new RouterBuilder('home');
         $routes->addRoute('home', new CallbackController(NoParameters::class, static fn(
             Request $request,
-        ) => Response::display(Vdt::position(1, row: 1)->append(Vdt::text('HOME')))));
+        ) => Response::display(Vdt::position(new Position(row: 1))->append(Vdt::text('HOME')))));
         $router = $routes->build();
         $this->builder = KernelBuilder::for($router, (new MessagesXmlParser())->defaults());
     }

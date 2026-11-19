@@ -7,6 +7,7 @@ namespace MiniPaviService\Vdt\Screen;
 use MiniPaviService\Html\Html;
 use MiniPaviService\Io\Files;
 use MiniPaviService\Minitel\Color;
+use MiniPaviService\Minitel\Position;
 use MiniPaviService\Minitel\ScreenSize;
 
 /**
@@ -81,11 +82,11 @@ final readonly class HtmlRenderer
 
     /**
      * Style placing an element over the screen (e.g. an input field of the overlay) at a cell,
-     * from column 1, row 0, length cells wide: the screen's geometry, kept with its CSS
+     * length cells wide: the screen's geometry, kept with its CSS
      */
-    public function place(int $col, int $row, int $length): string
+    public function place(Position $position, int $length): string
     {
-        return "left: calc(var(--pad) + {$col}*var(--w) - var(--w)); top: calc(var(--pad) + {$row}*var(--h)); width: calc({$length}*var(--w));";
+        return "left: calc(var(--pad) + {$position->col}*var(--w) - var(--w)); top: calc(var(--pad) + {$position->row}*var(--h)); width: calc({$length}*var(--w));";
     }
 
     /**
