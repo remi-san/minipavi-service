@@ -494,7 +494,7 @@ KernelBuilder::for($router, $messages)
 
   `Values` reads what the context kept (JSON, from a previous request, possibly of another
   version of the service, or forged): `int($name, $default)`, `string()`, `bool()` and
-  `array()` coerce what is safe (`'12'` or `12.0` to `12`, a number to text, `1`/`0` and
+  `array()` coerce what is safe (`'12'` or `12.0` to `12`, `'+007'` to `7`, a number to text, `1`/`0` and
   `'true'`/`'false'` to a bool), and give the default for anything else.
 
   Behind it, `RouterBuilder::addRoute()` binds each controller with its types (`Route`), in
