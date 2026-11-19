@@ -7,6 +7,7 @@ namespace MiniPaviService\Controller\Pagination;
 use MiniPaviService\Controller\ControllerState;
 use MiniPaviService\Controller\Request;
 use MiniPaviService\Controller\Response;
+use MiniPaviService\Controller\Response\RunCommand;
 use MiniPaviService\Message\FrameworkMessage;
 use MiniPaviService\Message\Message;
 use MiniPaviService\Page;
@@ -43,7 +44,7 @@ final readonly class ShownPage
      */
     public function stay(Vdt $vdt = new Vdt()): Response
     {
-        return Response::readInput(
+        return RunCommand::readInput(
             $vdt,
             $this->page->inputCommand(),
             parameters: new PageParameters($this->paginator->index()),

@@ -165,7 +165,7 @@ final class ServiceTester
     }
 
     /**
-     * Asserts the user is sent to another service, at url (Response::connectTo())
+     * Asserts the user is sent to another service, at url (RunCommand::connectTo())
      */
     public function assertConnectsTo(string $url): self
     {

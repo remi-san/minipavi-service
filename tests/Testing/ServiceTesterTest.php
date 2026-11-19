@@ -8,6 +8,9 @@ use MiniPaviService\Controller\ControllerState;
 use MiniPaviService\Controller\Parameters\NoParameters;
 use MiniPaviService\Controller\Request;
 use MiniPaviService\Controller\Response;
+use MiniPaviService\Controller\Response\ChangePage;
+use MiniPaviService\Controller\Response\DisplayPage;
+use MiniPaviService\Controller\Response\RunCommand;
 use MiniPaviService\Core\ContextSerializer;
 use MiniPaviService\Core\RouterBuilder;
 use MiniPaviService\Core\Service;
@@ -34,9 +37,9 @@ final class ServiceTesterTest extends TestCase
         // directory: Suite on its only page shows a message on line 0
         $routes = new RouterBuilder('menu');
         $routes->addRoute('menu', $this->controller(static fn(Request $request) => match ($request->contentAsString()) {
-            '2' => Response::goTo('directory'),
-            'ext' => Response::connectTo('https://example.org/', Vdt::line0('Connexion…')),
-            default => Response::display(Vdt::join(
+            '2' => new ChangePage('directory'),
+            'ext' => RunCommand::connectTo('https://example.org/', Vdt::line0('Connexion…')),
+            default => new DisplayPage(Vdt::join(
                 Vdt::clearScreen(),
                 Vdt::position(new Position(row: 1)),
                 Vdt::text('MENU'),
@@ -44,8 +47,8 @@ final class ServiceTesterTest extends TestCase
         }));
         $routes->addRoute('directory', $this->controller(static fn(Request $request) => $request->functionKey()
             === FunctionKey::Next
-                ? Response::display(Vdt::line0('Dernière page'))
-                : Response::display(Vdt::join(
+                ? new DisplayPage(Vdt::line0('Dernière page'))
+                : new DisplayPage(Vdt::join(
                     Vdt::clearScreen(),
                     Vdt::position(new Position(row: 2)),
                     Vdt::text('Annuaire'),

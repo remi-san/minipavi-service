@@ -18,15 +18,16 @@ final readonly class ChangePage extends Response
 {
     /**
      * @param string $route route of the target controller
-     * @param ?Parameters $targetParameters parameters of the target controller; null: their defaults
+     * @param ?Parameters $parameters parameters of the target controller, of the class it
+     *                                declares; null: their defaults
      */
     public function __construct(
         public string $route,
-        public ?Parameters $targetParameters = null,
+        public ?Parameters $parameters = null,
     ) {}
 
     public function continueWith(Flow $flow): GatewayResponse
     {
-        return $flow->goTo($this->route, $this->targetParameters);
+        return $flow->goTo($this->route, $this->parameters);
     }
 }

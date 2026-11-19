@@ -9,6 +9,7 @@ use MiniPaviService\Controller\Pagination\PageParameters;
 use MiniPaviService\Controller\Parameters\ParametersType;
 use MiniPaviService\Controller\Request;
 use MiniPaviService\Controller\Response;
+use MiniPaviService\Controller\Response\DisplayPage;
 use MiniPaviService\Vdt\Vdt;
 
 /**
@@ -30,7 +31,7 @@ final class SearchController implements Controller
 
     public function run(Request $request): Response
     {
-        return Response::display(
+        return new DisplayPage(
             Vdt::text($request->state()->value . ' ' . $request->parameters()->page),
             SearchState::ReadQuery,
         );
