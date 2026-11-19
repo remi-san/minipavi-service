@@ -12,8 +12,10 @@ use MiniPaviService\Gateway\GatewayResponse;
 use MiniPaviService\Vdt\Vdt;
 
 /**
- * Sends Videotex content and a command (e.g. reading an input field) to the gateway; what
- * the user types comes back to this controller
+ * Sends Videotex content and a command to the gateway: reading an input field
+ * (Response::readInput()), what the user types coming back to this controller; or calling
+ * another service (Response::connectTo()), this controller's state and parameters kept for
+ * when the user comes back
  */
 final readonly class RunCommand extends KeepingResponse
 {

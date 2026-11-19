@@ -8,7 +8,6 @@ use MiniPaviService\Controller\ControllerState;
 use MiniPaviService\Controller\Pagination\PageParameters;
 use MiniPaviService\Controller\Response;
 use MiniPaviService\Controller\Response\RunCommand;
-use MiniPaviService\Controller\Response\RunExternalService;
 use MiniPaviService\Gateway\CallMode;
 use MiniPaviService\Gateway\InputCommand;
 use MiniPaviService\Gateway\ServiceCallCommand;
@@ -117,28 +116,26 @@ final class ResponseTest extends TestCase
 
     public function testConnectToAnswersWithTheOtherService(): void
     {
+        [[$method, $arguments]] = $this->answersOf(Response::connectTo(
+            'https://example.org/service',
+            new Vdt('Cnx en cours'),
+        ));
+
+        self::assertSame(['answer', 'Cnx en cours'], [$method, $arguments['vdt']]);
         self::assertEquals(
-            [[
-                'answer',
-                [
-                    'vdt' => 'Cnx en cours',
-                    'command' => new ServiceCallCommand('https://example.org/service', CallMode::Connect),
-                ],
-            ]],
-            $this->answersOf(Response::connectTo('https://example.org/service', new Vdt('Cnx en cours'))),
+            new ServiceCallCommand('https://example.org/service', CallMode::Connect),
+            $arguments['command'],
         );
     }
 
-    public function testRunExternalServiceCanCallTheOtherServiceDirectly(): void
+    public function testRunCommandSendsAnyCommand(): void
     {
-        $answer = [
-            'answer',
-            ['vdt' => '', 'command' => new ServiceCallCommand('https://example.org/', CallMode::Direct)],
-        ];
+        // A direct call, as the continuation of the session: no named constructor gives one
+        $command = new ServiceCallCommand('https://example.org/', CallMode::Direct);
 
-        self::assertEquals(
-            [$answer],
-            $this->answersOf(new RunExternalService(null, null, new Vdt(), 'https://example.org/', CallMode::Direct)),
+        self::assertSame(
+            [['answer', ['vdt' => '', 'command' => $command]]],
+            $this->answersOf(new RunCommand(null, null, new Vdt(), $command)),
         );
     }
 

@@ -8,10 +8,10 @@ use MiniPaviService\Controller\Parameters\Parameters;
 use MiniPaviService\Controller\Response\ChangePage;
 use MiniPaviService\Controller\Response\DisplayPage;
 use MiniPaviService\Controller\Response\RunCommand;
-use MiniPaviService\Controller\Response\RunExternalService;
 use MiniPaviService\Gateway\CallMode;
 use MiniPaviService\Gateway\GatewayResponse;
 use MiniPaviService\Gateway\InputCommand;
+use MiniPaviService\Gateway\ServiceCallCommand;
 use MiniPaviService\Gateway\WaitForKeyCommand;
 use MiniPaviService\Vdt\Vdt;
 
@@ -75,8 +75,8 @@ abstract readonly class Response
         Vdt $vdt = new Vdt(),
         ?State $state = null,
         ?Parameters $parameters = null,
-    ): RunExternalService {
-        return new RunExternalService($state, $parameters, $vdt, $url, CallMode::Connect);
+    ): RunCommand {
+        return new RunCommand($state, $parameters, $vdt, new ServiceCallCommand($url, CallMode::Connect));
     }
 
     /**
