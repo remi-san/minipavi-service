@@ -1,0 +1,23 @@
+{
+    // Infection (https://infection.github.io): mutation testing of src/ with the PHPUnit tests
+    // (composer mutation, needs pcov or Xdebug)
+    "$schema": "vendor/infection/infection/resources/schema.json",
+    "source": {
+        "directories": ["src"]
+    },
+    "phpUnit": {
+        "configDir": "."
+    },
+    // The whole suite runs in about 2 s: a mutant still running after 10 s loops
+    "timeout": 10,
+    // In build/infection/: the escaped mutants (infection.log, infection.html), and the counts
+    // and the MSI (summary.json, shown by the CI job)
+    "logs": {
+        "text": "build/infection/infection.log",
+        "html": "build/infection/infection.html",
+        "summaryJson": "build/infection/summary.json"
+    },
+    "mutators": {
+        "@default": true
+    }
+}

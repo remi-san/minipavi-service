@@ -87,6 +87,10 @@ moved ones link to them as `remi-san/minipavi-stack#<n>`. For each issue:
   (Mago's linter and analyzer, `mago.toml`, failing on any issue). Add or update tests for
   the changed behaviour. A fix starts with a test that fails without it. CI runs `cs`,
   `analyse` and `test` on PHP 8.2–8.5 (`.github/workflows/ci.yml`); the PR must be green.
+- **Coverage and mutants**: `composer coverage` fails below its minimum share of lines (in
+  `composer.json`): raise it when tests are added, never lower it. `composer mutation`
+  (Infection) lists the escaped mutants in `build/infection/infection.log`: a changed
+  behaviour's mutants should not escape. CI runs both on PHP 8.4. Both need pcov or Xdebug.
 - **Videotex output**: `tests/Vdt` compares `offset()` with golden files. After an intended
   change to the bytes written, regenerate them with `UPDATE_GOLDEN=1 composer test`, and
   explain the change in the commit.

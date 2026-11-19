@@ -40,7 +40,7 @@ jobs:
         run: composer test
 
   # Coverage, on one PHP version: printed in the log, and kept as the job's artifact (Clover
-  # XML), without a minimum until it is known
+  # XML). Fails below a minimum share of lines (composer coverage), raised as tests are added
   coverage:
     name: Coverage
     runs-on: ubuntu-latest
@@ -60,6 +60,42 @@ jobs:
         run: composer coverage
 
       - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
         with:
           name: coverage
           path: coverage.xml
+
+  # Mutation testing (Infection, infection.json5), on one PHP version: the Mutation Score
+  # Indicator (MSI) and the covered MSI in the job's summary, and the escaped mutants kept as the
+  # job's artifact, without a minimum until it is known
+  mutation:
+    name: Mutation testing
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, simplexml, dom
+          coverage: pcov
+
+      - name: Install
+        run: composer install --no-interaction --no-progress
+
+      - name: Mutation testing
+        run: composer mutation
+
+      - name: Summary
+        if: ${{ !cancelled() }}
+        run: |
+          jq -r '.stats | "| Mutation Score Indicator (MSI) | Covered MSI | Mutants | Killed | Escaped | Not covered | Timed out |",
+            "|---|---|---|---|---|---|---|",
+            "| \(.msi)% | \(.coveredCodeMsi)% | \(.totalMutantsCount) | \(.killedCount) | \(.escapedCount) | \(.notCoveredCount) | \(.timeOutCount) |"' \
+            build/infection/summary.json >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: mutation
+          path: build/infection/

@@ -867,7 +867,20 @@ composer cs-fix     # formats the code
 composer analyse    # linter and static analysis (mago lint, mago analyze)
 composer test       # tests (PHPUnit, tests/)
 composer coverage   # tests with coverage, as text and in coverage.xml (needs pcov or Xdebug)
+composer mutation   # mutation testing (Infection, needs pcov or Xdebug), logs in build/infection/
 ```
+
+`composer coverage` fails when the tests cover less than 97% of the lines of `src/`
+(`tools/coverage-minimum.php` reads it from `coverage.xml`). The minimum is raised as the
+missing tests are added, never lowered to let a change through.
+
+Coverage says which code the tests run, not whether they would notice it being wrong:
+`composer mutation` ([Infection](https://infection.github.io), `infection.json5`) changes
+the code of `src/` in small ways (mutants), and runs the tests that cover each one. A mutant
+the tests don't notice (escaped, listed in `build/infection/infection.log`) is a test missing,
+or code nothing needs. It gives the Mutation Score Indicator (MSI, the share of mutants
+noticed) and the covered MSI (among the mutants of covered code). It runs the tests without
+`UPDATE_GOLDEN`, so it never writes the golden files.
 
 Tests are in `tests/`, with their files in `tests/fixtures/`. Pages are checked through the
 screen they draw (`Screen::preview()`). `Offset` is checked in two ways: against the
@@ -883,4 +896,5 @@ The other tags (`<input>`, `<foreach>`, `<if>`, `<message>`) each have their
 of an element with them, and gives the nodes and the page's `<input>` (`ParsedNodes`).
 
 GitHub Actions runs the three checks on PHP 8.2, 8.3, 8.4 and 8.5 for every change to the
-framework.
+framework, and the coverage (with its minimum) and the mutation testing (its MSI in the job's
+summary, without a minimum yet) on PHP 8.4.
