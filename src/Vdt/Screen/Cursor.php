@@ -48,7 +48,8 @@ final class Cursor
     /**
      * Sets the attribute of ESC byte (Attributes::with()), as the Minitel does: ESC M and ESC
      * O received on rows 0 and 1, which can't have double height, are discarded, the size
-     * staying as it was, and so is any size received in mosaic (MiniPavi's emulator)
+     * staying as it was, and so are a size and inverse video received in mosaic (MiniPavi's
+     * emulator, setSize() and setInvert())
      *
      * @param string $byte the byte after ESC
      */
@@ -57,7 +58,7 @@ final class Cursor
         if (!Attributes::allowsDoubleHeight($this->row) && Attributes::isTallSize($byte)) {
             return;
         }
-        if ($this->attributes->isMosaic() && Attributes::isSize($byte)) {
+        if ($this->attributes->isMosaic() && !Attributes::appliesInMosaic($byte)) {
             return;
         }
         $this->attributes = $this->attributes->with($byte);

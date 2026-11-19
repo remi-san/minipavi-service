@@ -50,15 +50,21 @@ final class CursorTest extends TestCase
         self::assertTrue($cursor->attributes()->isDoubleHeight());
     }
 
-    public function testDiscardsSizesInMosaic(): void
+    public function testDiscardsSizesAndInverseInMosaic(): void
     {
-        // As the Minitel does: in mosaic, ESC L, M, N and O are discarded (MiniPavi's
-        // emulator, setSize()), the size staying normal, as SO sets it
-        foreach ([Attributes::DOUBLE_HEIGHT, Attributes::DOUBLE_WIDTH, Attributes::DOUBLE] as $size) {
+        // As the Minitel does: in mosaic, ESC L, M, N, O and ESC ] are discarded (MiniPavi's
+        // emulator, setSize() and setInvert()), staying normal size and not inverse, as SO
+        // sets them
+        foreach ([
+            Attributes::DOUBLE_HEIGHT,
+            Attributes::DOUBLE_WIDTH,
+            Attributes::DOUBLE,
+            Attributes::INVERSE,
+        ] as $byte) {
             $cursor = new Cursor();
             $cursor->reset(10, col: 1);
             $cursor->setCharset("\x0E");
-            $cursor->setAttribute($size);
+            $cursor->setAttribute($byte);
 
             self::assertEquals(Attributes::defaults()->withCharset("\x0E"), $cursor->attributes());
         }

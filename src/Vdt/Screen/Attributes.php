@@ -169,11 +169,12 @@ final readonly class Attributes
     }
 
     /**
-     * Whether ESC byte sets the size: ESC L, M, N or O
+     * Whether the Minitel applies ESC byte in mosaic: not the size (ESC L, M, N or O) nor
+     * inverse video (ESC ] or ESC \), which it discards there
      */
-    public static function isSize(string $byte): bool
+    public static function appliesInMosaic(string $byte): bool
     {
-        return self::group($byte) === 'size';
+        return !\in_array(self::group($byte), ['size', 'inverse'], strict: true);
     }
 
     /**
