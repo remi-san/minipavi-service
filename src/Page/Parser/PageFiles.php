@@ -43,13 +43,13 @@ final readonly class PageFiles
     /**
      * Videotex content of a file named relative to the page's folder
      *
-     * @throws PageXmlException for no file, or one outside the page's folder
-     * @throws \InvalidArgumentException if it can't be read
+     * @throws PageXmlException for no file, one outside the page's folder, or one that can't be
+     *                          read
      */
     public function read(string $file): string
     {
         $path = $this->path($file);
 
-        return Files::read($path) ?? throw new \InvalidArgumentException("Videotex file not found: {$path}");
+        return Files::read($path) ?? throw new PageXmlException("Videotex file not found: {$path}");
     }
 }

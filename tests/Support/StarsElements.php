@@ -16,9 +16,9 @@ use MiniPaviService\Page\Parser\PageFiles;
 use MiniPaviService\Vdt\Vdt;
 
 /**
- * Display elements of a service: <stars count="n" row="r"/>, a row of n stars, and
- * <picture>file</picture>, a Videotex file of the page's folder; or, given a tag, one element
- * of that tag
+ * Display elements of a service: <stars count="n" row="r"/>, a row of n stars,
+ * <picture>file</picture>, a Videotex file of the page's folder, and <broken/>, whose builder
+ * fails; or, given a tag, one element of that tag
  */
 final readonly class StarsElements implements PageElements
 {
@@ -44,6 +44,11 @@ final readonly class StarsElements implements PageElements
             'picture' => self::builder(
                 'picture',
                 static fn(AttributeValues $attributes, string $text) => new Background(new Vdt($files->read($text))),
+            ),
+            // A bug in the service's code, not in the page
+            'broken' => self::builder(
+                'broken',
+                static fn() => throw new \InvalidArgumentException('a bug building <broken>'),
             ),
         ];
     }

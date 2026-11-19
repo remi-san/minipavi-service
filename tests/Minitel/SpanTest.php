@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Tests\Minitel;
 
+use MiniPaviService\InvalidValueException;
 use MiniPaviService\Minitel\Position;
 use MiniPaviService\Minitel\Span;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -45,7 +46,7 @@ final class SpanTest extends TestCase
     #[DataProvider('offTheScreen')]
     public function testCannotBeOffTheScreen(\Closure $build, string $message): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidValueException::class);
         $this->expectExceptionMessage($message);
 
         $build();

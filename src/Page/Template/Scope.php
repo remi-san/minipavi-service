@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Page\Template;
 
+use MiniPaviService\InvalidValueException;
 use MiniPaviService\Page\Parser\AttributeValues;
 use MiniPaviService\Text\Placeholders;
 
@@ -59,7 +60,7 @@ final readonly class Scope
      * Text with its {{placeholders}} replaced by the values of the variables
      * (Text\Placeholders::substitute())
      *
-     * @throws \InvalidArgumentException for an unknown variable, or a value that isn't text
+     * @throws InvalidValueException for an unknown variable, or a value that isn't text
      */
     public function substitute(string $text): string
     {
@@ -70,7 +71,7 @@ final readonly class Scope
      * Value of a variable, following dots through arrays and object properties
      * (Text\Placeholders::value())
      *
-     * @throws \InvalidArgumentException for an unknown variable
+     * @throws InvalidValueException for an unknown variable
      */
     public function value(string $path): mixed
     {

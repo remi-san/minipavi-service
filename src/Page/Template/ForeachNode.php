@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Page\Template;
 
+use MiniPaviService\InvalidValueException;
+
 /**
  * <foreach items="services" as="service" row="5" step="4">: draws its children once
  * per item, each item step rows below the previous one. Children rows are relative
@@ -29,7 +31,7 @@ final readonly class ForeachNode implements Node
     {
         try {
             $items = $scope->value($this->items);
-        } catch (\InvalidArgumentException $e) {
+        } catch (InvalidValueException $e) {
             throw new TemplateException("{$this->location}: <foreach>: " . $e->getMessage(), 0, $e);
         }
         if (!is_iterable($items)) {

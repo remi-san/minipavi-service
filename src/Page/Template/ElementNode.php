@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Page\Template;
 
+use MiniPaviService\InvalidValueException;
 use MiniPaviService\Page\Parser\AttributeValues;
 use MiniPaviService\Page\Parser\Element\ElementBuilder;
 use MiniPaviService\Page\Parser\PageXmlException;
@@ -36,7 +37,7 @@ final readonly class ElementNode implements Node
             }
 
             return [$this->builder->build($attributes, $scope->substitute($this->text))];
-        } catch (PageXmlException|\InvalidArgumentException $e) {
+        } catch (PageXmlException|InvalidValueException $e) {
             throw new TemplateException("{$this->location}: <{$this->builder->tag()}>: " . $e->getMessage(), 0, $e);
         }
     }

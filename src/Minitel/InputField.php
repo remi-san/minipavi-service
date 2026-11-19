@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Minitel;
 
+use MiniPaviService\InvalidValueException;
 use MiniPaviService\Vdt\Screen\Screen;
 
 /**
@@ -19,7 +20,7 @@ final readonly class InputField
      * @param list<FunctionKey> $validWith keys validating the field
      * @param string $spaceChar shown in the empty cells of the field
      *
-     * @throws \InvalidArgumentException for a field off the screen
+     * @throws InvalidValueException for a field off the screen
      */
     public function __construct(
         public Span $span,
@@ -30,9 +31,7 @@ final readonly class InputField
     ) {
         $row = $span->start->row;
         if ($lines < 1 || ($row + $lines - 1) > Screen::ROWS) {
-            throw new \InvalidArgumentException(
-                "Input of {$lines} lines from row {$row} goes past row " . Screen::ROWS,
-            );
+            throw new InvalidValueException("Input of {$lines} lines from row {$row} goes past row " . Screen::ROWS);
         }
     }
 

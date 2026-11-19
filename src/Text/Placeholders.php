@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Text;
 
+use MiniPaviService\InvalidValueException;
+
 /**
  * The {{placeholders}} of a text, and the values of variables they name: {{name}}, or a dotted
  * path through arrays and object properties ({{game.studio.city}}). Used by page templates
@@ -55,12 +57,12 @@ final readonly class Placeholders
                 if ($value === null || is_scalar($value) || $value instanceof \Stringable) {
                     return (string) $value;
                 }
-                throw new \InvalidArgumentException("{{{$m[1]}}} is not text (" . get_debug_type($value) . ')');
+                throw new InvalidValueException("{{{$m[1]}}} is not text (" . get_debug_type($value) . ')');
             },
             $text,
         );
         if ($result === null) {
-            throw new \InvalidArgumentException('cannot replace the placeholders: ' . preg_last_error_msg());
+            throw new InvalidValueException('cannot replace the placeholders: ' . preg_last_error_msg());
         }
 
         return $result;
@@ -74,7 +76,7 @@ final readonly class Placeholders
         $names = explode('.', $path);
         $first = array_shift($names);
         if (!array_key_exists($first, $this->vars)) {
-            throw new \InvalidArgumentException("unknown variable {{{$path}}}");
+            throw new InvalidValueException("unknown variable {{{$path}}}");
         }
         $value = $this->vars[$first];
         foreach ($names as $name) {
@@ -86,7 +88,7 @@ final readonly class Placeholders
     /**
      * Element of an array (or ArrayAccess), or property of an object, by name
      *
-     * @throws \InvalidArgumentException if it hasn't any of that name
+     * @throws InvalidValueException if it hasn't any of that name
      */
     private static function member(mixed $value, string $name, string $path): mixed
     {
@@ -103,8 +105,6 @@ final readonly class Placeholders
         ) {
             return $value->$name;
         }
-        throw new \InvalidArgumentException(
-            "unknown variable {{{$path}}}: no \"{$name}\" in " . get_debug_type($value),
-        );
+        throw new InvalidValueException("unknown variable {{{$path}}}: no \"{$name}\" in " . get_debug_type($value));
     }
 }

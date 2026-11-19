@@ -19,6 +19,7 @@ use MiniPaviService\Page;
 use MiniPaviService\Page\Parser\PageXmlException;
 use MiniPaviService\Page\Parser\PageXmlParser;
 use MiniPaviService\Page\Template\TemplateException;
+use MiniPaviService\Tests\Support\FailingProperties;
 use MiniPaviService\Tests\Support\StarsElements;
 use MiniPaviService\Tests\Support\TestMessage;
 use MiniPaviService\Vdt\Vdt;
@@ -310,6 +311,60 @@ final class PageXmlParserTest extends TestCase
         $this->expectExceptionMessage('list.xml line 2: <text>: Row 30 is off the screen (0 to 24)');
 
         $page->display(new Terminal(), ['row' => 30]);
+    }
+
+    public function testInvalidValueOfAServiceElementGivesTheLine(): void
+    {
+        $parser = new PageXmlParser((new MessagesXmlParser())->defaults(), new StarsElements());
+
+        $this->expectException(PageXmlException::class);
+        $this->expectExceptionMessage('stars.xml line 2: <stars>: Row 30 is off the screen (0 to 24)');
+
+        $parser->parse("<page type=\"static\">\n<stars row=\"30\"/></page>", self::FIXTURES, name: 'stars.xml');
+    }
+
+    public function testBugOfAServiceElementIsntAnErrorOfThePage(): void
+    {
+        $parser = new PageXmlParser((new MessagesXmlParser())->defaults(), new StarsElements());
+
+        // Not a PageXmlException: nothing to fix in the page
+        $this->expectExceptionObject(new \InvalidArgumentException('a bug building <broken>'));
+
+        $parser->parse('<page type="static"><broken/></page>', self::FIXTURES);
+    }
+
+    public function testBugOfAServiceElementIsntAnErrorOfTheTemplate(): void
+    {
+        $page = (new PageXmlParser((new MessagesXmlParser())->defaults(), new StarsElements()))->parse(
+            '<page type="template"><broken row="{{row}}"/></page>',
+            self::FIXTURES,
+        );
+
+        // Not a TemplateException: nothing to fix in the page
+        $this->expectExceptionObject(new \InvalidArgumentException('a bug building <broken>'));
+
+        $page->display(new Terminal(), ['row' => 3]);
+    }
+
+    /**
+     * @return iterable<string, array{string}>
+     */
+    public static function templatesReadingAVariable(): iterable
+    {
+        yield 'a placeholder' => ['<text row="1">{{user.name}}</text>'];
+        yield 'a condition' => ['<if test="user.name"><text row="1">x</text></if>'];
+        yield 'a loop' => ['<foreach items="user.name" as="n" row="1"><text row="0">x</text></foreach>'];
+    }
+
+    #[DataProvider('templatesReadingAVariable')]
+    public function testBugOfAVariableIsntAnErrorOfTheTemplate(string $xml): void
+    {
+        $page = $this->parse("<page type=\"template\">{$xml}</page>");
+
+        // Not a TemplateException: the variable's own code failed
+        $this->expectExceptionObject(new \InvalidArgumentException('a bug reading name'));
+
+        $page->display(new Terminal(), ['user' => new FailingProperties()]);
     }
 
     public function testInputCommandReadsTheInputField(): void

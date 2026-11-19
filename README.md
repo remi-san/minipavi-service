@@ -20,7 +20,7 @@ which depend on nothing above them):
 
 | Namespace | Holds |
 |---|---|
-| `MiniPaviService` | the `Controller` and `Page` interfaces |
+| `MiniPaviService` | the `Controller` and `Page` interfaces, and the `InvalidValueException` of a value the framework can't take (e.g. a `Position` off the screen) |
 | `Core\` | the runtime: `Service`, `Router` and its `Route`s, `Context` and its `RouteContext`s, `RequestFlow` |
 | `Controller\` | `AbstractController`, `Request`, `Response` and the response types, `Flow`, the states (`State`, `ControllerState`) |
 | `Controller\Parameters\` | what a controller keeps: `Parameters`, `NoParameters`, their `ParametersType` (what `Controller::parametersType()` returns), and the raw `Values` they are read from |
@@ -628,6 +628,12 @@ $parser = new PageXmlParser($messages, new GameElements());
 
 The parser takes one `PageElements`: a service with several sets of elements returns all their
 builders from one.
+
+A builder reports what is wrong in the page with a `PageXmlException` or an
+`InvalidValueException`, as `Position`, `Span`, `InputField` and `PageFiles::read()` do: the
+parser gives it the file and line, as for the framework's elements. Any other exception is a
+bug of the builder, and goes through as it is, as does an exception of a variable's own code
+(its `__get()`, `__toString()`...) read by a template or a message.
 
 A tag of the format (`text`, `foreach`, `input`...) can't be taken again, nor one tag by two
 elements: building the `PageXmlParser` then throws a `LogicException`, at boot. For this check,

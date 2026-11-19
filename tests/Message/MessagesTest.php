@@ -8,6 +8,7 @@ use MiniPaviService\Message\FrameworkMessage;
 use MiniPaviService\Message\Messages;
 use MiniPaviService\Message\MessagesException;
 use MiniPaviService\Message\MessagesXmlParser;
+use MiniPaviService\Tests\Support\FailingProperties;
 use MiniPaviService\Tests\Support\TestMessage;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
@@ -78,6 +79,16 @@ final class MessagesTest extends TestCase
         $this->expectExceptionMessage($error);
 
         (new Messages(['welcome' => $text]))->get(TestMessage::Welcome, $variables);
+    }
+
+    public function testBugOfAVariableGoesThroughAsItIs(): void
+    {
+        // Not a LogicException naming the message: the variable's own code failed
+        $this->expectExceptionObject(new \InvalidArgumentException('a bug reading name'));
+
+        (new Messages(['welcome' => 'Bonjour {{user.name}}']))->get(TestMessage::Welcome, [
+            'user' => new FailingProperties(),
+        ]);
     }
 
     public function testMessageWithoutTextIsAnError(): void

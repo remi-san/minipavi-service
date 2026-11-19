@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MiniPaviService\Client;
 
 use MiniPaviService\Gateway\InputCommand;
+use MiniPaviService\InvalidValueException;
 use MiniPaviService\Minitel\FunctionKey;
 use MiniPaviService\Minitel\InputField;
 use MiniPaviService\Minitel\Position;
@@ -57,7 +58,7 @@ final readonly class InputCommandJson
         }
         try {
             $field = new InputField(new Span(new Position($row, $col), $length), $lines, ...$given);
-        } catch (\InvalidArgumentException) {
+        } catch (InvalidValueException) {
             // Off the screen
             return null;
         }
