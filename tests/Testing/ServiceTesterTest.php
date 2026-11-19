@@ -43,8 +43,10 @@ final class ServiceTesterTest extends TestCase
                 : Response::display(Vdt::join(Vdt::clearScreen(), Vdt::position(1, row: 2), Vdt::text('Annuaire')))));
         $router = $routes->build();
 
+        $serializer = new ContextSerializer($router);
         $this->tester = new ServiceTester(
-            new Service($router, (new MessagesXmlParser())->defaults(), new ContextSerializer($router)),
+            new Service($router, (new MessagesXmlParser())->defaults(), $serializer),
+            $serializer,
             new Terminal('192.0.2.1', 'websocket', 'Cv5'),
         );
     }

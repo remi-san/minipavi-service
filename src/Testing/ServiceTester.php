@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MiniPaviService\Testing;
 
 use MiniPaviService\Core\Context;
+use MiniPaviService\Core\ContextSerializer;
 use MiniPaviService\Core\Service;
 use MiniPaviService\Gateway\CallMode;
 use MiniPaviService\Gateway\ConnectionCode;
@@ -23,7 +24,7 @@ use PHPUnit\Framework\Assert;
  * simulated Screen, and gives the context of each response back with the next request, as the
  * gateway does.
  *
- *     $tester = new ServiceTester($service);
+ *     $tester = new ServiceTester($service, $serializer);
  *     $tester->connect()->assertScreenContains('BIENVENUE')
  *         ->type('2')->press(FunctionKey::Send)->assertRoute('games')
  *         ->press(FunctionKey::Next)->assertLine0('Dernière page');
@@ -43,8 +44,13 @@ final class ServiceTester
     /** @var list<string> text typed for the next key, one string per line */
     private array $typed = [];
 
+    /**
+     * @param ContextSerializer $serializer the service's, to read the context of its
+     *                                      responses back (context())
+     */
     public function __construct(
         private Service $service,
+        private ContextSerializer $serializer,
         private Terminal $terminal = new Terminal(),
     ) {
         $this->vdt = new Vdt();
@@ -182,10 +188,11 @@ final class ServiceTester
 
     /**
      * Context of the last response, as the service will restore it
+     * (ContextSerializer::unserialize())
      */
     public function context(): Context
     {
-        return $this->service->restore($this->response()->context);
+        return $this->serializer->unserialize($this->response()->context);
     }
 
     private function send(GatewayRequest $request): self

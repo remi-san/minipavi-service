@@ -102,7 +102,8 @@ final class PaginatedControllerTest extends TestCase
         $this->routes->addRoute('list', new PaginatedController($page, new ListItems(['a', 'b', 'c'])));
 
         $router = $this->routes->build();
-        (new ServiceTester(new Service($router, (new MessagesXmlParser())->defaults(), new ContextSerializer($router))))
+        $serializer = new ContextSerializer($router);
+        (new ServiceTester(new Service($router, (new MessagesXmlParser())->defaults(), $serializer), $serializer))
             ->connect()
             ->press(FunctionKey::Send)
             ->press(FunctionKey::Next)
@@ -175,8 +176,11 @@ final class PaginatedControllerTest extends TestCase
 
         $router = $this->routes->build();
 
+        $serializer = new ContextSerializer($router);
+
         return (new ServiceTester(
-            new Service($router, (new MessagesXmlParser())->defaults(), new ContextSerializer($router)),
+            new Service($router, (new MessagesXmlParser())->defaults(), $serializer),
+            $serializer,
         ))
             ->connect()
             ->press(FunctionKey::Send);

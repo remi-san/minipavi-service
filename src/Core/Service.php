@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Core;
 
-use MiniPaviService\Core\Signing\ForgedContextException;
 use MiniPaviService\Gateway\GatewayRequest;
 use MiniPaviService\Gateway\GatewayResponse;
 use MiniPaviService\Message\FrameworkMessage;
@@ -121,7 +120,7 @@ final class Service
         }
 
         try {
-            $context = $this->restore($request->context);
+            $context = $this->serializer->unserialize($request->context);
         } catch (UnknownRouteException $e) {
             // E.g. removed in a new version: the input was for a screen that doesn't exist any
             // more
@@ -133,20 +132,6 @@ final class Service
         }
 
         return $this->serve($context, $request->key, $request->content, $request->terminal);
-    }
-
-    /**
-     * Context sent with a previous response (GatewayResponse::$context), typed with the
-     * declarations of this service's controllers (ContextSerializer::unserialize()): what
-     * ServiceTester checks the route of
-     *
-     * @throws UnknownRouteException for a context at a route this service doesn't have
-     * @throws ForgedContextException if the signer didn't sign it
-     * @throws \RuntimeException if it isn't a JSON object
-     */
-    public function restore(string $serialized): Context
-    {
-        return $this->serializer->unserialize($serialized);
     }
 
     /**
