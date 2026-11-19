@@ -21,6 +21,7 @@ use MiniPaviService\Http\Emulator\EmulatorConfig;
 use MiniPaviService\Http\Emulator\EmulatorRedirect;
 use MiniPaviService\Http\Url\RequestUrl;
 use MiniPaviService\Http\Url\WithUrls;
+use MiniPaviService\InvalidValueException;
 use MiniPaviService\Message\Messages;
 use MiniPaviService\Message\MessagesException;
 use MiniPaviService\Message\MessagesXmlParser;
@@ -39,7 +40,7 @@ use Psr\Log\NullLogger;
  *
  * Each with...() gives a builder changing one thing; the defaults: no logger, the context not
  * signed (with a warning), the request's URL as it comes, the minipavi.fr emulator and gateway,
- * no other handler.
+ * no other handler, Service's maximum of page changes, and the Minitel font of the HTML client.
  */
 final readonly class KernelBuilder
 {
@@ -55,6 +56,8 @@ final readonly class KernelBuilder
         private RequestUrl $requestUrl,
         private EmulatorConfig $emulator,
         private array $handlers,
+        private int $maxPageChanges,
+        private string $fontFile,
     ) {}
 
     /**
@@ -62,7 +65,17 @@ final readonly class KernelBuilder
      */
     public static function for(Router $router, Messages $messages): self
     {
-        return new self($router, $messages, new NullLogger(), '', new RequestUrl(), new EmulatorConfig(), []);
+        return new self(
+            $router,
+            $messages,
+            new NullLogger(),
+            contextKey: '',
+            requestUrl: new RequestUrl(),
+            emulator: new EmulatorConfig(),
+            handlers: [],
+            maxPageChanges: Service::MAX_PAGE_CHANGES,
+            fontFile: HtmlRenderer::MINITEL_FONT,
+        );
     }
 
     /**
@@ -108,6 +121,31 @@ final readonly class KernelBuilder
     }
 
     /**
+     * Page changes (Response::goTo()) allowed in one request, more being taken as controllers
+     * changing to each other endlessly (Service); 0 forbids them, and a negative number
+     * makes build() throw
+     */
+    public function withMaxPageChanges(int $maxPageChanges): self
+    {
+        return $this->with(maxPageChanges: $maxPageChanges);
+    }
+
+    /**
+     * The TrueType font of the HTML client's screen (HtmlRenderer), instead of the Minitel font
+     * of the framework. Checked here, as HtmlRenderer only reads it for each browser's request
+     *
+     * @throws InvalidValueException if the font file can't be read
+     */
+    public function withFont(string $fontFile): self
+    {
+        if (!is_file($fontFile) || !is_readable($fontFile)) {
+            throw new InvalidValueException("Font file not found: {$fontFile}");
+        }
+
+        return $this->with(fontFile: $fontFile);
+    }
+
+    /**
      * A copy with the values given, the others as they are: what each with...() changes. Null
      * means "not given", so this can't set an option back to null: a nullable option would
      * need its own copy
@@ -121,6 +159,8 @@ final readonly class KernelBuilder
         ?RequestUrl $requestUrl = null,
         ?EmulatorConfig $emulator = null,
         ?array $handlers = null,
+        ?int $maxPageChanges = null,
+        ?string $fontFile = null,
     ): self {
         return new self(
             $this->router,
@@ -130,11 +170,14 @@ final readonly class KernelBuilder
             $requestUrl ?? $this->requestUrl,
             $emulator ?? $this->emulator,
             $handlers ?? $this->handlers,
+            $maxPageChanges ?? $this->maxPageChanges,
+            $fontFile ?? $this->fontFile,
         );
     }
 
     /**
      * @throws MessagesException if the messages miss some of the framework's
+     * @throws InvalidValueException if the max page changes are below 1 (Service)
      */
     public function build(): Kernel
     {
@@ -151,6 +194,7 @@ final readonly class KernelBuilder
      * What the Kernel has handle the request: WithUrls, then the Dispatcher
      *
      * @throws MessagesException if the messages miss some of the framework's
+     * @throws InvalidValueException if the max page changes are below 1 (Service)
      */
     private function handler(): RequestHandlerInterface
     {
@@ -158,7 +202,8 @@ final readonly class KernelBuilder
             $this->router,
             $this->messages,
             new ContextSerializer($this->router, $this->signer()),
-            logger: $this->logger,
+            $this->maxPageChanges,
+            $this->logger,
         );
 
         return new WithUrls(
@@ -176,7 +221,7 @@ final readonly class KernelBuilder
                         new ServiceRunner(
                             $service,
                             new HtmlClient(
-                                new HtmlForm(new HtmlRenderer(HtmlRenderer::MINITEL_FONT), $this->messages),
+                                new HtmlForm(new HtmlRenderer($this->fontFile), $this->messages),
                                 $this->messages,
                             ),
                             $this->logger,

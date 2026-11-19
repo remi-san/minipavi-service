@@ -47,12 +47,20 @@ final class ServiceTester
     /**
      * @param ContextSerializer $serializer the service's, to read the context of its
      *                                      responses back (context())
+     *
+     * @throws \LogicException without PHPUnit, whose assertions it uses: the framework only
+     *                         suggests it
      */
     public function __construct(
         private Service $service,
         private ContextSerializer $serializer,
         private Terminal $terminal = new Terminal(),
     ) {
+        if (!class_exists(Assert::class)) {
+            throw new \LogicException(
+                'ServiceTester needs PHPUnit, for its assertions: composer require --dev phpunit/phpunit',
+            );
+        }
         $this->vdt = new Vdt();
     }
 

@@ -22,6 +22,7 @@ use MiniPaviService\Gateway\GatewayResponse;
 use MiniPaviService\Gateway\InputCommand;
 use MiniPaviService\Gateway\ServiceCallCommand;
 use MiniPaviService\Gateway\WaitForKeyCommand;
+use MiniPaviService\InvalidValueException;
 use MiniPaviService\Message\FrameworkMessage;
 use MiniPaviService\Message\Messages;
 use MiniPaviService\Message\MessagesException;
@@ -253,6 +254,31 @@ final class ServiceTest extends TestCase
             'Too many page changes in one request (more than 2): menu → ping → pong → ping',
             $this->error()[0],
         );
+    }
+
+    public function testNoPageChangeCanBeAllowed(): void
+    {
+        $this->maxPageChanges = 0;
+        $menu = $this->connect();
+        $this->requests = [];
+
+        $response = $this->press($menu, key: FunctionKey::Next, content: ['ping']);
+
+        self::assertStringContainsString(self::errorMessage(), self::line0($response));
+        self::assertCount(1, array_merge(...array_values($this->requests)));
+        self::assertStringContainsString(
+            'Too many page changes in one request (more than 0): menu → ping',
+            $this->error()[0],
+        );
+    }
+
+    public function testThePageChangesAllowedCantBeNegative(): void
+    {
+        $this->expectException(InvalidValueException::class);
+        $this->expectExceptionMessage('The page changes allowed in one request can\'t be negative: -1');
+
+        $router = $this->routes->build();
+        new Service($router, (new MessagesXmlParser())->defaults(), new ContextSerializer($router), -1);
     }
 
     public function testChangePageStartsTheTargetAtInitWithItsParametersWithoutTheInput(): void

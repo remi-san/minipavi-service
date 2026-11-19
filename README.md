@@ -104,7 +104,12 @@ KernelBuilder::for($router, $messages)
   - `withRequestUrl()`: how the service's URLs are computed (default: the request's);
   - `withEmulator()`: where browsers are sent (default: the minipavi.fr emulator and gateway);
   - `withHandler()`: a `ConditionalRequestHandler` of the service (e.g. an API, a health
-    check), tried before the framework's, in the order they are added.
+    check), tried before the framework's, in the order they are added;
+  - `withMaxPageChanges()`: the page changes allowed in one request (default: 10, see below;
+    0 forbids them; a negative number makes `build()` throw an `InvalidValueException`);
+  - `withFont()`: the TrueType font of the HTML client's screen (default: the framework's
+    Minitel font, `HtmlRenderer::MINITEL_FONT`); a file that can't be read throws an
+    `InvalidValueException` there, rather than on each browser's request.
 
   A service needing another wiring builds the `Kernel` itself, from the classes below.
 
@@ -222,7 +227,8 @@ KernelBuilder::for($router, $messages)
   doesn't exist any more (the serializer refuses it with an `UnknownRouteException`).
   More than 10 page changes (`Response::goTo()`) in one request are taken as controllers
   changing to each other endlessly, and responded to with an error; give another limit with
-  `new Service(..., maxPageChanges: 20)`.
+  `KernelBuilder::withMaxPageChanges(20)` (or `new Service(..., maxPageChanges: 20)`), 0 to
+  forbid page changes.
   If serving a request fails (an exception or a PHP error, in a controller, a template, the
   context...), the error is logged, and the user gets a message on line 0
   (`FrameworkMessage::Error`, from the `$messages` of the constructor; see
@@ -488,9 +494,10 @@ KernelBuilder::for($router, $messages)
 
 `Testing\ServiceTester` scripts a session of a user against a `Service`, without the gateway,
 in a PHPUnit test (PHPUnit is suggested by the framework, not required: add it to the
-service's `require-dev`). It runs the service on requests built in memory, gives the context
-of each response back with the next request, and plays every response since the connection on a
-simulated `Screen`, as the Minitel keeps what isn't cleared:
+service's `require-dev`; without it, `ServiceTester`'s constructor says so). It runs the
+service on requests built in memory, gives the context of each response back with the next
+request, and plays every response since the connection on a simulated `Screen`, as the Minitel
+keeps what isn't cleared:
 
 ```php
 $serializer = new ContextSerializer($router);
