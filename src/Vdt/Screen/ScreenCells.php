@@ -26,12 +26,12 @@ final class ScreenCells implements ScreenListener
     /** @var array<int, array<int, ?Cell>> by row, then column (from 1); null if empty */
     private array $cells;
 
-    /** @var array<int, array<int, Zone>> delimiters, by row, then column: the zone each starts */
-    private array $delimiters = [];
+    private Zones $zones;
 
     private function __construct()
     {
         $this->cells = array_fill(0, ScreenSize::ROWS + 1, self::emptyRow());
+        $this->zones = new Zones();
     }
 
     /**
@@ -54,18 +54,15 @@ final class ScreenCells implements ScreenListener
         }
         for ($i = 0; $i < $width && ($col + $i) <= ScreenSize::COLS; $i++) {
             $this->cells[$row][$col + $i] = new Cell($bytes, $attributes);
-            unset($this->delimiters[$row][$col + $i]);
+            $this->drawZone($row, $col + $i, $attributes);
         }
     }
 
     public function delimiter(int $row, int $col, int $width, Attributes $attributes, Zone $zone): void
     {
         $this->glyph($row, $col, bytes: ' ', width: $width, attributes: $attributes);
-        if ($row < 0 || $row > ScreenSize::ROWS) {
-            return;
-        }
-        for ($i = 0; $i < $width && ($col + $i) <= ScreenSize::COLS; $i++) {
-            $this->delimiters[$row][$col + $i] = $zone;
+        if ($row >= 0 && $row <= ScreenSize::ROWS) {
+            $this->zones->text($row, $col, $width, delimiter: $zone);
         }
     }
 
@@ -75,23 +72,21 @@ final class ScreenCells implements ScreenListener
             // The status line stays
             for ($row = 1; $row <= ScreenSize::ROWS; $row++) {
                 $this->cells[$row] = self::emptyRow();
-                unset($this->delimiters[$row]);
             }
+            $this->zones->clear();
         }
         $row = $cursor->row();
         if ($sequence->type === TokenType::ClearLine && $row >= 0 && $row <= ScreenSize::ROWS) {
             $attributes = $cursor->attributes();
             for ($col = $cursor->col(); $col <= ScreenSize::COLS; $col++) {
                 $this->cells[$row][$col] = new Cell(' ', $attributes);
-                unset($this->delimiters[$row][$col]);
+                $this->drawZone($row, $col, $attributes);
             }
         }
     }
 
     /**
-     * The cells of a row, each text cell underlined as its zone is: a delimiter starts a
-     * zone, and isn't underlined itself; a mosaic or empty cell ends it (MiniPavi's emulator,
-     * vdu.js, drawRow())
+     * The cells of a row, each text cell underlined as its zone is (Zones::of())
      *
      * @param array<int, ?Cell> $cells by column
      *
@@ -99,18 +94,24 @@ final class ScreenCells implements ScreenListener
      */
     private function inZones(array $cells, int $row): array
     {
-        $zone = Zone::none();
         foreach ($cells as $col => $cell) {
             if ($cell === null || $cell->attributes->isMosaic()) {
-                $zone = Zone::none();
                 continue;
             }
-            $delimiter = $this->delimiters[$row][$col] ?? null;
-            $cells[$col] = $cell->inZone($delimiter === null ? $zone : Zone::none());
-            $zone = $delimiter ?? $zone;
+            $cells[$col] = $cell->inZone($this->zones->of($row, $col));
         }
 
         return $cells;
+    }
+
+    // A cell drawn at row, col with these attributes, in the zones: text or mosaic
+    private function drawZone(int $row, int $col, Attributes $attributes): void
+    {
+        if ($attributes->isMosaic()) {
+            $this->zones->mosaic($row, $col);
+            return;
+        }
+        $this->zones->text($row, $col, width: 1);
     }
 
     /**
