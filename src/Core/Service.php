@@ -97,14 +97,14 @@ final class Service
      */
     private function error(\Throwable $error): ?GatewayResponse
     {
-        $this->logger->error('Error serving the request: ' . $error->getMessage(), ['exception' => $error]);
+        $this->logger->error('Error serving the request', ['exception' => $error]);
         try {
             // The context keeps nothing: the default controller starts at its initial state
             return $this->flow($this->newContext(), new Terminal())->respond(Vdt::line0($this->messages->get(
                 FrameworkMessage::Error,
             )));
         } catch (\Throwable $e) {
-            $this->logger->critical('Cannot respond to the error: ' . $e->getMessage(), ['exception' => $e]);
+            $this->logger->critical('Cannot respond to the error', ['exception' => $e]);
 
             return null;
         }

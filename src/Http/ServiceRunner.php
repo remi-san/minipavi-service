@@ -77,7 +77,7 @@ final readonly class ServiceRunner implements RequestHandlerInterface
         try {
             return $exchange->respond($response);
         } catch (\Throwable $e) {
-            $this->logger->critical('Cannot send the response: ' . $e->getMessage(), ['exception' => $e]);
+            $this->logger->critical('Cannot send the response', ['exception' => $e]);
 
             return new Response(500);
         }

@@ -155,10 +155,16 @@ final class KernelBuilderTest extends TestCase
             query: 'web=true',
         );
 
-        self::assertContains('Error serving the request: Too many page changes in one request (more than 2): home → home → home → home', array_map(
-            static fn(array $record): string => $record[1],
-            $logger->records,
-        ));
+        self::assertContains(
+            [
+                'Error serving the request',
+                'Too many page changes in one request (more than 2): home → home → home → home',
+            ],
+            array_map(static fn(array $record): array => [
+                $record[1],
+                ($record[2]['exception'] ?? null) instanceof \Throwable ? $record[2]['exception']->getMessage() : null,
+            ], $logger->records),
+        );
     }
 
     #[RunInSeparateProcess]

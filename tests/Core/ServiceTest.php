@@ -133,7 +133,7 @@ final class ServiceTest extends TestCase
         );
 
         self::assertStringContainsString(self::errorMessage(), self::line0($response));
-        self::assertInstanceOf(ForgedContextException::class, $this->error()[1]['exception'] ?? null);
+        self::assertInstanceOf(ForgedContextException::class, $this->error());
     }
 
     public function testConnectionStartsAtTheDefaultRoute(): void
@@ -167,9 +167,9 @@ final class ServiceTest extends TestCase
 
         self::assertStringContainsString(self::errorMessage(), self::line0($response));
         self::assertEquals(new WaitForKeyCommand(), $response->command);
-        [$message, $context] = $this->error();
-        self::assertStringContainsString('Template data missing', $message);
-        self::assertInstanceOf(\RuntimeException::class, $context['exception'] ?? null);
+        $error = $this->error();
+        self::assertStringContainsString('Template data missing', $error->getMessage());
+        self::assertInstanceOf(\RuntimeException::class, $error);
     }
 
     public function testNextKeyAfterAnErrorStartsAgainAtTheDefaultRoute(): void
@@ -239,7 +239,7 @@ final class ServiceTest extends TestCase
         self::assertCount(10 + 1, array_merge(...array_values($this->requests)));
         self::assertStringContainsString(
             'Too many page changes in one request (more than 10): menu → ping → pong → ping',
-            $this->error()[0],
+            $this->error()->getMessage(),
         );
     }
 
@@ -255,7 +255,7 @@ final class ServiceTest extends TestCase
         self::assertCount(2 + 1, array_merge(...array_values($this->requests)));
         self::assertStringContainsString(
             'Too many page changes in one request (more than 2): menu → ping → pong → ping',
-            $this->error()[0],
+            $this->error()->getMessage(),
         );
     }
 
@@ -271,7 +271,7 @@ final class ServiceTest extends TestCase
         self::assertCount(1, array_merge(...array_values($this->requests)));
         self::assertStringContainsString(
             'Too many page changes in one request (more than 0): menu → ping',
-            $this->error()[0],
+            $this->error()->getMessage(),
         );
     }
 
@@ -406,7 +406,7 @@ final class ServiceTest extends TestCase
         self::assertStringContainsString(self::errorMessage(), self::line0($response));
         self::assertStringContainsString(
             'keeps parameters of MiniPaviService\\Controller\\Parameters\\NoParameters, not MiniPaviService\\Controller\\Pagination\\PageParameters',
-            $this->error()[0],
+            $this->error()->getMessage(),
         );
     }
 
@@ -578,16 +578,19 @@ final class ServiceTest extends TestCase
     }
 
     /**
-     * Message and context of the error logged
-     *
-     * @return array{string, array<mixed>}
+     * Failure logged as an error: always with the same message, the failure in its context
      */
-    private function error(): array
+    private function error(): \Throwable
     {
         foreach ($this->logger->records as [$level, $message, $context]) {
-            if ($level === LogLevel::ERROR) {
-                return [$message, $context];
+            if ($level !== LogLevel::ERROR) {
+                continue;
             }
+            self::assertSame('Error serving the request', $message);
+            $exception = $context['exception'] ?? null;
+            self::assertInstanceOf(\Throwable::class, $exception);
+
+            return $exception;
         }
 
         self::fail('No error logged');
