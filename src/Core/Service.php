@@ -56,8 +56,8 @@ final class Service
 
     /**
      * Response to a request of the gateway, null for a disconnection or a background call
-     * (nothing to respond to). An
-     * error (exception or PHP error) is logged and responded to: see error()
+     * (nothing to respond to). An error (exception or PHP error) is logged and responded to:
+     * see error()
      */
     public function handle(GatewayRequest $request): ?GatewayResponse
     {
@@ -69,14 +69,23 @@ final class Service
     }
 
     /**
-     * Response to a request that failed, e.g. that couldn't be read: the error is logged, and
-     * the error message shown on line 0, with a new context at the default route, whose
-     * controller the user's next function key runs. It is not run now: if it is the one
-     * failing, the user would get the same error again at once.
+     * Response to a request that couldn't be read (by the client, ServiceRunner), as to one
+     * that failed: see error()
+     */
+    public function unreadable(\Throwable $error): ?GatewayResponse
+    {
+        return $this->error($error);
+    }
+
+    /**
+     * Response to a request that failed: the error is logged, and the error message shown on
+     * line 0, with a new context at the default route, whose controller the user's next
+     * function key runs. It is not run now: if it is the one failing, the user would get the
+     * same error again at once.
      *
      * Null if even that response fails: logged as critical.
      */
-    public function error(\Throwable $error): ?GatewayResponse
+    private function error(\Throwable $error): ?GatewayResponse
     {
         $this->logger->error('Error serving the request: ' . $error->getMessage(), ['exception' => $error]);
         try {
