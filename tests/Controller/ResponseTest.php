@@ -82,6 +82,28 @@ final class ResponseTest extends TestCase
         );
     }
 
+    public function testRunCommandKeepsTheStateItIsGiven(): void
+    {
+        $command = new InputCommand(new InputField(new Span(new Position(2, 1), 4), validWith: [FunctionKey::Send]));
+
+        self::assertSame(
+            ['keep', ['state' => ControllerState::ReadInput, 'parameters' => null]],
+            $this->callsOf(new RunCommand(new Vdt('Code ?'), $command, ControllerState::ReadInput))[0],
+        );
+        self::assertSame(
+            ['keep', ['state' => null, 'parameters' => null]],
+            $this->callsOf(new RunCommand(new Vdt(), new WaitForKeyCommand(), null))[0],
+        );
+    }
+
+    public function testDisplayCanKeepTheInitialState(): void
+    {
+        self::assertSame(
+            ['keep', ['state' => null, 'parameters' => null]],
+            $this->callsOf(new DisplayPage(new Vdt('Hello'), null))[0],
+        );
+    }
+
     public function testDisplayRespondsWithItsContent(): void
     {
         [[$method, $arguments]] = $this->respondCallsOf(new DisplayPage(new Vdt('Hello')));
@@ -137,7 +159,7 @@ final class ResponseTest extends TestCase
 
         self::assertSame(
             [['respond', ['vdt' => '', 'command' => $command]]],
-            $this->respondCallsOf(new RunCommand(new Vdt(), $command)),
+            $this->respondCallsOf(new RunCommand(new Vdt(), $command, null)),
         );
     }
 

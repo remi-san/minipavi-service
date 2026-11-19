@@ -28,13 +28,15 @@ final readonly class RunCommand extends KeepingResponse
      * @param Vdt $vdt Videotex content (empty: none)
      * @param Command $command e.g. Page::inputCommand(); WaitForKeyCommand: only the content is
      *                         sent
-     * @param ?State $state state this controller keeps; null: its initial state
+     * @param ?State $state state this controller keeps (null: its initial state); given, as
+     *                      it depends on the command: ControllerState::ReadInput to read
+     *                      what an InputCommand brings back
      * @param ?Parameters $parameters parameters this controller keeps; null: their defaults
      */
     public function __construct(
         public Vdt $vdt,
         public Command $command,
-        ?State $state = null,
+        ?State $state,
         ?Parameters $parameters = null,
     ) {
         parent::__construct($state, $parameters);
