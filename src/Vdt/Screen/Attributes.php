@@ -80,15 +80,21 @@ final readonly class Attributes
     }
 
     /**
-     * These attributes, in the charset SO (mosaic) or SI (text) selects, at normal size: the
-     * Minitel sets the size back to normal on every SO and SI, even one that doesn't change
-     * the charset (checked in MiniPavi's emulator, #26)
+     * These attributes, in the charset SO (mosaic) or SI (text) selects, as the Minitel sets
+     * them on every SO and SI, even one that doesn't change the charset (MiniPavi's emulator,
+     * setCharType(), #26): normal size, no inverse video, no separated mosaic, and on SO no
+     * underline. Underline kept by an SI is the text's: in mosaic, ESC Z separates instead
+     * (and SO already turned underline off)
      */
     public function withCharset(string $byte): self
     {
+        $keepsUnderline = $byte === Videotex::TEXT_SET && !$this->isMosaic();
+
         return new self([
             'charset' => $byte === Videotex::MOSAIC_SET ? Videotex::MOSAIC_SET : Videotex::TEXT_SET,
             'size' => self::SIZE_NORMAL,
+            'inverse' => self::NO_INVERSE,
+            'underline' => $keepsUnderline ? $this->values['underline'] : self::NO_UNDERLINE,
         ] + $this->values);
     }
 
@@ -163,11 +169,12 @@ final readonly class Attributes
     }
 
     /**
-     * Whether ESC byte sets the size: ESC L, M, N or O
+     * Whether the Minitel applies ESC byte in mosaic: not the size (ESC L, M, N or O) nor
+     * inverse video (ESC ] or ESC \), which it discards there
      */
-    public static function isSize(string $byte): bool
+    public static function appliesInMosaic(string $byte): bool
     {
-        return self::group($byte) === 'size';
+        return !\in_array(self::group($byte), ['size', 'inverse'], strict: true);
     }
 
     /**

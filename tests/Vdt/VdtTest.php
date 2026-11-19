@@ -106,6 +106,20 @@ final class VdtTest extends TestCase
         self::assertTrue($moved->cell(row: 12, col: 2)?->attributes->isDoubleHeight());
     }
 
+    public function testOffsetKeepsInverseAndUnderlineSetAfterSi(): void
+    {
+        // Row 10: ESC ], ESC Z, A, SO, a mosaic character, SI, ESC ], ESC Z, B: SO and SI
+        // turn them off, so offset() must send them after the SI again (#26)
+        $moved = (new Vdt("\x1F\x4A\x41\x1B\x5D\x1B\x5AA\x0E\x7F\x0F\x1B\x5D\x1B\x5AB"))
+            ->offset(x: 0, y: 2)
+            ->screen();
+
+        $b = $moved->cell(row: 12, col: 3) ?? self::fail('Nothing at row 12, column 3');
+        self::assertSame('B', $b->bytes);
+        self::assertTrue($b->attributes->isInverse());
+        self::assertTrue($b->attributes->isUnderlined());
+    }
+
     public function testOffsetDropsWhatGoesOffTheScreenInsteadOfWrapping(): void
     {
         $abcde = new Vdt("\x1F\x41\x41ABCDE");

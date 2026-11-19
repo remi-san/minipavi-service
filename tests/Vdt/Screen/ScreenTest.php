@@ -311,4 +311,43 @@ final class ScreenTest extends TestCase
         self::assertSame('Q', $screen->cell(21, col: 1)?->bytes);
         self::assertNull($screen->cell(22, col: 1));
     }
+
+    /**
+     * Inverse video and underline (separation, in mosaic) after SO and SI, which the Minitel
+     * turns off: inverse and separation on SO and SI, underline on SO only (MiniPavi's
+     * emulator, setCharType(), #26)
+     *
+     * @return iterable<string, array{string, int, bool, bool}>
+     */
+    public static function charsetResets(): iterable
+    {
+        $so = Videotex::MOSAIC_SET;
+        $si = Videotex::TEXT_SET;
+        yield 'inverse after SO and SI' => [Videotex::INVERSE_ON . "A{$so}\x7F{$si}B", 3, false, false];
+        yield 'inverse after SI alone' => [Videotex::INVERSE_ON . "A{$si}B", 2, false, false];
+        yield 'underline after SO and SI' => [Videotex::UNDERLINE_ON . "C{$so}\x7F{$si}D", 3, false, false];
+        yield 'underline kept by SI alone' => [Videotex::UNDERLINE_ON . "C{$si}D", 2, false, true];
+        yield 'separation after SO' => ["{$so}" . Videotex::UNDERLINE_ON . "\x7F{$so}\x7F", 2, false, false];
+        yield 'separation after SI, then SO' => [
+            "{$so}" . Videotex::UNDERLINE_ON . "\x7F{$si}{$so}\x7F",
+            2,
+            false,
+            false,
+        ];
+        // Set again after SI: kept
+        yield 'inverse set after SI' => [Videotex::INVERSE_ON . "A{$si}" . Videotex::INVERSE_ON . 'B', 2, true, false];
+    }
+
+    /**
+     * @param string $sent after positioning the cursor at row 10, column 1
+     */
+    #[DataProvider('charsetResets')]
+    public function testSoAndSiTurnOffInverseAndUnderline(string $sent, int $col, bool $inverse, bool $underlined): void
+    {
+        $screen = Vdt::join(Vdt::position(1, row: 10), new Vdt($sent))->screen();
+
+        $cell = $screen->cell(10, $col) ?? self::fail("Nothing at row 10, column {$col}");
+        self::assertSame($inverse, $cell->attributes->isInverse(), "Inverse at column {$col}");
+        self::assertSame($underlined, $cell->attributes->isUnderlined(), "Underlined at column {$col}");
+    }
 }

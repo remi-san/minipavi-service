@@ -13,8 +13,9 @@ use MiniPaviService\Vdt\Screen\Cursor;
  * the size staying as it was; a double height already set when a cursor move brings the
  * cursor there is kept (the character drawn over the row above). A tall character wrapping
  * at the end of a row goes 2 rows down (Cursor::advance()); a move right (HT) from the last
- * column goes 1 row down, as BS, LF and VT do. SO and SI set the size back to normal, and a
- * size received in mosaic is discarded. What Screen and Offset are built on.
+ * column goes 1 row down, as BS, LF and VT do. SO and SI set the size back to normal and
+ * turn off inverse video and separation (SO also underline), and a size or inverse video
+ * received in mosaic is discarded. What Screen and Offset are built on.
  *
  * @internal
  */
