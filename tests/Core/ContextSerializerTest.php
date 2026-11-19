@@ -9,7 +9,7 @@ use MiniPaviService\Controller\Pagination\PageParameters;
 use MiniPaviService\Controller\Parameters\NoParameters;
 use MiniPaviService\Controller\Parameters\Values;
 use MiniPaviService\Controller\Request;
-use MiniPaviService\Controller\Response;
+use MiniPaviService\Controller\Response\DisplayPage;
 use MiniPaviService\Core\Context;
 use MiniPaviService\Core\ContextSerializer;
 use MiniPaviService\Core\KeptRoute;
@@ -40,7 +40,7 @@ final class ContextSerializerTest extends TestCase
             new CallbackController(
                 PageParameters::class,
                 /** @param Request<ControllerState, PageParameters> $request */
-                static fn(Request $request) => Response::display(Vdt::text(
+                static fn(Request $request) => new DisplayPage(Vdt::text(
                     'home '
                         . $request->state()->value
                         . ' '
@@ -55,15 +55,19 @@ final class ContextSerializerTest extends TestCase
             ),
         );
         $routes->addRoute('search', new SearchController());
-        $routes->addRoute('menu', new CallbackController(NoParameters::class, static fn(
-            Request $request,
-        ) => Response::display(new Vdt('menu'))));
+        $routes->addRoute(
+            'menu',
+            new CallbackController(
+                NoParameters::class,
+                static fn(Request $request) => new DisplayPage(new Vdt('menu')),
+            ),
+        );
         $routes->addRoute(
             'origin',
             new CallbackController(
                 FromParameters::class,
                 /** @param Request<ControllerState, FromParameters> $request */
-                static fn(Request $request) => Response::display(Vdt::text('from ' . $request->parameters()->from)),
+                static fn(Request $request) => new DisplayPage(Vdt::text('from ' . $request->parameters()->from)),
             ),
         );
         $this->router = $routes->build();

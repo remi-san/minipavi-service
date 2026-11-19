@@ -9,7 +9,7 @@ use MiniPaviService\Controller\Pagination\PageParameters;
 use MiniPaviService\Controller\Parameters\NoParameters;
 use MiniPaviService\Controller\Parameters\Values;
 use MiniPaviService\Controller\Request;
-use MiniPaviService\Controller\Response;
+use MiniPaviService\Controller\Response\DisplayPage;
 use MiniPaviService\Core\RouterBuilder;
 use MiniPaviService\Core\UnknownRouteException;
 use MiniPaviService\Minitel\Terminal;
@@ -27,7 +27,7 @@ final class RouterTest extends TestCase
                 new CallbackController(
                     PageParameters::class,
                     /** @param Request<ControllerState, PageParameters> $request */
-                    static fn(Request $request) => Response::display(Vdt::text('home ' . $request->parameters()->page)),
+                    static fn(Request $request) => new DisplayPage(Vdt::text('home ' . $request->parameters()->page)),
                 ),
             )
             ->build();
@@ -38,7 +38,7 @@ final class RouterTest extends TestCase
             new PageParameters(3),
             $route->restore('read-input', new Values(['page' => 3]))->parameters(),
         );
-        self::assertEquals(Response::display(new Vdt('home 0')), $route->start()->run(null, [], new Terminal()));
+        self::assertEquals(new DisplayPage(new Vdt('home 0')), $route->start()->run(null, [], new Terminal()));
         self::assertTrue($router->has('home'));
         self::assertFalse($router->has('menu'));
         self::assertSame('home', $router->defaultRoute());

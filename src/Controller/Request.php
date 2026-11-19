@@ -62,7 +62,7 @@ final readonly class Request
      * Function key pressed (FunctionKey), or connection code (ConnectionCode). See
      * functionKey() and connectionCode().
      *
-     * Null when there is none: for the controller a Response::goTo() leads to, for the default
+     * Null when there is none: for the controller a ChangePage leads to, for the default
      * route started again because the context's route is unknown, and for what the gateway
      * sends that the framework doesn't know as a key (GatewayRequest::keyOf(), e.g. DIRECT
      * after a CallMode::Direct call). A controller can't tell these cases apart by the key.

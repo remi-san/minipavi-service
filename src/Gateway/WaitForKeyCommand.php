@@ -6,7 +6,7 @@ namespace MiniPaviService\Gateway;
 
 /**
  * Command waiting for the user's next key, then calling this service with it: what the gateway
- * does when a response asks for nothing else (Response::display())
+ * does when a response asks for nothing else (DisplayPage)
  */
 final readonly class WaitForKeyCommand implements Command
 {

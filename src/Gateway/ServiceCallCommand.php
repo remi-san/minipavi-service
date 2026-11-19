@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace MiniPaviService\Gateway;
 
 /**
- * Command calling a service at once, without waiting for the user (Response::connectTo()):
+ * Command calling a service at once, without waiting for the user (RunCommand::connectTo()):
  * another service, or this one as the continuation of the session
  */
 final readonly class ServiceCallCommand implements Command

@@ -10,6 +10,9 @@ use MiniPaviService\Controller\Parameters\NoParameters;
 use MiniPaviService\Controller\Parameters\Parameters;
 use MiniPaviService\Controller\Request;
 use MiniPaviService\Controller\Response;
+use MiniPaviService\Controller\Response\ChangePage;
+use MiniPaviService\Controller\Response\DisplayPage;
+use MiniPaviService\Controller\Response\RunCommand;
 use MiniPaviService\Core\ContextSerializer;
 use MiniPaviService\Core\RouterBuilder;
 use MiniPaviService\Core\Service;
@@ -310,7 +313,7 @@ final class ServiceTest extends TestCase
         $routes->addRoute('removed', $this->controller(
             'removed',
             NoParameters::class,
-            static fn(Request $request) => Response::display(new Vdt('removed')),
+            static fn(Request $request) => new DisplayPage(new Vdt('removed')),
         ));
         $previous = $routes->build();
         $context =
@@ -331,11 +334,9 @@ final class ServiceTest extends TestCase
 
     public function testDisplayRespondsWithTheContentAndKeepsItsStateAndParameters(): void
     {
-        $response = $this->responseTo(Response::display(
-            new Vdt('Hello'),
-            ControllerState::Display,
-            new PageParameters(2),
-        ));
+        $response = $this->responseTo(
+            new DisplayPage(new Vdt('Hello'), ControllerState::Display, new PageParameters(2)),
+        );
 
         self::assertSame('Hello', $response->vdt->toString());
         // To this service, waiting for the user
@@ -349,7 +350,7 @@ final class ServiceTest extends TestCase
     {
         $command = new InputCommand(new InputField(new Span(new Position(2, 1), 4), validWith: [FunctionKey::Send]));
 
-        $response = $this->responseTo(Response::readInput(new Vdt('Code ?'), $command));
+        $response = $this->responseTo(RunCommand::readInput(new Vdt('Code ?'), $command));
 
         self::assertSame('Code ?', $response->vdt->toString());
         self::assertSame($command, $response->command);
@@ -362,7 +363,7 @@ final class ServiceTest extends TestCase
     public function testReadInputWithoutCommandOnlySendsTheContent(): void
     {
         // Page::inputCommand() gives null for a page without <input>
-        $response = $this->responseTo(Response::readInput(new Vdt('Hello'), command: null));
+        $response = $this->responseTo(RunCommand::readInput(new Vdt('Hello'), command: null));
 
         self::assertSame('Hello', $response->vdt->toString());
         self::assertEquals(new WaitForKeyCommand(), $response->command);
@@ -370,7 +371,7 @@ final class ServiceTest extends TestCase
 
     public function testConnectToSendsTheUserToTheOtherServiceAndKeepsWhatItIsGiven(): void
     {
-        $response = $this->responseTo(Response::connectTo(
+        $response = $this->responseTo(RunCommand::connectTo(
             'https://example.org/service',
             new Vdt('Cnx en cours'),
             parameters: new PageParameters(4),
@@ -421,20 +422,20 @@ final class ServiceTest extends TestCase
             'menu',
             NoParameters::class,
             static fn(Request $request) => match ($request->functionKey()) {
-                FunctionKey::Send => Response::goTo('directory', new PageParameters(1)),
-                FunctionKey::Next => Response::goTo($request->contentAsString()),
-                default => Response::display(new Vdt('menu')),
+                FunctionKey::Send => new ChangePage('directory', new PageParameters(1)),
+                FunctionKey::Next => new ChangePage($request->contentAsString()),
+                default => new DisplayPage(new Vdt('menu')),
             },
         ));
         $routes->addRoute('directory', $this->controller(
             'directory',
             PageParameters::class,
             static fn(Request $request) => match (true) {
-                $request->functionKey() === FunctionKey::Summary => Response::goTo('menu'),
-                $request->state() === ControllerState::ReadInput => Response::display(Vdt::text(
+                $request->functionKey() === FunctionKey::Summary => new ChangePage('menu'),
+                $request->state() === ControllerState::ReadInput => new DisplayPage(Vdt::text(
                     'code ' . $request->contentAsString(),
                 )),
-                default => Response::display(new Vdt('directory'), parameters: new PageParameters(2)),
+                default => new DisplayPage(new Vdt('directory'), parameters: new PageParameters(2)),
             },
         ));
         $routes->addRoute('broken', $this->controller(
@@ -446,18 +447,18 @@ final class ServiceTest extends TestCase
         $routes->addRoute('ping', $this->controller(
             'ping',
             NoParameters::class,
-            static fn(Request $request) => Response::goTo('pong'),
+            static fn(Request $request) => new ChangePage('pong'),
         ));
         $routes->addRoute('pong', $this->controller(
             'pong',
             NoParameters::class,
-            static fn(Request $request) => Response::goTo('ping'),
+            static fn(Request $request) => new ChangePage('ping'),
         ));
         // Keeps parameters of another class than it declares
         $routes->addRoute('mistyped', $this->controller(
             'mistyped',
             NoParameters::class,
-            static fn(Request $request) => Response::display(new Vdt('x'), parameters: new PageParameters(1)),
+            static fn(Request $request) => new DisplayPage(new Vdt('x'), parameters: new PageParameters(1)),
         ));
 
         return $routes;

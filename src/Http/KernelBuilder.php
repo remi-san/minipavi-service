@@ -121,7 +121,7 @@ final readonly class KernelBuilder
     }
 
     /**
-     * Page changes (Response::goTo()) allowed in one request, more being taken as controllers
+     * Page changes (ChangePage) allowed in one request, more being taken as controllers
      * changing to each other endlessly (Service); 0 forbids them, and a negative number
      * makes build() throw
      */

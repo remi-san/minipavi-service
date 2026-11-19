@@ -30,7 +30,7 @@ enum FrameworkMessage: string implements Message
     case KeyCorrection = 'key.correction';
     case KeyNext = 'key.next';
     case KeySend = 'key.send';
-    // On line 0 of the HTML view, when a key would leave the service (Response::connectTo())
+    // On line 0 of the HTML view, when a key would leave the service (RunCommand::connectTo())
     case WebLeave = 'web.leave';
 
     /**

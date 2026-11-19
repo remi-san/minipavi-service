@@ -7,7 +7,7 @@ namespace MiniPaviService\Core;
 /**
  * A route the router doesn't have (Router::route()): a context at such a route (e.g. removed in
  * a new version), which Service starts again at the default route, or a controller going to it
- * (Response::goTo()), an error of the service. Not a \RuntimeException, which means a context
+ * (ChangePage), an error of the service. Not a \RuntimeException, which means a context
  * that can't be read at all: such a context is valid, but out of date.
  */
 final class UnknownRouteException extends \Exception

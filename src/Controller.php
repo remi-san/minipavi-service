@@ -26,7 +26,7 @@ use MiniPaviService\Controller\State;
 interface Controller
 {
     /**
-     * State of the controller when it starts, or starts again (Response::goTo() leaving it, a
+     * State of the controller when it starts, or starts again (ChangePage leaving it, a
      * state its enum doesn't have): a case of the enum of its states
      *
      * @return TState

@@ -8,7 +8,8 @@ use MiniPaviService\Controller\Pagination\PageParameters;
 use MiniPaviService\Controller\Pagination\PaginatedController;
 use MiniPaviService\Controller\Parameters\NoParameters;
 use MiniPaviService\Controller\Request;
-use MiniPaviService\Controller\Response;
+use MiniPaviService\Controller\Response\ChangePage;
+use MiniPaviService\Controller\Response\DisplayPage;
 use MiniPaviService\Core\ContextSerializer;
 use MiniPaviService\Core\RouterBuilder;
 use MiniPaviService\Core\Service;
@@ -42,8 +43,8 @@ final class PaginatedControllerTest extends TestCase
         $this->routes->addRoute('menu', new CallbackController(NoParameters::class, static fn(
             Request $request,
         ) => $request->functionKey() === FunctionKey::Send
-            ? Response::goTo('list')
-            : Response::display(new Vdt('MENU'))));
+            ? new ChangePage('list')
+            : new DisplayPage(new Vdt('MENU'))));
     }
 
     public function testShowsTheFirstPageWithItsNumber(): void

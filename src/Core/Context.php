@@ -48,7 +48,7 @@ final class Context
     }
 
     /**
-     * Leaves the current route for another (Response::goTo()): the controller left starts
+     * Leaves the current route for another (ChangePage): the controller left starts
      * again next time (it keeps nothing), and the one of route starts again now, at its initial
      * state, with parameters (null: their defaults), whatever either kept before
      *
