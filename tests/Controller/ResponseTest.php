@@ -104,6 +104,12 @@ final class ResponseTest extends TestCase
         self::assertFalse((new ReflectionParameter([RunCommand::class, '__construct'], 'state'))->isOptional());
     }
 
+    public function testReadInputAlwaysKeepsAState(): void
+    {
+        // null would start the controller again (onInit()), dropping what is typed
+        self::assertFalse((new ReflectionParameter([RunCommand::class, 'readInput'], 'state'))->allowsNull());
+    }
+
     public function testDisplayCanKeepTheInitialState(): void
     {
         self::assertSame(

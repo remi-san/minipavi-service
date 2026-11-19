@@ -49,7 +49,7 @@ final readonly class RunCommand extends KeepingResponse
     public static function readInput(
         Vdt $vdt,
         ?InputCommand $command,
-        ?State $state = ControllerState::ReadInput,
+        State $state = ControllerState::ReadInput,
         ?Parameters $parameters = null,
     ): self {
         return new self($vdt, $command ?? new WaitForKeyCommand(), $state, $parameters);
