@@ -261,6 +261,45 @@ final class ScreenTest extends TestCase
         self::assertNull($screen->cell(12, col: 1));
     }
 
+    public function testTextAfterSoAndSiWrapsOneRowDown(): void
+    {
+        // Row 10, column 39: ESC M, A, SO, a mosaic character (column 40), which wraps to row
+        // 11, SI, then text: SO and SI set the size back to normal, as the Minitel does, so F
+        // wraps to row 12 (checked in MiniPavi's emulator, #26)
+        $screen = Vdt::join(
+            Vdt::position(39, row: 10),
+            new Vdt(
+                Videotex::SIZE_DOUBLE_HEIGHT
+                . 'A'
+                . Videotex::MOSAIC_SET
+                . "\x7F"
+                . Videotex::TEXT_SET
+                . str_repeat('C', times: 40)
+                . 'F',
+            ),
+        )->screen();
+
+        $c = $screen->cell(11, col: 1) ?? self::fail('Nothing at row 11, column 1');
+        self::assertFalse($c->attributes->isDoubleHeight());
+        self::assertSame('F', $screen->cell(12, col: 1)?->bytes);
+        self::assertNull($screen->cell(13, col: 1));
+    }
+
+    public function testSizeSentInMosaicIsIgnored(): void
+    {
+        // Row 10, column 40: SO, ESC M, SI, then AB: the Minitel ignores the size in mosaic,
+        // so B is at normal size, 1 row down (checked in MiniPavi's emulator)
+        $screen = Vdt::join(
+            Vdt::position(40, row: 10),
+            new Vdt(Videotex::MOSAIC_SET . Videotex::SIZE_DOUBLE_HEIGHT . Videotex::TEXT_SET . 'AB'),
+        )->screen();
+
+        $b = $screen->cell(11, col: 1) ?? self::fail('Nothing at row 11, column 1');
+        self::assertSame('B', $b->bytes);
+        self::assertFalse($b->attributes->isDoubleHeight());
+        self::assertNull($screen->cell(12, col: 1));
+    }
+
     public function testMoveRightWrapsOneRowDownInDoubleHeight(): void
     {
         // Row 20, column 39: ESC M, O, HT from column 40 to row 21 (not 22), Q
