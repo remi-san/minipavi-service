@@ -288,8 +288,10 @@ KernelBuilder::for($router, $messages)
   Every response but `ChangePage` responds to the gateway and ends the request. The state and
   parameters are what this controller keeps for its next run (for `connectTo()`, when the
   user comes back to it): a `State`, and a `Parameters` object (none by default). Give
-  others by name, e.g. `RunCommand::readInput($vdt, $command, parameters: new
-  DirectoryParameters(2))`. `new RunCommand($vdt, $command)` sends any other `Command`.
+  others after the content and the command (by name to give only one), e.g.
+  `RunCommand::readInput($vdt, $command, parameters: new DirectoryParameters(2))`.
+  `new RunCommand($vdt, $command, $state)` sends any other `Command`, keeping the state
+  given (`null`: the initial state).
   `Response` doesn't know these classes: a response of your own (see below) is built the
   same way.
   They are readonly, and don't change the context. `Service` calls the response's

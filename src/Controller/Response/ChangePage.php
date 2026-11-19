@@ -13,6 +13,7 @@ use MiniPaviService\Gateway\GatewayResponse;
  * Switches to the controller of another route, which runs at once: it starts at its initial
  * state, with the given parameters, and without the user's input (that was for the controller
  * left). The controller left is reset: its initial state, the defaults of its parameters.
+ * Unlike a KeepingResponse's, its parameters are the target controller's, not this one's.
  */
 final readonly class ChangePage extends Response
 {
