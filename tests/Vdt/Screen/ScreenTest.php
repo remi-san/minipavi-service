@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Tests\Vdt\Screen;
 
-use MiniPaviService\Page\Display\Color;
+use MiniPaviService\Minitel\Color;
 use MiniPaviService\Vdt\Vdt;
 use MiniPaviService\Vdt\Videotex;
 use PHPUnit\Framework\Attributes\DataProvider;

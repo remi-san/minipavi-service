@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace MiniPaviService\Tests\Vdt\Screen;
 
 use MiniPaviService\Minitel\Position;
+use MiniPaviService\Minitel\ScreenSize;
 use MiniPaviService\Minitel\Terminal;
 use MiniPaviService\Page\Display\Key;
 use MiniPaviService\Vdt\Screen\HtmlRenderer;
-use MiniPaviService\Vdt\Screen\Screen;
 use MiniPaviService\Vdt\Vdt;
 use PHPUnit\Framework\TestCase;
 
@@ -19,9 +19,9 @@ final class HtmlRendererTest extends TestCase
         $html = $this->render(new Vdt());
 
         self::assertStringStartsWith('<div class="minitel">', $html);
-        self::assertSame((Screen::ROWS + 1) * Screen::COLS, substr_count($html, needle: '<span class="c'));
+        self::assertSame((ScreenSize::ROWS + 1) * ScreenSize::COLS, substr_count($html, needle: '<span class="c'));
         // Row 0, the status line, is set apart
-        self::assertSame(Screen::COLS, substr_count($html, needle: 'class="c status"'));
+        self::assertSame(ScreenSize::COLS, substr_count($html, needle: 'class="c status"'));
         self::assertStringNotContainsString('<script', $html);
     }
 
@@ -79,7 +79,10 @@ final class HtmlRendererTest extends TestCase
 
         self::assertStringContainsString('class="c w2"', $html);
         // The character's second column is not drawn again
-        self::assertSame(((Screen::ROWS + 1) * Screen::COLS) - 1, substr_count($html, needle: '<span class="c'));
+        self::assertSame(((ScreenSize::ROWS + 1) * ScreenSize::COLS) - 1, substr_count(
+            $html,
+            needle: '<span class="c',
+        ));
     }
 
     public function testDoubleHeightBlinkAndUnderline(): void

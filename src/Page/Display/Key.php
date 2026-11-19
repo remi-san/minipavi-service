@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Page\Display;
 
+use MiniPaviService\Minitel\Color;
 use MiniPaviService\Minitel\Position;
 use MiniPaviService\Minitel\Terminal;
 use MiniPaviService\Vdt\Vdt;
@@ -29,7 +30,7 @@ final readonly class Key implements Element
     {
         return Vdt::join(
             Vdt::position($this->position->col, $this->position->row),
-            $this->bg?->background() ?? new Vdt(),
+            $this->bg === null ? new Vdt() : new Vdt(Videotex::backgroundColor($this->bg)),
             self::badge($this->label, $this->color),
         );
     }
@@ -40,13 +41,13 @@ final readonly class Key implements Element
     public static function badge(string $label, Color $color): Vdt
     {
         return Vdt::join(
-            Color::White->text(),
+            new Vdt(Videotex::textColor(Color::White)),
             new Vdt(Videotex::UNDERLINE_ON),
             Vdt::text(' '),
-            $color->text(),
+            new Vdt(Videotex::textColor($color)),
             new Vdt(Videotex::INVERSE_ON),
             Vdt::text(' ' . $label . ' '),
-            Color::White->text(),
+            new Vdt(Videotex::textColor(Color::White)),
             new Vdt(Videotex::INVERSE_OFF . Videotex::UNDERLINE_OFF),
             Vdt::text(' '),
         );

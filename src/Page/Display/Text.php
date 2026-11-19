@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Page\Display;
 
+use MiniPaviService\Minitel\Color;
 use MiniPaviService\Minitel\Position;
+use MiniPaviService\Minitel\ScreenSize;
 use MiniPaviService\Minitel\Terminal;
-use MiniPaviService\Vdt\Screen\Screen;
 use MiniPaviService\Vdt\Vdt;
 use MiniPaviService\Vdt\Videotex;
 
@@ -32,8 +33,8 @@ final readonly class Text implements Element
     {
         $attr = Vdt::join(
             $this->size?->toVdt() ?? new Vdt(),
-            $this->bg?->background() ?? new Vdt(),
-            $this->color->text(),
+            $this->bg === null ? new Vdt() : new Vdt(Videotex::backgroundColor($this->bg)),
+            new Vdt(Videotex::textColor($this->color)),
         );
         // Characters of double width take two columns each
         $charWidth = $this->size?->width() ?? 1;
@@ -71,6 +72,6 @@ final readonly class Text implements Element
     {
         $width = mb_strlen($this->text) * $charWidth;
 
-        return $width >= Screen::COLS ? 1 : intdiv(Screen::COLS - $width, num2: 2) + 1;
+        return $width >= ScreenSize::COLS ? 1 : intdiv(ScreenSize::COLS - $width, num2: 2) + 1;
     }
 }

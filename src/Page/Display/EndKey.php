@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Page\Display;
 
+use MiniPaviService\Minitel\Color;
 use MiniPaviService\Minitel\Position;
+use MiniPaviService\Minitel\ScreenSize;
 use MiniPaviService\Minitel\Terminal;
-use MiniPaviService\Vdt\Screen\Screen;
 use MiniPaviService\Vdt\Vdt;
+use MiniPaviService\Vdt\Videotex;
 
 /**
  * Hint telling how to come back to this screen (<endkey> in the page XML format): the key
@@ -38,19 +40,19 @@ final readonly class EndKey implements Element
             $width += mb_strlen($this->shiftLabel);
 
             return Vdt::join(
-                Vdt::position(self::centered($width), $this->position->row ?? (Screen::ROWS - 1)),
-                Color::White->text(),
+                Vdt::position(self::centered($width), $this->position->row ?? (ScreenSize::ROWS - 1)),
+                new Vdt(Videotex::textColor(Color::White)),
                 Vdt::text($this->shiftLabel),
                 $badge,
             );
         }
 
-        return Vdt::position(self::centered($width), $this->position->row ?? Screen::ROWS)->append($badge);
+        return Vdt::position(self::centered($width), $this->position->row ?? ScreenSize::ROWS)->append($badge);
     }
 
     // Column of the first cell of something width wide, centered on the row
     private static function centered(int $width): int
     {
-        return max(1, intdiv(Screen::COLS - $width, num2: 2) + 1);
+        return max(1, intdiv(ScreenSize::COLS - $width, num2: 2) + 1);
     }
 }

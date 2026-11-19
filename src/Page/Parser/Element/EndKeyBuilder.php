@@ -6,8 +6,8 @@ namespace MiniPaviService\Page\Parser\Element;
 
 use MiniPaviService\Message\FrameworkMessage;
 use MiniPaviService\Message\Messages;
+use MiniPaviService\Minitel\Color;
 use MiniPaviService\Minitel\Position;
-use MiniPaviService\Page\Display\Color;
 use MiniPaviService\Page\Display\Element;
 use MiniPaviService\Page\Display\EndKey;
 use MiniPaviService\Page\Parser\AttributeValues;

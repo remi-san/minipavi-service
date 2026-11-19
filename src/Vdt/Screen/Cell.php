@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Vdt\Screen;
 
-use MiniPaviService\Page\Display\Color;
+use MiniPaviService\Minitel\Color;
 use MiniPaviService\Vdt\Videotex;
 
 /**

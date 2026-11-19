@@ -2,13 +2,11 @@
 
 declare(strict_types=1);
 
-namespace MiniPaviService\Page\Display;
-
-use MiniPaviService\Vdt\Vdt;
-use MiniPaviService\Vdt\Videotex;
+namespace MiniPaviService\Minitel;
 
 /**
- * Minitel colors, named as in the page XML format (color="red")
+ * The Minitel's 8 colors, named as in the page XML format (color="red"), each with its number
+ * in Videotex (index())
  */
 enum Color: string
 {
@@ -38,25 +36,9 @@ enum Color: string
     }
 
     /**
-     * Videotex attribute for this text (foreground) color
-     */
-    public function text(): Vdt
-    {
-        return new Vdt(Videotex::ESC . chr(0x40 + $this->index()));
-    }
-
-    /**
-     * Videotex attribute for this background color
-     */
-    public function background(): Vdt
-    {
-        return new Vdt(Videotex::ESC . chr(0x50 + $this->index()));
-    }
-
-    /**
      * Number of the color in Videotex, from 0 (black) to 7 (white)
      */
-    private function index(): int
+    public function index(): int
     {
         return match ($this) {
             self::Black => 0,

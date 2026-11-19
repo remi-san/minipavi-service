@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Tests\Vdt;
 
-use MiniPaviService\Page\Display\Color;
+use MiniPaviService\Minitel\Color;
+use MiniPaviService\Minitel\ScreenSize;
 use MiniPaviService\Vdt\Player;
 use MiniPaviService\Vdt\Screen\Attributes;
 use MiniPaviService\Vdt\Screen\Cursor;
-use MiniPaviService\Vdt\Screen\Screen;
 use MiniPaviService\Vdt\ScreenListener;
 use MiniPaviService\Vdt\Token;
 use MiniPaviService\Vdt\Vdt;
@@ -207,8 +207,8 @@ final class VdtTest extends TestCase
         $after = $original->offset($x, $y)->screen();
         $glyphs = self::glyphColumns($original);
 
-        for ($row = 0; $row <= Screen::ROWS; $row++) {
-            for ($col = 1; $col <= Screen::COLS; $col++) {
+        for ($row = 0; $row <= ScreenSize::ROWS; $row++) {
+            for ($col = 1; $col <= ScreenSize::COLS; $col++) {
                 if ($row === 0) {
                     // The status line isn't moved
                     self::assertEquals($before->cell(0, $col), $after->cell(0, $col), "row 0, column {$col}");
@@ -218,9 +218,9 @@ final class VdtTest extends TestCase
                 [$start, $width] = $glyphs[$fromRow][$fromCol] ?? [$fromCol, 1];
                 $onScreen =
                     $fromRow >= 1
-                    && $fromRow <= Screen::ROWS
+                    && $fromRow <= ScreenSize::ROWS
                     && ($start + $x) >= 1
-                    && ($start + $x + $width - 1) <= Screen::COLS;
+                    && ($start + $x + $width - 1) <= ScreenSize::COLS;
                 $expected = $onScreen ? $before->cell($fromRow, $fromCol) : null;
                 self::assertEquals($expected, $after->cell($row, $col), "row {$row}, column {$col}");
             }

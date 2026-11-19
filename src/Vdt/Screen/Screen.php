@@ -7,14 +7,11 @@ namespace MiniPaviService\Vdt\Screen;
 use MiniPaviService\Vdt\Vdt;
 
 /**
- * Screen drawn by Videotex content: rows 0 (status line) to ROWS, of COLS cells. ROWS and
- * COLS are the size of the Minitel screen for the whole framework.
+ * Screen drawn by Videotex content: rows 0 (status line) to Minitel\ScreenSize::ROWS, of
+ * ScreenSize::COLS cells
  */
 final readonly class Screen
 {
-    public const ROWS = 24;
-    public const COLS = 40;
-
     /**
      * @param array<int, array<int, ?Cell>> $cells by row, then column (from 1); null if empty
      */
@@ -34,7 +31,7 @@ final readonly class Screen
 
     /**
      * Text of a row (0: status line), a character per cell (Cell::text()), empty cells as
-     * spaces: COLS characters, or '' for a row the screen doesn't have
+     * spaces: ScreenSize::COLS characters, or '' for a row the screen doesn't have
      */
     public function line(int $row): string
     {
@@ -46,7 +43,8 @@ final readonly class Screen
     }
 
     /**
-     * Text of the screen: line() of each row, from 0 (status line) to ROWS, a row per line
+     * Text of the screen: line() of each row, from 0 (status line) to ScreenSize::ROWS, a row
+     * per line
      */
     public function text(): string
     {

@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Page\Parser\Element;
 
+use MiniPaviService\Minitel\Color;
 use MiniPaviService\Minitel\Position;
-use MiniPaviService\Page\Display\Color;
 use MiniPaviService\Page\Display\Element;
 use MiniPaviService\Page\Display\Key;
 use MiniPaviService\Page\Parser\AttributeValues;

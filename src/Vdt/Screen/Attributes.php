@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Vdt\Screen;
 
-use MiniPaviService\Page\Display\Color;
+use MiniPaviService\Minitel\Color;
 use MiniPaviService\Vdt\Videotex;
 
 /**
@@ -28,8 +28,13 @@ final readonly class Attributes
     public const INVERSE = "\x5D";
     public const NO_INVERSE = "\x5C";
 
+    // The colors: the byte after ESC is TEXT_COLOR + the color's index for the text, and
+    // BACKGROUND_COLOR + its index for the background (Color::index(), 0 to 7)
+    private const TEXT_COLOR = 0x40;
+    private const BACKGROUND_COLOR = 0x50;
+
     // The byte after ESC of each group, as the Minitel starts (the charset: SI): white text
-    // (0x40 + 7) on black (0x50 + 0)
+    // (TEXT_COLOR + 7) on black (BACKGROUND_COLOR + 0)
     private const DEFAULTS = [
         'charset' => Videotex::TEXT_SET,
         'fg' => "\x47",
@@ -90,12 +95,28 @@ final readonly class Attributes
 
     public function foreground(): Color
     {
-        return Color::fromIndex(\ord($this->values['fg']) - 0x40);
+        return Color::fromIndex(\ord($this->values['fg']) - self::TEXT_COLOR);
     }
 
     public function background(): Color
     {
-        return Color::fromIndex(\ord($this->values['bg']) - 0x50);
+        return Color::fromIndex(\ord($this->values['bg']) - self::BACKGROUND_COLOR);
+    }
+
+    /**
+     * The byte after ESC setting this text (foreground) color
+     */
+    public static function textColor(Color $color): string
+    {
+        return \chr(self::TEXT_COLOR + $color->index());
+    }
+
+    /**
+     * The byte after ESC setting this background color
+     */
+    public static function backgroundColor(Color $color): string
+    {
+        return \chr(self::BACKGROUND_COLOR + $color->index());
     }
 
     public function isDoubleHeight(): bool
@@ -192,11 +213,11 @@ final readonly class Attributes
     private static function group(string $byte): ?string
     {
         $code = \ord($byte);
-        // The colours: 0x40 + n for the text, 0x50 + n for the background (Color)
-        if ($code >= 0x40 && $code <= 0x47) {
+        // The colours (Color::index(), 0 to 7)
+        if ($code >= self::TEXT_COLOR && $code <= (self::TEXT_COLOR + 7)) {
             return 'fg';
         }
-        if ($code >= 0x50 && $code <= 0x57) {
+        if ($code >= self::BACKGROUND_COLOR && $code <= (self::BACKGROUND_COLOR + 7)) {
             return 'bg';
         }
 
