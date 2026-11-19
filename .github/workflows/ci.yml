@@ -38,3 +38,28 @@ jobs:
 
       - name: Tests
         run: composer test
+
+  # Coverage, on one PHP version: printed in the log, and kept as the job's artifact (Clover
+  # XML), without a minimum until it is known
+  coverage:
+    name: Coverage
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, simplexml, dom
+          coverage: pcov
+
+      - name: Install
+        run: composer install --no-interaction --no-progress
+
+      - name: Tests with coverage
+        run: composer coverage
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage.xml
