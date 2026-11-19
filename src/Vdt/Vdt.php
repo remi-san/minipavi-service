@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Vdt;
 
+use MiniPaviService\InvalidValueException;
 use MiniPaviService\Minitel\Position;
 
 /**
@@ -19,6 +20,9 @@ use MiniPaviService\Minitel\Position;
  */
 final readonly class Vdt
 {
+    // Most repetitions a REP's count (0x40 + count, a 7-bit byte) gives
+    private const MAX_REPEAT = 0x3F;
+
     /**
      * @param string $bytes Videotex, as sent; '' for nothing
      */
@@ -74,11 +78,25 @@ final readonly class Vdt
     }
 
     /**
-     * A character, count times in all, as REP sends it
+     * A character, count times in all, as REP sends it: the character, then REP and how many
+     * more times, 63 at most (0x7F) for its count to stay a 7-bit byte; beyond, more REPs follow,
+     * as the MiniPavi emulator's own encoder writes them
+     *
+     * @throws InvalidValueException for a count below 1
      */
     public static function repeat(string $char, int $count): self
     {
-        return new self($char . Videotex::REPEAT . \chr(0x40 + $count - 1));
+        if ($count < 1) {
+            throw new InvalidValueException("A character is repeated once at least, got {$count}");
+        }
+        $bytes = $char;
+        $more = $count - 1;
+        while ($more > self::MAX_REPEAT) {
+            $bytes .= Videotex::REPEAT . \chr(0x40 + self::MAX_REPEAT);
+            $more -= self::MAX_REPEAT;
+        }
+
+        return new self($bytes . Videotex::REPEAT . \chr(0x40 + $more));
     }
 
     /**
