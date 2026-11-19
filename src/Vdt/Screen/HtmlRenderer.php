@@ -158,20 +158,19 @@ final readonly class HtmlRenderer
             return '<span class="' . implode(' ', $classes) . '" style="' . $style . '"> </span>';
         }
 
-        return (
-            '<span class="'
-            . implode(' ', $classes)
-            . '" style="'
-            . $style
-            . '">'
-            . (
-                $mosaic && self::isMosaic($cell->bytes)
-                    // Separated when underlined
-                    ? '<span class="m' . ($underline ? ' sep' : '') . '">' . self::pixels($cell->bytes) . '</span>'
-                    : Html::escape($cell->text())
-            )
-            . '</span>'
-        );
+        $content = $mosaic && self::isMosaic($cell->bytes) ? self::mosaic($cell) : Html::escape($cell->text());
+
+        return '<span class="' . implode(' ', $classes) . '" style="' . $style . '">' . $content . '</span>';
+    }
+
+    /**
+     * A mosaic character, drawn as its pixels: separated ones when it is underlined
+     */
+    private static function mosaic(Cell $cell): string
+    {
+        $classes = $cell->attributes->isUnderlined() ? 'm sep' : 'm';
+
+        return '<span class="' . $classes . '">' . self::pixels($cell->bytes) . '</span>';
     }
 
     /**
