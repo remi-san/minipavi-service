@@ -60,7 +60,7 @@ final readonly class HtmlRenderer
 
     /**
      * The screen (a <div class="minitel">), with what overlay puts over it (e.g. input fields,
-     * positioned with --w, --h and --pad)
+     * placed with place())
      *
      * @param string $overlay HTML over the screen
      */
@@ -82,11 +82,12 @@ final readonly class HtmlRenderer
 
     /**
      * Style placing an element over the screen (e.g. an input field of the overlay) at a cell,
-     * length cells wide: the screen's geometry, kept with its CSS
+     * length cells wide and a cell high: all of the screen's geometry, kept with its CSS, so
+     * the element's own style needn't know it
      */
     public function place(Position $position, int $length): string
     {
-        return "left: calc(var(--pad) + {$position->col}*var(--w) - var(--w)); top: calc(var(--pad) + {$position->row}*var(--h)); width: calc({$length}*var(--w));";
+        return "position: absolute; left: calc(var(--pad) + {$position->col}*var(--w) - var(--w)); top: calc(var(--pad) + {$position->row}*var(--h)); width: calc({$length}*var(--w)); height: var(--h);";
     }
 
     /**
