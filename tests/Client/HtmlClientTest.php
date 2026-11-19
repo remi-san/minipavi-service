@@ -107,6 +107,9 @@ final class HtmlClientTest extends TestCase
             '/value="ab" style="position: absolute; [^"]*height: var\(--h\); box-sizing: border-box; z-index: 2;"/',
             $html,
         );
+        // Underlined without a border, which would take a pixel of the cell from its text
+        self::assertMatchesRegularExpression('/\.field \{[^}]*border: 0;/', $html);
+        self::assertDoesNotMatchRegularExpression('/\.field[^{]*\{[^}]*border-(bottom|color)/', $html);
         // Its keys: Envoi and Suite only
         self::assertSame(6, substr_count($html, needle: ' disabled>'));
         // The whole command, cursor and space character included, posted back as it came
