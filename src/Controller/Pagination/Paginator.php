@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace MiniPaviService\Controller\Pagination;
 
 /**
- * A page of items shown perPage at a time: which items it holds (offset(), limit(), slice()),
+ * A page of items shown limit() at a time: which items it holds (offset(), limit(), slice()),
  * where it is among the pages (number(), pageCount(), isFirst(), isLast()), and the pages
  * around it (next(), previous()). There is always one page at least, empty if there are no
  * items. Immutable.
@@ -23,7 +23,7 @@ final readonly class Paginator
      * @throws \InvalidArgumentException for a negative item count, or less than one item per page
      */
     public function __construct(
-        public int $itemCount,
+        private int $itemCount,
         private int $perPage,
         int $index = 0,
     ) {
@@ -34,6 +34,14 @@ final readonly class Paginator
             throw new \InvalidArgumentException("At least one item per page, {$perPage} given");
         }
         $this->index = max(0, min($index, $this->pageCount() - 1));
+    }
+
+    /**
+     * Number of items, on all the pages (also in toArray())
+     */
+    public function itemCount(): int
+    {
+        return $this->itemCount;
     }
 
     /**
@@ -78,7 +86,7 @@ final readonly class Paginator
     }
 
     /**
-     * Number of items on the page: perPage, fewer on the last one
+     * Number of items on the page: limit(), fewer on the last one
      */
     public function itemCountOnPage(): int
     {
@@ -136,7 +144,7 @@ final readonly class Paginator
     }
 
     /**
-     * The items of the page, from all the items (a list of itemCount items)
+     * The items of the page, from all the items (a list of itemCount() items)
      *
      * @template T
      *

@@ -33,6 +33,7 @@ final class PaginatorTest extends TestCase
     {
         $paginator = new Paginator(10, 4, 1);
 
+        self::assertSame(10, $paginator->itemCount());
         self::assertSame(1, $paginator->index());
         self::assertSame(2, $paginator->number());
         self::assertSame(4, $paginator->offset());
