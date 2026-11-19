@@ -184,6 +184,21 @@ final class ContextTest extends TestCase
         $context->keep(ControllerState::ReadInput, parameters: null);
     }
 
+    public function testKeepingThatFailsDoesNotKeepTheCurrentRoute(): void
+    {
+        $context = new Context($this->router, 'search');
+
+        $refused = false;
+        try {
+            $context->keep(ControllerState::ReadInput, parameters: null);
+        } catch (\LogicException) {
+            $refused = true;
+        }
+
+        self::assertTrue($refused);
+        self::assertSame([], $context->kept());
+    }
+
     public function testKeepingParametersOfAnotherClassThanTheControllersIsAnError(): void
     {
         $context = new Context($this->router, 'search');

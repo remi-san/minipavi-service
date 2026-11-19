@@ -94,11 +94,15 @@ final class Context
      * @param ?State $state a case of the enum of its controller's states; null: the initial one
      * @param ?Parameters $parameters of the class its controller declares; null: the defaults
      *
-     * @throws \LogicException for a state or parameters of other types than the controller's
+     * @throws \LogicException for a state or parameters of other types than the controller's:
+     *                         the context then stays as it was
      */
     public function keep(?State $state, ?Parameters $parameters): void
     {
-        $this->current()->keep($state, $parameters);
+        // Kept only once keep() succeeds: if it throws, a route that kept nothing still doesn't
+        $route = $this->routes[$this->route] ?? $this->router->route($this->route)->start();
+        $route->keep($state, $parameters);
+        $this->routes[$this->route] = $route;
     }
 
     /**
