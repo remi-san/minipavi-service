@@ -112,6 +112,31 @@ final class PageXsdTest extends TestCase
     /**
      * @return iterable<string, array{string}>
      */
+    public static function filesInThePageFolder(): iterable
+    {
+        yield 'in a subfolder' => ['images/logo.vdt'];
+        yield 'with Windows separators' => ['images\logo.vdt'];
+        yield 'one letter' => ['a'];
+        yield 'colon after the first letter' => ['ab:c.vdt'];
+        yield 'colon in a subfolder' => ['images/C:logo.vdt'];
+        yield 'from the current folder' => ['./logo.vdt'];
+        yield 'hidden' => ['.logo.vdt'];
+        yield 'starting with two dots' => ['..logo.vdt'];
+    }
+
+    /**
+     * A file the parser takes from the page's folder: the schema takes it too
+     */
+    #[DataProvider('filesInThePageFolder')]
+    public function testFileInThePageFolderIsValid(string $file): void
+    {
+        self::assertSame('dir/' . $file, (new PageFiles('dir'))->path($file));
+        self::assertSame([], self::errors("<page type=\"static\"><image>{$file}</image></page>"));
+    }
+
+    /**
+     * @return iterable<string, array{string}>
+     */
     public static function pagesRefusedBySchema(): iterable
     {
         foreach (PageXmlParserTest::invalidPages() as $name => [$xml]) {
