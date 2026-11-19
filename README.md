@@ -777,11 +777,11 @@ echo Screen::of($moved)->preview();              // the screen, as text
   the status line, is not moved. A double-height or double-size character moved onto row 1,
   where the Minitel discards `ESC M` and `ESC O`, is written without them: at normal size, or
   double width for double size, in the columns it had. Text keeps its zone (see `Screen::of()`):
-  each delimiter is written with `ESC Z` or `ESC Y` before it, and a space that would
-  otherwise start another zone (a background colour sent again waits for it) or lose its own
-  (its delimiter went off the screen) is written as a delimiter of its zone. That space isn't
-  underlined, as a delimiter isn't. Text moved to column 1 before such a space has no column
-  left for its delimiter, and loses its zone.
+  its background colour, masking and underline are sent only before its delimiter (with
+  `ESC Z` or `ESC Y` when none of them changes), never with a text character, and a space that
+  would otherwise lose its zone (its delimiter went off the screen) is written as a delimiter
+  of its zone. That space isn't underlined, as a delimiter isn't. Text moved to column 1 before
+  such a space has no column left for its delimiter, and loses its zone.
 - **`ClearScreens`**: `removed($vdt)` is the same content without its clear screens (FF), to
   draw it over other content, and `fromLast($vdt)` the content from its last one, what still
   shows.
@@ -805,14 +805,22 @@ echo Screen::of($moved)->preview();              // the screen, as text
   40 goes 1 row down, as BS, LF and VT move 1 row. SO and SI set the size back to normal
   and turn off inverse video and separated mosaic, SO also underline; a size (`ESC L` to
   `ESC O`) or inverse video (`ESC ]`) received in mosaic is discarded: mosaic characters are
-  never tall, wide or inverse. Underline in text is a zone attribute: `ESC Z` and `ESC Y`
-  wait for a delimiter, a space drawn while a zone attribute (underline, background colour,
-  masking) waits. The delimiter isn't underlined, and starts a zone running along its row up
-  to the next delimiter, mosaic or empty cell, over what is already there too: write
-  `ESC Z`, a space, then the text (as `Page\Display\Key` does). A positioning drops what waits,
-  and SO ends the zone. CAN clears with spaces, so while a zone attribute waits, the first one
-  is a delimiter. A mosaic character uses up nothing that waits. Background colour and masking
-  are still applied at once.
+  never tall, wide or inverse. Underline, background colour and masking are zone attributes
+  in text (checked in MiniPavi's emulator, #28, #30): `ESC Z` and `ESC Y`, `ESC P` to `ESC W`,
+  `ESC X` and `ESC _` wait for a delimiter, a space drawn while a zone attribute waits. The
+  delimiter starts a zone along its row, over what is already there too: its background and
+  underline up to the next delimiter, mosaic or empty cell (black from column 1 and after an
+  empty cell; the text after a mosaic cell on its background), its masking up to the next
+  delimiter, mosaic and empty cells included. The delimiter itself is on the zone's
+  background, not underlined. To colour or underline text, write the attribute, a space, then
+  the text (as `Page\Display\Key` does): `ESC T` then `AB` draws `AB` on black. A positioning
+  drops what waits, and SO ends the underline and applies the background colour waiting. In
+  mosaic, the background colour applies at once, and masking waits too; a delimiter with no
+  background colour waiting takes the last one applied. CAN clears with spaces, so while a
+  zone attribute waits, the first one is a delimiter: `ESC T`, CAN colours the rest of the row,
+  but text written then over its first column draws over the delimiter, and the row is black.
+  A mosaic character uses up nothing that waits. Each `Cell` has the background, masking and
+  (in text) underline its zone shows, which `HtmlRenderer` draws.
 - **`Vdt\Player::play($vdt, $listener)`** (internal, what `Screen::of()` and `Offset` are
   built on): plays the content on the simulated screen, telling a `Vdt\ScreenListener` each
   character (`glyph()`, with its row, column, width and attributes), each delimiter
