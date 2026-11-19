@@ -51,15 +51,6 @@ final class VdtTest extends TestCase
         self::assertFalse(Vdt::text(' ')->isEmpty());
     }
 
-    public function testKeepsWhatShowsFromTheLastClearScreen(): void
-    {
-        $vdt = new Vdt("\x1F\x41\x41A\x0C\x1F\x41\x41B\x0C\x1F\x42\x41C");
-
-        self::assertSame("\x0C\x1F\x42\x41C", $vdt->fromLastClear()->toString());
-        // Without a clear screen: all of it
-        self::assertSame("\x1F\x41\x41A", (new Vdt("\x1F\x41\x41A"))->fromLastClear()->toString());
-    }
-
     public function testGivesBackItsBytesAsTheyAre(): void
     {
         $vdt = (string) file_get_contents(self::FIXTURES . '/background.vdt');
@@ -279,15 +270,6 @@ final class VdtTest extends TestCase
             ["\x21", "\x22", null],
             array_map(static fn(int $col) => $mosaic->cell(1, $col)?->bytes, [1, 2, 3]),
         );
-    }
-
-    public function testWithoutClearDrawsOverWhatIsShown(): void
-    {
-        $screen = Screen::of((new Vdt("\x1F\x43\x41shown"))->append((new Vdt("\x0CAB"))->withoutClear()));
-
-        self::assertSame('shown', rtrim($screen->line(3)));
-        // From the top left corner, as after a clear screen
-        self::assertSame('AB', rtrim($screen->line(1)));
     }
 
     /**

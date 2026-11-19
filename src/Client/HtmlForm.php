@@ -10,6 +10,7 @@ use MiniPaviService\Message\FrameworkMessage;
 use MiniPaviService\Message\Messages;
 use MiniPaviService\Minitel\FunctionKey;
 use MiniPaviService\Minitel\Position;
+use MiniPaviService\Vdt\ClearScreens;
 use MiniPaviService\Vdt\Screen\HtmlRenderer;
 use MiniPaviService\Vdt\Screen\Screen;
 use MiniPaviService\Vdt\Vdt;
@@ -63,7 +64,7 @@ final readonly class HtmlForm
      */
     public function render(Vdt $screen, string $context, ?InputCommand $command, string $title): string
     {
-        $screen = $screen->fromLastClear();
+        $screen = (new ClearScreens())->fromLast($screen);
         $hidden =
             self::hidden(self::CONTEXT, $context)
             . self::hidden(self::COMMAND, $command === null ? '' : $this->commands->encode($command))

@@ -103,43 +103,10 @@ final readonly class Vdt
     }
 
     /**
-     * The content from its last clear screen (FF), which erases what comes before it but row
-     * 0: what still shows, without the content drawn over since
-     */
-    public function fromLastClear(): self
-    {
-        $tokens = (new Parser())->parse($this->bytes);
-        $start = 0;
-        foreach ($tokens as $i => $token) {
-            if ($token->type !== TokenType::Clear) {
-                continue;
-            }
-
-            $start = $i;
-        }
-
-        return new self(implode('', array_map(
-            static fn(Token $token) => $token->source,
-            \array_slice($tokens, $start),
-        )));
-    }
-
-    /**
      * The bytes sent to the Minitel
      */
     public function toString(): string
     {
         return $this->bytes;
-    }
-
-    /**
-     * Content that doesn't clear the screen, to be drawn over other content: its clear
-     * screens (FF) only bring the cursor home, as RS
-     */
-    public function withoutClear(): self
-    {
-        return new self(implode('', array_map(static fn(Token $token) => $token->type === TokenType::Clear
-            ? Videotex::HOME
-            : $token->source, (new Parser())->parse($this->bytes))));
     }
 }
