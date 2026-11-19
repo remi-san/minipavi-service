@@ -105,9 +105,11 @@ KernelBuilder::for($router, $messages)
   - `withEmulator()`: where browsers are sent (default: the minipavi.fr emulator and gateway);
   - `withHandler()`: a `ConditionalRequestHandler` of the service (e.g. an API, a health
     check), tried before the framework's, in the order they are added;
-  - `withMaxPageChanges()`: the page changes allowed in one request (default: 10, see below);
+  - `withMaxPageChanges()`: the page changes allowed in one request (default: 10, see below;
+    at least 1, or `build()` throws an `InvalidValueException`);
   - `withFont()`: the TrueType font of the HTML client's screen (default: the framework's
-    Minitel font, `HtmlRenderer::MINITEL_FONT`).
+    Minitel font, `HtmlRenderer::MINITEL_FONT`); a file that can't be read throws an
+    `InvalidValueException` there, rather than on each browser's request.
 
   A service needing another wiring builds the `Kernel` itself, from the classes below.
 
