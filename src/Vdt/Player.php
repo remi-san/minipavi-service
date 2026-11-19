@@ -31,8 +31,7 @@ final readonly class Player
 
     /**
      * Plays the content, telling the listener each character drawn (repetitions included),
-     * delimiter or CAN, and the other tokens once the cursor has followed them (a copy of the
-     * cursor)
+     * delimiter or CAN, and the other tokens once the cursor has followed them
      */
     public function play(Vdt $vdt, ScreenListener $listener): void
     {
@@ -45,13 +44,12 @@ final readonly class Player
                     $repeat = $token->type === TokenType::Repeat;
                     $bytes = $repeat ? $last : $token->bytes;
                     // REP with no character before: nothing to draw, nor to tell
-                    if ($bytes === null) {
-                        continue 2;
+                    if ($bytes !== null) {
+                        for ($n = 0; $n < ($repeat ? $token->count : 1); $n++) {
+                            $this->draw($cursor, $bytes, $listener);
+                        }
+                        $last = $bytes;
                     }
-                    for ($n = 0; $n < ($repeat ? $token->count : 1); $n++) {
-                        $this->draw($cursor, $bytes, $listener);
-                    }
-                    $last = $bytes;
                     continue 2;
                 case TokenType::Attribute:
                     $cursor->setAttribute($token->bytes);
@@ -73,8 +71,7 @@ final readonly class Player
                     $cursor->reset(1, col: 1);
                     break;
             }
-            // A copy: what the listener does with it doesn't move what follows
-            $listener->sequence($token, clone $cursor);
+            $listener->sequence($token);
         }
     }
 

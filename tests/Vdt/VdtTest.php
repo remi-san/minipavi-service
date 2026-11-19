@@ -9,13 +9,7 @@ use MiniPaviService\Minitel\Color;
 use MiniPaviService\Minitel\Position;
 use MiniPaviService\Minitel\ScreenSize;
 use MiniPaviService\Vdt\Offset;
-use MiniPaviService\Vdt\Player;
-use MiniPaviService\Vdt\Screen\Attributes;
-use MiniPaviService\Vdt\Screen\Cursor;
 use MiniPaviService\Vdt\Screen\Screen;
-use MiniPaviService\Vdt\Screen\Zone;
-use MiniPaviService\Vdt\ScreenListener;
-use MiniPaviService\Vdt\Token;
 use MiniPaviService\Vdt\Vdt;
 use MiniPaviService\Vdt\Videotex;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -342,7 +336,7 @@ final class VdtTest extends TestCase
         $original = self::fixture($file);
         $before = Screen::of($original);
         $after = Screen::of((new Offset($x, $y))->apply($original));
-        $glyphs = self::glyphColumns($original);
+        $glyphs = self::glyphColumns($before);
 
         for ($row = 0; $row <= ScreenSize::ROWS; $row++) {
             for ($col = 1; $col <= ScreenSize::COLS; $col++) {
@@ -365,35 +359,30 @@ final class VdtTest extends TestCase
     }
 
     /**
-     * For each cell drawn by a character: the first column of that character, and its width
+     * For each cell of the screen a character takes: the first column of that character, and
+     * its width. A double-width text character takes two cells, read from the left: its second
+     * one only if it still shows it (a character drawn over it since takes that cell). A
+     * second half left alone, its first one drawn over, reads as a character of its own.
      *
      * @return array<int, array<int, array{int, int}>>
      */
-    private static function glyphColumns(Vdt $vdt): array
+    private static function glyphColumns(Screen $screen): array
     {
-        $listener = new class implements ScreenListener {
-            /** @var array<int, array<int, array{int, int}>> */
-            public array $columns = [];
-
-            public function glyph(int $row, int $col, string $bytes, int $width, Attributes $attributes): void
-            {
-                for ($i = 0; $i < $width; $i++) {
-                    $this->columns[$row][$col + $i] = [$col, $width];
+        $columns = [];
+        for ($row = 0; $row <= ScreenSize::ROWS; $row++) {
+            for ($col = 1; $col <= ScreenSize::COLS; $col++) {
+                $cell = $screen->cell($row, $col);
+                $width = $cell?->attributes->width() ?? 1;
+                $columns[$row][$col] = [$col, $width];
+                $next = $screen->cell($row, $col + 1);
+                if ($width === 2 && $next?->bytes === $cell?->bytes && $next?->attributes->width() === 2) {
+                    $columns[$row][$col + 1] = [$col, $width];
+                    $col++;
                 }
             }
+        }
 
-            public function delimiter(int $row, int $col, int $width, Attributes $attributes, Zone $zone): void
-            {
-                $this->glyph($row, $col, bytes: ' ', width: $width, attributes: $attributes);
-            }
-
-            public function clearLine(int $row, int $col, Attributes $attributes, ?Zone $delimiter): void {}
-
-            public function sequence(Token $sequence, Cursor $cursor): void {}
-        };
-        (new Player())->play($vdt, $listener);
-
-        return $listener->columns;
+        return $columns;
     }
 
     /**

@@ -76,7 +76,7 @@ final class ScreenCells implements ScreenListener
         }
     }
 
-    public function sequence(Token $sequence, Cursor $cursor): void
+    public function sequence(Token $sequence): void
     {
         if ($sequence->type === TokenType::Clear) {
             // The status line stays

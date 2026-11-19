@@ -52,7 +52,7 @@ final class Zones
     /**
      * Draws a mosaic character at row, col, which ends a zone
      */
-    public function mosaic(int $row, int $col): void
+    private function mosaic(int $row, int $col): void
     {
         unset($this->text[$row][$col]);
     }
@@ -70,7 +70,7 @@ final class Zones
     /**
      * Whether the cell at row, col is a delimiter
      */
-    public function isDelimiter(int $row, int $col): bool
+    private function isDelimiter(int $row, int $col): bool
     {
         return ($this->text[$row][$col] ?? null) !== null;
     }

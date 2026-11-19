@@ -6,7 +6,6 @@ namespace MiniPaviService\Vdt;
 
 use MiniPaviService\Minitel\ScreenSize;
 use MiniPaviService\Vdt\Screen\Attributes;
-use MiniPaviService\Vdt\Screen\Cursor;
 use MiniPaviService\Vdt\Screen\Zone;
 use MiniPaviService\Vdt\Screen\Zones;
 
@@ -68,7 +67,7 @@ final class OffsetWriter implements ScreenListener
         }
     }
 
-    public function sequence(Token $sequence, Cursor $cursor): void
+    public function sequence(Token $sequence): void
     {
         switch ($sequence->type) {
             case TokenType::Clear:
