@@ -14,6 +14,7 @@ use MiniPaviService\Core\Context;
 use MiniPaviService\Core\KeptRoute;
 use MiniPaviService\Core\Router;
 use MiniPaviService\Core\RouterBuilder;
+use MiniPaviService\Core\UnknownRouteException;
 use MiniPaviService\Minitel\FunctionKey;
 use MiniPaviService\Minitel\Terminal;
 use MiniPaviService\Tests\Support\CallbackController;
@@ -144,7 +145,7 @@ final class ContextTest extends TestCase
         $refused = false;
         try {
             $context->leaveFor($route, $parameters);
-        } catch (\LogicException) {
+        } catch (\LogicException|UnknownRouteException) {
             $refused = true;
         }
 

@@ -68,9 +68,8 @@ final readonly class ContextSerializer
     {
         $context = self::decode($this->signer->verify($serialized));
         $current = \is_string($context['route'] ?? null) ? $context['route'] : $this->router->defaultRoute();
-        if (!$this->router->has($current)) {
-            throw new UnknownRouteException($current);
-        }
+        // Throws UnknownRouteException if the router doesn't have it
+        $this->router->route($current);
         $states = \is_array($context['states'] ?? null) ? $context['states'] : [];
         $parameters = \is_array($context['parameters'] ?? null) ? $context['parameters'] : [];
 

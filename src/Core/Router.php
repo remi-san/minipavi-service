@@ -38,13 +38,11 @@ final readonly class Router
     /**
      * @return Route<State, Parameters>
      *
-     * @throws \LogicException if there is no such route
+     * @throws UnknownRouteException if there is no such route
      */
     public function route(string $name): Route
     {
-        return (
-            $this->routes[$name] ?? throw new \LogicException("Unknown route \"{$name}\" (routes: {$this->names()})")
-        );
+        return $this->routes[$name] ?? throw new UnknownRouteException($name, array_keys($this->routes));
     }
 
     /**

@@ -54,8 +54,9 @@ final class Context
      *
      * @param ?Parameters $parameters of the class route's controller declares
      *
-     * @throws \LogicException for an unknown route, or parameters of another class than its
-     *                         controller's: the context then stays as it was
+     * @throws UnknownRouteException for an unknown route
+     * @throws \LogicException for parameters of another class than its controller's: in both
+     *                         cases, the context stays as it was
      */
     public function leaveFor(string $route, ?Parameters $parameters = null): void
     {

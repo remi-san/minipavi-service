@@ -11,6 +11,7 @@ use MiniPaviService\Controller\Parameters\Values;
 use MiniPaviService\Controller\Request;
 use MiniPaviService\Controller\Response;
 use MiniPaviService\Core\RouterBuilder;
+use MiniPaviService\Core\UnknownRouteException;
 use MiniPaviService\Minitel\Terminal;
 use MiniPaviService\Tests\Support\CallbackController;
 use MiniPaviService\Vdt\Vdt;
@@ -61,7 +62,7 @@ final class RouterTest extends TestCase
             ->addRoute('home', self::controller())
             ->build();
 
-        $this->expectException(\LogicException::class);
+        $this->expectException(UnknownRouteException::class);
         $this->expectExceptionMessage('Unknown route "directory" (routes: home)');
 
         $router->route('directory');

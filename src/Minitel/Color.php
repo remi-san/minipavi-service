@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Minitel;
 
+use MiniPaviService\InvalidValueException;
+
 /**
  * The Minitel's 8 colors, named as in the page XML format (color="red"), each with its number
  * in Videotex (index())
@@ -22,7 +24,7 @@ enum Color: string
     /**
      * Color of a number in Videotex, from 0 (black) to 7 (white)
      *
-     * @throws \ValueError for another number
+     * @throws InvalidValueException for another number
      */
     public static function fromIndex(int $index): self
     {
@@ -32,7 +34,7 @@ enum Color: string
             }
         }
 
-        throw new \ValueError("No color of index {$index}");
+        throw new InvalidValueException("No color of index {$index}");
     }
 
     /**
