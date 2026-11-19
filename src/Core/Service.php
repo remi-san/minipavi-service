@@ -6,6 +6,7 @@ namespace MiniPaviService\Core;
 
 use MiniPaviService\Gateway\GatewayRequest;
 use MiniPaviService\Gateway\GatewayResponse;
+use MiniPaviService\InvalidValueException;
 use MiniPaviService\Message\FrameworkMessage;
 use MiniPaviService\Message\Messages;
 use MiniPaviService\Message\MessagesException;
@@ -44,6 +45,8 @@ final class Service
      *                                 none by default
      *
      * @throws MessagesException if the messages miss some of the framework's
+     * @throws InvalidValueException if maxPageChanges is below 1: no page change could be
+     *                               made
      */
     public function __construct(
         private Router $router,
@@ -52,6 +55,11 @@ final class Service
         private int $maxPageChanges = self::MAX_PAGE_CHANGES,
         ?LoggerInterface $logger = null,
     ) {
+        if ($maxPageChanges < 1) {
+            throw new InvalidValueException(
+                "At least 1 page change must be allowed in one request, not {$maxPageChanges}",
+            );
+        }
         $this->logger = $logger ?? new NullLogger();
         $this->messages = $messages->check(FrameworkMessage::class);
     }

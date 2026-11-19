@@ -21,6 +21,7 @@ use MiniPaviService\Http\Emulator\EmulatorConfig;
 use MiniPaviService\Http\Emulator\EmulatorRedirect;
 use MiniPaviService\Http\Url\RequestUrl;
 use MiniPaviService\Http\Url\WithUrls;
+use MiniPaviService\InvalidValueException;
 use MiniPaviService\Message\Messages;
 use MiniPaviService\Message\MessagesException;
 use MiniPaviService\Message\MessagesXmlParser;
@@ -121,7 +122,7 @@ final readonly class KernelBuilder
 
     /**
      * Page changes (Response::goTo()) allowed in one request, more being taken as controllers
-     * changing to each other endlessly (Service)
+     * changing to each other endlessly (Service); at least 1, or build() throws
      */
     public function withMaxPageChanges(int $maxPageChanges): self
     {
@@ -169,6 +170,7 @@ final readonly class KernelBuilder
 
     /**
      * @throws MessagesException if the messages miss some of the framework's
+     * @throws InvalidValueException if the max page changes are below 1 (Service)
      */
     public function build(): Kernel
     {
@@ -185,6 +187,7 @@ final readonly class KernelBuilder
      * What the Kernel has handle the request: WithUrls, then the Dispatcher
      *
      * @throws MessagesException if the messages miss some of the framework's
+     * @throws InvalidValueException if the max page changes are below 1 (Service)
      */
     private function handler(): RequestHandlerInterface
     {
