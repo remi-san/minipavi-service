@@ -22,7 +22,8 @@ use MiniPaviService\Minitel\ScreenSize;
  * It draws the screen only: the page around it (e.g. Client\HtmlForm's) puts render() in its
  * body, and style() in its <style>. style() sets, for the whole page, --w and --h, the size
  * of a cell, --pad, the screen's padding, and --font, the Minitel font at the cell's size
- * (e.g. for the page's other controls); place() places an element over the screen.
+ * (e.g. for the page's other controls); place() gives all the geometry of an element over the
+ * screen (position, size, stacking), so the page's style only says how it looks.
  */
 final readonly class HtmlRenderer
 {
