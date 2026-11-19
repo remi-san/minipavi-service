@@ -23,7 +23,7 @@ use Psr\Log\NullLogger;
  * URL of the service (UrlAttribute::Service, from WithUrls) goes to the client, for its
  * responses. The context the client carries is signed and checked by the service
  * (ContextSerializer). Nothing to respond to (e.g. a disconnection) is a 204, a response that
- * can't be given a 500.
+ * can't be given (nor the exchange of a request that couldn't be read) a 500.
  */
 final readonly class ServiceRunner implements RequestHandlerInterface
 {
@@ -47,10 +47,7 @@ final readonly class ServiceRunner implements RequestHandlerInterface
         try {
             $exchange = $this->client->exchange($request, $serviceUrl);
         } catch (\Throwable $e) {
-            // The request couldn't be read: all that is known of it is where it was sent
-            $exchange = $this->client->unreadable($serviceUrl);
-
-            return $this->respond($exchange, $this->service->unreadable($e));
+            return $this->respondToUnreadable($serviceUrl, $e);
         }
         try {
             $gatewayRequest = $exchange->request();
@@ -61,6 +58,23 @@ final readonly class ServiceRunner implements RequestHandlerInterface
 
         // The service responds to its own errors (Service::handle())
         return $this->respond($exchange, $this->service->handle($gatewayRequest));
+    }
+
+    /**
+     * The HTTP response for a request the client couldn't read: the service logs the error and
+     * responds to it, through the exchange the client gives for where the request was sent (all
+     * that is known of it); 500 if the client can't give it
+     */
+    private function respondToUnreadable(string $serviceUrl, \Throwable $error): ResponseInterface
+    {
+        $response = $this->service->unreadable($error);
+        try {
+            $exchange = $this->client->unreadable($serviceUrl);
+        } catch (\Throwable $e) {
+            return $this->cannotRespond($e);
+        }
+
+        return $this->respond($exchange, $response);
     }
 
     /**
@@ -77,9 +91,17 @@ final readonly class ServiceRunner implements RequestHandlerInterface
         try {
             return $exchange->respond($response);
         } catch (\Throwable $e) {
-            $this->logger->critical('Cannot send the response', ['exception' => $e]);
-
-            return new Response(500);
+            return $this->cannotRespond($e);
         }
+    }
+
+    /**
+     * A 500, the reason logged as critical
+     */
+    private function cannotRespond(\Throwable $error): ResponseInterface
+    {
+        $this->logger->critical('Cannot send the response', ['exception' => $error]);
+
+        return new Response(500);
     }
 }

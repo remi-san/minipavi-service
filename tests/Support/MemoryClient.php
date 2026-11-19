@@ -16,7 +16,7 @@ use Psr\Http\Message\ServerRequestInterface;
  * Client giving a request (or failing to read it), and responding with the Videotex of the
  * response (or failing to give the request, or the response, once read); keeps the requests and
  * responds to it gave responses for in $responded, and the service URL of each exchange in
- * $serviceUrls
+ * $serviceUrls. It can also fail to give the exchange of a request it couldn't read.
  */
 final class MemoryClient implements Client
 {
@@ -30,6 +30,7 @@ final class MemoryClient implements Client
         private GatewayRequest|\Throwable $request,
         private ?\Throwable $responseFailure = null,
         private ?\Throwable $requestFailure = null,
+        private ?\Throwable $unreadableFailure = null,
     ) {}
 
     public function exchange(ServerRequestInterface $request, string $serviceUrl): ClientExchange
@@ -45,6 +46,9 @@ final class MemoryClient implements Client
     public function unreadable(string $serviceUrl): ClientExchange
     {
         $this->serviceUrls[] = $serviceUrl;
+        if ($this->unreadableFailure !== null) {
+            throw $this->unreadableFailure;
+        }
 
         return $this->exchangeOf(new GatewayRequest(null));
     }
