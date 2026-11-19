@@ -855,9 +855,10 @@ The code is checked with [Mago](https://mago.carthage.software) (`mago.toml`): i
 (PER Coding Style, 120 columns, one import per `use`), and its linter and static analyzer,
 which fail on any issue, notes included. `mago.toml` says why each rule turned off or ignored
 is, the ignored ones only in the files where they occur. There is no baseline of known
-issues: a rule is turned on with its issues fixed. `stubs/MiniPaviCli.php` gives the types
-`MiniPaviCli` doesn't declare (a patch of the library's class). Every file has
-`declare(strict_types=1)`.
+issues: a rule is turned on with its issues fixed. (A baseline brought back would need
+`--fail-on-out-of-sync-baseline` in `composer analyse` again, so that its stale entries fail.)
+`stubs/MiniPaviCli.php` gives the types `MiniPaviCli` doesn't declare (a patch of the library's
+class). Every file has `declare(strict_types=1)`.
 
 ```sh
 composer install    # once, in this folder: development tools in vendor/

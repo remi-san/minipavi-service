@@ -107,6 +107,8 @@ Say in the PR which of these checks were run, and which weren't.
   conflicts with a convention, or Mago's analyzer can't follow correct code, say why in
   `mago.toml`, ignoring it only in the files concerned. There is no lint baseline: turning a
   rule on means fixing its issues, unless the user asks for a baseline
-  (`vendor/bin/mago lint --generate-baseline`, set in `mago.toml`).
+  (`vendor/bin/mago lint --generate-baseline`, set in `mago.toml`, with
+  `mago lint --fail-on-out-of-sync-baseline` back in `composer analyse` so that stale entries
+  fail).
 - Document classes and methods with PHPDoc (`/** ... */`, typed `@param` / `@return`).
 - Errors in page XML must give the file and line (`PageXmlException`), as they do now.
