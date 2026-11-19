@@ -735,7 +735,9 @@ echo $moved->screen()->preview();      // the screen, as text
   row 1 is kept, the character drawn over row 0. A tall text character (double height or
   double size) wrapping at the end of a row goes 2 rows down, cycling through rows 1 to 24
   (24 to 2, 23 to 1), and the text carries on along that row; a move right (HT) from column
-  40 goes 1 row down, as BS, LF and VT move 1 row. Mosaic characters are never tall.
+  40 goes 1 row down, as BS, LF and VT move 1 row. SO and SI set the size back to normal,
+  and a size (`ESC L` to `ESC O`) received in mosaic is discarded: mosaic characters are
+  never tall or wide.
 - **`Vdt\Player::play($vdt, $listener)`** (internal, what `screen()` and `offset()` are
   built on): plays the content on the simulated screen, telling a `Vdt\ScreenListener` each
   character (`glyph()`, with its row, column, width and attributes) and the other `Token`s
