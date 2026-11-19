@@ -133,30 +133,26 @@ final class PageXsdTest extends TestCase
         yield 'empty validwith' => ['<page type="static"><input validwith=""/></page>'];
     }
 
-    /**
-     * @return iterable<string, array{string}>
-     */
-    public static function pagesOnlyTheParserRefuses(): iterable
-    {
-        foreach (PageXmlParserTest::invalidPages() as $name => [$xml]) {
-            if (!\in_array($name, self::PARSER_ONLY, strict: true)) {
-                continue;
-            }
-
-            yield $name => [$xml];
-        }
-    }
-
     #[DataProvider('pagesRefusedBySchema')]
-    public function testPageRefusedByTheParserIsInvalid(string $xml): void
+    public function testPageRefusedBySchemaIsInvalid(string $xml): void
     {
         self::assertNotSame([], self::errors($xml), self::SHOULD_BE_REFUSED);
     }
 
-    #[DataProvider('pagesOnlyTheParserRefuses')]
-    public function testPageOnlyTheParserRefusesIsValid(string $xml): void
+    // One test over the list (not a data provider), so that it still passes once the schema
+    // refuses every page and PARSER_ONLY is empty
+    public function testPagesOnlyTheParserRefusesAreValid(): void
     {
-        self::assertSame([], self::errors($xml), self::REFUSED_BY_THE_SCHEMA_TOO);
+        $refused = [];
+        foreach (PageXmlParserTest::invalidPages() as $name => [$xml]) {
+            if (!\in_array($name, self::PARSER_ONLY, strict: true) || self::errors($xml) === []) {
+                continue;
+            }
+
+            $refused[] = $name;
+        }
+
+        self::assertSame([], $refused, self::REFUSED_BY_THE_SCHEMA_TOO);
     }
 
     public function testParserOnlyPagesAreInvalidPagesOfTheParser(): void
@@ -164,6 +160,8 @@ final class PageXsdTest extends TestCase
         $names = array_keys(iterator_to_array(PageXmlParserTest::invalidPages()));
 
         self::assertSame([], array_values(array_diff(self::PARSER_ONLY, $names)));
+        // Not well-formed: the schema can't be checked against it
+        self::assertNotContains('invalid XML', self::PARSER_ONLY);
     }
 
     public function testValuesAreThoseOfTheParser(): void
