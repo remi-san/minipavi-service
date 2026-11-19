@@ -32,6 +32,7 @@
     },
     "scripts": {
         "test": "phpunit",
+        "coverage": "phpunit --coverage-text --coverage-clover coverage.xml",
         "analyse": [
             "mago lint --fail-on-out-of-sync-baseline",
             "mago analyze"
@@ -41,6 +42,7 @@
     },
     "scripts-descriptions": {
         "test": "Runs the tests",
+        "coverage": "Runs the tests with coverage (needs pcov or Xdebug): as text, and in coverage.xml",
         "analyse": "Runs the linter and the static analysis (Mago)",
         "cs": "Checks the formatting (Mago)",
         "cs-fix": "Formats the code (Mago)"
