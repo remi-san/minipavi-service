@@ -87,8 +87,11 @@ messages between them, and keeps the user informed. It does write the Claude fil
    and ask the user what to do: list each open finding with both sides' arguments, and your
    own view.
 7. **Approved: hand over.** Once the reviewer approves and the tester (if any) sees what the
-   issue expects, tell the user the PR is ready, with its link and a summary of the rounds.
-   The user reviews and merges it; the agents never merge.
+   issue expects, add the `reviewer approved` label to the PR
+   (`gh pr edit <n> --add-label "reviewer approved"`), and tell the user the PR is ready, with
+   its link and a summary of the rounds. If the developer pushes to it afterwards, remove the
+   label until the reviewer approves again. The user reviews and merges it; the agents never
+   merge.
 
 ## Commit messages: Karma convention
 
