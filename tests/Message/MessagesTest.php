@@ -9,6 +9,7 @@ use MiniPaviService\Message\Messages;
 use MiniPaviService\Message\MessagesException;
 use MiniPaviService\Message\MessagesXmlParser;
 use MiniPaviService\Tests\Support\FailingProperties;
+use MiniPaviService\Tests\Support\PrivateProperties;
 use MiniPaviService\Tests\Support\TestMessage;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
@@ -79,6 +80,17 @@ final class MessagesTest extends TestCase
         $this->expectExceptionMessage($error);
 
         (new Messages(['welcome' => $text]))->get(TestMessage::Welcome, $variables);
+    }
+
+    public function testPrivatePropertyIsAnUnknownVariableOfTheMessage(): void
+    {
+        $this->expectException(\LogicException::class);
+        $this->expectExceptionMessage('Message "welcome": unknown variable {{user.city}}: no "city" in '
+        . PrivateProperties::class);
+
+        (new Messages(['welcome' => 'Bonjour {{user.city}}']))->get(TestMessage::Welcome, [
+            'user' => new PrivateProperties(),
+        ]);
     }
 
     public function testBugOfAVariableGoesThroughAsItIs(): void

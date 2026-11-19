@@ -8,7 +8,7 @@ use MiniPaviService\InvalidValueException;
 
 /**
  * The {{placeholders}} of a text, and the values of variables they name: {{name}}, or a dotted
- * path through arrays and object properties ({{game.studio.city}}). Used by page templates
+ * path through arrays and public object properties ({{game.studio.city}}). Used by page templates
  * (Page\Template\Scope) and messages (Message\Messages).
  */
 final readonly class Placeholders
@@ -86,7 +86,7 @@ final readonly class Placeholders
     }
 
     /**
-     * Element of an array (or ArrayAccess), or property of an object, by name
+     * Element of an array (or ArrayAccess), or public property of an object, by name
      *
      * @throws InvalidValueException if it hasn't any of that name
      */
@@ -98,10 +98,14 @@ final readonly class Placeholders
         if ($value instanceof \ArrayAccess && $value->offsetExists($name)) {
             return $value[$name];
         }
-        // Its property, or one it gives through __isset() and __get()
+        // Its public property (get_object_vars() called from outside sees only those, unlike
+        // property_exists()), or one it gives through __isset() and __get()
         if (
             is_object($value)
-            && (property_exists($value, $name) || method_exists($value, '__isset') && $value->__isset($name))
+            && (
+                array_key_exists($name, get_object_vars($value))
+                || method_exists($value, '__isset') && $value->__isset($name)
+            )
         ) {
             return $value->$name;
         }
