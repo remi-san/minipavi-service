@@ -20,8 +20,9 @@ final readonly class Values
     ) {}
 
     /**
-     * A value as an int: an int, or an integer as a float or as text ('12'); default
-     * otherwise
+     * A value as an int: an int, an integer as a float, or decimal digits as text, with an
+     * optional sign and leading zeros ('12', '-3', '+3', '007'), within the int range;
+     * default otherwise
      */
     public function int(string $name, int $default = 0): int
     {
@@ -30,8 +31,11 @@ final readonly class Values
         if (\is_float($value) && $value === floor($value) && abs($value) <= (2 ** 53)) {
             $value = (int) $value;
         }
-        if (\is_string($value) && preg_match('/^-?[0-9]+$/', $value) === 1) {
-            $value = filter_var($value, FILTER_VALIDATE_INT, FILTER_NULL_ON_FAILURE);
+        // filter_var() rejects leading zeros and accepts surrounding whitespace: the digits
+        // are checked here (\z, as $ allows a final newline), and given without their zeros
+        $matches = [];
+        if (\is_string($value) && preg_match('/^([+-]?)0*([0-9]+)\z/', $value, $matches) === 1) {
+            $value = filter_var($matches[1] . $matches[2], FILTER_VALIDATE_INT, FILTER_NULL_ON_FAILURE);
         }
 
         return \is_int($value) ? $value : $default;
