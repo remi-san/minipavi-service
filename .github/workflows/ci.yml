@@ -67,7 +67,7 @@ jobs:
 
   # Mutation testing (Infection, infection.json5), on one PHP version: the Mutation Score
   # Indicator (MSI) and the covered MSI in the job's summary, and the escaped mutants kept as the
-  # job's artifact, without a minimum until it is known
+  # job's artifact. Fails below a minimum MSI (infection.json5), raised as mutants are killed
   mutation:
     name: Mutation testing
     runs-on: ubuntu-latest
