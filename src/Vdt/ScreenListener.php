@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace MiniPaviService\Vdt;
 
 use MiniPaviService\Vdt\Screen\Attributes;
-use MiniPaviService\Vdt\Screen\Cursor;
 use MiniPaviService\Vdt\Screen\Zone;
 
 /**
@@ -35,7 +34,6 @@ interface ScreenListener
 
     /**
      * Any other sequence (a move, an attribute, a clear...), once the cursor has followed it
-     * (cursor: a copy of Player's, changing it changes nothing)
      */
-    public function sequence(Token $sequence, Cursor $cursor): void;
+    public function sequence(Token $sequence): void;
 }

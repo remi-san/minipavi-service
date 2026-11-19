@@ -31,8 +31,7 @@ final readonly class Player
 
     /**
      * Plays the content, telling the listener each character drawn (repetitions included),
-     * delimiter or CAN, and the other tokens once the cursor has followed them (a copy of the
-     * cursor)
+     * delimiter or CAN, and the other tokens once the cursor has followed them
      */
     public function play(Vdt $vdt, ScreenListener $listener): void
     {
@@ -73,8 +72,7 @@ final readonly class Player
                     $cursor->reset(1, col: 1);
                     break;
             }
-            // A copy: what the listener does with it doesn't move what follows
-            $listener->sequence($token, clone $cursor);
+            $listener->sequence($token);
         }
     }
 
