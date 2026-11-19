@@ -23,8 +23,9 @@ use MiniPaviService\Vdt\Screen\Cursor;
 final readonly class Player
 {
     /**
-     * Plays the content, telling the listener each character drawn (repetitions included) or
-     * delimiter, and the other tokens once the cursor has followed them (a copy of the cursor)
+     * Plays the content, telling the listener each character drawn (repetitions included),
+     * delimiter or CAN, and the other tokens once the cursor has followed them (a copy of the
+     * cursor)
      */
     public function play(Vdt $vdt, ScreenListener $listener): void
     {
@@ -57,6 +58,9 @@ final readonly class Player
                 case TokenType::Move:
                     $cursor->move($token->bytes);
                     break;
+                case TokenType::ClearLine:
+                    $this->clearLine($cursor, $listener);
+                    continue 2;
                 case TokenType::Home:
                 case TokenType::Clear:
                     $cursor->reset(1, col: 1);
@@ -65,6 +69,20 @@ final readonly class Player
             // A copy: what the listener does with it doesn't move what follows
             $listener->sequence($token, clone $cursor);
         }
+    }
+
+    /**
+     * CAN at the cursor: clears to the end of its row with spaces, the first one a delimiter
+     * while a zone attribute waits (Cursor::delimits()), as when the content draws them
+     */
+    private function clearLine(Cursor $cursor, ScreenListener $listener): void
+    {
+        $delimiter = null;
+        if ($cursor->delimits(' ')) {
+            $cursor->delimit();
+            $delimiter = $cursor->zone();
+        }
+        $listener->clearLine($cursor->row(), $cursor->col(), $cursor->attributes(), $delimiter);
     }
 
     /**

@@ -383,6 +383,10 @@ final class ScreenTest extends TestCase
         yield 'a background delimiting the same zone' => ["{$on} A{$blue} B", '.U.U'];
         yield 'a positioning ending the zone a background delimits' => ["{$on} A{$col3}{$blue} B", '.U..'];
         yield 'over what is already drawn' => ["ABCD{$col3}{$on} ", '...U'];
+        $can = Videotex::CLEAR_LINE;
+        $ht = Videotex::CURSOR_RIGHT;
+        yield 'CAN drawing a delimiter' => ["A{$on}{$can}{$ht}BC", '..UUU'];
+        yield 'CAN using up what waits' => ["{$on}{$can}{$ht}A B", '.UUU'];
     }
 
     /**

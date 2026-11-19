@@ -49,10 +49,17 @@ final class Writer
         $this->movePast($col, $width);
     }
 
-    public function clearLine(int $row, int $col, Attributes $attributes): void
+    /**
+     * CAN at row, col: clears to the end of the row, the first cell a delimiter starting zone
+     * delimiter, if not null, made one by ESC Z or ESC Y just before it (Zone::delimiterCodes())
+     */
+    public function clearLine(int $row, int $col, Attributes $attributes, ?Zone $delimiter): void
     {
         $this->moveTo($row, $col);
         $this->setAttributes($attributes);
+        if ($delimiter !== null) {
+            $this->send($delimiter->delimiterCodes());
+        }
         $this->send(Videotex::CLEAR_LINE);
     }
 

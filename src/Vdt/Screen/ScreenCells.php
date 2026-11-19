@@ -66,6 +66,16 @@ final class ScreenCells implements ScreenListener
         }
     }
 
+    public function clearLine(int $row, int $col, Attributes $attributes, ?Zone $delimiter): void
+    {
+        for ($cleared = $col; $cleared <= ScreenSize::COLS; $cleared++) {
+            $this->glyph($row, $cleared, bytes: ' ', width: 1, attributes: $attributes);
+        }
+        if ($delimiter !== null) {
+            $this->delimiter($row, $col, width: 1, attributes: $attributes, zone: $delimiter);
+        }
+    }
+
     public function sequence(Token $sequence, Cursor $cursor): void
     {
         if ($sequence->type === TokenType::Clear) {
@@ -74,14 +84,6 @@ final class ScreenCells implements ScreenListener
                 $this->cells[$row] = self::emptyRow();
             }
             $this->zones->clear();
-        }
-        $row = $cursor->row();
-        if ($sequence->type === TokenType::ClearLine && $row >= 0 && $row <= ScreenSize::ROWS) {
-            $attributes = $cursor->attributes();
-            for ($col = $cursor->col(); $col <= ScreenSize::COLS; $col++) {
-                $this->cells[$row][$col] = new Cell(' ', $attributes);
-                $this->drawZone($row, $col, $attributes);
-            }
         }
     }
 

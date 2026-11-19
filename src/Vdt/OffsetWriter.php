@@ -65,9 +65,6 @@ final readonly class OffsetWriter implements ScreenListener
             case TokenType::Clear:
                 $this->out->clear();
                 break;
-            case TokenType::ClearLine:
-                $this->clearLine($cursor);
-                break;
             case TokenType::Raw:
                 $this->out->raw($sequence->bytes);
                 break;
@@ -99,15 +96,16 @@ final readonly class OffsetWriter implements ScreenListener
         return [$row, $col, $attributes];
     }
 
-    private function clearLine(Cursor $cursor): void
+    /**
+     * CAN, moved: the cleared cells of the moved row stop at the screen's last column
+     */
+    public function clearLine(int $row, int $col, Attributes $attributes, ?Zone $delimiter): void
     {
-        $col = $cursor->col();
-        $attributes = $cursor->attributes();
-        if ($cursor->row() === 0) {
-            $this->out->clearLine(0, $col, $attributes);
+        if ($row === 0) {
+            $this->out->clearLine(0, $col, $attributes, $delimiter);
             return;
         }
-        $row = $cursor->row() + $this->y;
+        $row += $this->y;
         if ($row < 1 || $row > ScreenSize::ROWS) {
             return;
         }
@@ -115,12 +113,16 @@ final readonly class OffsetWriter implements ScreenListener
         // columns that came from beyond the screen, so they are written as spaces instead
         if ($this->x < 0) {
             for ($cleared = max(1, $col + $this->x); $cleared <= (ScreenSize::COLS + $this->x); $cleared++) {
+                if ($delimiter !== null && $cleared === ($col + $this->x)) {
+                    $this->out->delimiter($row, $cleared, width: 1, attributes: $attributes, zone: $delimiter);
+                    continue;
+                }
                 $this->out->glyph($row, $cleared, bytes: ' ', width: 1, attributes: $attributes);
             }
             return;
         }
         if (($col + $this->x) <= ScreenSize::COLS) {
-            $this->out->clearLine($row, $col + $this->x, $attributes);
+            $this->out->clearLine($row, $col + $this->x, $attributes, $delimiter);
         }
     }
 }

@@ -29,6 +29,8 @@ final class PlayerTest extends TestCase
 
             public function delimiter(int $row, int $col, int $width, Attributes $attributes, Zone $zone): void {}
 
+            public function clearLine(int $row, int $col, Attributes $attributes, ?Zone $delimiter): void {}
+
             public function sequence(Token $sequence, Cursor $cursor): void
             {
                 $cursor->reset(10, col: 10);
@@ -59,6 +61,8 @@ final class PlayerTest extends TestCase
                 $this->glyphs++;
             }
 
+            public function clearLine(int $row, int $col, Attributes $attributes, ?Zone $delimiter): void {}
+
             public function sequence(Token $sequence, Cursor $cursor): void
             {
                 $this->tokens[] = $sequence->type;
@@ -70,5 +74,46 @@ final class PlayerTest extends TestCase
 
         self::assertSame(0, $listener->glyphs);
         self::assertSame([TokenType::Clear], $listener->tokens);
+    }
+
+    public function testClearLineDrawsADelimiterWhileAZoneAttributeWaits(): void
+    {
+        // ESC Z then CAN at column 2: its first space is a delimiter (the emulator prints
+        // CAN's spaces), which uses up what waits, so the next space is not one
+        $delimiters = self::delimiters(new Vdt("A\x1B\x5A\x18\x09B C"));
+
+        self::assertSame([[1, 2]], $delimiters);
+    }
+
+    /**
+     * Where the content draws delimiters, CAN's included
+     *
+     * @return list<array{int, int}> row and column of each
+     */
+    private static function delimiters(Vdt $vdt): array
+    {
+        $listener = new class implements ScreenListener {
+            /** @var list<array{int, int}> */
+            public array $delimiters = [];
+
+            public function glyph(int $row, int $col, string $bytes, int $width, Attributes $attributes): void {}
+
+            public function delimiter(int $row, int $col, int $width, Attributes $attributes, Zone $zone): void
+            {
+                $this->delimiters[] = [$row, $col];
+            }
+
+            public function clearLine(int $row, int $col, Attributes $attributes, ?Zone $delimiter): void
+            {
+                if ($delimiter !== null) {
+                    $this->delimiters[] = [$row, $col];
+                }
+            }
+
+            public function sequence(Token $sequence, Cursor $cursor): void {}
+        };
+        (new Player())->play($vdt, $listener);
+
+        return $listener->delimiters;
     }
 }

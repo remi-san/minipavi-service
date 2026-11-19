@@ -27,6 +27,13 @@ interface ScreenListener
     public function delimiter(int $row, int $col, int $width, Attributes $attributes, Zone $zone): void;
 
     /**
+     * CAN at row, col: the row cleared from there to its end with spaces, drawn with these
+     * attributes, the first one a delimiter starting zone delimiter, if not null (MiniPavi's
+     * emulator prints CAN's spaces, clear()). The cursor stays where it is
+     */
+    public function clearLine(int $row, int $col, Attributes $attributes, ?Zone $delimiter): void;
+
+    /**
      * Any other sequence (a move, an attribute, a clear...), once the cursor has followed it
      * (cursor: a copy of Player's, changing it changes nothing)
      */

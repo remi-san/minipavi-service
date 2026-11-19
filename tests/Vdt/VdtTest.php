@@ -138,6 +138,26 @@ final class VdtTest extends TestCase
         self::assertSame([false, true, true, true, false, false], $underlined);
     }
 
+    public function testOffsetWritesTheDelimiterOfAClearLine(): void
+    {
+        // Row 10: A, ESC Z, CAN (its first space a delimiter), HT, B, C (#28)
+        $vdt = new Vdt("\x1F\x4A\x41A\x1B\x5A\x18\x09BC");
+
+        foreach ([[0, 0], [2, 1], [-1, 0]] as [$x, $y]) {
+            $moved = $vdt->offset($x, $y)->screen();
+            $underlined = array_map(
+                static fn(int $col): bool => $moved->cell(10 + $y, $col + $x)?->attributes->isUnderlined() === true,
+                range(max(1, 1 - $x), end: 5),
+            );
+            // Columns 1 to 5: A, the delimiter, B, C, a cleared space
+            self::assertSame(
+                \array_slice([false, false, true, true, true], max(0, -$x)),
+                $underlined,
+                "offset {$x}, {$y}",
+            );
+        }
+    }
+
     public function testOffsetDropsWhatGoesOffTheScreenInsteadOfWrapping(): void
     {
         $abcde = new Vdt("\x1F\x41\x41ABCDE");
@@ -305,6 +325,8 @@ final class VdtTest extends TestCase
             {
                 $this->glyph($row, $col, bytes: ' ', width: $width, attributes: $attributes);
             }
+
+            public function clearLine(int $row, int $col, Attributes $attributes, ?Zone $delimiter): void {}
 
             public function sequence(Token $sequence, Cursor $cursor): void {}
         };
