@@ -49,6 +49,20 @@ final class CursorTest extends TestCase
         self::assertTrue($cursor->attributes()->isDoubleHeight());
     }
 
+    public function testDiscardsSizesInMosaic(): void
+    {
+        // As the Minitel does: in mosaic, ESC L, M, N and O are discarded (MiniPavi's
+        // emulator, setSize()), the size staying normal, as SO sets it
+        foreach ([Attributes::DOUBLE_HEIGHT, Attributes::DOUBLE_WIDTH, Attributes::DOUBLE] as $size) {
+            $cursor = new Cursor();
+            $cursor->reset(10, col: 1);
+            $cursor->setCharset("\x0E");
+            $cursor->setAttribute($size);
+
+            self::assertEquals(Attributes::defaults()->withCharset("\x0E"), $cursor->attributes());
+        }
+    }
+
     public function testResetGoesBackToTheDefaultAttributes(): void
     {
         $cursor = new Cursor();

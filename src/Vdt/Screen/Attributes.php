@@ -163,6 +163,14 @@ final readonly class Attributes
     }
 
     /**
+     * Whether ESC byte sets the size: ESC L, M, N or O
+     */
+    public static function isSize(string $byte): bool
+    {
+        return self::group($byte) === 'size';
+    }
+
+    /**
      * Whether ESC byte sets double height: ESC M (double height) or ESC O (double size)
      */
     public static function isTallSize(string $byte): bool
