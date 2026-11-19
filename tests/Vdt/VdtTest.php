@@ -13,6 +13,7 @@ use MiniPaviService\Vdt\Screen\Zone;
 use MiniPaviService\Vdt\ScreenListener;
 use MiniPaviService\Vdt\Token;
 use MiniPaviService\Vdt\Vdt;
+use MiniPaviService\Vdt\Videotex;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
@@ -136,6 +137,46 @@ final class VdtTest extends TestCase
         );
         // Columns 3 to 8: the delimiter, A, B, C, the delimiter, D
         self::assertSame([false, true, true, true, false, false], $underlined);
+    }
+
+    /**
+     * @return iterable<string, array{string, int, string}> content (after positioning at row
+     *                                                     10, column 1), x, and the underline
+     *                                                     of columns 1 to 6 once moved by x
+     */
+    public static function spacesKeepingTheirZone(): iterable
+    {
+        $red = Videotex::backgroundColor(Color::Red);
+        $green = Videotex::backgroundColor(Color::Green);
+        $back = str_repeat(Videotex::CURSOR_LEFT, times: 3);
+
+        // Written again after a positioning, the background waits: the space is a delimiter,
+        // of the zone it was in
+        yield 'a background sent again after a positioning' => ["{$red}\x1B\x5A ABCD{$back} ", 0, '.U.UU '];
+        // A background set in mosaic is sent in text
+        yield 'a background set in mosaic' => ["\x1B\x5A AB\x0E{$green}\x0F CD", 0, '.UU.UU'];
+        // The delimiter goes off the screen: the first space after it starts its zone again,
+        // what is before that space can't be (no column left for a delimiter)
+        yield 'a delimiter off the screen' => ["\x1B\x5A AB CD", -1, '...UU '];
+    }
+
+    #[DataProvider('spacesKeepingTheirZone')]
+    public function testOffsetWritesASpaceAsADelimiterWhenItWouldLoseItsZone(
+        string $sent,
+        int $x,
+        string $expected,
+    ): void {
+        $moved = Vdt::join(Vdt::position(1, row: 10), new Vdt($sent))->offset($x, y: 0)->screen();
+
+        $cells = '';
+        for ($col = 1; $col <= 6; $col++) {
+            $cells .= match ($moved->cell(10, $col)?->attributes->isUnderlined()) {
+                null => ' ',
+                true => 'U',
+                false => '.',
+            };
+        }
+        self::assertSame($expected, $cells);
     }
 
     public function testOffsetWritesTheDelimiterOfAClearLine(): void
