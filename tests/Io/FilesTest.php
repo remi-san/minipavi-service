@@ -16,8 +16,8 @@ final class FilesTest extends TestCase
     {
         $file = (string) tempnam(sys_get_temp_dir(), prefix: 'files');
         try {
-            self::assertTrue(Files::write($file, content: "\x0C\x1F\x41\x41OK"));
-            self::assertSame("\x0C\x1F\x41\x41OK", Files::read($file));
+            self::assertTrue((new Files())->write($file, content: "\x0C\x1F\x41\x41OK"));
+            self::assertSame("\x0C\x1F\x41\x41OK", (new Files())->read($file));
         } finally {
             unlink($file);
         }
@@ -25,12 +25,12 @@ final class FilesTest extends TestCase
 
     public function testReadsNothingFromAMissingFile(): void
     {
-        self::assertNull(Files::read(sys_get_temp_dir() . '/missing-' . bin2hex(random_bytes(4)) . '.vdt'));
+        self::assertNull((new Files())->read(sys_get_temp_dir() . '/missing-' . bin2hex(random_bytes(4)) . '.vdt'));
     }
 
     public function testWritesNothingInAMissingFolder(): void
     {
-        self::assertFalse(Files::write(
+        self::assertFalse((new Files())->write(
             sys_get_temp_dir() . '/missing-' . bin2hex(random_bytes(4)) . '/out.vdt',
             content: 'x',
         ));
@@ -41,7 +41,7 @@ final class FilesTest extends TestCase
         $handler = static fn(): bool => false;
         set_error_handler($handler);
         try {
-            Files::read(sys_get_temp_dir() . '/missing-' . bin2hex(random_bytes(4)));
+            (new Files())->read(sys_get_temp_dir() . '/missing-' . bin2hex(random_bytes(4)));
             self::assertSame($handler, set_error_handler(null));
         } finally {
             restore_error_handler();

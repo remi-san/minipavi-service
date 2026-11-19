@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Page\Parser;
 
+use MiniPaviService\Io\FileReader;
 use MiniPaviService\Io\Files;
 use MiniPaviService\Message\MessageElement;
 use MiniPaviService\Message\Messages;
@@ -39,6 +40,7 @@ final class PageXmlParser
      *                           framework's only), which a page's <message> redefine
      * @param PageElements $elements display elements of the service, besides the framework's
      *                               (StandardElements); their tags must be new ones
+     * @param FileReader $files reads the page files and their Videotex files
      *
      * @throws \LogicException for an element whose tag is taken, by another element or by the
      *                         format (e.g. <if>): checked now, at boot, rather than when a page
@@ -47,8 +49,9 @@ final class PageXmlParser
     public function __construct(
         private Messages $messages,
         private PageElements $elements = new NoElements(),
+        private FileReader $files = new Files(),
     ) {
-        NodesParser::check($this->elementsOf(new PageFiles('.'), $messages), file: 'PageXmlParser');
+        NodesParser::check($this->elementsOf(new PageFiles('.', $this->files), $messages), file: 'PageXmlParser');
     }
 
     /**
@@ -56,7 +59,7 @@ final class PageXmlParser
      */
     public function parseFile(string $file): Page
     {
-        $xml = Files::read($file);
+        $xml = $this->files->read($file);
         if ($xml === null) {
             throw new PageXmlException("{$file}: file not found");
         }
@@ -92,10 +95,10 @@ final class PageXmlParser
         );
 
         $messages = $this->messages->with($this->messageTexts($root, $name));
-        $parsed = NodesParser::standard($this->elementsOf(new PageFiles($baseDir), $messages), $name)->parse(
-            $root,
-            TagPosition::page(template: $type->isTemplate()),
-        );
+        $parsed = NodesParser::standard(
+            $this->elementsOf(new PageFiles($baseDir, $this->files), $messages),
+            $name,
+        )->parse($root, TagPosition::page(template: $type->isTemplate()));
 
         $template = new TemplateContent(new Nodes($parsed->nodes));
 

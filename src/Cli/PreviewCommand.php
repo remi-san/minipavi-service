@@ -70,7 +70,7 @@ final class PreviewCommand extends Command
      */
     private static function data(string $file): array
     {
-        $json = Files::read($file);
+        $json = (new Files())->read($file);
         if ($json === null) {
             throw new \UnexpectedValueException("{$file}: file not found");
         }

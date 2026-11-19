@@ -5,17 +5,16 @@ declare(strict_types=1);
 namespace MiniPaviService\Io;
 
 /**
- * Reads and writes files without PHP's warning when it can't (a missing or unreadable file,
- * a folder that doesn't exist): the caller handles the failure, with its own error
- *
- * @internal
+ * Reads and writes files on disk without PHP's warning when it can't (a missing or
+ * unreadable file, a folder that doesn't exist): the caller handles the failure, with its own
+ * error. The FileReader the framework uses by default.
  */
-final readonly class Files
+final readonly class Files implements FileReader
 {
     /**
      * Content of the file (or of a stream, e.g. php://stdin); null if it can't be read
      */
-    public static function read(string $file): ?string
+    public function read(string $file): ?string
     {
         $content = self::silently(static fn() => file_get_contents($file));
 
@@ -25,7 +24,7 @@ final readonly class Files
     /**
      * Writes the content to the file; false if it can't
      */
-    public static function write(string $file, string $content): bool
+    public function write(string $file, string $content): bool
     {
         return self::silently(static fn() => file_put_contents($file, $content)) !== false;
     }

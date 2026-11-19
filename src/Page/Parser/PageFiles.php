@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Page\Parser;
 
+use MiniPaviService\Io\FileReader;
 use MiniPaviService\Io\Files;
 
 /**
@@ -14,9 +15,11 @@ final readonly class PageFiles
 {
     /**
      * @param string $baseDir folder of the page
+     * @param FileReader $files reads the Videotex files
      */
     public function __construct(
         private string $baseDir,
+        private FileReader $files = new Files(),
     ) {}
 
     /**
@@ -50,6 +53,6 @@ final readonly class PageFiles
     {
         $path = $this->path($file);
 
-        return Files::read($path) ?? throw new PageXmlException("Videotex file not found: {$path}");
+        return $this->files->read($path) ?? throw new PageXmlException("Videotex file not found: {$path}");
     }
 }

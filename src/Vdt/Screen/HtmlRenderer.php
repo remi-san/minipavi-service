@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MiniPaviService\Vdt\Screen;
 
 use MiniPaviService\Html\Html;
+use MiniPaviService\Io\FileReader;
 use MiniPaviService\Io\Files;
 use MiniPaviService\Minitel\Color;
 use MiniPaviService\Minitel\Position;
@@ -54,9 +55,11 @@ final readonly class HtmlRenderer
     /**
      * @param string $fontFile TrueType font of the text, embedded in style() (e.g.
      *                         MINITEL_FONT): its glyphs 1 em wide, 1.25 em high
+     * @param FileReader $files reads the font file
      */
     public function __construct(
         private string $fontFile,
+        private FileReader $files = new Files(),
     ) {}
 
     /**
@@ -105,7 +108,7 @@ final readonly class HtmlRenderer
      */
     public function style(): string
     {
-        $font = Files::read($this->fontFile);
+        $font = $this->files->read($this->fontFile);
         if ($font === null) {
             throw new \RuntimeException("Font file not found: {$this->fontFile}");
         }

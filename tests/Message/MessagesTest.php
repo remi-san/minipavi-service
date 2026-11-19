@@ -9,6 +9,7 @@ use MiniPaviService\Message\Messages;
 use MiniPaviService\Message\MessagesException;
 use MiniPaviService\Message\MessagesXmlParser;
 use MiniPaviService\Tests\Support\FailingProperties;
+use MiniPaviService\Tests\Support\MemoryFiles;
 use MiniPaviService\Tests\Support\PrivateProperties;
 use MiniPaviService\Tests\Support\TestMessage;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -23,6 +24,26 @@ final class MessagesTest extends TestCase
             ->check(FrameworkMessage::class);
 
         self::assertSame('Dernière page', $defaults->get(FrameworkMessage::LastPage));
+    }
+
+    public function testReadsItsFilesThroughItsFileReader(): void
+    {
+        $files = new MemoryFiles([
+            '/config/messages.xml' => '<messages><message name="welcome">Bienvenue</message></messages>',
+        ]);
+
+        $messages = (new MessagesXmlParser($files))->parseFile('/config/messages.xml', new Messages());
+
+        self::assertSame('Bienvenue', $messages->get(TestMessage::Welcome));
+        self::assertSame(['/config/messages.xml'], $files->read);
+    }
+
+    public function testReadsTheFrameworkMessagesThroughItsFileReaderToo(): void
+    {
+        $this->expectException(MessagesException::class);
+        $this->expectExceptionMessage('messages.xml: file not found');
+
+        (new MessagesXmlParser(new MemoryFiles([])))->defaults();
     }
 
     public function testReplacesThePlaceholders(): void

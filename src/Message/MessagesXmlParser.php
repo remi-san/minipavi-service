@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Message;
 
+use MiniPaviService\Io\FileReader;
 use MiniPaviService\Io\Files;
 use MiniPaviService\Xml\XmlDocument;
 use MiniPaviService\Xml\XmlElements;
@@ -18,6 +19,13 @@ final class MessagesXmlParser
 {
     // The framework's messages
     private const DEFAULTS = __DIR__ . '/../../config/messages.xml';
+
+    /**
+     * @param FileReader $files reads the messages files, the framework's included
+     */
+    public function __construct(
+        private readonly FileReader $files = new Files(),
+    ) {}
 
     /**
      * The framework's messages (config/messages.xml), each a FrameworkMessage: what a
@@ -39,7 +47,7 @@ final class MessagesXmlParser
      */
     public function parseFile(string $file, Messages $base): Messages
     {
-        $xml = Files::read($file);
+        $xml = $this->files->read($file);
         if ($xml === null) {
             throw new MessagesException("{$file}: file not found");
         }
