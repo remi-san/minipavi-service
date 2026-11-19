@@ -44,7 +44,9 @@ final readonly class RunCommand extends KeepingResponse
 
     /**
      * Sends Videotex content and an input command (Page::inputCommand(); null for a page
-     * without input: only the content is sent); what is typed comes back to this controller
+     * without input: only the content is sent); what is typed comes back to this controller,
+     * in the state kept: ControllerState::ReadInput by default, which a controller with its
+     * own State enum replaces with one of its states
      */
     public static function readInput(
         Vdt $vdt,

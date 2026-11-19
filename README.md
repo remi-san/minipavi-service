@@ -282,13 +282,14 @@ KernelBuilder::for($router, $messages)
   |---|---|---|
   | `new DisplayPage($vdt)` | sends Videotex content to the gateway; the next key comes back to this controller | `ControllerState::ReadInput` |
   | `RunCommand::readInput($vdt, $command)` | sends content and the command reading the page's input field (`Page::inputCommand()`, an `InputCommand`: the page's `Minitel\InputField`, where it is, its size and the keys validating it, and its prefill) to the gateway | `ControllerState::ReadInput` |
-  | `new ChangePage($route, $parameters)` | switches to another controller, which runs at once: at `ControllerState::Init`, with `$parameters` (a `Parameters` object, or none), without the user's input; this controller is reset | `ControllerState::Init` |
+  | `new ChangePage($route, $parameters)` | switches to another controller, which runs at once: at `ControllerState::Init`, with `$parameters` (a `Parameters` object, or none), without the user's input; this controller is reset | none: this controller is reset (its initial state, the defaults of its parameters) |
   | `RunCommand::connectTo($url, $vdt)` | sends the user to another service, as a new connection (a `ServiceCallCommand` with `CallMode::Connect`) | `ControllerState::Init` |
 
-  Every response but `ChangePage` responds to the gateway and ends the request. The state and
+  Every response but `ChangePage` responds to the gateway and ends the request. Their state and
   parameters are what this controller keeps for its next run (for `connectTo()`, when the
-  user comes back to it): a `State`, and a `Parameters` object (none by default). Give
-  others after the content and the command (by name to give only one), e.g.
+  user comes back to it): a `State` (a case of the controller's own enum, if it has one), and a
+  `Parameters` object (none by default). Give others after the content and the command (by
+  name to give only one), e.g.
   `RunCommand::readInput($vdt, $command, parameters: new DirectoryParameters(2))`.
   `new RunCommand($vdt, $command, $state)` sends any other `Command`, keeping the state
   given (`null`: the initial state).
@@ -425,7 +426,10 @@ KernelBuilder::for($router, $messages)
 
   and gets them typed: `Request<TState, TParameters>`, `$request->state()` and
   `$request->parameters()`. Its responses keep a case of its enum and an object of its class
-  (null: the initial state, the default parameters); another type is an error.
+  (null: the initial state, the default parameters); another type is an error. The state
+  `new DisplayPage($vdt)` and `RunCommand::readInput()` keep by default is
+  `ControllerState::ReadInput`: a controller with its own enum gives them one of its states,
+  as `SearchController` does below.
 
   ```php
   final readonly class DirectoryParameters implements Parameters

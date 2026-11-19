@@ -19,7 +19,8 @@ final readonly class DisplayPage extends KeepingResponse
     /**
      * @param Vdt $vdt Videotex content
      * @param ?State $state state this controller keeps (null: its initial state); by default,
-     *                      it reads the next input
+     *                      it reads the next input (ControllerState::ReadInput: a
+     *                      controller with its own State enum gives one of its states)
      * @param ?Parameters $parameters parameters this controller keeps; null: their defaults
      */
     public function __construct(
