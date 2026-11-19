@@ -15,9 +15,10 @@ use MiniPaviService\Vdt\Vdt;
 
 /**
  * Renders a response as HtmlClient's next page (HtmlExchange), sending its command as what
- * the page shows. The response's screen is drawn over the one the page showed, with the field of an
- * input command; a call to another service is blocked, the page shown as it was, with
- * FrameworkMessage::WebLeave on line 0.
+ * the page shows. The response's screen is drawn over the one the page showed, with the field
+ * of an input command; a call to another service is blocked, the page shown as it was, with
+ * FrameworkMessage::WebLeave on line 0. A call to this service isn't made at once, as the
+ * gateway makes it: the page waits for a key.
  *
  * @implements CommandSender<string>
  *
@@ -64,8 +65,9 @@ final readonly class HtmlCommandRenderer implements CommandSender
     }
 
     /**
-     * This service again: the response, as when waiting for a key (the page doesn't call
-     * it by itself); another one: blocked, the user stays where they were
+     * This service again: the response, as when waiting for a key (the page doesn't call it
+     * by itself, at once, unlike the gateway: the next key posted does); another one: blocked,
+     * the user stays where they were
      */
     public function callService(ServiceCallCommand $command): string
     {
