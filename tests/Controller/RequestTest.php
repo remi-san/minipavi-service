@@ -36,20 +36,26 @@ final class RequestTest extends TestCase
 
     public function testFunctionKeyIsNullForConnectionCodes(): void
     {
-        self::assertSame(FunctionKey::Guide, (new Request(key: FunctionKey::Guide))->functionKey());
-        self::assertNull((new Request(key: ConnectionCode::Connect))->functionKey());
-        self::assertNull((new Request())->functionKey());
+        self::assertSame(
+            FunctionKey::Guide,
+            (new Request(ControllerState::Init, key: FunctionKey::Guide))->functionKey(),
+        );
+        self::assertNull((new Request(ControllerState::Init, key: ConnectionCode::Connect))->functionKey());
+        self::assertNull((new Request(ControllerState::Init))->functionKey());
     }
 
     public function testConnectionCodeIsNullForFunctionKeys(): void
     {
-        self::assertSame(ConnectionCode::Connect, (new Request(key: ConnectionCode::Connect))->connectionCode());
-        self::assertNull((new Request(key: FunctionKey::Guide))->connectionCode());
+        self::assertSame(
+            ConnectionCode::Connect,
+            (new Request(ControllerState::Init, key: ConnectionCode::Connect))->connectionCode(),
+        );
+        self::assertNull((new Request(ControllerState::Init, key: FunctionKey::Guide))->connectionCode());
     }
 
     public function testWithoutInputNothingWasTyped(): void
     {
-        $request = new Request();
+        $request = new Request(ControllerState::Init);
 
         self::assertSame(ControllerState::Init, $request->state());
         self::assertEquals(new NoParameters(), $request->parameters());
