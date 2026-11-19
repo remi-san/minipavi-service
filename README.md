@@ -491,7 +491,8 @@ of each response back with the next request, and plays every response since the 
 simulated `Screen`, as the Minitel keeps what isn't cleared:
 
 ```php
-$tester = new ServiceTester(new Service($router, $messages, new ContextSerializer($router)));   // optionally, a Terminal
+$serializer = new ContextSerializer($router);
+$tester = new ServiceTester(new Service($router, $messages, $serializer), $serializer);   // optionally, a Terminal
 
 $tester->connect()->assertRoute('home')->assertScreenContains('BIENVENUE')
     ->type('2')->press(FunctionKey::Send)->assertRoute('games')
