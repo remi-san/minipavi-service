@@ -76,6 +76,15 @@ final class PlayerTest extends TestCase
         self::assertSame([TokenType::Clear], $listener->tokens);
     }
 
+    public function testAMosaicCharacterDoesNotUseUpAWaitingMask(): void
+    {
+        // ESC X in mosaic, a mosaic space and character, SI, then a space: the emulator only
+        // makes a text space a delimiter (print()), so the mask still waits for it
+        $delimiters = self::delimiters(new Vdt("\x0E\x1B\x58 \x7F\x0F A"));
+
+        self::assertSame([[1, 3]], $delimiters);
+    }
+
     public function testClearLineDrawsADelimiterWhileAZoneAttributeWaits(): void
     {
         // ESC Z then CAN at column 2: its first space is a delimiter (the emulator prints
