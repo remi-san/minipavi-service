@@ -14,6 +14,7 @@ use MiniPaviService\Http\Dispatch\QueryParameterEquals;
 use MiniPaviService\Http\Emulator\EmulatorConfig;
 use MiniPaviService\Http\KernelBuilder;
 use MiniPaviService\Http\Url\RequestUrl;
+use MiniPaviService\InvalidValueException;
 use MiniPaviService\Message\MessagesXmlParser;
 use MiniPaviService\Minitel\Position;
 use MiniPaviService\Tests\Support\CallbackController;
@@ -169,6 +170,14 @@ final class KernelBuilderTest extends TestCase
         }
 
         self::assertStringContainsString(base64_encode('not the Minitel font'), $html);
+    }
+
+    public function testAFontThatCantBeReadIsRefusedWhenGiven(): void
+    {
+        $this->expectException(InvalidValueException::class);
+        $this->expectExceptionMessage('Font file not found: /missing.ttf');
+
+        $this->builder->withFont('/missing.ttf');
     }
 
     /**

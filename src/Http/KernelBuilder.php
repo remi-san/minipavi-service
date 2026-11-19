@@ -131,10 +131,16 @@ final readonly class KernelBuilder
 
     /**
      * The TrueType font of the HTML client's screen (HtmlRenderer), instead of the Minitel font
-     * of the framework
+     * of the framework. Checked here, as HtmlRenderer only reads it for each browser's request
+     *
+     * @throws InvalidValueException if the font file can't be read
      */
     public function withFont(string $fontFile): self
     {
+        if (!is_file($fontFile) || !is_readable($fontFile)) {
+            throw new InvalidValueException("Font file not found: {$fontFile}");
+        }
+
         return $this->with(fontFile: $fontFile);
     }
 
