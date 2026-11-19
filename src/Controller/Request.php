@@ -22,14 +22,16 @@ use MiniPaviService\Minitel\Terminal;
 final readonly class Request
 {
     /**
-     * @param TState $state
+     * @param TState $state the state the controller's previous response kept, or its
+     *                      initial state (Controller::initialState()): a state of that
+     *                      controller, so there is no default
      * @param TParameters $parameters
      * @param ?Key $key function key pressed (FunctionKey), or connection code
      *                  (ConnectionCode); null for none (see key())
      * @param list<string> $content text typed, one string per line of the input field
      */
     public function __construct(
-        private State $state = ControllerState::Init,
+        private State $state,
         private Parameters $parameters = new NoParameters(),
         private ?Key $key = null,
         private array $content = [],

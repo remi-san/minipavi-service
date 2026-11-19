@@ -48,7 +48,7 @@ final class PageXmlParser
         private Messages $messages,
         private PageElements $elements = new NoElements(),
     ) {
-        NodesParser::standard($this->elementsOf(new PageFiles('.'), $messages), file: 'PageXmlParser');
+        NodesParser::check($this->elementsOf(new PageFiles('.'), $messages), file: 'PageXmlParser');
     }
 
     /**
