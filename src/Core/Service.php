@@ -25,6 +25,9 @@ use Psr\Log\NullLogger;
  */
 final class Service
 {
+    // Page changes allowed in one request, by default
+    public const MAX_PAGE_CHANGES = 10;
+
     private LoggerInterface $logger;
 
     private Messages $messages;
@@ -46,7 +49,7 @@ final class Service
         private Router $router,
         Messages $messages,
         private ContextSerializer $serializer,
-        private int $maxPageChanges = 10,
+        private int $maxPageChanges = self::MAX_PAGE_CHANGES,
         ?LoggerInterface $logger = null,
     ) {
         $this->logger = $logger ?? new NullLogger();

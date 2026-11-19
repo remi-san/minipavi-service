@@ -128,6 +128,49 @@ final class KernelBuilderTest extends TestCase
         );
     }
 
+    #[RunInSeparateProcess]
+    public function testTheServiceAllowsTheMaxPageChangesGiven(): void
+    {
+        // home goes to itself, endlessly
+        $routes = new RouterBuilder('home');
+        $routes->addRoute('home', new CallbackController(NoParameters::class, static fn(
+            Request $request,
+        ) => Response::goTo('home')));
+        $logger = new MemoryLogger();
+
+        self::serve(
+            KernelBuilder::for($routes->build(), (new MessagesXmlParser())->defaults())
+                ->withLogger($logger)
+                ->withContextKey('secret')
+                ->withMaxPageChanges(2),
+            query: 'web=true',
+        );
+
+        self::assertContains('Error serving the request: Too many page changes in one request (more than 2): home → home → home → home', array_map(
+            static fn(array $record): string => $record[1],
+            $logger->records,
+        ));
+    }
+
+    #[RunInSeparateProcess]
+    public function testTheHtmlClientEmbedsTheFontGiven(): void
+    {
+        // Embedded as it is: any bytes do
+        $font = tempnam(sys_get_temp_dir(), prefix: 'font');
+        if ($font === false) {
+            self::fail('No temporary file');
+        }
+        file_put_contents($font, data: 'not the Minitel font');
+
+        try {
+            $html = self::serve($this->builder->withContextKey('secret')->withFont($font), query: 'web=true');
+        } finally {
+            unlink($font);
+        }
+
+        self::assertStringContainsString(base64_encode('not the Minitel font'), $html);
+    }
+
     /**
      * Output of the Kernel for a browser's GET of /Svc/ with this query
      */
