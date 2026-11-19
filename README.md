@@ -869,6 +869,10 @@ composer test       # tests (PHPUnit, tests/)
 composer coverage   # tests with coverage, as text and in coverage.xml (needs pcov or Xdebug)
 ```
 
+`composer coverage` fails when the tests cover less than 97% of the lines of `src/`
+(`tools/coverage-minimum.php` reads it from `coverage.xml`). The minimum is raised as the
+missing tests are added, never lowered to let a change through.
+
 Tests are in `tests/`, with their files in `tests/fixtures/`. Pages are checked through the
 screen they draw (`Screen::preview()`). `Offset` is checked in two ways: against the
 property that the moved screen is the original one moved, and byte for byte against golden

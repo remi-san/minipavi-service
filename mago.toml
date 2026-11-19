@@ -3,7 +3,7 @@
 php-version = "8.2.0"
 
 [source]
-paths = ["src", "tests", "bin/minipavi"]
+paths = ["src", "tests", "tools", "bin/minipavi"]
 # Read for their types, not checked
 includes = ["vendor"]
 # Types of the libraries that don't declare them
