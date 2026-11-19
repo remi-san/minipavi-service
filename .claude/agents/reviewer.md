@@ -40,6 +40,10 @@ whole diff (`git diff main...`), then the code around it.
    XML format changed; commits follow the Karma convention, each doing one thing; the PR body
    says which checks ran and ends with `Closes #<n>`.
 
+On an issue that changes what a Minitel shows, a tester agent checks the PR in the MiniPavi
+emulator, and the main session sends you its report. Take what it saw as what a Minitel shows,
+and don't run your own probe stack; do say if a case it should have checked is missing.
+
 Report only what you have verified, or say plainly that a finding is a suspicion and why.
 Don't pad the review with style preferences the formatter or the rules don't ask for.
 
