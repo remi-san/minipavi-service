@@ -6,6 +6,7 @@ namespace MiniPaviService\Tests\Vdt\Screen;
 
 use MiniPaviService\Minitel\Color;
 use MiniPaviService\Minitel\Position;
+use MiniPaviService\Vdt\Screen\Screen;
 use MiniPaviService\Vdt\Vdt;
 use MiniPaviService\Vdt\Videotex;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -19,7 +20,7 @@ final class ScreenTest extends TestCase
         // on black, empty on blue. Row 2: cleared with a blue background from column 3.
         $vdt = "\x1F\x41\x41Hi\x19\x42e\x0E\x21\x20\x1B\x54\x20\x1F\x42\x43\x1B\x54\x18";
 
-        $lines = explode("\n", (new Vdt($vdt))->screen()->preview());
+        $lines = explode("\n", Screen::of(new Vdt($vdt))->preview());
 
         self::assertCount(26, $lines);
         self::assertSame(' 0|' . str_repeat(' ', times: 40) . '|', $lines[0]);
@@ -31,7 +32,7 @@ final class ScreenTest extends TestCase
 
     public function testClearScreenEmptiesEveryRowButTheStatusRow(): void
     {
-        $screen = (new Vdt("\x1F\x40\x41S\x1F\x45\x45X\x0C"))->screen();
+        $screen = Screen::of(new Vdt("\x1F\x40\x41S\x1F\x45\x45X\x0C"));
 
         self::assertSame('S', $screen->cell(row: 0, col: 1)?->bytes);
         self::assertNull($screen->cell(row: 5, col: 5));
@@ -39,11 +40,11 @@ final class ScreenTest extends TestCase
 
     public function testLineGivesTheTextOfARowWithItsAccents(): void
     {
-        $screen = Vdt::join(
+        $screen = Screen::of(Vdt::join(
             Vdt::position(new Position(row: 3)),
             Vdt::text('Dernière page, ça coûte 5£ ½ Œuvre'),
             Vdt::line0('Accès refusé'),
-        )->screen();
+        ));
 
         $text = 'Dernière page, ça coûte 5£ ½ Œuvre';
         self::assertSame($text . str_repeat(' ', max(0, 40 - mb_strlen($text))), $screen->line(3));
@@ -55,14 +56,14 @@ final class ScreenTest extends TestCase
     public function testLineShowsMosaicAsInThePreview(): void
     {
         // A mosaic cell with pixels, one empty on black, one empty on blue
-        $screen = (new Vdt("\x1F\x41\x41\x0E\x21\x20\x1B\x54\x20"))->screen();
+        $screen = Screen::of(new Vdt("\x1F\x41\x41\x0E\x21\x20\x1B\x54\x20"));
 
         self::assertSame('# #', substr($screen->line(1), offset: 0, length: 3));
     }
 
     public function testTextGivesEveryRow(): void
     {
-        $text = Vdt::position(new Position(row: 1))->append(Vdt::text('Hello'))->screen()->text();
+        $text = Screen::of(Vdt::position(new Position(row: 1))->append(Vdt::text('Hello')))->text();
 
         $lines = explode("\n", $text);
         self::assertCount(25, $lines);
@@ -73,7 +74,7 @@ final class ScreenTest extends TestCase
     {
         // Clear screen, position at row 1 column 2, AB, B three more times, red mosaic,
         // clear to the end of the row, back one column, home
-        $screen = (new Vdt("\x0C\x1F\x41\x42AB\x12\x43\x1B\x41\x0E\x18\x08\x1E"))->screen();
+        $screen = Screen::of(new Vdt("\x0C\x1F\x41\x42AB\x12\x43\x1B\x41\x0E\x18\x08\x1E"));
 
         self::assertSame(' ABBBB', rtrim($screen->line(1)));
         self::assertTrue($screen->cell(row: 1, col: 7)?->attributes->isMosaic());
@@ -82,34 +83,18 @@ final class ScreenTest extends TestCase
 
     public function testPositionsCanBeGivenInDigits(): void
     {
-        self::assertSame(
-            'A',
-            (new Vdt("\x1F0712A"))
-                ->screen()
-                ->cell(row: 7, col: 12)
-                ?->text(),
-        );
+        self::assertSame('A', Screen::of(new Vdt("\x1F0712A"))->cell(row: 7, col: 12)?->text());
     }
 
     public function testAG2AccentGoesWithItsLetter(): void
     {
-        self::assertStringStartsWith(
-            'é!',
-            (new Vdt("\x1F\x41\x41\x19\x42e!"))
-                ->screen()
-                ->line(1),
-        );
+        self::assertStringStartsWith('é!', Screen::of(new Vdt("\x1F\x41\x41\x19\x42e!"))->line(1));
     }
 
     public function testProtocolSequencesDrawNothing(): void
     {
         // PRO2 (ESC : x y) and PRO1 (ESC 9 x): none of their bytes is a character
-        self::assertStringStartsWith(
-            'A ',
-            (new Vdt("\x1F\x41\x41\x1B\x3A\x69\x43\x1B\x39\x70A"))
-                ->screen()
-                ->line(1),
-        );
+        self::assertStringStartsWith('A ', Screen::of(new Vdt("\x1F\x41\x41\x1B\x3A\x69\x43\x1B\x39\x70A"))->line(1));
     }
 
     /**
@@ -130,7 +115,7 @@ final class ScreenTest extends TestCase
     #[DataProvider('sizesOnRow1')]
     public function testRow1HasNoDoubleHeight(string $size, string $text, int $width, string $shown): void
     {
-        $screen = Vdt::join(Vdt::position(new Position(row: 1)), new Vdt($size), Vdt::text($text))->screen();
+        $screen = Screen::of(Vdt::join(Vdt::position(new Position(row: 1)), new Vdt($size), Vdt::text($text)));
 
         self::assertSame($shown, rtrim($screen->line(1)));
         for ($col = 1; $col <= \strlen($shown); $col++) {
@@ -143,10 +128,10 @@ final class ScreenTest extends TestCase
     public function testDoubleHeightDiscardedOnRow1IsntKeptForTheNextRows(): void
     {
         // ESC M, a, six line feeds (LF), b: both at normal size
-        $screen = Vdt::join(
+        $screen = Screen::of(Vdt::join(
             Vdt::position(new Position(row: 1)),
             new Vdt(Videotex::SIZE_DOUBLE_HEIGHT . 'a' . str_repeat("\x0A", times: 6) . 'b'),
-        )->screen();
+        ));
 
         self::assertFalse($screen->cell(1, col: 1)?->attributes->isDoubleHeight());
         self::assertSame('b', $screen->cell(7, col: 2)?->bytes);
@@ -156,20 +141,18 @@ final class ScreenTest extends TestCase
     public function testRow2HasDoubleHeight(): void
     {
         // Its top half on row 1
-        $screen = Vdt::join(
+        $screen = Screen::of(Vdt::join(
             Vdt::position(new Position(row: 2, col: 30)),
             new Vdt(Videotex::SIZE_DOUBLE_HEIGHT),
             Vdt::text('T2'),
-        )->screen();
+        ));
 
         self::assertTrue($screen->cell(2, col: 30)?->attributes->isDoubleHeight());
     }
 
     public function testDoubleHeightIsDiscardedOnRow0(): void
     {
-        $cell = (new Vdt("\x1F\x40\x41\x1B\x4DZ"))
-            ->screen()
-            ->cell(0, col: 1) ?? self::fail('Nothing on row 0');
+        $cell = Screen::of(new Vdt("\x1F\x40\x41\x1B\x4DZ"))->cell(0, col: 1) ?? self::fail('Nothing on row 0');
 
         self::assertSame('Z', $cell->bytes);
         self::assertFalse($cell->attributes->isDoubleHeight());
@@ -195,9 +178,7 @@ final class ScreenTest extends TestCase
     #[DataProvider('sizeBroughtOntoRow1')]
     public function testSizeBroughtOntoRow1IsKept(string $vdt, int $col, bool $doubleWidth, Color $color): void
     {
-        $cell = (new Vdt($vdt))
-            ->screen()
-            ->cell(1, $col) ?? self::fail("Nothing at row 1, column {$col}");
+        $cell = Screen::of(new Vdt($vdt))->cell(1, $col) ?? self::fail("Nothing at row 1, column {$col}");
 
         self::assertTrue($cell->attributes->isDoubleHeight());
         self::assertSame($doubleWidth, $cell->attributes->isDoubleWidth());
@@ -241,7 +222,7 @@ final class ScreenTest extends TestCase
     #[DataProvider('tallWraps')]
     public function testTallCharacterWrapsTwoRowsDown(int $row, int $col, string $sent, array $drawn): void
     {
-        $screen = Vdt::join(Vdt::position(new Position($row, $col)), new Vdt($sent))->screen();
+        $screen = Screen::of(Vdt::join(Vdt::position(new Position($row, $col)), new Vdt($sent)));
 
         foreach ($drawn as [$atRow, $atCol, $char]) {
             $cell = $screen->cell($atRow, $atCol) ?? self::fail("Nothing at row {$atRow}, column {$atCol}");
@@ -253,10 +234,10 @@ final class ScreenTest extends TestCase
     public function testMosaicCharacterWrapsOneRowDownInDoubleHeight(): void
     {
         // Row 10, column 40: ESC M, SO, then two mosaic characters, which are never tall
-        $screen = Vdt::join(
+        $screen = Screen::of(Vdt::join(
             Vdt::position(new Position(row: 10, col: 40)),
             new Vdt(Videotex::SIZE_DOUBLE_HEIGHT . Videotex::MOSAIC_SET . "\x7F\x21"),
-        )->screen();
+        ));
 
         self::assertSame("\x21", $screen->cell(11, col: 1)?->bytes);
         self::assertNull($screen->cell(12, col: 1));
@@ -267,7 +248,7 @@ final class ScreenTest extends TestCase
         // Row 10, column 39: ESC M, A, SO, a mosaic character (column 40), which wraps to row
         // 11, SI, then text: SO and SI set the size back to normal, as the Minitel does, so F
         // wraps to row 12 (checked in MiniPavi's emulator, #26)
-        $screen = Vdt::join(
+        $screen = Screen::of(Vdt::join(
             Vdt::position(new Position(row: 10, col: 39)),
             new Vdt(
                 Videotex::SIZE_DOUBLE_HEIGHT
@@ -278,7 +259,7 @@ final class ScreenTest extends TestCase
                 . str_repeat('C', times: 40)
                 . 'F',
             ),
-        )->screen();
+        ));
 
         $c = $screen->cell(11, col: 1) ?? self::fail('Nothing at row 11, column 1');
         self::assertFalse($c->attributes->isDoubleHeight());
@@ -290,10 +271,10 @@ final class ScreenTest extends TestCase
     {
         // Row 10, column 40: SO, ESC M, SI, then AB: the Minitel ignores the size in mosaic,
         // so B is at normal size, 1 row down (checked in MiniPavi's emulator)
-        $screen = Vdt::join(
+        $screen = Screen::of(Vdt::join(
             Vdt::position(new Position(row: 10, col: 40)),
             new Vdt(Videotex::MOSAIC_SET . Videotex::SIZE_DOUBLE_HEIGHT . Videotex::TEXT_SET . 'AB'),
-        )->screen();
+        ));
 
         $b = $screen->cell(11, col: 1) ?? self::fail('Nothing at row 11, column 1');
         self::assertSame('B', $b->bytes);
@@ -304,10 +285,10 @@ final class ScreenTest extends TestCase
     public function testMoveRightWrapsOneRowDownInDoubleHeight(): void
     {
         // Row 20, column 39: ESC M, O, HT from column 40 to row 21 (not 22), Q
-        $screen = Vdt::join(
+        $screen = Screen::of(Vdt::join(
             Vdt::position(new Position(row: 20, col: 39)),
             new Vdt(Videotex::SIZE_DOUBLE_HEIGHT . 'O' . Videotex::CURSOR_RIGHT . 'Q'),
-        )->screen();
+        ));
 
         self::assertSame('Q', $screen->cell(21, col: 1)?->bytes);
         self::assertNull($screen->cell(22, col: 1));
@@ -345,7 +326,7 @@ final class ScreenTest extends TestCase
     #[DataProvider('charsetResets')]
     public function testSoAndSiTurnOffInverseAndUnderline(string $sent, int $col, bool $inverse, bool $underlined): void
     {
-        $screen = Vdt::join(Vdt::position(new Position(row: 10)), new Vdt($sent))->screen();
+        $screen = Screen::of(Vdt::join(Vdt::position(new Position(row: 10)), new Vdt($sent)));
 
         $cell = $screen->cell(10, $col) ?? self::fail("Nothing at row 10, column {$col}");
         self::assertSame($inverse, $cell->attributes->isInverse(), "Inverse at column {$col}");
@@ -396,7 +377,7 @@ final class ScreenTest extends TestCase
     #[DataProvider('underlineZones')]
     public function testUnderlineIsAZoneStartedByADelimiter(string $sent, string $expected): void
     {
-        $screen = Vdt::join(Vdt::position(new Position(row: 10)), new Vdt($sent))->screen();
+        $screen = Screen::of(Vdt::join(Vdt::position(new Position(row: 10)), new Vdt($sent)));
 
         $cells = '';
         for ($col = 1; $col <= \strlen($expected); $col++) {

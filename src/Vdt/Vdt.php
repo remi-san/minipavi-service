@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace MiniPaviService\Vdt;
 
 use MiniPaviService\Minitel\Position;
-use MiniPaviService\Vdt\Screen\Screen;
 
 /**
  * Videotex content: what is sent to the Minitel. The framework and services carry it as this
@@ -15,7 +14,7 @@ use MiniPaviService\Vdt\Screen\Screen;
  * MiniPaviCli's helpers do; raw Videotex with new Vdt().
  *
  * It keeps the bytes, and doesn't draw them itself: what the content shows is Screen's
- * (screen()), moving it Offset's (offset()), both played by Player. A file is read by its
+ * (Screen::of()), moving it Offset's (Offset::apply()), both played by Player. A file is read by its
  * caller (e.g. ElementFactory), with its own error.
  */
 final readonly class Vdt
@@ -131,19 +130,6 @@ final readonly class Vdt
     public function toString(): string
     {
         return $this->bytes;
-    }
-
-    public function screen(): Screen
-    {
-        return Screen::of($this);
-    }
-
-    /**
-     * Content moved by x columns right and y rows down (negative: left, up): see Offset
-     */
-    public function offset(int $x, int $y): self
-    {
-        return (new Offset($x, $y))->apply($this);
     }
 
     /**

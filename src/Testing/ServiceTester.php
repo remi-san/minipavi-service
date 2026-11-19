@@ -175,7 +175,7 @@ final class ServiceTester
      */
     public function screen(): Screen
     {
-        return $this->vdt->screen();
+        return Screen::of($this->vdt);
     }
 
     /**

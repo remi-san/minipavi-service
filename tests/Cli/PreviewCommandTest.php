@@ -8,6 +8,7 @@ use MiniPaviService\Cli\PreviewCommand;
 use MiniPaviService\Message\MessagesXmlParser;
 use MiniPaviService\Minitel\Terminal;
 use MiniPaviService\Page\Parser\PageXmlParser;
+use MiniPaviService\Vdt\Screen\Screen;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Console\Command\Command;
@@ -43,7 +44,7 @@ final class PreviewCommandTest extends TestCase
         $page = (new PageXmlParser((new MessagesXmlParser())->defaults()))->parseFile(self::FIXTURES . '/logo.xml');
 
         self::assertSame(Command::SUCCESS, $this->preview([self::FIXTURES . '/logo.xml']));
-        self::assertSame($page->display(new Terminal())->screen()->preview(), $this->tester->getDisplay());
+        self::assertSame(Screen::of($page->display(new Terminal()))->preview(), $this->tester->getDisplay());
     }
 
     public function testPrintsATemplateWithItsData(): void

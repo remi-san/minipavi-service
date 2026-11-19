@@ -20,6 +20,7 @@ use MiniPaviService\Page\Parser\PageXmlParser;
 use MiniPaviService\Testing\ServiceTester;
 use MiniPaviService\Tests\Support\CallbackController;
 use MiniPaviService\Tests\Support\ListItems;
+use MiniPaviService\Vdt\Screen\Screen;
 use MiniPaviService\Vdt\Vdt;
 use PHPUnit\Framework\TestCase;
 
@@ -119,7 +120,7 @@ final class PaginatedControllerTest extends TestCase
         $tester = $this->tester(['a', 'b', 'c'])->press(FunctionKey::Next)->press(FunctionKey::Refresh);
 
         // The whole page again: the response alone draws it
-        $redrawn = $tester->response()->vdt->screen();
+        $redrawn = Screen::of($tester->response()->vdt);
         self::assertStringContainsString('Page 2/2', $redrawn->text());
         self::assertStringStartsWith('c', $redrawn->line(2));
         $tester->assertScreenContains('Page 2/2')->assertLineContains(2, text: 'c');
@@ -155,7 +156,7 @@ final class PaginatedControllerTest extends TestCase
             new ContextSerializer($router),
         ))->handle(new GatewayRequest(FunctionKey::Refresh, [], $context));
 
-        $screen = $response?->vdt->screen() ?? self::fail('No response');
+        $screen = Screen::of($response->vdt ?? self::fail('No response'));
         self::assertStringContainsString('Page 2/2', $screen->text());
         self::assertStringStartsWith('c', $screen->line(2));
     }

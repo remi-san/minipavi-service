@@ -11,6 +11,7 @@ use MiniPaviService\Message\Messages;
 use MiniPaviService\Minitel\FunctionKey;
 use MiniPaviService\Minitel\Position;
 use MiniPaviService\Vdt\Screen\HtmlRenderer;
+use MiniPaviService\Vdt\Screen\Screen;
 use MiniPaviService\Vdt\Vdt;
 use Psr\Http\Message\ServerRequestInterface;
 
@@ -78,7 +79,7 @@ final readonly class HtmlForm
             . self::STYLE
             . '</style></head>'
             . '<body><form method="post" class="page">'
-            . $this->renderer->render($screen->screen(), $this->fields($command))
+            . $this->renderer->render(Screen::of($screen), $this->fields($command))
             . $hidden
             . $this->keys($command)
             . '</form></body></html>'
