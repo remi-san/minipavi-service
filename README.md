@@ -411,7 +411,8 @@ KernelBuilder::for($router, $messages)
     (`ControllerState::Init` for an `AbstractController`);
   - `parametersType()`: the type of its parameters, a `ParametersType` of a class implementing
     `Parameters` (`ParametersType::of(DirectoryParameters::class)`, or `ParametersType::none()`
-    for none);
+    for none). The class is immutable (readonly): the context keeps the object the controller
+    is given, so changing it would change what the route keeps;
 
   and gets them typed: `Request<TState, TParameters>`, `$request->state()` and
   `$request->parameters()`. Its responses keep a case of its enum and an object of its class
