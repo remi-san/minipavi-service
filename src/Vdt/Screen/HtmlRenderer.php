@@ -12,10 +12,11 @@ use MiniPaviService\Minitel\ScreenSize;
 /**
  * Draws a Screen in HTML, as the Minitel would show it (checked against MiniPavi's emulator):
  * row 0 (the status line) and the ROWS × COLS cells, in the Minitel's colours, with their
- * sizes, inverse video, underlining (but not in inverse video, as the emulator draws the key
- * badges) and blinking. Text is drawn with a Minitel font (MINITEL_FONT: Minitel-Canvas's,
- * whose glyphs fill the cells), embedded in style(). Mosaic cells are drawn as their 2 × 3
- * pixels (separated when underlined), without depending on a font. No JavaScript.
+ * sizes, inverse video, underlining (of the zones a delimiter starts, Zone, but not in inverse
+ * video, as the emulator draws the key badges) and blinking. Text is drawn with a Minitel font
+ * (MINITEL_FONT: Minitel-Canvas's, whose glyphs fill the cells), embedded in style(). Mosaic
+ * cells are drawn as their 2 × 3 pixels (separated when underlined), without depending on a
+ * font. No JavaScript.
  *
  * It draws the screen only: the page around it (e.g. Client\HtmlForm's) puts render() in its
  * body, and style() in its <style>. style() sets, for the whole page, --w and --h, the size
@@ -133,9 +134,9 @@ final readonly class HtmlRenderer
             $classes[] = 'blink';
         }
         $underline = $attributes->isUnderlined();
-        // Neither spaces nor inverse video (the key badges, Page\Display\Key) are underlined,
-        // as in MiniPavi's emulator
-        if (!$mosaic && $underline && !$inverse && $cell->bytes !== ' ') {
+        // Inverse video (the key badges, Page\Display\Key) isn't underlined, as in MiniPavi's
+        // emulator; spaces in an underlined zone are (the delimiter starting it isn't: Zone)
+        if (!$mosaic && $underline && !$inverse) {
             $classes[] = 'u';
         }
 

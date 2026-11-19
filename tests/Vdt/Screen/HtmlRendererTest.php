@@ -96,6 +96,8 @@ final class HtmlRendererTest extends TestCase
         self::assertStringNotContainsString('class="c u"', $this->renderCell("\x1B\x5A \x1B\x5Dx"));
         // Not the delimiter itself
         self::assertStringNotContainsString('class="c u"', $this->renderCell("\x1B\x5A "));
+        // But the spaces in the zone, as MiniPavi's emulator draws them: x, a space, y
+        self::assertSame(3, substr_count($this->renderCell("\x1B\x5A x y"), needle: 'class="c u"'));
     }
 
     public function testMosaicIsNeverDoubleHeight(): void
