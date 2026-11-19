@@ -12,12 +12,14 @@ official [`ludosevilla/minipavi-cli`](https://packagist.org/packages/ludosevilla
 
 Requires PHP 8.2.
 
-The code (namespace `MiniPaviService`, in `src/`) is organized by layer. The runtime uses the
-controllers, which use the pages, and none uses those above it: `Core\` → `Controller\` →
-`Page\` → `Message\`, `Minitel\`, `Vdt\`, and the clients and the entry point sit on top:
-`Client\` → `Http\` → `Core\` (`Gateway\`'s requests and responses are values all of them use,
-which depend on nothing above them). Below `Page\`, `Vdt\` uses `Minitel\`, and neither uses
-the layers above it (`LayersTest` checks it):
+The code (namespace `MiniPaviService`, in `src/`) is organized by layer, each using only those
+below it (`mago guard` checks it, with the rules in `mago.toml`). At the bottom, the helpers
+(`Text\`, `Io\`, `Xml\`, `Html\`, `InvalidValueException`), then `Minitel\` (the terminal),
+then `Vdt\` (Videotex), then `Gateway\` (the requests, responses and commands); `Message\`
+beside them. Above them, `Page\` → `Controller\` → `Core\` (the runtime) → `Http\` (the
+entry point), which also uses `Client\` (the clients, on `Gateway\`). `Cli\` (on `Page\`)
+and `Testing\` (on `Core\`) sit on top. The one exception: `Minitel\Key` names
+`Gateway\ConnectionCode` (#49 removes it).
 
 | Namespace | Holds |
 |---|---|
@@ -854,11 +856,13 @@ or write, a wrong command line). The commands are Symfony `Command`s, in `Cli\`.
 ## Developing the framework
 
 The code is checked with [Mago](https://mago.carthage.software) (`mago.toml`): its formatter
-(PER Coding Style, 120 columns, one import per `use`), and its linter and static analyzer,
-which fail on any issue, notes included. `mago.toml` says why each rule turned off or ignored
-is, the ignored ones only in the files where they occur. There is no baseline of known
-issues: a rule is turned on with its issues fixed. (A baseline brought back would need
-`--fail-on-out-of-sync-baseline` in `composer analyse` again, so that its stale entries fail.)
+(PER Coding Style, 120 columns, one import per `use`), its linter and static analyzer,
+which fail on any issue, notes included, and its guard, which checks the layers'
+dependencies: a namespace uses only the layers and libraries its rule permits. `mago.toml`
+says why each rule turned off or ignored is, the ignored ones only in the files where they
+occur. There is no baseline of known issues: a rule is turned on with its issues fixed. (A
+baseline brought back would need `--fail-on-out-of-sync-baseline` in `composer analyse` again,
+so that its stale entries fail.)
 `stubs/MiniPaviCli.php` gives the types `MiniPaviCli` doesn't declare (a patch of the library's
 class). Every file has `declare(strict_types=1)`.
 
@@ -866,7 +870,7 @@ class). Every file has `declare(strict_types=1)`.
 composer install    # once, in this folder: development tools in vendor/
 composer cs         # checks the formatting
 composer cs-fix     # formats the code
-composer analyse    # linter and static analysis (mago lint, mago analyze)
+composer analyse    # linter, static analysis and layers (mago lint, mago analyze, mago guard)
 composer test       # tests (PHPUnit, tests/)
 composer coverage   # tests with coverage, as text and in coverage.xml (needs pcov or Xdebug)
 composer mutation   # mutation testing (Infection, needs pcov or Xdebug), logs in build/infection/

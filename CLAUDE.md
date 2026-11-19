@@ -84,9 +84,11 @@ moved ones link to them as `remi-san/minipavi-stack#<n>`. For each issue:
   (`git diff --name-only main -- '*.php' | xargs -n1 php -l`).
 - **Formatting**: `composer cs` (Mago's formatter).
 - **Tests and static analysis**: `composer test` (PHPUnit, `tests/`) and `composer analyse`
-  (Mago's linter and analyzer, `mago.toml`, failing on any issue). Add or update tests for
-  the changed behaviour. A fix starts with a test that fails without it. CI runs `cs`,
-  `analyse` and `test` on PHP 8.2–8.5 (`.github/workflows/ci.yml`); the PR must be green.
+  (Mago's linter, analyzer and guard, `mago.toml`, failing on any issue; the guard checks
+  each namespace's dependencies, so a new use of a layer or library may need its rule). Add
+  or update tests for the changed behaviour. A fix starts with a test that fails without it.
+  CI runs `cs`, `analyse` and `test` on PHP 8.2–8.5 (`.github/workflows/ci.yml`); the PR
+  must be green.
 - **Coverage and mutants**: `composer coverage` fails below its minimum share of lines (in
   `composer.json`): raise it when tests are added, never lower it. `composer mutation`
   (Infection) fails below its minimum MSI (in `infection.json5`), raised the same way, and
