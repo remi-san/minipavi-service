@@ -812,6 +812,7 @@ composer cs         # checks the formatting
 composer cs-fix     # formats the code
 composer analyse    # linter and static analysis (mago lint, mago analyze)
 composer test       # tests (PHPUnit, tests/)
+composer coverage   # tests with coverage, as text and in coverage.xml (needs pcov or Xdebug)
 ```
 
 Tests are in `tests/`, with their files in `tests/fixtures/`. Pages are checked through the
