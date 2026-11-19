@@ -105,8 +105,10 @@ Say in the PR which of these checks were run, and which weren't.
   Don't mix reformatting into a fix.
 - Don't turn off or ignore a Mago rule to make an issue go away: fix the code. When a rule
   conflicts with a convention, or Mago's analyzer can't follow correct code, say why in
-  `mago.toml`, ignoring it only in the files concerned. `lint-baseline.toml` holds the issues
-  known when a rule was turned on: don't add new ones to it. After fixing one, regenerate it
-  (`vendor/bin/mago lint --generate-baseline`), or `composer analyse` fails.
+  `mago.toml`, ignoring it only in the files concerned. There is no lint baseline: turning a
+  rule on means fixing its issues, unless the user asks for a baseline
+  (`vendor/bin/mago lint --generate-baseline`, set in `mago.toml`, with
+  `mago lint --fail-on-out-of-sync-baseline` back in `composer analyse` so that stale entries
+  fail).
 - Document classes and methods with PHPDoc (`/** ... */`, typed `@param` / `@return`).
 - Errors in page XML must give the file and line (`PageXmlException`), as they do now.

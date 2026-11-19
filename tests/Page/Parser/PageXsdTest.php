@@ -40,6 +40,10 @@ final class PageXsdTest extends TestCase
         'message of no service',
     ];
 
+    private const SHOULD_BE_REFUSED = 'the schema should refuse it';
+
+    private const REFUSED_BY_THE_SCHEMA_TOO = 'the schema refuses it: remove it from PARSER_ONLY';
+
     /**
      * @return iterable<string, array{string}>
      */
@@ -106,40 +110,58 @@ final class PageXsdTest extends TestCase
     }
 
     /**
-     * @return iterable<string, array{string, bool}>
+     * @return iterable<string, array{string}>
      */
-    public static function invalidPages(): iterable
+    public static function pagesRefusedBySchema(): iterable
     {
         foreach (PageXmlParserTest::invalidPages() as $name => [$xml]) {
-            if ($name === 'invalid XML') {
+            if ($name === 'invalid XML' || \in_array($name, self::PARSER_ONLY, strict: true)) {
                 continue;
             }
 
-            yield $name => [$xml, !\in_array($name, self::PARSER_ONLY, strict: true)];
+            yield $name => [$xml];
         }
-        yield 'unknown attribute' => ['<page type="static"><text bold="yes">x</text></page>', true];
-        yield 'col 0' => ['<page type="static"><text col="0">x</text></page>', true];
-        yield 'signed number' => ['<page type="static"><text row="+1">x</text></page>', true];
-        yield 'input in an if' => ['<page type="template"><if test="a"><input/></if></page>', true];
+        yield 'unknown attribute' => ['<page type="static"><text bold="yes">x</text></page>'];
+        yield 'col 0' => ['<page type="static"><text col="0">x</text></page>'];
+        yield 'signed number' => ['<page type="static"><text row="+1">x</text></page>'];
+        yield 'input in an if' => ['<page type="template"><if test="a"><input/></if></page>'];
         yield 'endkey in an if in a loop' => [
             '<page type="template"><foreach items="a" as="b"><if test="c"><endkey/></if></foreach></page>',
-            true,
         ];
-        yield 'foreach without items' => ['<page type="template"><foreach as="b"/></page>', true];
-        yield 'line of two characters' => ['<page type="static"><line char="=="/></page>', true];
-        yield 'empty validwith' => ['<page type="static"><input validwith=""/></page>', true];
+        yield 'foreach without items' => ['<page type="template"><foreach as="b"/></page>'];
+        yield 'line of two characters' => ['<page type="static"><line char="=="/></page>'];
+        yield 'empty validwith' => ['<page type="static"><input validwith=""/></page>'];
     }
 
-    #[DataProvider('invalidPages')]
-    public function testPageRefusedByTheParserIsInvalid(string $xml, bool $refusedBySchema): void
+    #[DataProvider('pagesRefusedBySchema')]
+    public function testPageRefusedBySchemaIsInvalid(string $xml): void
     {
-        self::assertSame(
-            $refusedBySchema,
-            self::errors($xml) !== [],
-            $refusedBySchema
-                ? 'the schema should refuse it'
-                : 'the schema can\'t refuse it: remove it from PARSER_ONLY',
-        );
+        self::assertNotSame([], self::errors($xml), self::SHOULD_BE_REFUSED);
+    }
+
+    // One test over the list (not a data provider), so that it still passes once the schema
+    // refuses every page and PARSER_ONLY is empty
+    public function testPagesOnlyTheParserRefusesAreValid(): void
+    {
+        $refused = [];
+        foreach (PageXmlParserTest::invalidPages() as $name => [$xml]) {
+            if (!\in_array($name, self::PARSER_ONLY, strict: true) || self::errors($xml) === []) {
+                continue;
+            }
+
+            $refused[] = $name;
+        }
+
+        self::assertSame([], $refused, self::REFUSED_BY_THE_SCHEMA_TOO);
+    }
+
+    public function testParserOnlyPagesAreInvalidPagesOfTheParser(): void
+    {
+        $names = array_keys(iterator_to_array(PageXmlParserTest::invalidPages()));
+
+        self::assertSame([], array_values(array_diff(self::PARSER_ONLY, $names)));
+        // Not well-formed: the schema can't be checked against it
+        self::assertNotContains('invalid XML', self::PARSER_ONLY);
     }
 
     public function testValuesAreThoseOfTheParser(): void

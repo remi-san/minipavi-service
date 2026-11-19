@@ -158,25 +158,25 @@ final readonly class HtmlRenderer
             return '<span class="' . implode(' ', $classes) . '" style="' . $style . '"> </span>';
         }
 
-        return (
-            '<span class="'
-            . implode(' ', $classes)
-            . '" style="'
-            . $style
-            . '">'
-            . (
-                $mosaic && self::isMosaic($cell->bytes)
-                    ? self::mosaic($cell->bytes, $underline)
-                    : Html::escape($cell->text())
-            )
-            . '</span>'
-        );
+        $content = $mosaic && self::isMosaic($cell->bytes) ? self::mosaic($cell) : Html::escape($cell->text());
+
+        return '<span class="' . implode(' ', $classes) . '" style="' . $style . '">' . $content . '</span>';
     }
 
     /**
-     * Pixels of a mosaic character, separated when underlined
+     * A mosaic character, drawn as its pixels: separated ones when they are (Attributes)
      */
-    private static function mosaic(string $byte, bool $separated): string
+    private static function mosaic(Cell $cell): string
+    {
+        $classes = $cell->attributes->isSeparated() ? 'm sep' : 'm';
+
+        return '<span class="' . $classes . '">' . self::pixels($cell->bytes) . '</span>';
+    }
+
+    /**
+     * Pixels of a mosaic character
+     */
+    private static function pixels(string $byte): string
     {
         $code = \ord($byte);
         $pixels = '';
@@ -184,7 +184,7 @@ final readonly class HtmlRenderer
             $pixels .= ($code & $bit) !== 0 ? '<i class="on"></i>' : '<i></i>';
         }
 
-        return '<span class="m' . ($separated ? ' sep' : '') . '">' . $pixels . '</span>';
+        return $pixels;
     }
 
     // Every character of the mosaic set is pixels (0x40 to 0x5F included, as MiniPavi's

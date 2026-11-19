@@ -34,7 +34,7 @@
         "test": "phpunit",
         "coverage": "phpunit --coverage-text --coverage-clover coverage.xml",
         "analyse": [
-            "mago lint --fail-on-out-of-sync-baseline",
+            "mago lint",
             "mago analyze"
         ],
         "cs": "mago format --check",
