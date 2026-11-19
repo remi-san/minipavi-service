@@ -29,7 +29,7 @@ which depend on nothing above them):
 | `Message\` | the messages shown on screen: `Message`, `FrameworkMessage`, `Messages` and their XML parser |
 | `Minitel\` | the user's terminal: `Terminal`, its `FunctionKey`s, its settings (`Keyboard`, `LocalEcho`, `Scroll`), and the `InputField` where the user types |
 | `Vdt\` | Videotex: codes, reading, writing and moving Videotex content (`Vdt`, `Videotex`); in `Screen\`, the Minitel screen it draws (`Screen`, `Cell`) and its HTML rendering (`HtmlRenderer`) |
-| `Gateway\` | the requests and answers the service handles (`GatewayRequest`, `GatewayResponse`, `CallMode`, the `InputCommand` reading a field), and the `Client` interface reading and sending them |
+| `Gateway\` | the requests and answers the service handles (`GatewayRequest`, `GatewayResponse`), the commands an answer sends (`Command`: the `WaitForKeyCommand` waiting for a key, the `InputCommand` reading a field, the `ServiceCallCommand` calling a service, with its `CallMode`), and the `Client` interface reading and sending them |
 | `Client\` | the clients: `MiniPaviClient` for the MiniPavi gateway, `HtmlClient` for a browser (`?web=true`) |
 | `Http\` | the entry point for the web server, on PSR-7 / PSR-15: `Kernel`, `ResponseEmitter`, `ServiceRunner`; in `Dispatch\`, who handles the request (`Dispatcher`, `ConditionalRequestHandler`, `RequestMatcher`s); in `Url\`, the request's URLs (`RequestUrl`, `UrlAttribute`, `WithUrls`); in `Emulator\`, the emulator browsers are sent to (`EmulatorConfig`, `EmulatorRedirect`) |
 | `Testing\` | `ServiceTester`, functional tests of a service (needs PHPUnit) |
@@ -195,8 +195,8 @@ KernelBuilder::for($router, $messages)
       last clear screen). The page's screen and command come back
       with the key as the client's state (`HtmlPageState`).
 
-    A key that would **leave the service** (an answer whose next URL is another one, as
-    `Response::connectTo()`) is blocked: the page stays as it was, with
+    A key that would **leave the service** (an answer calling another service, a
+    `ServiceCallCommand`, as `Response::connectTo()` gives) is blocked: the page stays as it was, with
     `FrameworkMessage::WebLeave` on line 0. The key labels and that error are messages
     (`key.send`, `key.next`…, `web.leave`). The screen is drawn in the Minitel's colours, with
     double sizes, inverse video, underlining, blinking and mosaic pixels, as MiniPavi's
@@ -229,9 +229,15 @@ KernelBuilder::for($router, $messages)
   `ConnectionCode`, which its `functionKey()` and `connectionCode()` tell apart, or null for
   another key; `GatewayRequest::keyOf()` reads it from what the
   gateway sends, `fctn()` gives its name back), `content` (the text typed), `context` (given back from the previous answer) and
-  `terminal`. **`GatewayResponse`** is what is sent back: `vdt`, `context`, `next` (the URL the
-  gateway calls next, null for this service's), `command` (e.g. an input command),
-  `directCall` (a `CallMode`, to call `next` at once). Both are plain values, so a
+  `terminal`. **`GatewayResponse`** is what is sent back: `vdt`, `context` and `command`, what
+  the gateway does next (a `Gateway\Command`: a `WaitForKeyCommand`, the default, waiting for
+  a key, then calling this service; an `InputCommand` reading a field; a `ServiceCallCommand`
+  calling a service at once, with its URL and `CallMode`). Each client sends a command its own
+  way, with its `Gateway\CommandSender`, whose method for it the command calls
+  (`Command::sendWith()`). The commands are the framework's: a service sends them, but can't
+  add one, since its clients wouldn't know it. The framework adds a command as a class
+  implementing `Command` and a method of `CommandSender`, so that a client that doesn't
+  send it can't be loaded. Both are plain values, so a
   service can be tested, or run elsewhere than PHP's web server, without `MiniPaviCli`.
 - **Pages** are displayed for the user's terminal, which `<endkey>` depends on:
   `$page->display($request->terminal(), $data)`; display elements get it too
@@ -269,18 +275,18 @@ KernelBuilder::for($router, $messages)
   | `Response::display($vdt)` | sends Videotex content to the gateway; the next key comes back to this controller | `ControllerState::ReadInput` |
   | `Response::readInput($vdt, $command)` | sends content and the command reading the page's input field (`Page::inputCommand()`, an `InputCommand`: the page's `Minitel\InputField`, where it is, its size and the keys validating it, and its prefill) to the gateway | `ControllerState::ReadInput` |
   | `Response::goTo($route, $parameters)` | switches to another controller, which runs at once: at `ControllerState::Init`, with `$parameters` (a `Parameters` object, or none), without the user's input; this controller is reset | `ControllerState::Init` |
-  | `Response::connectTo($url, $vdt)` | sends the user to another service, as a new connection (`CallMode::Connect`) | `ControllerState::Init` |
+  | `Response::connectTo($url, $vdt)` | sends the user to another service, as a new connection (a `ServiceCallCommand` with `CallMode::Connect`) | `ControllerState::Init` |
 
   Every response but `goTo()` answers the gateway and ends the request. The state and
   parameters are what this controller keeps for its next run (for `connectTo()`, when the
   user comes back to it): a `State`, and a `Parameters` object (none by default). Give
   others by name, e.g. `Response::readInput($vdt, $command, parameters: new
   DirectoryParameters(2))`. The classes behind them
-  (`DisplayPage`, `RunCommand`, `ChangePage`, `RunExternalService`) can also be built directly.
+  (`DisplayPage`, `RunCommand` for any `Command`, `ChangePage`) can also be built directly.
   They are readonly, and don't change the context. `Service` calls the response's
   `continueWith(Flow $flow): GatewayResponse`, where it says what comes next:
   `$flow->keep($state, $parameters)` keeps them for this controller,
-  `$flow->answer($vdt, $command, $next, $directCall)` ends the request with that answer to
+  `$flow->answer($vdt, $command)` ends the request with that answer to
   the gateway, and `$flow->goTo($route, $parameters)` resets this controller and runs
   another one, giving its answer. Every response but `ChangePage` extends
   `KeepingResponse`, which keeps the state and parameters it is built with, then calls its
