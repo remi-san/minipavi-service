@@ -376,8 +376,8 @@ final class VdtTest extends TestCase
      * attributes, except on row 0 (the status row), which stays as it is; nothing else is
      * drawn. A double-width character that would be partly off the screen is not drawn at
      * all. On a row moved left, a zone whose delimiter goes off the screen can only start
-     * again at a space (Writer): the cells before it show what they do without it
-     * (withoutZoneFromOffTheScreen())
+     * again at a space (Writer): on a row whose text space went off the screen, the cells
+     * before its first one left show what they do without it (withoutZoneFromOffTheScreen())
      */
     private static function assertScreenMoved(Vdt $original, int $x, int $y): void
     {
@@ -401,7 +401,11 @@ final class VdtTest extends TestCase
                     && ($start + $x + $width - 1) <= ScreenSize::COLS;
                 $expected = $onScreen ? $before->cell($fromRow, $fromCol) : null;
                 $actual = $after->cell($row, $col);
-                if ($x < 0 && self::isBeforeTheFirstSpace($before, $fromRow, $fromCol, firstCol: 1 - $x)) {
+                if (
+                    $x < 0
+                    && self::losesADelimiterOffTheScreen($before, $fromRow, firstCol: 1 - $x)
+                    && self::isBeforeTheFirstSpace($before, $fromRow, $fromCol, firstCol: 1 - $x)
+                ) {
                     [$expected, $actual] = [
                         self::withoutZoneFromOffTheScreen($expected),
                         self::withoutZoneFromOffTheScreen($actual),
@@ -410,6 +414,15 @@ final class VdtTest extends TestCase
                 self::assertEquals($expected, $actual, "row {$row}, column {$col}");
             }
         }
+    }
+
+    /**
+     * Whether the row, moved left so that firstCol is its first column, has a text space (a
+     * delimiter may be one) that goes off the screen
+     */
+    private static function losesADelimiterOffTheScreen(Screen $screen, int $row, int $firstCol): bool
+    {
+        return !self::isBeforeTheFirstSpace($screen, $row, col: $firstCol, firstCol: 1);
     }
 
     /**
