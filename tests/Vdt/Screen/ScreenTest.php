@@ -6,6 +6,7 @@ namespace MiniPaviService\Tests\Vdt\Screen;
 
 use MiniPaviService\Minitel\Color;
 use MiniPaviService\Minitel\Position;
+use MiniPaviService\Vdt\Screen\Attributes;
 use MiniPaviService\Vdt\Screen\Screen;
 use MiniPaviService\Vdt\Vdt;
 use MiniPaviService\Vdt\Videotex;
@@ -150,12 +151,25 @@ final class ScreenTest extends TestCase
         self::assertTrue($screen->cell(2, col: 30)?->attributes->isDoubleHeight());
     }
 
-    public function testDoubleHeightIsDiscardedOnRow0(): void
+    /**
+     * @return iterable<string, array{string}>
+     */
+    public static function tallSizes(): iterable
     {
-        $cell = Screen::of(new Vdt("\x1F\x40\x41\x1B\x4DZ"))->cell(0, col: 1) ?? self::fail('Nothing on row 0');
+        yield 'double height' => [Videotex::SIZE_DOUBLE_HEIGHT];
+        yield 'double size' => [Videotex::SIZE_DOUBLE];
+    }
 
+    #[DataProvider('tallSizes')]
+    public function testDoubleHeightIsDiscardedOnRow0(string $size): void
+    {
+        $screen = Screen::of(new Vdt("\x1F\x40\x41{$size}ZY"));
+
+        $cell = $screen->cell(0, col: 1) ?? self::fail('Nothing on row 0');
         self::assertSame('Z', $cell->bytes);
         self::assertFalse($cell->attributes->isDoubleHeight());
+        // Normal size: one column
+        self::assertSame('Y', $screen->cell(0, col: 2)?->bytes);
     }
 
     /**
@@ -349,22 +363,43 @@ final class ScreenTest extends TestCase
         $so = Videotex::MOSAIC_SET;
         $si = Videotex::TEXT_SET;
         $blue = Videotex::backgroundColor(Color::Blue);
-        // Row 10, column 3
+        $mask = Videotex::MASK_ON;
+        // Row 10, column 3, and column 1
         $col3 = "\x1F\x4A\x43";
+        $col1 = "\x1F\x4A\x41";
 
+        yield 'nothing waiting' => [' AB', '...'];
         yield 'waiting for a delimiter' => ["{$on}AB", '..'];
         yield 'from a delimiter' => ["{$on} AB", '.UU'];
         yield 'ESC Y waiting too' => ["{$on} AB{$off}CD", '.UUUU'];
         yield 'up to a delimiter' => ["{$on} A{$off} B", '.U..'];
         yield 'spaces in the zone' => ["{$on} A B", '.UUU'];
+        // Both its columns a delimiter
+        yield 'a double-width delimiter' => [Videotex::SIZE_DOUBLE_WIDTH . "{$on} A", '..UU'];
         yield 'up to a mosaic cell' => ["{$on} A{$so}\x7F{$si}B", '.U..'];
         yield 'up to an empty cell' => ["{$on} A" . Videotex::CURSOR_RIGHT . 'B', '.U .'];
         yield 'waiting after SO' => ["{$on}{$so}{$si} B", '.U'];
         yield 'not waiting after a positioning' => ["{$on}\x1F\x4A\x41 B", '..'];
         yield 'ESC Z in mosaic not waiting' => ["{$so}{$on}{$si} B", '..'];
         yield 'a background delimiting the same zone' => ["{$on} A{$blue} B", '.U.U'];
+        yield 'masking delimiting the same zone' => ["{$on} A{$mask} B", '.U.U'];
+        yield 'unmasking delimiting the same zone' => ["{$on} A" . Videotex::MASK_OFF . ' B', '.U.U'];
+        // Nor does any other attribute
+        yield 'inverse not waiting' => ["{$on} A" . Videotex::INVERSE_ON . ' B', '.UUU'];
         yield 'a positioning ending the zone a background delimits' => ["{$on} A{$col3}{$blue} B", '.U..'];
+        // SO and SI draw nothing: B is in the zone, and the space after it
+        yield 'a background in mosaic not waiting' => ["{$on} A{$so}{$blue}{$si}B C", '.UUUU'];
+        // The space a delimiter, of a zone SO ended
+        yield 'masking waiting in mosaic' => ["{$on} A{$so}{$mask}{$si}B C", '.UU..'];
+        yield 'SO ending the zone a background delimits' => ["{$on} A{$so}{$si}{$blue} B", '.U..'];
+        // The background no longer waits: the space is in the zone
+        yield 'SO applying the waiting background' => ["{$on} A{$blue}{$so}{$si} B", '.UUU'];
+        yield 'SI keeping the background waiting' => ["{$on} A{$blue}{$si} B", '.U.U'];
+        // The emulator only makes a text space a delimiter (print()): the mosaic space (column
+        // 1) doesn't use up what waits, the text one (column 3) does
+        yield 'a mosaic space not delimiting' => ["{$on}{$so}{$mask} \x7F{$si} A", '...U'];
         yield 'over what is already drawn' => ["ABCD{$col3}{$on} ", '...U'];
+        yield 'a delimiter drawn over' => ["{$on} AB{$col1}X", '...'];
         $can = Videotex::CLEAR_LINE;
         $ht = Videotex::CURSOR_RIGHT;
         yield 'CAN drawing a delimiter' => ["A{$on}{$can}{$ht}BC", '..UUU'];
@@ -388,5 +423,148 @@ final class ScreenTest extends TestCase
             };
         }
         self::assertSame($expected, $cells);
+    }
+
+    public function testUnderlinedZoneEndsWithItsRow(): void
+    {
+        // Row 10, column 38: ESC Z, a space, A, B, then C wrapped to row 11
+        $screen = Screen::of(Vdt::join(
+            Vdt::position(new Position(row: 10, col: 38)),
+            new Vdt(Videotex::UNDERLINE_ON . ' ABC'),
+        ));
+
+        self::assertTrue($screen->cell(10, col: 40)?->attributes->isUnderlined());
+        $c = $screen->cell(11, col: 1) ?? self::fail('Nothing at row 11, column 1');
+        self::assertSame('C', $c->bytes);
+        self::assertFalse($c->attributes->isUnderlined());
+    }
+
+    public function testClearScreenEndsTheZonesOfEveryRowButTheStatusRow(): void
+    {
+        // An underlined zone from column 1 on rows 0, 1 and 24, a clear screen, then C and D
+        // drawn in columns 3 and 4 of rows 1 and 24, and E after the zone of row 0
+        $zone = Videotex::UNDERLINE_ON . ' AB';
+        $screen = Screen::of(
+            new Vdt(
+                "\x1F\x40\x41{$zone}\x1F\x41\x41{$zone}\x1F\x58\x41{$zone}\x0C"
+                . "\x1F\x41\x43CD\x1F\x58\x43CD\x1F\x40\x44E",
+            ),
+        );
+
+        self::assertTrue($screen->cell(0, col: 4)?->attributes->isUnderlined());
+        foreach ([1, 24] as $row) {
+            foreach ([3, 4] as $col) {
+                self::assertFalse($screen->cell($row, $col)?->attributes->isUnderlined(), "row {$row}, column {$col}");
+            }
+        }
+    }
+
+    public function testContentStartsAtRow1Column1WithTheDefaultAttributes(): void
+    {
+        $cell = Screen::of(new Vdt('A'))->cell(1, col: 1) ?? self::fail('Nothing at row 1, column 1');
+
+        self::assertSame('A', $cell->bytes);
+        self::assertEquals(Attributes::defaults(), $cell->attributes);
+    }
+
+    /**
+     * @return iterable<string, array{string, int, int}> the sequence, and where A is drawn
+     *                                                    after it
+     */
+    public static function positionings(): iterable
+    {
+        yield 'a positioning' => ["\x1F\x45\x47", 5, 7];
+        yield 'a home' => [Videotex::HOME, 1, 1];
+        yield 'a clear screen' => [Videotex::CLEAR_SCREEN, 1, 1];
+    }
+
+    #[DataProvider('positionings')]
+    public function testPositioningSetsTheAttributesBackToTheirDefaults(string $sequence, int $row, int $col): void
+    {
+        // XY, red, inverse, double width, then the sequence and A
+        $screen = Screen::of(
+            new Vdt(
+                'XY' . Videotex::ESC . "\x41" . Videotex::INVERSE_ON . Videotex::SIZE_DOUBLE_WIDTH . "{$sequence}A",
+            ),
+        );
+
+        $cell = $screen->cell($row, $col) ?? self::fail("Nothing at row {$row}, column {$col}");
+        self::assertSame('A', $cell->bytes);
+        self::assertEquals(Attributes::defaults(), $cell->attributes);
+    }
+
+    public function testTextWrapsToTheNextRow(): void
+    {
+        $screen = Screen::of(Vdt::join(Vdt::position(new Position(row: 3, col: 40)), Vdt::text('AB')));
+
+        self::assertSame('A', $screen->cell(3, col: 40)?->bytes);
+        self::assertSame('B', $screen->cell(4, col: 1)?->bytes);
+    }
+
+    public function testUnderlinedMosaicIsSeparated(): void
+    {
+        // SO, ESC Z, red, a mosaic character, then one after SO again (no longer separated);
+        // SO first, as it turns separation off
+        $screen = Screen::of(
+            new Vdt(
+                Videotex::MOSAIC_SET
+                . Videotex::UNDERLINE_ON
+                . Videotex::ESC
+                . "\x41\x7F"
+                . Videotex::MOSAIC_SET
+                . "\x7F",
+            ),
+        );
+
+        $separated = $screen->cell(1, col: 1) ?? self::fail('Nothing at row 1, column 1');
+        self::assertTrue($separated->attributes->isMosaic());
+        self::assertTrue($separated->attributes->isSeparated());
+        self::assertSame(Color::Red, $separated->attributes->foreground());
+        self::assertFalse($screen->cell(1, col: 2)?->attributes->isSeparated());
+    }
+
+    public function testUnderlinedTextIsntSeparated(): void
+    {
+        $a = Screen::of(new Vdt(Videotex::UNDERLINE_ON . ' A'))->cell(1, col: 2) ?? self::fail('Nothing at column 2');
+
+        self::assertTrue($a->attributes->isUnderlined());
+        self::assertFalse($a->attributes->isSeparated());
+    }
+
+    /**
+     * As the Minitel does: in mosaic, ESC L, M, N, O and ESC ] are discarded (MiniPavi's
+     * emulator, setSize() and setInvert())
+     *
+     * @return iterable<string, array{string}>
+     */
+    public static function discardedInMosaic(): iterable
+    {
+        yield 'double height' => [Videotex::SIZE_DOUBLE_HEIGHT];
+        yield 'double width' => [Videotex::SIZE_DOUBLE_WIDTH];
+        yield 'double size' => [Videotex::SIZE_DOUBLE];
+        yield 'inverse' => [Videotex::INVERSE_ON];
+    }
+
+    #[DataProvider('discardedInMosaic')]
+    public function testSizesAndInverseAreDiscardedInMosaic(string $sent): void
+    {
+        $screen = Screen::of(Vdt::join(
+            Vdt::position(new Position(row: 10)),
+            new Vdt(Videotex::MOSAIC_SET . $sent . "\x7F"),
+        ));
+
+        $cell = $screen->cell(10, col: 1) ?? self::fail('Nothing at row 10, column 1');
+        self::assertTrue($cell->attributes->isMosaic());
+        self::assertFalse($cell->attributes->isDoubleHeight());
+        self::assertFalse($cell->attributes->isDoubleWidth());
+        self::assertFalse($cell->attributes->isInverse());
+    }
+
+    public function testRepeatWithoutACharacterDrawsNothing(): void
+    {
+        // REP 3 with nothing sent before, then A: drawn where the cursor was
+        $screen = Screen::of(new Vdt("\x1F\x41\x41" . Videotex::REPEAT . "\x43A"));
+
+        self::assertSame('A', rtrim($screen->line(1)));
     }
 }
