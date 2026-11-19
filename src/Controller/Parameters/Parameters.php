@@ -8,11 +8,12 @@ use MiniPaviService\Controller\Request;
 use MiniPaviService\Controller\Response;
 
 /**
- * Parameters of a controller, as an object (e.g. a readonly class with a property per
+ * Parameters of a controller, as an immutable object (a readonly class with a property per
  * parameter): the controller declares their type (Controller::parametersType(), a
  * ParametersType of this class), gets them typed (Request::parameters()) and keeps them by
  * giving them to a Response. NoParameters (ParametersType::none()) for a controller without
- * any.
+ * any. The context keeps the object Request::parameters() gives: changing it would change
+ * what the route keeps, without a Response keeping it.
  */
 interface Parameters
 {

@@ -28,9 +28,9 @@ final class Context
     ) {}
 
     /**
-     * What each route keeps (those whose controller ran or was restored), by route: its state
-     * and parameters, typed by its controller, as snapshots the caller can't change the context
-     * with
+     * What each route keeps (the current one once used, and those restored), by route: its
+     * state and parameters, typed by its controller, as snapshots the caller can't change the
+     * context with
      *
      * @return array<string, KeptRoute<State, Parameters>>
      */
@@ -70,7 +70,9 @@ final class Context
     }
 
     /**
-     * State of the current route: the one kept, or its controller's initial state
+     * State of the current route: the one kept, or its controller's initial state. The first
+     * call starts the current route if it kept nothing, and keeps it (in kept(), and so in the
+     * serialized context)
      */
     public function state(): State
     {
@@ -78,7 +80,9 @@ final class Context
     }
 
     /**
-     * Parameters of the current route: the ones kept, or the defaults of its controller's
+     * Parameters of the current route: the ones kept, or the defaults of its controller's. The
+     * first call starts the current route if it kept nothing, and keeps it (in kept(), and so in
+     * the serialized context)
      */
     public function parameters(): Parameters
     {
@@ -91,11 +95,13 @@ final class Context
      * @param ?State $state a case of the enum of its controller's states; null: the initial one
      * @param ?Parameters $parameters of the class its controller declares; null: the defaults
      *
-     * @throws \LogicException for a state or parameters of other types than the controller's
+     * @throws \LogicException for a state or parameters of other types than the controller's:
+     *                         the context then stays as it was
      */
     public function keep(?State $state, ?Parameters $parameters): void
     {
-        $route = $this->current();
+        // Kept only once keep() succeeds: if it throws, a route that kept nothing still doesn't
+        $route = $this->routes[$this->route] ?? $this->router->route($this->route)->start();
         $route->keep($state, $parameters);
         $this->routes[$this->route] = $route;
     }
@@ -112,10 +118,13 @@ final class Context
     }
 
     /**
+     * What the current route keeps: started on first use if it kept nothing, then kept, so
+     * that state(), parameters(), keep() and run() all work on the same one
+     *
      * @return RouteContext<State, Parameters>
      */
     private function current(): RouteContext
     {
-        return $this->routes[$this->route] ?? $this->router->route($this->route)->start();
+        return $this->routes[$this->route] ??= $this->router->route($this->route)->start();
     }
 }
