@@ -523,7 +523,8 @@ Text shown on the Minitel is not written in the code: it is read from messages f
   `MessagesXmlParser::defaults()`, read where the service is built), then the service's
   messages file over them, then a page's
   `<message>` over those, for that page. A text can have `{{placeholders}}`, as in page
-  templates: `{{name}}`, or a dotted path through arrays and object properties (`{{user.name}}`).
+  templates: `{{name}}`, or a dotted path through arrays and public object properties
+  (`{{user.name}}`).
 - **Always given:** `Service`, `PageXmlParser` and the pages take the messages as a required
   argument, never a hidden default: pass `(new MessagesXmlParser())->defaults()` for the
   framework's only.
@@ -607,7 +608,7 @@ instructions, filled in with the data given to `Page::display($terminal, $data)`
 
 | Syntax | Meaning |
 |---|---|
-| `{{name}}`, `{{service.code}}` | placeholder, in any text or attribute (not in `<input>`); dotted paths go through arrays and object properties |
+| `{{name}}`, `{{service.code}}` | placeholder, in any text or attribute (not in `<input>`); dotted paths go through arrays and public object properties (or those an object gives through `__isset()` and `__get()`): any other is an unknown variable |
 | `<foreach items="services" as="service" row="5" step="2">…</foreach>` | repeats its content for each item, `step` rows apart. Inside, rows are relative to the item (0 = its first row), and `loop.index` (from 1), `loop.count`, `loop.first` and `loop.last` are available |
 | `<if test="loop.last">…</if>` | content shown only if the variable is set and not empty |
 | `<if test="!loop.last">…</if>` | … or only if it is not |
