@@ -360,7 +360,9 @@ final class VdtTest extends TestCase
 
     /**
      * For each cell of the screen a character takes: the first column of that character, and
-     * its width (a double-width text character takes two cells, read from the left)
+     * its width. A double-width text character takes two cells, read from the left: its second
+     * one only if it still shows it (a character drawn over it since takes that cell). A
+     * second half left alone, its first one drawn over, reads as a character of its own.
      *
      * @return array<int, array<int, array{int, int}>>
      */
@@ -369,11 +371,14 @@ final class VdtTest extends TestCase
         $columns = [];
         for ($row = 0; $row <= ScreenSize::ROWS; $row++) {
             for ($col = 1; $col <= ScreenSize::COLS; $col++) {
-                $width = $screen->cell($row, $col)?->attributes->width() ?? 1;
-                for ($i = 0; $i < $width; $i++) {
-                    $columns[$row][$col + $i] = [$col, $width];
+                $cell = $screen->cell($row, $col);
+                $width = $cell?->attributes->width() ?? 1;
+                $columns[$row][$col] = [$col, $width];
+                $next = $screen->cell($row, $col + 1);
+                if ($width === 2 && $next?->bytes === $cell?->bytes && $next?->attributes->width() === 2) {
+                    $columns[$row][$col + 1] = [$col, $width];
+                    $col++;
                 }
-                $col += $width - 1;
             }
         }
 
