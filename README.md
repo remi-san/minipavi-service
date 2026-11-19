@@ -106,7 +106,7 @@ KernelBuilder::for($router, $messages)
   - `withHandler()`: a `ConditionalRequestHandler` of the service (e.g. an API, a health
     check), tried before the framework's, in the order they are added;
   - `withMaxPageChanges()`: the page changes allowed in one request (default: 10, see below;
-    at least 1, or `build()` throws an `InvalidValueException`);
+    0 forbids them; a negative number makes `build()` throw an `InvalidValueException`);
   - `withFont()`: the TrueType font of the HTML client's screen (default: the framework's
     Minitel font, `HtmlRenderer::MINITEL_FONT`); a file that can't be read throws an
     `InvalidValueException` there, rather than on each browser's request.
@@ -227,7 +227,8 @@ KernelBuilder::for($router, $messages)
   doesn't exist any more (the serializer refuses it with an `UnknownRouteException`).
   More than 10 page changes (`Response::goTo()`) in one request are taken as controllers
   changing to each other endlessly, and responded to with an error; give another limit with
-  `KernelBuilder::withMaxPageChanges(20)` (or `new Service(..., maxPageChanges: 20)`).
+  `KernelBuilder::withMaxPageChanges(20)` (or `new Service(..., maxPageChanges: 20)`), 0 to
+  forbid page changes.
   If serving a request fails (an exception or a PHP error, in a controller, a template, the
   context...), the error is logged, and the user gets a message on line 0
   (`FrameworkMessage::Error`, from the `$messages` of the constructor; see
