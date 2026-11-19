@@ -23,8 +23,8 @@ use MiniPaviService\Vdt\Screen\Cursor;
 final readonly class Player
 {
     /**
-     * Plays the content, telling the listener each character drawn (repetitions included),
-     * and the other tokens once the cursor has followed them (a copy of the cursor)
+     * Plays the content, telling the listener each character drawn (repetitions included) or
+     * delimiter, and the other tokens once the cursor has followed them (a copy of the cursor)
      */
     public function play(Vdt $vdt, ScreenListener $listener): void
     {

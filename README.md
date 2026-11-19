@@ -738,11 +738,17 @@ echo $moved->screen()->preview();      // the screen, as text
   40 goes 1 row down, as BS, LF and VT move 1 row. SO and SI set the size back to normal
   and turn off inverse video and separated mosaic, SO also underline; a size (`ESC L` to
   `ESC O`) or inverse video (`ESC ]`) received in mosaic is discarded: mosaic characters are
-  never tall, wide or inverse.
+  never tall, wide or inverse. Underline in text is a zone attribute: `ESC Z` and `ESC Y`
+  wait for a delimiter, a space drawn while a zone attribute (underline, background colour,
+  masking) waits. The delimiter isn't underlined, and starts a zone running along its row up
+  to the next delimiter, mosaic or empty cell, over what is already there too: write
+  `ESC Z`, a space, then the text (as `Page\Display\Key` does). A positioning drops what waits,
+  and SO ends the zone. Background colour and masking are still applied at once.
 - **`Vdt\Player::play($vdt, $listener)`** (internal, what `screen()` and `offset()` are
   built on): plays the content on the simulated screen, telling a `Vdt\ScreenListener` each
-  character (`glyph()`, with its row, column, width and attributes) and the other `Token`s
-  (`sequence()`, with a copy of the cursor). `Screen\ScreenCells::of()` collects the cells of
+  character (`glyph()`, with its row, column, width and attributes), each delimiter
+  (`delimiter()`, with the `Screen\Zone` it starts) and the other `Token`s (`sequence()`, with
+  a copy of the cursor). `Screen\ScreenCells::of()` collects the cells of
   `screen()`, `Vdt\OffsetWriter::write()` writes the content moved by `offset()`: each listens
   to one content, built by that static method only.
 
