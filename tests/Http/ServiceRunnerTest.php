@@ -83,10 +83,13 @@ final class ServiceRunnerTest extends TestCase
         // Responded to through the client, for a request it couldn't read: at the service's URL
         self::assertEquals(new GatewayRequest(null), $request);
         self::assertSame(['http://services/Svc/index.php', 'http://services/Svc/index.php'], $client->serviceUrls);
-        self::assertSame([LogLevel::ERROR, 'Error serving the request: Not JSON'], [
+        self::assertSame([LogLevel::ERROR, 'Error serving the request'], [
             $this->logger->records[0][0],
             $this->logger->records[0][1],
         ]);
+        $error = $this->logger->records[0][2]['exception'] ?? null;
+        self::assertInstanceOf(\Throwable::class, $error);
+        self::assertSame('Not JSON', $error->getMessage());
     }
 
     public function testAFailureAfterTheRequestWasReadIsRespondedToThroughTheExchangeRead(): void
@@ -167,10 +170,13 @@ final class ServiceRunnerTest extends TestCase
         $httpResponse = (new ServiceRunner($this->service, $client, $logger))->handle(HttpRequests::to('MiniPAVI'));
 
         self::assertSame(500, $httpResponse->getStatusCode());
-        self::assertSame([LogLevel::CRITICAL, 'Cannot send the response: Connection reset'], [
+        self::assertSame([LogLevel::CRITICAL, 'Cannot send the response'], [
             $logger->records[0][0],
             $logger->records[0][1],
         ]);
+        $error = $logger->records[0][2]['exception'] ?? null;
+        self::assertInstanceOf(\Throwable::class, $error);
+        self::assertSame('Connection reset', $error->getMessage());
     }
 
     /**
