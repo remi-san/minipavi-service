@@ -164,11 +164,11 @@ final readonly class HtmlRenderer
     }
 
     /**
-     * A mosaic character, drawn as its pixels: separated ones when it is underlined
+     * A mosaic character, drawn as its pixels: separated ones when they are (Attributes)
      */
     private static function mosaic(Cell $cell): string
     {
-        $classes = $cell->attributes->isUnderlined() ? 'm sep' : 'm';
+        $classes = $cell->attributes->isSeparated() ? 'm sep' : 'm';
 
         return '<span class="' . $classes . '">' . self::pixels($cell->bytes) . '</span>';
     }

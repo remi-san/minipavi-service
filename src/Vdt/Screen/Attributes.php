@@ -154,6 +154,14 @@ final readonly class Attributes
         return $this->values['underline'] === self::UNDERLINE;
     }
 
+    /**
+     * Whether a mosaic character is drawn with separated pixels: underlining, in mosaic
+     */
+    public function isSeparated(): bool
+    {
+        return $this->isMosaic() && $this->isUnderlined();
+    }
+
     public function isInverse(): bool
     {
         return $this->values['inverse'] === self::INVERSE;
