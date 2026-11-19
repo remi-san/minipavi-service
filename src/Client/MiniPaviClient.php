@@ -5,9 +5,13 @@ declare(strict_types=1);
 namespace MiniPaviService\Client;
 
 use MiniPavi\MiniPaviCli;
+use MiniPaviService\Gateway\CallMode;
 use MiniPaviService\Gateway\Client;
 use MiniPaviService\Gateway\GatewayRequest;
+use MiniPaviService\Gateway\InputCommand;
+use MiniPaviService\Minitel\FunctionKey;
 use MiniPaviService\Minitel\Terminal;
+use MiniPaviService\Vdt\Vdt;
 use Psr\Http\Message\ServerRequestInterface;
 
 /**
@@ -15,7 +19,8 @@ use Psr\Http\Message\ServerRequestInterface;
  * gateway's request itself (MiniPaviCli::start(), from the body of the HTTP request), and
  * writes the response itself (MiniPaviCli::send()): what it writes is captured as the body of
  * the HTTP response, which the Kernel sends. It sends input commands as MiniPavi's (InputTxt,
- * InputMsg). With Vdt (its Videotex helpers), the only class calling MiniPaviCli.
+ * InputMsg). With Vdt (its Videotex helpers), the only class calling MiniPaviCli: the exchange
+ * (MiniPaviExchange) and the commands (MiniPaviCommandWriter) go through it.
  */
 final class MiniPaviClient implements Client
 {
@@ -30,12 +35,44 @@ final class MiniPaviClient implements Client
     {
         MiniPaviCli::start(ignoreWMState: false);
 
-        return new MiniPaviExchange($this->decoded(), $serviceUrl);
+        return new MiniPaviExchange($this, $this->decoded(), $serviceUrl);
     }
 
     public function unreadable(string $serviceUrl): MiniPaviExchange
     {
-        return new MiniPaviExchange(new GatewayRequest(null), $serviceUrl);
+        return new MiniPaviExchange($this, new GatewayRequest(null), $serviceUrl);
+    }
+
+    /**
+     * What MiniPaviCli::send() writes for a response, captured: the content and the context,
+     * the URL the gateway calls next, and what it does before
+     *
+     * @param ?InputCommand $input field the gateway reads, as MiniPavi's InputTxt or InputMsg
+     * @param ?CallMode $directCall calls next at once, without waiting for the user
+     */
+    public function send(
+        Vdt $vdt,
+        string $next,
+        string $context,
+        ?InputCommand $input = null,
+        ?CallMode $directCall = null,
+    ): string {
+        ob_start();
+        try {
+            MiniPaviCli::send(
+                $vdt->toString(),
+                $next,
+                $context,
+                // The gateway echoes what the user types: no response turns it off
+                echo: true,
+                cmd: $input === null ? null : self::inputCmd($input),
+                directCall: $directCall->value ?? false,
+            );
+        } finally {
+            $body = (string) ob_get_clean();
+        }
+
+        return $body;
     }
 
     /**
@@ -56,6 +93,40 @@ final class MiniPaviClient implements Client
                 self::textOrNull(MiniPaviCli::$typeSocket),
                 self::textOrNull(MiniPaviCli::$versionMinitel),
             ),
+        );
+    }
+
+    /**
+     * MiniPavi's command reading the field: InputTxt for a text field, InputMsg for a message
+     *
+     * @return array<string, mixed>
+     */
+    private static function inputCmd(InputCommand $command): array
+    {
+        $field = $command->field;
+        $validWith = FunctionKey::masks(...$field->validWith);
+        if ($field->isMessage()) {
+            return MiniPaviCli::createInputMsgCmd(
+                $field->span->start->col,
+                $field->span->start->row,
+                $field->span->length,
+                $field->lines,
+                $validWith,
+                $field->cursor,
+                $field->spaceChar,
+                $command->prefill,
+            );
+        }
+
+        return MiniPaviCli::createInputTxtCmd(
+            $field->span->start->col,
+            $field->span->start->row,
+            $field->span->length,
+            $validWith,
+            $field->cursor,
+            $field->spaceChar,
+            char: '',
+            preFill: $command->prefill[0] ?? '',
         );
     }
 

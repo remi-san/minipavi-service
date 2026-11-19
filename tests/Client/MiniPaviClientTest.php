@@ -219,6 +219,27 @@ final class MiniPaviClientTest extends TestCase
         self::assertArrayNotHasKey('COMMAND', $connect);
     }
 
+    public function testIsTheOnlyFacadeOfMiniPaviCli(): void
+    {
+        // Besides Vdt's Videotex helpers, which don't touch the gateway's request or response
+        $src = \dirname(__DIR__, levels: 2) . '/src/';
+        $files = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator($src, flags: \FilesystemIterator::SKIP_DOTS),
+        );
+        $users = [];
+        foreach ($files as $file) {
+            // A file's info is its path as text
+            $path = (string) $file;
+            if (!str_contains((string) file_get_contents($path), 'MiniPavi\\MiniPaviCli')) {
+                continue;
+            }
+            $users[] = substr($path, \strlen($src));
+        }
+        sort($users);
+
+        self::assertSame(['Client/MiniPaviClient.php', 'Vdt/Vdt.php'], $users);
+    }
+
     /**
      * What the client writes for the response, decoded
      *
@@ -226,7 +247,11 @@ final class MiniPaviClientTest extends TestCase
      */
     private function sent(GatewayResponse $response, ?ClientExchange $exchange = null): array
     {
-        $exchange ??= new MiniPaviExchange(new GatewayRequest(FunctionKey::Send), self::SERVICE_URL);
+        $exchange ??= new MiniPaviExchange(
+            new MiniPaviClient(),
+            new GatewayRequest(FunctionKey::Send),
+            self::SERVICE_URL,
+        );
         ob_start();
         try {
             $httpResponse = $exchange->respond($response);
