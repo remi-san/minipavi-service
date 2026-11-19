@@ -15,7 +15,8 @@ use MiniPaviService\Vdt\Screen\Cursor;
  * at the end of a row goes 2 rows down (Cursor::advance()); a move right (HT) from the last
  * column goes 1 row down, as BS, LF and VT do. SO and SI set the size back to normal and
  * turn off inverse video and separation (SO also underline), and a size or inverse video
- * received in mosaic is discarded. What Screen and Offset are built on.
+ * received in mosaic is discarded. Underline in text is a zone's, which a delimiter starts
+ * (Screen\Zone). What Screen and Offset are built on.
  *
  * @internal
  */
@@ -40,9 +41,7 @@ final readonly class Player
                         continue 2;
                     }
                     for ($n = 0; $n < ($repeat ? $token->count : 1); $n++) {
-                        $width = $cursor->attributes()->width();
-                        $listener->glyph($cursor->row(), $cursor->col(), $bytes, $width, $cursor->attributes());
-                        $cursor->advance($width);
+                        $this->draw($cursor, $bytes, $listener);
                     }
                     $last = $bytes;
                     continue 2;
@@ -66,5 +65,21 @@ final readonly class Player
             // A copy: what the listener does with it doesn't move what follows
             $listener->sequence($token, clone $cursor);
         }
+    }
+
+    /**
+     * Draws a character at the cursor, or a delimiter (Cursor::delimits()), and moves past it
+     */
+    private function draw(Cursor $cursor, string $bytes, ScreenListener $listener): void
+    {
+        $width = $cursor->attributes()->width();
+        if (!$cursor->delimits($bytes)) {
+            $listener->glyph($cursor->row(), $cursor->col(), $bytes, $width, $cursor->attributes());
+            $cursor->advance($width);
+            return;
+        }
+        $cursor->delimit();
+        $listener->delimiter($cursor->row(), $cursor->col(), $width, $cursor->attributes(), $cursor->zone());
+        $cursor->advance($width);
     }
 }

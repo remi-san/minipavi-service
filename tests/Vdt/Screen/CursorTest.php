@@ -8,6 +8,7 @@ use MiniPaviService\Minitel\Color;
 use MiniPaviService\Minitel\ScreenSize;
 use MiniPaviService\Vdt\Screen\Attributes;
 use MiniPaviService\Vdt\Screen\Cursor;
+use MiniPaviService\Vdt\Screen\Zone;
 use PHPUnit\Framework\TestCase;
 
 final class CursorTest extends TestCase
@@ -87,5 +88,42 @@ final class CursorTest extends TestCase
         $cursor->advance(1);
 
         self::assertSame([4, 1], [$cursor->row(), $cursor->col()]);
+    }
+
+    public function testUnderlineInTextWaitsForADelimiter(): void
+    {
+        $cursor = new Cursor();
+        $cursor->reset(5, col: 1);
+        $cursor->setAttribute(Attributes::UNDERLINE);
+
+        // Not the next character's: the zone's that the next space starts
+        self::assertEquals(Attributes::defaults(), $cursor->attributes());
+        self::assertFalse($cursor->delimits('A'));
+        self::assertTrue($cursor->delimits(' '));
+        $cursor->delimit();
+        self::assertTrue($cursor->zone()->isUnderlined());
+        self::assertFalse($cursor->delimits(' '));
+    }
+
+    public function testNoDelimiterInMosaic(): void
+    {
+        $cursor = new Cursor();
+        $cursor->reset(5, col: 1);
+        $cursor->setCharset("\x0E");
+        // Masking waits, in mosaic too
+        $cursor->setAttribute(Attributes::MASK);
+
+        self::assertFalse($cursor->delimits(' '));
+    }
+
+    public function testPositioningDropsTheZone(): void
+    {
+        $cursor = new Cursor();
+        $cursor->setAttribute(Attributes::UNDERLINE);
+        $cursor->delimit();
+        $cursor->setAttribute(Attributes::UNDERLINE);
+        $cursor->reset(5, col: 1);
+
+        self::assertEquals(Zone::none(), $cursor->zone());
     }
 }

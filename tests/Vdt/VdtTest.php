@@ -9,6 +9,7 @@ use MiniPaviService\Minitel\ScreenSize;
 use MiniPaviService\Vdt\Player;
 use MiniPaviService\Vdt\Screen\Attributes;
 use MiniPaviService\Vdt\Screen\Cursor;
+use MiniPaviService\Vdt\Screen\Zone;
 use MiniPaviService\Vdt\ScreenListener;
 use MiniPaviService\Vdt\Token;
 use MiniPaviService\Vdt\Vdt;
@@ -108,16 +109,33 @@ final class VdtTest extends TestCase
 
     public function testOffsetKeepsInverseAndUnderlineSetAfterSi(): void
     {
-        // Row 10: ESC ], ESC Z, A, SO, a mosaic character, SI, ESC ], ESC Z, B: SO and SI
-        // turn them off, so offset() must send them after the SI again (#26)
-        $moved = (new Vdt("\x1F\x4A\x41\x1B\x5D\x1B\x5AA\x0E\x7F\x0F\x1B\x5D\x1B\x5AB"))
+        // Row 10: ESC ], ESC Z, a space, A, SO, a mosaic character, SI, ESC ], ESC Z, a space,
+        // B: SO and SI turn them off, so offset() must send them after the SI again (#26), and
+        // the mosaic cell ends the zone, so the space after it must start it again (#28)
+        $moved = (new Vdt("\x1F\x4A\x41\x1B\x5D\x1B\x5A A\x0E\x7F\x0F\x1B\x5D\x1B\x5A B"))
             ->offset(x: 0, y: 2)
             ->screen();
 
-        $b = $moved->cell(row: 12, col: 3) ?? self::fail('Nothing at row 12, column 3');
+        $b = $moved->cell(row: 12, col: 5) ?? self::fail('Nothing at row 12, column 5');
         self::assertSame('B', $b->bytes);
         self::assertTrue($b->attributes->isInverse());
         self::assertTrue($b->attributes->isUnderlined());
+    }
+
+    public function testOffsetWritesDelimitersAgain(): void
+    {
+        // Row 10: ESC Z, a space, A, B, ESC Y, C, a space (ending the zone), D: moved, each
+        // delimiter is sent again with its ESC Z or ESC Y just before it (#28)
+        $vdt = new Vdt("\x1F\x4A\x41\x1B\x5A AB\x1B\x59C D");
+
+        self::assertSame("\x1F\x4A\x41\x1B\x5A ABC\x1B\x59 D", $vdt->offset(x: 0, y: 0)->toString());
+        $moved = $vdt->offset(x: 2, y: 1)->screen();
+        $underlined = array_map(
+            static fn(int $col): bool => $moved->cell(row: 11, col: $col)?->attributes->isUnderlined() === true,
+            range(3, end: 8),
+        );
+        // Columns 3 to 8: the delimiter, A, B, C, the delimiter, D
+        self::assertSame([false, true, true, true, false, false], $underlined);
     }
 
     public function testOffsetDropsWhatGoesOffTheScreenInsteadOfWrapping(): void
@@ -281,6 +299,11 @@ final class VdtTest extends TestCase
                 for ($i = 0; $i < $width; $i++) {
                     $this->columns[$row][$col + $i] = [$col, $width];
                 }
+            }
+
+            public function delimiter(int $row, int $col, int $width, Attributes $attributes, Zone $zone): void
+            {
+                $this->glyph($row, $col, bytes: ' ', width: $width, attributes: $attributes);
             }
 
             public function sequence(Token $sequence, Cursor $cursor): void {}

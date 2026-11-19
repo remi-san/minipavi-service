@@ -11,6 +11,9 @@ use MiniPaviService\Vdt\Videotex;
  * Character attributes of a cell, as Videotex content sets them: the charset (text or mosaic),
  * the colours, the size, blinking, masking, underlining and inverse video. A positioning (US),
  * a home (RS) or a clear screen (FF) sets them back to defaults(). Immutable.
+ *
+ * Underlining is the separation of mosaic characters. In text, it is a zone's (Zone): the
+ * cursor doesn't set it, and the Screen's cells have it when their zone is underlined.
  */
 final readonly class Attributes
 {
@@ -175,6 +178,30 @@ final readonly class Attributes
     public static function appliesInMosaic(string $byte): bool
     {
         return !\in_array(self::group($byte), ['size', 'inverse'], strict: true);
+    }
+
+    /**
+     * Whether ESC byte sets underlining, or separation in mosaic: ESC Z or ESC Y
+     */
+    public static function isUnderline(string $byte): bool
+    {
+        return self::group($byte) === 'underline';
+    }
+
+    /**
+     * Whether ESC byte sets the background colour: ESC P to ESC W
+     */
+    public static function isBackground(string $byte): bool
+    {
+        return self::group($byte) === 'bg';
+    }
+
+    /**
+     * Whether ESC byte sets masking: ESC X or ESC _
+     */
+    public static function isMask(string $byte): bool
+    {
+        return self::group($byte) === 'mask';
     }
 
     /**

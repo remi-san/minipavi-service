@@ -6,6 +6,7 @@ namespace MiniPaviService\Vdt;
 
 use MiniPaviService\Vdt\Screen\Attributes;
 use MiniPaviService\Vdt\Screen\Cursor;
+use MiniPaviService\Vdt\Screen\Zone;
 
 /**
  * Told by Player what Videotex content does on the screen, as it plays it
@@ -18,6 +19,12 @@ interface ScreenListener
      * A character drawn at row, col (each repetition of REP too), width cells wide
      */
     public function glyph(int $row, int $col, string $bytes, int $width, Attributes $attributes): void;
+
+    /**
+     * A delimiter drawn at row, col, width cells wide: a space starting zone, up to the next
+     * delimiter, mosaic or empty cell of its row
+     */
+    public function delimiter(int $row, int $col, int $width, Attributes $attributes, Zone $zone): void;
 
     /**
      * Any other sequence (a move, an attribute, a clear...), once the cursor has followed it

@@ -6,6 +6,7 @@ namespace MiniPaviService\Vdt;
 
 use MiniPaviService\Minitel\ScreenSize;
 use MiniPaviService\Vdt\Screen\Attributes;
+use MiniPaviService\Vdt\Screen\Zone;
 
 /**
  * Writes Videotex content cell by cell: positions the cursor only where the next character
@@ -32,6 +33,19 @@ final class Writer
         $this->moveTo($row, $col);
         $this->setAttributes($attributes);
         $this->put($bytes);
+        $this->movePast($col, $width);
+    }
+
+    /**
+     * A delimiter: a space starting zone, made one by ESC Z or ESC Y just before it
+     * (Zone::delimiterCodes())
+     */
+    public function delimiter(int $row, int $col, int $width, Attributes $attributes, Zone $zone): void
+    {
+        $this->moveTo($row, $col);
+        $this->setAttributes($attributes);
+        $this->send($zone->delimiterCodes());
+        $this->put(' ');
         $this->movePast($col, $width);
     }
 

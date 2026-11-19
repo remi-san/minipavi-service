@@ -7,6 +7,7 @@ namespace MiniPaviService\Tests\Vdt;
 use MiniPaviService\Vdt\Player;
 use MiniPaviService\Vdt\Screen\Attributes;
 use MiniPaviService\Vdt\Screen\Cursor;
+use MiniPaviService\Vdt\Screen\Zone;
 use MiniPaviService\Vdt\ScreenListener;
 use MiniPaviService\Vdt\Token;
 use MiniPaviService\Vdt\TokenType;
@@ -25,6 +26,8 @@ final class PlayerTest extends TestCase
             {
                 $this->glyphs[] = [$row, $col];
             }
+
+            public function delimiter(int $row, int $col, int $width, Attributes $attributes, Zone $zone): void {}
 
             public function sequence(Token $sequence, Cursor $cursor): void
             {
@@ -47,6 +50,11 @@ final class PlayerTest extends TestCase
             public int $glyphs = 0;
 
             public function glyph(int $row, int $col, string $bytes, int $width, Attributes $attributes): void
+            {
+                $this->glyphs++;
+            }
+
+            public function delimiter(int $row, int $col, int $width, Attributes $attributes, Zone $zone): void
             {
                 $this->glyphs++;
             }

@@ -95,6 +95,17 @@ final readonly class Cell
     ) {}
 
     /**
+     * This text cell as shown in zone (ScreenCells): underlined if the zone is
+     */
+    public function inZone(Zone $zone): self
+    {
+        return new self(
+            $this->bytes,
+            $this->attributes->with($zone->isUnderlined() ? Attributes::UNDERLINE : Attributes::NO_UNDERLINE),
+        );
+    }
+
+    /**
      * The character as text (UTF-8): text characters as they are, G2 ones decoded (an
      * accented letter with its accent; ? for one unknown), mosaic cells as # when they have
      * pixels or a background color, a space otherwise

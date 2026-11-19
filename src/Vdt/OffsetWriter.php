@@ -7,6 +7,7 @@ namespace MiniPaviService\Vdt;
 use MiniPaviService\Minitel\ScreenSize;
 use MiniPaviService\Vdt\Screen\Attributes;
 use MiniPaviService\Vdt\Screen\Cursor;
+use MiniPaviService\Vdt\Screen\Zone;
 
 /**
  * Writes again (Writer) what content draws, moved by x columns right and y rows down: what
@@ -46,6 +47,15 @@ final readonly class OffsetWriter implements ScreenListener
         if ($moved !== null) {
             [$row, $col, $attributes] = $moved;
             $this->out->glyph($row, $col, $bytes, $attributes->width(), $attributes);
+        }
+    }
+
+    public function delimiter(int $row, int $col, int $width, Attributes $attributes, Zone $zone): void
+    {
+        $moved = $this->moved($row, $col, $attributes);
+        if ($moved !== null) {
+            [$row, $col, $attributes] = $moved;
+            $this->out->delimiter($row, $col, $attributes->width(), $attributes, $zone);
         }
     }
 
