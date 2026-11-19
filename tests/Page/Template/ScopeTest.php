@@ -7,6 +7,8 @@ namespace MiniPaviService\Tests\Page\Template;
 use MiniPaviService\InvalidValueException;
 use MiniPaviService\Page\Parser\AttributeValues;
 use MiniPaviService\Page\Template\Scope;
+use MiniPaviService\Tests\Support\PrivateProperties;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class ScopeTest extends TestCase
@@ -82,6 +84,48 @@ final class ScopeTest extends TestCase
         $this->expectException(InvalidValueException::class);
         $this->expectExceptionMessage('no "city" in class@anonymous');
         $scope->value('game.city');
+    }
+
+    /**
+     * @return iterable<string, array{string}>
+     */
+    public static function nonPublicProperties(): iterable
+    {
+        yield 'a private property' => ['city'];
+        yield 'a protected property' => ['nickname'];
+    }
+
+    #[DataProvider('nonPublicProperties')]
+    public function testDoesntReadPropertiesThatArentPublic(string $name): void
+    {
+        $scope = new Scope(['user' => new PrivateProperties()]);
+        self::assertSame('Léa', $scope->value('user.name'));
+
+        // Unknown, as from outside the object: not an \Error reading it
+        $this->expectException(InvalidValueException::class);
+        $this->expectExceptionMessage(
+            "unknown variable {{user.{$name}}}: no \"{$name}\" in " . PrivateProperties::class,
+        );
+        $scope->value("user.{$name}");
+    }
+
+    public function testReadsAPrivatePropertyItGivesThroughGet(): void
+    {
+        $user = new class {
+            private string $city = 'Lyon';
+
+            public function __isset(string $name): bool
+            {
+                return $name === 'city';
+            }
+
+            public function __get(string $name): string
+            {
+                return "in {$this->city}";
+            }
+        };
+
+        self::assertSame('in Lyon', (new Scope(['user' => $user]))->value('user.city'));
     }
 
     public function testWithAddsVariablesAndChangesTheRowOffset(): void

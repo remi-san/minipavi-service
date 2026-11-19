@@ -20,6 +20,7 @@ use MiniPaviService\Page\Parser\PageXmlException;
 use MiniPaviService\Page\Parser\PageXmlParser;
 use MiniPaviService\Page\Template\TemplateException;
 use MiniPaviService\Tests\Support\FailingProperties;
+use MiniPaviService\Tests\Support\PrivateProperties;
 use MiniPaviService\Tests\Support\StarsElements;
 use MiniPaviService\Tests\Support\TestMessage;
 use MiniPaviService\Vdt\Vdt;
@@ -311,6 +312,17 @@ final class PageXmlParserTest extends TestCase
         $this->expectExceptionMessage('list.xml line 2: <text>: Row 30 is off the screen (0 to 24)');
 
         $page->display(new Terminal(), ['row' => 30]);
+    }
+
+    public function testPrivatePropertyIsAnUnknownVariableOfTheTemplate(): void
+    {
+        $page = $this->parse("<page type=\"template\">\n<text row=\"1\">{{user.city}}</text></page>", name: 'user.xml');
+
+        $this->expectException(TemplateException::class);
+        $this->expectExceptionMessage('user.xml line 2: <text>: unknown variable {{user.city}}: no "city" in '
+        . PrivateProperties::class);
+
+        $page->display(new Terminal(), ['user' => new PrivateProperties()]);
     }
 
     public function testInvalidValueOfAServiceElementGivesTheLine(): void
