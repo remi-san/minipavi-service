@@ -39,8 +39,9 @@ final class Service
      * @param ContextSerializer $serializer of the context of the responses and requests, for
      *                                      the same router, signing it (e.g. with
      *                                      HmacContextSigner)
-     * @param int $maxPageChanges page changes (ChangePage) allowed in one request: more is
-     *                            taken as controllers changing to each other endlessly
+     * @param int $maxPageChanges page changes (Response::goTo()) allowed in one request:
+     *                            more is taken as controllers changing to each other
+     *                            endlessly
      * @param ?LoggerInterface $logger where connections, disconnections and errors are logged;
      *                                 none by default
      *
