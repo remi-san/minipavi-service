@@ -89,15 +89,7 @@ final class Cursor
      */
     public function advance(int $columns): void
     {
-        $this->col += $columns;
-        if ($this->col > ScreenSize::COLS) {
-            if ($this->row === 0) {
-                $this->col = ScreenSize::COLS;
-                return;
-            }
-            $this->col = 1;
-            $this->row = $this->row === ScreenSize::ROWS ? 1 : $this->row + 1;
-        }
+        $this->right($columns, rows: 1);
     }
 
     /**
@@ -128,5 +120,23 @@ final class Cursor
                 $this->col = 1;
                 break;
         }
+    }
+
+    /**
+     * Moves right by columns, wrapping past the last column rows down, cycling through rows 1
+     * to ScreenSize::ROWS (row 0 stays on its last column)
+     */
+    private function right(int $columns, int $rows): void
+    {
+        $this->col += $columns;
+        if ($this->col <= ScreenSize::COLS) {
+            return;
+        }
+        if ($this->row === 0) {
+            $this->col = ScreenSize::COLS;
+            return;
+        }
+        $this->col = 1;
+        $this->row = (($this->row - 1 + $rows) % ScreenSize::ROWS) + 1;
     }
 }
