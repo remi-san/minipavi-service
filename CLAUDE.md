@@ -52,32 +52,43 @@ moved ones link to them as `remi-san/minipavi-stack#<n>`. For each issue:
 
 ## Working with agents
 
-The issues are worked on by two agents, defined in `.claude/agents/`, each in its own git
-worktree: a **developer**, who resolves the issue and opens its PR, and a **reviewer**, who
-reviews that PR. Both are strong in architecture, OOP and testing, and follow this file. The
-main session doesn't write the code: it starts the agents, carries messages between them,
-and keeps the user informed. The order of the issues is the pinned roadmap, #80.
+The issues are worked on by three agents, defined in `.claude/agents/`, each in its own git
+worktree: a **developer**, who resolves the issue and opens its PR, a **reviewer**, who
+reviews that PR, and a **tester**, who checks in the MiniPavi emulator what a Minitel shows
+with it. The developer and the reviewer are strong in architecture, OOP and testing; all three
+follow this file. The main session doesn't write the code: it starts the agents, carries
+messages between them, and keeps the user informed. It does write the Claude files
+(`CLAUDE.md`, `.claude/`) itself. The order of the issues is the pinned roadmap, #80.
 
 1. **Start on the user's word.** When the user says to start an issue (or the next one on
    the roadmap), start a new developer: the `Agent` tool with `subagent_type: "developer"`
    and `isolation: "worktree"`, giving it the issue number and any decision the user has
-   already made. One issue at a time.
+   already made. One issue at a time. Say then whether the issue changes what a Minitel
+   shows (the bytes written, a page's layout, the Videotex engine), and so needs the tester.
 2. **Questions go to the user.** When the developer reports a question or an ambiguity, ask
    the user (with the developer's options and recommendation), and send the answer back with
    `SendMessage`, to the same developer.
 3. **Review once the PR is pushed.** When the developer reports its PR, start a new reviewer
-   (`subagent_type: "reviewer"`, `isolation: "worktree"`) with the PR and issue numbers.
+   (`subagent_type: "reviewer"`, `isolation: "worktree"`) with the PR and issue numbers. When
+   the issue changes what a Minitel shows, start a new tester too (`subagent_type: "tester"`,
+   `isolation: "worktree"`), with the PR and issue numbers and any case to check. Its report
+   goes to the reviewer with the developer's answer, from the next round on.
 4. **Relay every round.** Give the user each review's verdict and findings (numbered,
-   blocking or not, and the developer's answer to each from round 2 on), then carry on
+   blocking or not, and the developer's answer to each from round 2 on), and the tester's
+   verdict and cases (what the emulator showed on `main` and on the branch), then carry on
    without waiting, unless the user steps in.
-5. **Loop until approved.** On `CHANGES REQUESTED`, send the findings, unedited, to the same
-   developer (`SendMessage`). When it has pushed, send its answer to the same reviewer for
-   the next round. Keep both agents for the whole issue, so they keep their context.
-6. **Three rounds at most.** A round is one review. If the reviewer hasn't approved after the
-   third, stop and ask the user what to do: list each open finding with both sides'
-   arguments, and your own view.
-7. **Approved: hand over.** Tell the user the PR is ready, with its link and a summary of the
-   rounds. The user reviews and merges it; the agents never merge.
+5. **Loop until approved.** On `CHANGES REQUESTED`, or a case the tester says doesn't show
+   as expected (a blocking finding), send the findings, unedited, to the same developer
+   (`SendMessage`). When it has pushed, send its answer to the same reviewer, and to the same
+   tester when the screen may have changed, for the next round. Keep the agents for the whole
+   issue, so they keep their context.
+6. **Three rounds at most.** A round is one review (and the tester's check with it). If the
+   reviewer hasn't approved, or the tester still sees a blocking case, after the third, stop
+   and ask the user what to do: list each open finding with both sides' arguments, and your
+   own view.
+7. **Approved: hand over.** Once the reviewer approves and the tester (if any) sees what the
+   issue expects, tell the user the PR is ready, with its link and a summary of the rounds.
+   The user reviews and merges it; the agents never merge.
 
 ## Commit messages: Karma convention
 
