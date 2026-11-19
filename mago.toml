@@ -43,3 +43,197 @@ excessive-parameter-list = { enabled = false }
 cyclomatic-complexity = { enabled = false }
 halstead = { enabled = false }
 kan-defect = { enabled = false }
+
+# Layers of src/, each using only those below it (mago guard, in composer analyse). At the
+# bottom, the helpers; then Minitel (the terminal's facts) <- Vdt (Videotex, and the screen it
+# draws) <- Gateway (what MiniPavi sends and is sent); Message (texts) beside them; Page
+# (presentation) <- Controller <- Core (routing, context, service) <- Http; Client (how commands
+# reach the gateway) <- Http; Cli and Testing at the top. Each rule lists all the layers its
+# namespace may use (its own, those below it, and theirs), and the libraries it uses.
+[guard]
+mode = "perimeter"
+
+[guard.perimeter.layers]
+helpers = [
+    "MiniPaviService\\InvalidValueException",
+    "MiniPaviService\\Text\\**",
+    "MiniPaviService\\Io\\**",
+    "MiniPaviService\\Xml\\**",
+    "MiniPaviService\\Html\\**",
+]
+minitel = ["MiniPaviService\\Minitel\\**"]
+vdt = ["MiniPaviService\\Vdt\\**"]
+gateway = ["MiniPaviService\\Gateway\\**"]
+message = ["MiniPaviService\\Message\\**"]
+# A layer's root type (MiniPaviService\Page) belongs to it
+page = ["MiniPaviService\\Page", "MiniPaviService\\Page\\**"]
+controller = ["MiniPaviService\\Controller", "MiniPaviService\\Controller\\**"]
+core = ["MiniPaviService\\Core\\**"]
+client = ["MiniPaviService\\Client\\**"]
+http = ["MiniPaviService\\Http\\**"]
+cli = ["MiniPaviService\\Cli\\**"]
+testing = ["MiniPaviService\\Testing\\**"]
+# Libraries
+psr-http = ["Psr\\Http\\**"]
+psr-log = ["Psr\\Log\\**"]
+nyholm = ["Nyholm\\**"]
+minipavi-cli = ["MiniPavi\\MiniPaviCli"]
+symfony-console = ["Symfony\\Component\\Console\\**"]
+phpunit = ["PHPUnit\\**"]
+
+[[guard.perimeter.rules]]
+namespace = "MiniPaviService\\Text\\"
+permit = ["@native", "MiniPaviService\\InvalidValueException", "MiniPaviService\\Text\\**"]
+
+[[guard.perimeter.rules]]
+namespace = "MiniPaviService\\Io\\"
+permit = ["@native", "MiniPaviService\\InvalidValueException", "MiniPaviService\\Io\\**"]
+
+[[guard.perimeter.rules]]
+namespace = "MiniPaviService\\Xml\\"
+permit = ["@native", "MiniPaviService\\InvalidValueException", "MiniPaviService\\Xml\\**"]
+
+[[guard.perimeter.rules]]
+namespace = "MiniPaviService\\Html\\"
+permit = ["@native", "MiniPaviService\\InvalidValueException", "MiniPaviService\\Html\\**"]
+
+[[guard.perimeter.rules]]
+namespace = "MiniPaviService\\Minitel\\"
+permit = [
+    "@native",
+    "@layer:helpers",
+    "@layer:minitel",
+    # Key::connectionCode() (and FunctionKey's), until #49 removes it
+    "MiniPaviService\\Gateway\\ConnectionCode",
+]
+
+[[guard.perimeter.rules]]
+namespace = "MiniPaviService\\Vdt\\"
+permit = ["@native", "@layer:helpers", "@layer:minitel", "@layer:vdt"]
+
+[[guard.perimeter.rules]]
+namespace = "MiniPaviService\\Gateway\\"
+permit = ["@native", "@layer:helpers", "@layer:minitel", "@layer:vdt", "@layer:gateway", "@layer:psr-http"]
+
+[[guard.perimeter.rules]]
+namespace = "MiniPaviService\\Message\\"
+permit = ["@native", "@layer:helpers", "@layer:minitel", "@layer:message"]
+
+[[guard.perimeter.rules]]
+namespace = "MiniPaviService\\Page\\"
+permit = ["@native", "@layer:helpers", "@layer:minitel", "@layer:vdt", "@layer:gateway", "@layer:message", "@layer:page"]
+
+[[guard.perimeter.rules]]
+namespace = "MiniPaviService\\Controller\\"
+permit = [
+    "@native",
+    "@layer:helpers",
+    "@layer:minitel",
+    "@layer:vdt",
+    "@layer:gateway",
+    "@layer:message",
+    "@layer:page",
+    "@layer:controller",
+]
+
+# The root types: the Page and Controller interfaces (each of its layer), InvalidValueException
+[[guard.perimeter.rules]]
+namespace = "MiniPaviService\\"
+permit = [
+    "@native",
+    "@layer:helpers",
+    "@layer:minitel",
+    "@layer:vdt",
+    "@layer:gateway",
+    "@layer:message",
+    "@layer:page",
+    "@layer:controller",
+]
+
+[[guard.perimeter.rules]]
+namespace = "MiniPaviService\\Core\\"
+permit = [
+    "@native",
+    "@layer:helpers",
+    "@layer:minitel",
+    "@layer:vdt",
+    "@layer:gateway",
+    "@layer:message",
+    "@layer:page",
+    "@layer:controller",
+    "@layer:core",
+    "@layer:psr-log",
+]
+
+[[guard.perimeter.rules]]
+namespace = "MiniPaviService\\Client\\"
+permit = [
+    "@native",
+    "@layer:helpers",
+    "@layer:minitel",
+    "@layer:vdt",
+    "@layer:gateway",
+    "@layer:message",
+    "@layer:client",
+    "@layer:psr-http",
+    "@layer:nyholm",
+    "@layer:minipavi-cli",
+]
+
+[[guard.perimeter.rules]]
+namespace = "MiniPaviService\\Http\\"
+permit = [
+    "@native",
+    "@layer:helpers",
+    "@layer:minitel",
+    "@layer:vdt",
+    "@layer:gateway",
+    "@layer:message",
+    "@layer:page",
+    "@layer:controller",
+    "@layer:core",
+    "@layer:client",
+    "@layer:http",
+    "@layer:psr-http",
+    "@layer:psr-log",
+    "@layer:nyholm",
+]
+
+[[guard.perimeter.rules]]
+namespace = "MiniPaviService\\Cli\\"
+permit = [
+    "@native",
+    "@layer:helpers",
+    "@layer:minitel",
+    "@layer:vdt",
+    "@layer:gateway",
+    "@layer:message",
+    "@layer:page",
+    "@layer:cli",
+    "@layer:symfony-console",
+]
+
+[[guard.perimeter.rules]]
+namespace = "MiniPaviService\\Testing\\"
+permit = [
+    "@native",
+    "@layer:helpers",
+    "@layer:minitel",
+    "@layer:vdt",
+    "@layer:gateway",
+    "@layer:message",
+    "@layer:page",
+    "@layer:controller",
+    "@layer:core",
+    "@layer:testing",
+    "@layer:phpunit",
+]
+
+# The tests, bin/minipavi and the tools use anything
+[[guard.perimeter.rules]]
+namespace = "MiniPaviService\\Tests\\"
+permit = ["@all"]
+
+[[guard.perimeter.rules]]
+namespace = "@global"
+permit = ["@all"]
