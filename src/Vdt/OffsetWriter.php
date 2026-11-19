@@ -17,20 +17,20 @@ use MiniPaviService\Vdt\Screen\Zones;
  * it is in, so that the Writer keeps it (as far as it can: a zone whose delimiter goes off the
  * screen starts again at its first space).
  *
- * Its Writer keeps where it is and what it wrote, so it listens to one content only: it is
- * only built, and played to, by write().
+ * Its Writer keeps where it is and what it wrote (so it isn't readonly), so it listens to one
+ * content only: it is only built, and played to, by write().
  *
  * @internal
  */
-final readonly class OffsetWriter implements ScreenListener
+final class OffsetWriter implements ScreenListener
 {
-    private Writer $out;
+    private readonly Writer $out;
     // The zones of the content, where it draws them (not moved)
-    private Zones $zones;
+    private readonly Zones $zones;
 
     private function __construct(
-        private int $x,
-        private int $y,
+        private readonly int $x,
+        private readonly int $y,
     ) {
         $this->out = new Writer();
         $this->zones = new Zones();
