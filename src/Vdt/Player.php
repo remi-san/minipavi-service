@@ -23,6 +23,13 @@ use MiniPaviService\Vdt\Screen\Cursor;
 final readonly class Player
 {
     /**
+     * @param Parser $parser cuts the content into tokens; stateless, so one can be shared
+     */
+    public function __construct(
+        private Parser $parser = new Parser(),
+    ) {}
+
+    /**
      * Plays the content, telling the listener each character drawn (repetitions included),
      * delimiter or CAN, and the other tokens once the cursor has followed them (a copy of the
      * cursor)
@@ -31,7 +38,7 @@ final readonly class Player
     {
         $cursor = new Cursor();
         $last = null;
-        foreach ((new Parser())->parse($vdt->toString()) as $token) {
+        foreach ($this->parser->parse($vdt->toString()) as $token) {
             switch ($token->type) {
                 case TokenType::Glyph:
                 case TokenType::Repeat:
