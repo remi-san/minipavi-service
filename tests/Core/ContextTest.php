@@ -106,6 +106,16 @@ final class ContextTest extends TestCase
         );
     }
 
+    public function testTheCurrentRouteIsKeptOnceUsed(): void
+    {
+        $context = new Context($this->router, 'search');
+
+        self::assertSame([], $context->kept());
+        self::assertSame(SearchState::Init, $context->state());
+        // The same one as state() read, at its initial state
+        self::assertEquals(['search' => new KeptRoute(SearchState::Init, new PageParameters())], $context->kept());
+    }
+
     public function testLeavingForARouteStartsBothControllersAgain(): void
     {
         $context = new Context($this->router, 'home', [

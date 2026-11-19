@@ -28,9 +28,9 @@ final class Context
     ) {}
 
     /**
-     * What each route keeps (those whose controller ran or was restored), by route: its state
-     * and parameters, typed by its controller, as snapshots the caller can't change the context
-     * with
+     * What each route keeps (the current one once used, and those restored), by route: its
+     * state and parameters, typed by its controller, as snapshots the caller can't change the
+     * context with
      *
      * @return array<string, KeptRoute<State, Parameters>>
      */
@@ -94,9 +94,7 @@ final class Context
      */
     public function keep(?State $state, ?Parameters $parameters): void
     {
-        $route = $this->current();
-        $route->keep($state, $parameters);
-        $this->routes[$this->route] = $route;
+        $this->current()->keep($state, $parameters);
     }
 
     /**
@@ -111,10 +109,13 @@ final class Context
     }
 
     /**
+     * What the current route keeps: started on first use if it kept nothing, then kept, so
+     * that state(), parameters(), keep() and run() all work on the same one
+     *
      * @return RouteContext<State, Parameters>
      */
     private function current(): RouteContext
     {
-        return $this->routes[$this->route] ?? $this->router->route($this->route)->start();
+        return $this->routes[$this->route] ??= $this->router->route($this->route)->start();
     }
 }
