@@ -85,6 +85,8 @@ final class RequestUrlTest extends TestCase
         yield 'empty entries' => [' , 10.0.0.5 ,', '10.0.0.5', 'https'];
         // E.g. a Unix socket: not trusted
         yield 'not an IP address' => ['10.0.0.0/8', 'unix:/run/php.sock', 'http'];
+        // Taken by some systems' inet_pton() (macOS) as 10.0.0.1
+        yield 'leading zeros' => ['10.0.0.0/8', '010.0.0.1', 'http'];
     }
 
     #[DataProvider('proxies')]
@@ -163,6 +165,9 @@ final class RequestUrlTest extends TestCase
         yield 'an empty prefix' => ['10.0.0.0/'];
         yield 'two prefixes' => ['10.0.0.0/8/16'];
         yield 'a malformed address' => ['10.0.0/8'];
+        // Taken by some systems' inet_pton() (macOS), not by others (Linux)
+        yield 'leading zeros' => ['010.0.0.1'];
+        yield 'a zone index' => ['fe80::1%en0'];
     }
 
     #[DataProvider('invalidProxies')]
