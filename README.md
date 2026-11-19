@@ -854,11 +854,9 @@ or write, a wrong command line). The commands are Symfony `Command`s, in `Cli\`.
 The code is checked with [Mago](https://mago.carthage.software) (`mago.toml`): its formatter
 (PER Coding Style, 120 columns, one import per `use`), and its linter and static analyzer,
 which fail on any issue, notes included. `mago.toml` says why each rule turned off or ignored
-is, the ignored ones only in the files where they occur. Issues known when a rule was turned
-on are in `lint-baseline.toml`: not reported, but the linter fails on new ones, and on an entry
-whose issue was fixed (regenerate it with `vendor/bin/mago lint --generate-baseline`).
-`stubs/MiniPaviCli.php` gives the
-types `MiniPaviCli` doesn't declare (a patch of the library's class). Every file has
+is, the ignored ones only in the files where they occur. There is no baseline of known
+issues: a rule is turned on with its issues fixed. `stubs/MiniPaviCli.php` gives the types
+`MiniPaviCli` doesn't declare (a patch of the library's class). Every file has
 `declare(strict_types=1)`.
 
 ```sh

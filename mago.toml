@@ -34,9 +34,6 @@ ignore = [
 [linter]
 # Fails on any issue, notes included
 minimum-fail-level = "Note"
-# Issues known when a rule was turned on, not reported (mago lint --generate-baseline). New ones
-# fail: fix them rather than adding them here
-baseline = "lint-baseline.toml"
 
 [linter.rules]
 # Size and complexity metrics are not enforced: display elements take their XML attributes as
