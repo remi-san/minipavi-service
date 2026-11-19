@@ -6,6 +6,7 @@ namespace MiniPaviService\Vdt\Screen;
 
 use MiniPaviService\Html\Html;
 use MiniPaviService\Io\Files;
+use MiniPaviService\Minitel\ScreenSize;
 use MiniPaviService\Page\Display\Color;
 
 /**
@@ -64,8 +65,8 @@ final readonly class HtmlRenderer
     public function render(Screen $screen, string $overlay = ''): string
     {
         $cells = '';
-        for ($row = 0; $row <= Screen::ROWS; $row++) {
-            for ($col = 1; $col <= Screen::COLS; $col++) {
+        for ($row = 0; $row <= ScreenSize::ROWS; $row++) {
+            for ($col = 1; $col <= ScreenSize::COLS; $col++) {
                 $cell = $screen->cell($row, $col);
                 $cells .= $this->cell($cell, $row);
                 if ($cell !== null && $cell->attributes->width() === 2) {

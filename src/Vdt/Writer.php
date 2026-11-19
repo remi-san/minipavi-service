@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Vdt;
 
+use MiniPaviService\Minitel\ScreenSize;
 use MiniPaviService\Vdt\Screen\Attributes;
-use MiniPaviService\Vdt\Screen\Screen;
 
 /**
  * Writes Videotex content cell by cell: positions the cursor only where the next character
@@ -34,7 +34,7 @@ final class Writer
         $this->put($bytes);
         // At col since moveTo()
         $this->col = $col + $width;
-        if ($this->col > Screen::COLS) {
+        if ($this->col > ScreenSize::COLS) {
             // The screen wraps there, but the next character may be elsewhere
             $this->row = null;
             $this->col = null;

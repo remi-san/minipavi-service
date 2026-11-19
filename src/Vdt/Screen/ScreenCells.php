@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Vdt\Screen;
 
+use MiniPaviService\Minitel\ScreenSize;
 use MiniPaviService\Vdt\Player;
 use MiniPaviService\Vdt\ScreenListener;
 use MiniPaviService\Vdt\Token;
@@ -25,7 +26,7 @@ final class ScreenCells implements ScreenListener
 
     private function __construct()
     {
-        $this->cells = array_fill(0, Screen::ROWS + 1, self::emptyRow());
+        $this->cells = array_fill(0, ScreenSize::ROWS + 1, self::emptyRow());
     }
 
     /**
@@ -43,10 +44,10 @@ final class ScreenCells implements ScreenListener
 
     public function glyph(int $row, int $col, string $bytes, int $width, Attributes $attributes): void
     {
-        if ($row < 0 || $row > Screen::ROWS) {
+        if ($row < 0 || $row > ScreenSize::ROWS) {
             return;
         }
-        for ($i = 0; $i < $width && ($col + $i) <= Screen::COLS; $i++) {
+        for ($i = 0; $i < $width && ($col + $i) <= ScreenSize::COLS; $i++) {
             $this->cells[$row][$col + $i] = new Cell($bytes, $attributes);
         }
     }
@@ -55,14 +56,14 @@ final class ScreenCells implements ScreenListener
     {
         if ($sequence->type === TokenType::Clear) {
             // The status line stays
-            for ($row = 1; $row <= Screen::ROWS; $row++) {
+            for ($row = 1; $row <= ScreenSize::ROWS; $row++) {
                 $this->cells[$row] = self::emptyRow();
             }
         }
         $row = $cursor->row();
-        if ($sequence->type === TokenType::ClearLine && $row >= 0 && $row <= Screen::ROWS) {
+        if ($sequence->type === TokenType::ClearLine && $row >= 0 && $row <= ScreenSize::ROWS) {
             $attributes = $cursor->attributes();
-            for ($col = $cursor->col(); $col <= Screen::COLS; $col++) {
+            for ($col = $cursor->col(); $col <= ScreenSize::COLS; $col++) {
                 $this->cells[$row][$col] = new Cell(' ', $attributes);
             }
         }
@@ -73,6 +74,6 @@ final class ScreenCells implements ScreenListener
      */
     private static function emptyRow(): array
     {
-        return array_fill(1, Screen::COLS, value: null);
+        return array_fill(1, ScreenSize::COLS, value: null);
     }
 }

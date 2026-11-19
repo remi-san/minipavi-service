@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Vdt\Screen;
 
+use MiniPaviService\Minitel\ScreenSize;
 use MiniPaviService\Vdt\Videotex;
 
 /**
@@ -21,7 +22,7 @@ final class Cursor
     }
 
     /**
-     * Row of the cursor: 0 (the status row) to Screen::ROWS
+     * Row of the cursor: 0 (the status row) to ScreenSize::ROWS
      */
     public function row(): int
     {
@@ -89,13 +90,13 @@ final class Cursor
     public function advance(int $columns): void
     {
         $this->col += $columns;
-        if ($this->col > Screen::COLS) {
+        if ($this->col > ScreenSize::COLS) {
             if ($this->row === 0) {
-                $this->col = Screen::COLS;
+                $this->col = ScreenSize::COLS;
                 return;
             }
             $this->col = 1;
-            $this->row = $this->row === Screen::ROWS ? 1 : $this->row + 1;
+            $this->row = $this->row === ScreenSize::ROWS ? 1 : $this->row + 1;
         }
     }
 
@@ -110,18 +111,18 @@ final class Cursor
             case Videotex::CURSOR_LEFT:
                 $this->col--;
                 if ($this->col < 1) {
-                    $this->col = Screen::COLS;
-                    $this->row = $this->row <= 1 ? Screen::ROWS : $this->row - 1;
+                    $this->col = ScreenSize::COLS;
+                    $this->row = $this->row <= 1 ? ScreenSize::ROWS : $this->row - 1;
                 }
                 break;
             case Videotex::CURSOR_RIGHT:
                 $this->advance(1);
                 break;
             case Videotex::CURSOR_DOWN:
-                $this->row = $this->row >= Screen::ROWS ? 1 : $this->row + 1;
+                $this->row = $this->row >= ScreenSize::ROWS ? 1 : $this->row + 1;
                 break;
             case Videotex::CURSOR_UP:
-                $this->row = $this->row <= 1 ? Screen::ROWS : $this->row - 1;
+                $this->row = $this->row <= 1 ? ScreenSize::ROWS : $this->row - 1;
                 break;
             case Videotex::CARRIAGE_RETURN:
                 $this->col = 1;

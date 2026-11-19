@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace MiniPaviService\Page\Display;
 
 use MiniPaviService\Minitel\Position;
+use MiniPaviService\Minitel\ScreenSize;
 use MiniPaviService\Minitel\Terminal;
-use MiniPaviService\Vdt\Screen\Screen;
 use MiniPaviService\Vdt\Vdt;
 use MiniPaviService\Vdt\Videotex;
 
@@ -71,6 +71,6 @@ final readonly class Text implements Element
     {
         $width = mb_strlen($this->text) * $charWidth;
 
-        return $width >= Screen::COLS ? 1 : intdiv(Screen::COLS - $width, num2: 2) + 1;
+        return $width >= ScreenSize::COLS ? 1 : intdiv(ScreenSize::COLS - $width, num2: 2) + 1;
     }
 }

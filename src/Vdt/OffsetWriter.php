@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Vdt;
 
+use MiniPaviService\Minitel\ScreenSize;
 use MiniPaviService\Vdt\Screen\Attributes;
 use MiniPaviService\Vdt\Screen\Cursor;
-use MiniPaviService\Vdt\Screen\Screen;
 
 /**
  * Writes again (Writer) what content draws, moved by x columns right and y rows down: what
@@ -46,7 +46,7 @@ final readonly class OffsetWriter implements ScreenListener
         if ($row !== 0) {
             $row += $this->y;
             $col += $this->x;
-            if ($row < 1 || $row > Screen::ROWS) {
+            if ($row < 1 || $row > ScreenSize::ROWS) {
                 return;
             }
             // Written with a size the Minitel accepts on the row it is moved to (no ESC M or ESC O
@@ -54,7 +54,7 @@ final readonly class OffsetWriter implements ScreenListener
             $attributes = $attributes->writableOn($row);
             $width = $attributes->width();
         }
-        if ($col < 1 || ($col + $width - 1) > Screen::COLS) {
+        if ($col < 1 || ($col + $width - 1) > ScreenSize::COLS) {
             return;
         }
         $this->out->glyph($row, $col, $bytes, $width, $attributes);
@@ -84,18 +84,18 @@ final readonly class OffsetWriter implements ScreenListener
             return;
         }
         $row = $cursor->row() + $this->y;
-        if ($row < 1 || $row > Screen::ROWS) {
+        if ($row < 1 || $row > ScreenSize::ROWS) {
             return;
         }
         // CAN clears up to the last column: moved left, the cleared cells must stop before the
         // columns that came from beyond the screen, so they are written as spaces instead
         if ($this->x < 0) {
-            for ($cleared = max(1, $col + $this->x); $cleared <= (Screen::COLS + $this->x); $cleared++) {
+            for ($cleared = max(1, $col + $this->x); $cleared <= (ScreenSize::COLS + $this->x); $cleared++) {
                 $this->out->glyph($row, $cleared, bytes: ' ', width: 1, attributes: $attributes);
             }
             return;
         }
-        if (($col + $this->x) <= Screen::COLS) {
+        if (($col + $this->x) <= ScreenSize::COLS) {
             $this->out->clearLine($row, $col + $this->x, $attributes);
         }
     }

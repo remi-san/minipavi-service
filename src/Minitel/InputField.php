@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace MiniPaviService\Minitel;
 
 use MiniPaviService\InvalidValueException;
-use MiniPaviService\Vdt\Screen\Screen;
 
 /**
  * Field of the Minitel screen where the user types, validated with one of the validWith keys
@@ -30,8 +29,10 @@ final readonly class InputField
         public string $spaceChar = '.',
     ) {
         $row = $span->start->row;
-        if ($lines < 1 || ($row + $lines - 1) > Screen::ROWS) {
-            throw new InvalidValueException("Input of {$lines} lines from row {$row} goes past row " . Screen::ROWS);
+        if ($lines < 1 || ($row + $lines - 1) > ScreenSize::ROWS) {
+            throw new InvalidValueException(
+                "Input of {$lines} lines from row {$row} goes past row " . ScreenSize::ROWS,
+            );
         }
     }
 

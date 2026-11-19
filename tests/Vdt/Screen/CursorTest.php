@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Tests\Vdt\Screen;
 
+use MiniPaviService\Minitel\ScreenSize;
 use MiniPaviService\Page\Display\Color;
 use MiniPaviService\Vdt\Screen\Attributes;
 use MiniPaviService\Vdt\Screen\Cursor;
-use MiniPaviService\Vdt\Screen\Screen;
 use PHPUnit\Framework\TestCase;
 
 final class CursorTest extends TestCase
@@ -62,7 +62,7 @@ final class CursorTest extends TestCase
     public function testAdvanceWrapsToTheNextRow(): void
     {
         $cursor = new Cursor();
-        $cursor->reset(3, col: Screen::COLS);
+        $cursor->reset(3, col: ScreenSize::COLS);
         $cursor->advance(1);
 
         self::assertSame([4, 1], [$cursor->row(), $cursor->col()]);
