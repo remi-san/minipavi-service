@@ -8,11 +8,13 @@ use MiniPaviService\InvalidValueException;
 use MiniPaviService\Minitel\Color;
 use MiniPaviService\Minitel\Position;
 use MiniPaviService\Minitel\ScreenSize;
+use MiniPaviService\Tests\Vdt\Screen\ScreenTest;
 use MiniPaviService\Vdt\Offset;
 use MiniPaviService\Vdt\Screen\Screen;
 use MiniPaviService\Vdt\Vdt;
 use MiniPaviService\Vdt\Videotex;
 use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\DataProviderExternal;
 use PHPUnit\Framework\TestCase;
 
 final class VdtTest extends TestCase
@@ -242,6 +244,20 @@ final class VdtTest extends TestCase
         );
         self::assertSame('', trim(Screen::of((new Offset(x: 37, y: 0))->apply($abcde))->line(2)));
         self::assertSame('', trim(Screen::of((new Offset(x: 0, y: -1))->apply(new Vdt("\x1F\x41\x41ABC")))->text()));
+    }
+
+    #[DataProviderExternal(ScreenTest::class, 'sequencesDrawingNothing')]
+    public function testOffsetKeepsTheSequencesThatDrawNothing(string $sequence): void
+    {
+        $moved = (new Offset(x: 1, y: 1))
+            ->apply(new Vdt("\x1F\x41\x41{$sequence}A"))
+            ->toString();
+
+        // Sent whole, and only the A after it shown, moved
+        self::assertStringContainsString($sequence, $moved);
+        $screen = Screen::of(new Vdt($moved));
+        self::assertSame('A', trim($screen->text()));
+        self::assertStringStartsWith(' A ', $screen->line(2));
     }
 
     public function testOffsetDoesNotMoveTheStatusRow(): void
