@@ -24,6 +24,17 @@ final class ValuesTest extends TestCase
         yield 'int' => [2, 2];
         yield 'negative int' => [-3, -3];
         yield 'integer text' => ['12', 12];
+        yield 'negative integer text' => ['-12', -12];
+        yield 'integer text with a plus sign' => ['+3', 3];
+        yield 'integer text with leading zeros' => ['008', 8];
+        yield 'negative integer text with leading zeros' => ['-008', -8];
+        yield 'zeros' => ['000', 0];
+        yield 'negative zero' => ['-0', 0];
+        yield 'integer text too large after its zeros' => ['0099999999999999999999', 7];
+        yield 'sign alone' => ['-', 7];
+        yield 'two signs' => ['+-3', 7];
+        yield 'integer text with spaces' => [' 12', 7];
+        yield 'integer text with a newline' => ["12\n", 7];
         yield 'integral float' => [3.0, 3];
         yield 'missing' => [null, 7];
         yield 'float' => [2.5, 7];
