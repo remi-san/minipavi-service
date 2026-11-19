@@ -82,14 +82,14 @@ final class Cursor
     }
 
     /**
-     * Moves right after a character, or a move right: wraps to the next row, from the last
-     * one to the first (row 0 stays on its last column)
+     * Moves right after a character: wraps to the next row of text, as many rows down as the
+     * character is tall (Attributes::height()), as the Minitel does
      *
-     * @param int $columns the width of the character, or 1
+     * @param int $width the width of the character
      */
-    public function advance(int $columns): void
+    public function advance(int $width): void
     {
-        $this->right($columns, rows: 1);
+        $this->right($width, rows: $this->attributes->height());
     }
 
     /**
@@ -108,7 +108,8 @@ final class Cursor
                 }
                 break;
             case Videotex::CURSOR_RIGHT:
-                $this->advance(1);
+                // 1 row down from the last column, even in double height
+                $this->right(1, rows: 1);
                 break;
             case Videotex::CURSOR_DOWN:
                 $this->row = $this->row >= ScreenSize::ROWS ? 1 : $this->row + 1;

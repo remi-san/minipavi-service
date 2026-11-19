@@ -202,4 +202,74 @@ final class ScreenTest extends TestCase
         self::assertSame($doubleWidth, $cell->attributes->isDoubleWidth());
         self::assertSame($color, $cell->attributes->foreground());
     }
+
+    /**
+     * A character wrapping at the end of a row in double height or double size: the next row
+     * of text is 2 rows down, from 1 to ScreenSize::ROWS and around (checked in MiniPavi's
+     * emulator, #7)
+     *
+     * @return iterable<string, array{int, int, string, list<array{int, int, string}>}>
+     */
+    public static function tallWraps(): iterable
+    {
+        // A, B, C on row 10; D and E on row 12, the text carrying on along it
+        yield 'mid-screen' => [
+            10,
+            38,
+            Videotex::SIZE_DOUBLE_HEIGHT . 'ABCDE',
+            [[10, 40, 'C'], [12, 1, 'D'], [12, 2, 'E']],
+        ];
+        // R and S in two columns each, on row 13
+        yield 'double size' => [13, 37, Videotex::SIZE_DOUBLE . 'RST', [[13, 39, 'S'], [15, 1, 'T']]];
+        yield 'from the last row' => [24, 38, Videotex::SIZE_DOUBLE_HEIGHT . 'ABCDE', [[2, 1, 'D'], [2, 2, 'E']]];
+        // Drawn tall on row 1, over row 0
+        yield 'to row 1' => [23, 39, Videotex::SIZE_DOUBLE_HEIGHT . 'abc', [[23, 40, 'b'], [1, 1, 'c']]];
+        // Double height set on row 2, brought onto row 1 by a VT
+        yield 'from row 1' => [
+            2,
+            40,
+            Videotex::SIZE_DOUBLE_HEIGHT . Videotex::CURSOR_UP . 'JK',
+            [[1, 40, 'J'], [3, 1, 'K']],
+        ];
+    }
+
+    /**
+     * @param string $sent after positioning the cursor at row, col
+     * @param list<array{int, int, string}> $drawn row, column and character of tall cells
+     */
+    #[DataProvider('tallWraps')]
+    public function testTallCharacterWrapsTwoRowsDown(int $row, int $col, string $sent, array $drawn): void
+    {
+        $screen = Vdt::join(Vdt::position($col, $row), new Vdt($sent))->screen();
+
+        foreach ($drawn as [$atRow, $atCol, $char]) {
+            $cell = $screen->cell($atRow, $atCol) ?? self::fail("Nothing at row {$atRow}, column {$atCol}");
+            self::assertSame($char, $cell->bytes, "Row {$atRow}, column {$atCol}");
+            self::assertTrue($cell->attributes->isDoubleHeight());
+        }
+    }
+
+    public function testMosaicCharacterWrapsOneRowDownInDoubleHeight(): void
+    {
+        // Row 10, column 40: ESC M, SO, then two mosaic characters, which are never tall
+        $screen = Vdt::join(
+            Vdt::position(40, row: 10),
+            new Vdt(Videotex::SIZE_DOUBLE_HEIGHT . Videotex::MOSAIC_SET . "\x7F\x21"),
+        )->screen();
+
+        self::assertSame("\x21", $screen->cell(11, col: 1)?->bytes);
+        self::assertNull($screen->cell(12, col: 1));
+    }
+
+    public function testMoveRightWrapsOneRowDownInDoubleHeight(): void
+    {
+        // Row 20, column 39: ESC M, O, HT from column 40 to row 21 (not 22), Q
+        $screen = Vdt::join(
+            Vdt::position(39, row: 20),
+            new Vdt(Videotex::SIZE_DOUBLE_HEIGHT . 'O' . Videotex::CURSOR_RIGHT . 'Q'),
+        )->screen();
+
+        self::assertSame('Q', $screen->cell(21, col: 1)?->bytes);
+        self::assertNull($screen->cell(22, col: 1));
+    }
 }

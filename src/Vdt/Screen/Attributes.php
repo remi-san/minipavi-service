@@ -191,6 +191,15 @@ final readonly class Attributes
     }
 
     /**
+     * Rows taken by a character: double height only applies to text characters, as on the
+     * Minitel (which ignores ESC M and ESC O for mosaic)
+     */
+    public function height(): int
+    {
+        return $this->isDoubleHeight() && !$this->isMosaic() ? 2 : 1;
+    }
+
+    /**
      * Videotex codes setting these attributes where current ones are: the charset (SI or SO),
      * then ESC <byte> for each other attribute that differs; '' if none does
      */

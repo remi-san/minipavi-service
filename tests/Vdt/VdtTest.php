@@ -82,6 +82,18 @@ final class VdtTest extends TestCase
         self::assertSame('', trim($moved->line(1) . $moved->line(2)));
     }
 
+    public function testOffsetMovesATallCharacterWrappedTwoRowsDown(): void
+    {
+        // Row 10, column 39: ESC M, F, G, then H wrapped to row 12 (#7), moved 2 rows down
+        $moved = (new Vdt("\x1F\x4A\x67\x1B\x4DFGH"))
+            ->offset(x: 0, y: 2)
+            ->screen();
+
+        self::assertSame('G', $moved->cell(row: 12, col: 40)?->bytes);
+        self::assertSame('H', $moved->cell(row: 14, col: 1)?->bytes);
+        self::assertTrue($moved->cell(row: 14, col: 1)?->attributes->isDoubleHeight());
+    }
+
     public function testOffsetDropsWhatGoesOffTheScreenInsteadOfWrapping(): void
     {
         $abcde = new Vdt("\x1F\x41\x41ABCDE");
