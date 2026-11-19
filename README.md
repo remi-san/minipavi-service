@@ -431,6 +431,17 @@ KernelBuilder::for($router, $messages)
   `ControllerState::ReadInput`: a controller with its own enum gives them one of its states,
   as `SearchController` does below.
 
+  Static analysis checks it (Mago, which the framework is checked with): a response is typed by the states it keeps
+  (`Response<ControllerState>`, `Response<SearchState>`), and `run()` returns a
+  `Response<TState>` of the controller's. A response keeping another enum's state, such as the
+  default `ReadInput` in `SearchController`, is reported there, instead of failing at run
+  time. A method returning a response for the controller says which, e.g.
+  `@return Response<SearchState>` (an `AbstractController`'s `onDisplay()` and
+  `onReadInput()` already return `Response<ControllerState>`). `ChangePage` keeps no state
+  (`Response<never>`): any controller can return it. To keep the initial state with
+  `new DisplayPage()`, give it (`SearchState::Init`) rather than `null`, which the analyzer
+  types as the default.
+
   ```php
   final readonly class DirectoryParameters implements Parameters
   {

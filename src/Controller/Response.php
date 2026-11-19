@@ -22,6 +22,14 @@ use MiniPaviService\Gateway\GatewayResponse;
  * state, as the defaults are ControllerState's), and a Parameters object of the class it
  * declares (null: the defaults). ChangePage's parameters are the target controller's. A
  * service can add its own responses the same way.
+ *
+ * A response is typed by the states it keeps (TState: Response<ControllerState>, or the
+ * controller's enum), and Controller::run() returns a Response of the controller's, so that
+ * static analysis reports a response keeping another enum's state, e.g. the ReadInput a
+ * controller with its own enum didn't replace. ChangePage keeps none (Response<never>), so it
+ * is any controller's.
+ *
+ * @template-covariant TState of State
  */
 abstract readonly class Response
 {
@@ -29,6 +37,8 @@ abstract readonly class Response
      * What comes next: keep a state and parameters for this controller (Flow::keep()), then
      * respond to the gateway (Flow::respond()) or run another controller (Flow::goTo()); gives
      * the gateway response the request ends with
+     *
+     * @param Flow<TState> $flow
      */
     abstract public function continueWith(Flow $flow): GatewayResponse;
 }

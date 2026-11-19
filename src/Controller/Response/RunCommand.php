@@ -21,6 +21,10 @@ use MiniPaviService\Vdt\Vdt;
  * (readInput()), what the user types coming back to this controller; or calling another
  * service (connectTo()), this controller's state and parameters kept for when the user comes
  * back
+ *
+ * @template-covariant TState of State
+ *
+ * @extends KeepingResponse<TState>
  */
 final readonly class RunCommand extends KeepingResponse
 {
@@ -28,7 +32,7 @@ final readonly class RunCommand extends KeepingResponse
      * @param Vdt $vdt Videotex content (empty: none)
      * @param Command $command e.g. Page::inputCommand(); WaitForKeyCommand: only the content is
      *                         sent
-     * @param ?State $state state this controller keeps (null: its initial state); given, as
+     * @param ?TState $state state this controller keeps (null: its initial state); given, as
      *                      it depends on the command: ControllerState::ReadInput to read
      *                      what an InputCommand brings back
      * @param ?Parameters $parameters parameters this controller keeps; null: their defaults
@@ -47,6 +51,12 @@ final readonly class RunCommand extends KeepingResponse
      * without input: only the content is sent); what is typed comes back to this controller,
      * in the state kept: ControllerState::ReadInput by default, which a controller with its
      * own State enum replaces with one of its states
+     *
+     * @template T of State = ControllerState::ReadInput
+     *
+     * @param T $state
+     *
+     * @return self<T>
      */
     public static function readInput(
         Vdt $vdt,
@@ -61,6 +71,12 @@ final readonly class RunCommand extends KeepingResponse
      * Connects the user to another service, at url, after showing vdt (e.g. a message on
      * line 0). state and parameters are kept for this controller, for when the user comes
      * back; null: its initial state, and the defaults of its parameters.
+     *
+     * @template T of State
+     *
+     * @param ?T $state
+     *
+     * @return ($state is null ? self<never> : self<T>)
      */
     public static function connectTo(
         string $url,

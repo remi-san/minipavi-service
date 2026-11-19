@@ -43,6 +43,8 @@ interface Controller
 
     /**
      * @param Request<TState, TParameters> $request
+     *
+     * @return Response<TState>
      */
     public function run(Request $request): Response;
 }

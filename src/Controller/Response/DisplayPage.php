@@ -13,14 +13,20 @@ use MiniPaviService\Vdt\Vdt;
 
 /**
  * Sends Videotex content to the gateway; the next key comes back to this controller
+ *
+ * @template-covariant TState of State = ControllerState::ReadInput
+ *
+ * @extends KeepingResponse<TState>
  */
 final readonly class DisplayPage extends KeepingResponse
 {
     /**
      * @param Vdt $vdt Videotex content
-     * @param ?State $state state this controller keeps (null: its initial state); by default,
+     * @param ?TState $state state this controller keeps (null: its initial state); by default,
      *                      it reads the next input (ControllerState::ReadInput: a
-     *                      controller with its own State enum gives one of its states)
+     *                      controller with its own State enum gives one of its states;
+     *                      static analysis types null as the default too, so it gives
+     *                      its initialState() rather than null)
      * @param ?Parameters $parameters parameters this controller keeps; null: their defaults
      */
     public function __construct(

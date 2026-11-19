@@ -13,6 +13,8 @@ use MiniPaviService\Vdt\Vdt;
 
 /**
  * A response the framework doesn't have: clears the screen, then shows vdt
+ *
+ * @extends KeepingResponse<ControllerState>
  */
 final readonly class ClearAndShow extends KeepingResponse
 {
