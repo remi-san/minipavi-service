@@ -20,9 +20,6 @@ use MiniPaviService\Minitel\Position;
  */
 final readonly class Vdt
 {
-    // Most repetitions a REP's count (0x40 + count, a 7-bit byte) gives
-    private const MAX_REPEAT = 0x3F;
-
     /**
      * @param string $bytes Videotex, as sent; '' for nothing
      */
@@ -91,9 +88,9 @@ final readonly class Vdt
         }
         $bytes = $char;
         $more = $count - 1;
-        while ($more > self::MAX_REPEAT) {
-            $bytes .= Videotex::REPEAT . \chr(0x40 + self::MAX_REPEAT);
-            $more -= self::MAX_REPEAT;
+        while ($more > Videotex::MAX_REPEAT) {
+            $bytes .= Videotex::REPEAT . \chr(0x40 + Videotex::MAX_REPEAT);
+            $more -= Videotex::MAX_REPEAT;
         }
 
         return new self($bytes . Videotex::REPEAT . \chr(0x40 + $more));

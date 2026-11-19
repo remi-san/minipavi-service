@@ -12,6 +12,7 @@ use MiniPaviService\Vdt\Screen\Attributes;
  * Screen\Attributes names) and sequences. Most are MiniPaviCli's VDT_* constants (CodesTest
  * checks them); HOME, ESC, SEP, SS3 and the mask codes have none. Some are sent as they are;
  * ESC, POSITION, REPEAT, G2, SEP and SS3 start a sequence, with more bytes after them.
+ * MAX_REPEAT is not a code: the most repetitions one REP gives.
  */
 final class Videotex
 {
@@ -29,6 +30,8 @@ final class Videotex
     public const POSITION = "\x1F";
     // REP: repeats the last character, followed by the count (0x40 + n)
     public const REPEAT = "\x12";
+    // Most repetitions one REP gives: its count, 0x40 + n, stays a 7-bit byte (0x7F)
+    public const MAX_REPEAT = 0x3F;
     // SI and SO: the text (G0) and mosaic (G1) character sets
     public const TEXT_SET = "\x0F";
     public const MOSAIC_SET = "\x0E";
