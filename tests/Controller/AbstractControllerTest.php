@@ -11,6 +11,7 @@ use MiniPaviService\Controller\Parameters\NoParameters;
 use MiniPaviService\Controller\Parameters\ParametersType;
 use MiniPaviService\Controller\Request;
 use MiniPaviService\Controller\Response;
+use MiniPaviService\Controller\Response\DisplayPage;
 use MiniPaviService\Tests\Support\RecordingFlow;
 use MiniPaviService\Vdt\Vdt;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -50,22 +51,22 @@ final class AbstractControllerTest extends TestCase
 
             protected function onInit(Request $request): Response
             {
-                return Response::display(new Vdt('first'));
+                return new DisplayPage(new Vdt('first'));
             }
 
             protected function onDisplay(Request $request): Response
             {
-                return Response::display(new Vdt('display'));
+                return new DisplayPage(new Vdt('display'));
             }
 
             protected function onInitInput(Request $request): Response
             {
-                return Response::display(new Vdt('input'));
+                return new DisplayPage(new Vdt('input'));
             }
 
             protected function onReadInput(Request $request): Response
             {
-                return Response::display(new Vdt('read'));
+                return new DisplayPage(new Vdt('read'));
             }
         };
 
@@ -86,12 +87,12 @@ final class AbstractControllerTest extends TestCase
 
             protected function onDisplay(Request $request): Response
             {
-                return Response::display(Vdt::text('page ' . $request->parameters()->page));
+                return new DisplayPage(Vdt::text('page ' . $request->parameters()->page));
             }
 
             protected function onReadInput(Request $request): Response
             {
-                return Response::display(new Vdt('read'));
+                return new DisplayPage(new Vdt('read'));
             }
         };
 
@@ -115,12 +116,12 @@ final class AbstractControllerTest extends TestCase
 
             protected function onDisplay(Request $request): Response
             {
-                return Response::display(new Vdt('display'));
+                return new DisplayPage(new Vdt('display'));
             }
 
             protected function onReadInput(Request $request): Response
             {
-                return Response::display(new Vdt('read'));
+                return new DisplayPage(new Vdt('read'));
             }
         };
     }

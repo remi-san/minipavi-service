@@ -7,7 +7,7 @@ namespace MiniPaviService\Tests\Http;
 use MiniPaviService\Client\MiniPaviClient;
 use MiniPaviService\Controller\Parameters\NoParameters;
 use MiniPaviService\Controller\Request;
-use MiniPaviService\Controller\Response;
+use MiniPaviService\Controller\Response\DisplayPage;
 use MiniPaviService\Core\ContextSerializer;
 use MiniPaviService\Core\RouterBuilder;
 use MiniPaviService\Core\Service;
@@ -38,9 +38,13 @@ final class ServiceRunnerTest extends TestCase
     protected function setUp(): void
     {
         $routes = new RouterBuilder('home');
-        $routes->addRoute('home', new CallbackController(NoParameters::class, static fn(
-            Request $request,
-        ) => Response::display(new Vdt('home'))));
+        $routes->addRoute(
+            'home',
+            new CallbackController(
+                NoParameters::class,
+                static fn(Request $request) => new DisplayPage(new Vdt('home')),
+            ),
+        );
         $router = $routes->build();
         $this->logger = new MemoryLogger();
         $this->service = new Service(
@@ -206,9 +210,13 @@ final class ServiceRunnerTest extends TestCase
     private function signingService(ContextSigner $signer): Service
     {
         $router = (new RouterBuilder('home'))
-            ->addRoute('home', new CallbackController(NoParameters::class, static fn(
-                Request $request,
-            ) => Response::display(new Vdt('home'))))
+            ->addRoute(
+                'home',
+                new CallbackController(
+                    NoParameters::class,
+                    static fn(Request $request) => new DisplayPage(new Vdt('home')),
+                ),
+            )
             ->build();
 
         return new Service(

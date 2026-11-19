@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Controller\Response;
 
+use MiniPaviService\Controller\ControllerState;
 use MiniPaviService\Controller\Flow;
 use MiniPaviService\Controller\Parameters\Parameters;
 use MiniPaviService\Controller\State;
@@ -17,11 +18,15 @@ final readonly class DisplayPage extends KeepingResponse
 {
     /**
      * @param Vdt $vdt Videotex content
+     * @param ?State $state state this controller keeps (null: its initial state); by default,
+     *                      it reads the next input (ControllerState::ReadInput: a
+     *                      controller with its own State enum gives one of its states)
+     * @param ?Parameters $parameters parameters this controller keeps; null: their defaults
      */
     public function __construct(
-        ?State $state,
-        ?Parameters $parameters,
         public Vdt $vdt,
+        ?State $state = ControllerState::ReadInput,
+        ?Parameters $parameters = null,
     ) {
         parent::__construct($state, $parameters);
     }

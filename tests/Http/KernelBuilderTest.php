@@ -6,7 +6,8 @@ namespace MiniPaviService\Tests\Http;
 
 use MiniPaviService\Controller\Parameters\NoParameters;
 use MiniPaviService\Controller\Request;
-use MiniPaviService\Controller\Response;
+use MiniPaviService\Controller\Response\ChangePage;
+use MiniPaviService\Controller\Response\DisplayPage;
 use MiniPaviService\Core\RouterBuilder;
 use MiniPaviService\Core\Signing\HmacContextSigner;
 use MiniPaviService\Http\Dispatch\ConditionalRequestHandler;
@@ -36,9 +37,15 @@ final class KernelBuilderTest extends TestCase
     protected function setUp(): void
     {
         $routes = new RouterBuilder('home');
-        $routes->addRoute('home', new CallbackController(NoParameters::class, static fn(
-            Request $request,
-        ) => Response::display(Vdt::position(new Position(row: 1))->append(Vdt::text('HOME')))));
+        $routes->addRoute(
+            'home',
+            new CallbackController(
+                NoParameters::class,
+                static fn(Request $request) => new DisplayPage(Vdt::position(new Position(row: 1))->append(Vdt::text(
+                    'HOME',
+                ))),
+            ),
+        );
         $router = $routes->build();
         $this->builder = KernelBuilder::for($router, (new MessagesXmlParser())->defaults());
     }
@@ -134,9 +141,10 @@ final class KernelBuilderTest extends TestCase
     {
         // home goes to itself, endlessly
         $routes = new RouterBuilder('home');
-        $routes->addRoute('home', new CallbackController(NoParameters::class, static fn(
-            Request $request,
-        ) => Response::goTo('home')));
+        $routes->addRoute(
+            'home',
+            new CallbackController(NoParameters::class, static fn(Request $request) => new ChangePage('home')),
+        );
         $logger = new MemoryLogger();
 
         self::serve(

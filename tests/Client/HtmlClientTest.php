@@ -8,7 +8,8 @@ use MiniPaviService\Client\HtmlClient;
 use MiniPaviService\Client\HtmlForm;
 use MiniPaviService\Controller\Parameters\NoParameters;
 use MiniPaviService\Controller\Request;
-use MiniPaviService\Controller\Response;
+use MiniPaviService\Controller\Response\ChangePage;
+use MiniPaviService\Controller\Response\DisplayPage;
 use MiniPaviService\Core\ContextSerializer;
 use MiniPaviService\Core\RouterBuilder;
 use MiniPaviService\Core\Service;
@@ -417,14 +418,18 @@ final class HtmlClientTest extends TestCase
         $routes->addRoute('home', new CallbackController(NoParameters::class, static fn(
             Request $request,
         ) => $request->functionKey() === FunctionKey::Send
-            ? Response::goTo('games')
-            : Response::display(Vdt::clearScreen()->append(Vdt::position(new Position(row: 1)), Vdt::text('HOME')))));
-        $routes->addRoute('games', new CallbackController(NoParameters::class, static fn(
-            Request $request,
-        ) => Response::display(Vdt::clearScreen()->append(
-            Vdt::position(new Position(row: 1)),
-            Vdt::text('GAMES ' . $request->contentAsString()),
-        ))));
+            ? new ChangePage('games')
+            : new DisplayPage(Vdt::clearScreen()->append(Vdt::position(new Position(row: 1)), Vdt::text('HOME')))));
+        $routes->addRoute(
+            'games',
+            new CallbackController(
+                NoParameters::class,
+                static fn(Request $request) => new DisplayPage(Vdt::clearScreen()->append(
+                    Vdt::position(new Position(row: 1)),
+                    Vdt::text('GAMES ' . $request->contentAsString()),
+                )),
+            ),
+        );
         $router = $routes->build();
         $runner = new ServiceRunner(
             new Service(

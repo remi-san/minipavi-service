@@ -7,6 +7,8 @@ namespace MiniPaviService\Tests\Controller;
 use MiniPaviService\Controller\ControllerState;
 use MiniPaviService\Controller\Pagination\PageParameters;
 use MiniPaviService\Controller\Response;
+use MiniPaviService\Controller\Response\ChangePage;
+use MiniPaviService\Controller\Response\DisplayPage;
 use MiniPaviService\Controller\Response\RunCommand;
 use MiniPaviService\Gateway\CallMode;
 use MiniPaviService\Gateway\InputCommand;
@@ -20,6 +22,7 @@ use MiniPaviService\Tests\Support\FromParameters;
 use MiniPaviService\Tests\Support\RecordingFlow;
 use MiniPaviService\Vdt\Vdt;
 use PHPUnit\Framework\TestCase;
+use ReflectionParameter;
 
 /**
  * What a response keeps, and what it asks the flow for: what the flow does is Service's
@@ -32,7 +35,7 @@ final class ResponseTest extends TestCase
         // null: the defaults of the controller's parameters
         self::assertSame(
             ['keep', ['state' => ControllerState::ReadInput, 'parameters' => null]],
-            $this->callsOf(Response::display(new Vdt('Hello')))[0],
+            $this->callsOf(new DisplayPage(new Vdt('Hello')))[0],
         );
     }
 
@@ -42,27 +45,27 @@ final class ResponseTest extends TestCase
 
         self::assertSame(
             ['keep', ['state' => ControllerState::ReadInput, 'parameters' => $parameters]],
-            $this->callsOf(Response::readInput(new Vdt('Code ?'), command: null, parameters: $parameters))[0],
+            $this->callsOf(RunCommand::readInput(new Vdt('Code ?'), command: null, parameters: $parameters))[0],
         );
     }
 
     public function testGoToKeepsNothing(): void
     {
         // The flow resets the controller left
-        self::assertSame(['goTo'], array_column($this->callsOf(Response::goTo('menu')), 0));
+        self::assertSame(['goTo'], array_column($this->callsOf(new ChangePage('menu')), 0));
     }
 
     public function testConnectToKeepsWhatItIsGivenForWhenTheUserComesBack(): void
     {
         self::assertSame(
             ['keep', ['state' => null, 'parameters' => null]],
-            $this->callsOf(Response::connectTo('https://example.org/service'))[0],
+            $this->callsOf(RunCommand::connectTo('https://example.org/service'))[0],
         );
 
         $parameters = new PageParameters(4);
         self::assertSame(
             ['keep', ['state' => ControllerState::Display, 'parameters' => $parameters]],
-            $this->callsOf(Response::connectTo(
+            $this->callsOf(RunCommand::connectTo(
                 'https://example.org/service',
                 state: ControllerState::Display,
                 parameters: $parameters,
@@ -76,13 +79,48 @@ final class ResponseTest extends TestCase
 
         self::assertSame(
             ['keep', ['state' => ControllerState::Display, 'parameters' => $parameters]],
-            $this->callsOf(Response::display(new Vdt('Hello'), ControllerState::Display, $parameters))[0],
+            $this->callsOf(new DisplayPage(new Vdt('Hello'), ControllerState::Display, $parameters))[0],
+        );
+    }
+
+    public function testRunCommandKeepsTheStateItIsGiven(): void
+    {
+        $command = new InputCommand(new InputField(new Span(new Position(2, 1), 4), validWith: [FunctionKey::Send]));
+
+        self::assertSame(
+            ['keep', ['state' => ControllerState::ReadInput, 'parameters' => null]],
+            $this->callsOf(new RunCommand(new Vdt('Code ?'), $command, ControllerState::ReadInput))[0],
+        );
+        self::assertSame(
+            ['keep', ['state' => null, 'parameters' => null]],
+            $this->callsOf(new RunCommand(new Vdt(), new WaitForKeyCommand(), null))[0],
+        );
+    }
+
+    public function testRunCommandBuiltDirectlyIsGivenItsState(): void
+    {
+        // no default fits every command: an InputCommand needs ReadInput, or what is typed is
+        // dropped
+        self::assertFalse((new ReflectionParameter([RunCommand::class, '__construct'], 'state'))->isOptional());
+    }
+
+    public function testReadInputAlwaysKeepsAState(): void
+    {
+        // null would start the controller again (onInit()), dropping what is typed
+        self::assertFalse((new ReflectionParameter([RunCommand::class, 'readInput'], 'state'))->allowsNull());
+    }
+
+    public function testDisplayCanKeepTheInitialState(): void
+    {
+        self::assertSame(
+            ['keep', ['state' => null, 'parameters' => null]],
+            $this->callsOf(new DisplayPage(new Vdt('Hello'), null))[0],
         );
     }
 
     public function testDisplayRespondsWithItsContent(): void
     {
-        [[$method, $arguments]] = $this->respondCallsOf(Response::display(new Vdt('Hello')));
+        [[$method, $arguments]] = $this->respondCallsOf(new DisplayPage(new Vdt('Hello')));
 
         self::assertSame(['respond', 'Hello'], [$method, $arguments['vdt']]);
         self::assertEquals(new WaitForKeyCommand(), $arguments['command']);
@@ -94,13 +132,13 @@ final class ResponseTest extends TestCase
 
         self::assertSame(
             [['respond', ['vdt' => 'Code ?', 'command' => $command]]],
-            $this->respondCallsOf(Response::readInput(new Vdt('Code ?'), $command)),
+            $this->respondCallsOf(RunCommand::readInput(new Vdt('Code ?'), $command)),
         );
         // Without content: none sent
         $wait = new WaitForKeyCommand();
         self::assertSame(
             [['respond', ['vdt' => '', 'command' => $wait]]],
-            $this->respondCallsOf(new RunCommand(ControllerState::ReadInput, null, new Vdt(), $wait)),
+            $this->respondCallsOf(new RunCommand(new Vdt(), $wait, ControllerState::ReadInput)),
         );
     }
 
@@ -110,13 +148,13 @@ final class ResponseTest extends TestCase
 
         self::assertSame(
             [['goTo', ['route' => 'menu', 'parameters' => $from]]],
-            $this->callsOf(Response::goTo('menu', $from)),
+            $this->callsOf(new ChangePage('menu', $from)),
         );
     }
 
     public function testConnectToRespondsWithTheOtherService(): void
     {
-        [[$method, $arguments]] = $this->respondCallsOf(Response::connectTo(
+        [[$method, $arguments]] = $this->respondCallsOf(RunCommand::connectTo(
             'https://example.org/service',
             new Vdt('Cnx en cours'),
         ));
@@ -130,12 +168,12 @@ final class ResponseTest extends TestCase
 
     public function testRunCommandSendsAnyCommand(): void
     {
-        // A direct call, as the continuation of the session: no named constructor gives one
+        // A direct call, as the continuation of the session: neither readInput() nor connectTo() gives one
         $command = new ServiceCallCommand('https://example.org/', CallMode::Direct);
 
         self::assertSame(
             [['respond', ['vdt' => '', 'command' => $command]]],
-            $this->respondCallsOf(new RunCommand(null, null, new Vdt(), $command)),
+            $this->respondCallsOf(new RunCommand(new Vdt(), $command, null)),
         );
     }
 

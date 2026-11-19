@@ -8,7 +8,7 @@ use MiniPaviService\Minitel\InputField;
 
 /**
  * Command reading an input field, as built by Page::inputCommand(), and sent to the gateway
- * with Response::readInput(): the field, and what it is prefilled with. Each client sends it
+ * with RunCommand::readInput(): the field, and what it is prefilled with. Each client sends it
  * its own way (MiniPaviClient as MiniPavi's InputTxt or InputMsg, HtmlClient as form fields).
  */
 final readonly class InputCommand implements Command

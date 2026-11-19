@@ -60,7 +60,7 @@ abstract class AbstractController implements Controller
     }
 
     /**
-     * Shows the screen, usually with Response::readInput() to read what the user types
+     * Shows the screen, usually with RunCommand::readInput() to read what the user types
      *
      * @param Request<ControllerState, TParameters> $request
      */

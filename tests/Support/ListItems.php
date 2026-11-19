@@ -9,6 +9,7 @@ use MiniPaviService\Controller\Pagination\Paginator;
 use MiniPaviService\Controller\Pagination\ShownPage;
 use MiniPaviService\Controller\Request;
 use MiniPaviService\Controller\Response;
+use MiniPaviService\Controller\Response\ChangePage;
 use MiniPaviService\Minitel\FunctionKey;
 
 /**
@@ -42,7 +43,7 @@ final readonly class ListItems implements PaginatedList
     public function onOtherKey(Request $request, ShownPage $page): Response
     {
         return match ($request->functionKey()) {
-            FunctionKey::Summary => Response::goTo('menu'),
+            FunctionKey::Summary => new ChangePage('menu'),
             FunctionKey::Send => $page->next(),
             default => $page->stay(),
         };
