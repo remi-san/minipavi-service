@@ -9,9 +9,12 @@ use MiniPaviService\Http\Emulator\EmulatorConfig;
 use MiniPaviService\Minitel\FunctionKey;
 use MiniPaviService\Minitel\Keyboard;
 use MiniPaviService\Minitel\LocalEcho;
+use MiniPaviService\Minitel\Position;
 use MiniPaviService\Minitel\Scroll;
 use MiniPaviService\Vdt\Screen\Attributes;
+use MiniPaviService\Vdt\Vdt;
 use MiniPaviService\Vdt\Videotex;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -153,5 +156,39 @@ final class CodesTest extends TestCase
     public function testPublicGateway(): void
     {
         self::assertSame(DEFAULT_MINIPAVI_GW, EmulatorConfig::PUBLIC_GATEWAY);
+    }
+
+    /**
+     * @return iterable<string, array{string}>
+     */
+    public static function texts(): iterable
+    {
+        yield 'every character it encodes' => [
+            'éèàçêÉÈÀÇÊβßœŒüûúùöôóòïîíìëäâá£°±←↑→↓¼½¾ÂÎōá’ ňćřýšíąā',
+        ];
+        yield 'control characters' => ["a\x00b\x0Ac\x1Fd\x7Fe"];
+        yield 'plain text' => ['Hello, world! 0123456789 {}~'];
+        yield 'bytes MiniPaviCli takes as undefined (in UTF-8 letters, e.g. Á, Í, Ý)' => ['ÁÍÏÐÝ'];
+    }
+
+    /**
+     * Vdt encodes as MiniPaviCli's helpers do, byte for byte
+     */
+    #[DataProvider('texts')]
+    public function testVdtEncodesTextAsMiniPaviCli(string $text): void
+    {
+        self::assertSame(MiniPaviCli::toG2($text), Vdt::text($text)->toString());
+        self::assertSame(MiniPaviCli::writeLine0($text), Vdt::line0($text)->toString());
+    }
+
+    public function testVdtEncodesSequencesAsMiniPaviCli(): void
+    {
+        self::assertSame(MiniPaviCli::clearScreen(), Vdt::clearScreen()->toString());
+        foreach ([[0, 1], [1, 1], [24, 40], [12, 7]] as [$row, $col]) {
+            self::assertSame(MiniPaviCli::setPos($col, $row), Vdt::position(new Position($row, $col))->toString());
+        }
+        foreach ([1, 2, 40, 64] as $count) {
+            self::assertSame(MiniPaviCli::repeatChar('-', $count), Vdt::repeat('-', $count)->toString());
+        }
     }
 }

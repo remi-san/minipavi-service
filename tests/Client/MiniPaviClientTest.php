@@ -221,7 +221,6 @@ final class MiniPaviClientTest extends TestCase
 
     public function testIsTheOnlyFacadeOfMiniPaviCli(): void
     {
-        // Besides Vdt's Videotex helpers, which don't touch the gateway's request or response
         $src = \dirname(__DIR__, levels: 2) . '/src/';
         $files = new \RecursiveIteratorIterator(
             new \RecursiveDirectoryIterator($src, flags: \FilesystemIterator::SKIP_DOTS),
@@ -237,7 +236,7 @@ final class MiniPaviClientTest extends TestCase
         }
         sort($users);
 
-        self::assertSame(['Client/MiniPaviClient.php', 'Vdt/Vdt.php'], $users);
+        self::assertSame(['Client/MiniPaviClient.php'], $users);
     }
 
     /**
