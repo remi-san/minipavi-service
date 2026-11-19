@@ -10,6 +10,7 @@ use MiniPaviService\Minitel\Terminal;
 use MiniPaviService\Page\Parser\PageXmlException;
 use MiniPaviService\Page\Parser\PageXmlParser;
 use MiniPaviService\Page\Template\TemplateException;
+use MiniPaviService\Vdt\Screen\Screen;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -45,7 +46,7 @@ final class PreviewCommand extends Command
                 argument: 'page',
             ));
             $output->write(
-                $page->display(new Terminal(), $variables)->screen()->preview(),
+                Screen::of($page->display(new Terminal(), $variables))->preview(),
                 newline: false,
                 options: OutputInterface::OUTPUT_RAW,
             );

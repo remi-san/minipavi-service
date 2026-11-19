@@ -9,6 +9,7 @@ use MiniPaviService\Minitel\Position;
 use MiniPaviService\Minitel\Terminal;
 use MiniPaviService\Page\Display\EndKey;
 use MiniPaviService\Page\Display\Key;
+use MiniPaviService\Vdt\Screen\Screen;
 use MiniPaviService\Vdt\Vdt;
 use PHPUnit\Framework\TestCase;
 
@@ -16,9 +17,7 @@ final class KeyTest extends TestCase
 {
     public function testKeyIsABadgeInReverseVideo(): void
     {
-        $screen = (new Key('Envoi', new Position(20, 30), Color::Red))
-            ->toVdt(new Terminal())
-            ->screen();
+        $screen = Screen::of((new Key('Envoi', new Position(20, 30), Color::Red))->toVdt(new Terminal()));
 
         // An underlined space, then " Envoi " in reverse video, red
         self::assertSame('Envoi', implode('', array_map(
@@ -76,7 +75,7 @@ final class KeyTest extends TestCase
 
     private static function text(Vdt $vdt, int $row, int $col, int $length): string
     {
-        $screen = $vdt->screen();
+        $screen = Screen::of($vdt);
 
         return implode('', array_map(
             static fn(int $c) => $screen->cell($row, $c)->bytes ?? ' ',

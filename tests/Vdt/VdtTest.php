@@ -7,9 +7,11 @@ namespace MiniPaviService\Tests\Vdt;
 use MiniPaviService\Minitel\Color;
 use MiniPaviService\Minitel\Position;
 use MiniPaviService\Minitel\ScreenSize;
+use MiniPaviService\Vdt\Offset;
 use MiniPaviService\Vdt\Player;
 use MiniPaviService\Vdt\Screen\Attributes;
 use MiniPaviService\Vdt\Screen\Cursor;
+use MiniPaviService\Vdt\Screen\Screen;
 use MiniPaviService\Vdt\Screen\Zone;
 use MiniPaviService\Vdt\ScreenListener;
 use MiniPaviService\Vdt\Token;
@@ -27,9 +29,9 @@ final class VdtTest extends TestCase
 
     public function testTextShowsItsAccents(): void
     {
-        self::assertStringStartsWith('Déjà vu ', Vdt::text('Déjà vu')->screen()->line(1));
+        self::assertStringStartsWith('Déjà vu ', Screen::of(Vdt::text('Déjà vu'))->line(1));
         // Control characters can't slip in as text: a clear screen would erase the "a"
-        self::assertStringStartsWith('a b ', Vdt::text("a\x0Cb")->screen()->line(1));
+        self::assertStringStartsWith('a b ', Screen::of(Vdt::text("a\x0Cb"))->line(1));
     }
 
     public function testJoinsContents(): void
@@ -49,15 +51,6 @@ final class VdtTest extends TestCase
         self::assertFalse(Vdt::text(' ')->isEmpty());
     }
 
-    public function testKeepsWhatShowsFromTheLastClearScreen(): void
-    {
-        $vdt = new Vdt("\x1F\x41\x41A\x0C\x1F\x41\x41B\x0C\x1F\x42\x41C");
-
-        self::assertSame("\x0C\x1F\x42\x41C", $vdt->fromLastClear()->toString());
-        // Without a clear screen: all of it
-        self::assertSame("\x1F\x41\x41A", (new Vdt("\x1F\x41\x41A"))->fromLastClear()->toString());
-    }
-
     public function testGivesBackItsBytesAsTheyAre(): void
     {
         $vdt = (string) file_get_contents(self::FIXTURES . '/background.vdt');
@@ -65,16 +58,16 @@ final class VdtTest extends TestCase
         self::assertSame($vdt, (new Vdt($vdt))->toString());
         // Equal by its bytes, drawn or not
         $drawn = new Vdt("\x1F\x41\x41Hi");
-        $drawn->screen();
+        Screen::of($drawn);
         self::assertEquals(new Vdt("\x1F\x41\x41Hi"), $drawn);
     }
 
     public function testOffsetMovesTextAndKeepsItsAttributes(): void
     {
         // HELLO on row 1, then four red A (the last three as a repetition) on row 2
-        $moved = (new Vdt("\x1F\x41\x41HELLO\x1F\x42\x41\x1B\x41AA\x12\x42"))
-            ->offset(x: 2, y: 3)
-            ->screen();
+        $moved = Screen::of((new Offset(x: 2, y: 3))->apply(
+            new Vdt("\x1F\x41\x41HELLO\x1F\x42\x41\x1B\x41AA\x12\x42"),
+        ));
 
         self::assertSame('  HELLO', rtrim($moved->line(4)));
         self::assertSame('  AAAA', rtrim($moved->line(5)));
@@ -88,9 +81,7 @@ final class VdtTest extends TestCase
     public function testOffsetMovesATallCharacterWrappedTwoRowsDown(): void
     {
         // Row 10, column 39: ESC M, F, G, then H wrapped to row 12 (#7), moved 2 rows down
-        $moved = (new Vdt("\x1F\x4A\x67\x1B\x4DFGH"))
-            ->offset(x: 0, y: 2)
-            ->screen();
+        $moved = Screen::of((new Offset(x: 0, y: 2))->apply(new Vdt("\x1F\x4A\x67\x1B\x4DFGH")));
 
         self::assertSame('G', $moved->cell(row: 12, col: 40)?->bytes);
         self::assertSame('H', $moved->cell(row: 14, col: 1)?->bytes);
@@ -101,9 +92,7 @@ final class VdtTest extends TestCase
     {
         // Row 10: SO, ESC M (ignored in mosaic), a mosaic character, SI, ESC M, A: SI sets the
         // size back to normal, so offset() must send ESC M after it again (#26)
-        $moved = (new Vdt("\x1F\x4A\x41\x0E\x1B\x4D\x7F\x0F\x1B\x4DA"))
-            ->offset(x: 0, y: 2)
-            ->screen();
+        $moved = Screen::of((new Offset(x: 0, y: 2))->apply(new Vdt("\x1F\x4A\x41\x0E\x1B\x4D\x7F\x0F\x1B\x4DA")));
 
         self::assertSame('A', $moved->cell(row: 12, col: 2)?->bytes);
         self::assertTrue($moved->cell(row: 12, col: 2)?->attributes->isDoubleHeight());
@@ -114,9 +103,9 @@ final class VdtTest extends TestCase
         // Row 10: ESC ], ESC Z, a space, A, SO, a mosaic character, SI, ESC ], ESC Z, a space,
         // B: SO and SI turn them off, so offset() must send them after the SI again (#26), and
         // the mosaic cell ends the zone, so the space after it must start it again (#28)
-        $moved = (new Vdt("\x1F\x4A\x41\x1B\x5D\x1B\x5A A\x0E\x7F\x0F\x1B\x5D\x1B\x5A B"))
-            ->offset(x: 0, y: 2)
-            ->screen();
+        $moved = Screen::of((new Offset(x: 0, y: 2))->apply(
+            new Vdt("\x1F\x4A\x41\x1B\x5D\x1B\x5A A\x0E\x7F\x0F\x1B\x5D\x1B\x5A B"),
+        ));
 
         $b = $moved->cell(row: 12, col: 5) ?? self::fail('Nothing at row 12, column 5');
         self::assertSame('B', $b->bytes);
@@ -130,8 +119,13 @@ final class VdtTest extends TestCase
         // delimiter is sent again with its ESC Z or ESC Y just before it (#28)
         $vdt = new Vdt("\x1F\x4A\x41\x1B\x5A AB\x1B\x59C D");
 
-        self::assertSame("\x1F\x4A\x41\x1B\x5A ABC\x1B\x59 D", $vdt->offset(x: 0, y: 0)->toString());
-        $moved = $vdt->offset(x: 2, y: 1)->screen();
+        self::assertSame(
+            "\x1F\x4A\x41\x1B\x5A ABC\x1B\x59 D",
+            (new Offset(x: 0, y: 0))
+                ->apply($vdt)
+                ->toString(),
+        );
+        $moved = Screen::of((new Offset(x: 2, y: 1))->apply($vdt));
         $underlined = array_map(
             static fn(int $col): bool => $moved->cell(row: 11, col: $col)?->attributes->isUnderlined() === true,
             range(3, end: 8),
@@ -167,9 +161,10 @@ final class VdtTest extends TestCase
         int $x,
         string $expected,
     ): void {
-        $moved = Vdt::join(Vdt::position(new Position(row: 10)), new Vdt($sent))
-            ->offset($x, y: 0)
-            ->screen();
+        $moved = Screen::of((new Offset($x, y: 0))->apply(Vdt::join(
+            Vdt::position(new Position(row: 10)),
+            new Vdt($sent),
+        )));
 
         $cells = '';
         for ($col = 1; $col <= 6; $col++) {
@@ -188,7 +183,7 @@ final class VdtTest extends TestCase
         $vdt = new Vdt("\x1F\x4A\x41A\x1B\x5A\x18\x09BC");
 
         foreach ([[0, 0], [2, 1], [-1, 0]] as [$x, $y]) {
-            $moved = $vdt->offset($x, $y)->screen();
+            $moved = Screen::of((new Offset($x, $y))->apply($vdt));
             $underlined = array_map(
                 static fn(int $col): bool => $moved->cell(10 + $y, $col + $x)?->attributes->isUnderlined() === true,
                 range(max(1, 1 - $x), end: 5),
@@ -206,25 +201,18 @@ final class VdtTest extends TestCase
     {
         $abcde = new Vdt("\x1F\x41\x41ABCDE");
 
-        self::assertSame('CDE', rtrim($abcde->offset(x: -2, y: 0)->screen()->line(1)));
-        self::assertSame(str_repeat(' ', times: 37) . 'ABC', $abcde->offset(x: 37, y: 0)->screen()->line(1));
-        self::assertSame('', trim($abcde->offset(x: 37, y: 0)->screen()->line(2)));
+        self::assertSame('CDE', rtrim(Screen::of((new Offset(x: -2, y: 0))->apply($abcde))->line(1)));
         self::assertSame(
-            '',
-            trim(
-                (new Vdt("\x1F\x41\x41ABC"))
-                    ->offset(x: 0, y: -1)
-                    ->screen()
-                    ->text(),
-            ),
+            str_repeat(' ', times: 37) . 'ABC',
+            Screen::of((new Offset(x: 37, y: 0))->apply($abcde))->line(1),
         );
+        self::assertSame('', trim(Screen::of((new Offset(x: 37, y: 0))->apply($abcde))->line(2)));
+        self::assertSame('', trim(Screen::of((new Offset(x: 0, y: -1))->apply(new Vdt("\x1F\x41\x41ABC")))->text()));
     }
 
     public function testOffsetDoesNotMoveTheStatusRow(): void
     {
-        $moved = (new Vdt("\x1F\x40\x41status\x1F\x41\x41X"))
-            ->offset(x: 1, y: 1)
-            ->screen();
+        $moved = Screen::of((new Offset(x: 1, y: 1))->apply(new Vdt("\x1F\x40\x41status\x1F\x41\x41X")));
 
         self::assertSame('status', rtrim($moved->line(0)));
         self::assertSame(' X', rtrim($moved->line(2)));
@@ -251,8 +239,8 @@ final class VdtTest extends TestCase
     {
         self::assertSame(
             $written,
-            (new Vdt("\x1F\x43\x41" . $row3))
-                ->offset(x: 0, y: -2)
+            (new Offset(x: 0, y: -2))
+                ->apply(new Vdt("\x1F\x43\x41" . $row3))
                 ->toString(),
         );
     }
@@ -261,16 +249,16 @@ final class VdtTest extends TestCase
     {
         self::assertSame(
             "\x1F\x42\x41\x1B\x4DA",
-            (new Vdt("\x1F\x43\x41\x1B\x4DA"))
-                ->offset(x: 0, y: -1)
+            (new Offset(x: 0, y: -1))
+                ->apply(new Vdt("\x1F\x43\x41\x1B\x4DA"))
                 ->toString(),
         );
     }
 
     public function testDoubleWidthTakesTwoColumnsInTextButNotInMosaic(): void
     {
-        $text = (new Vdt("\x1F\x41\x41\x1B\x4EAB"))->screen();
-        $mosaic = (new Vdt("\x1F\x41\x41\x0E\x1B\x4E\x21\x22"))->screen();
+        $text = Screen::of(new Vdt("\x1F\x41\x41\x1B\x4EAB"));
+        $mosaic = Screen::of(new Vdt("\x1F\x41\x41\x0E\x1B\x4E\x21\x22"));
 
         self::assertSame(['A', 'A', 'B', 'B'], array_map(static fn(int $col) => $text->cell(1, $col)?->bytes, [
             1,
@@ -282,17 +270,6 @@ final class VdtTest extends TestCase
             ["\x21", "\x22", null],
             array_map(static fn(int $col) => $mosaic->cell(1, $col)?->bytes, [1, 2, 3]),
         );
-    }
-
-    public function testWithoutClearDrawsOverWhatIsShown(): void
-    {
-        $screen = (new Vdt("\x1F\x43\x41shown"))
-            ->append((new Vdt("\x0CAB"))->withoutClear())
-            ->screen();
-
-        self::assertSame('shown', rtrim($screen->line(3)));
-        // From the top left corner, as after a clear screen
-        self::assertSame('AB', rtrim($screen->line(1)));
     }
 
     /**
@@ -323,8 +300,8 @@ final class VdtTest extends TestCase
     public function testOffsetDrawsTheSameScreenMoved(string $file, int $x, int $y): void
     {
         $original = self::fixture($file);
-        $before = $original->screen();
-        $after = $original->offset($x, $y)->screen();
+        $before = Screen::of($original);
+        $after = Screen::of((new Offset($x, $y))->apply($original));
         $glyphs = self::glyphColumns($original);
 
         for ($row = 0; $row <= ScreenSize::ROWS; $row++) {
@@ -386,7 +363,9 @@ final class VdtTest extends TestCase
     public function testOffsetMatchesTheGoldenFile(string $file, int $x, int $y): void
     {
         $golden = self::FIXTURES . "/{$file}.offset_{$x}_{$y}.vdt";
-        $vdt = self::fixture($file)->offset($x, $y)->toString();
+        $vdt = (new Offset($x, $y))
+            ->apply(self::fixture($file))
+            ->toString();
 
         if (getenv('UPDATE_GOLDEN') === '1') {
             file_put_contents($golden, $vdt);

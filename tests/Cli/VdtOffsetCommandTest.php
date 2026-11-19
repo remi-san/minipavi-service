@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace MiniPaviService\Tests\Cli;
 
 use MiniPaviService\Cli\VdtOffsetCommand;
+use MiniPaviService\Vdt\Offset;
+use MiniPaviService\Vdt\Screen\Screen;
 use MiniPaviService\Vdt\Vdt;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Console\Command\Command;
@@ -65,7 +67,8 @@ final class VdtOffsetCommandTest extends TestCase
             '--preview' => true,
         ]));
         self::assertSame(
-            "Before:\n" . $vdt->screen()->preview() . "After (8, -2):\n" . $vdt->offset(8, -2)->screen()->preview(),
+            "Before:\n" . Screen::of($vdt)->preview() . "After (8, -2):\n"
+                . Screen::of((new Offset(8, -2))->apply($vdt))->preview(),
             $this->tester->getDisplay(),
         );
     }

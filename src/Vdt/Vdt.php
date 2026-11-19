@@ -4,19 +4,17 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Vdt;
 
-use MiniPavi\MiniPaviCli;
 use MiniPaviService\Minitel\Position;
-use MiniPaviService\Vdt\Screen\Screen;
 
 /**
  * Videotex content: what is sent to the Minitel. The framework and services carry it as this
  * value, and only the gateway client turns it into bytes (toString()). Text is made with
  * text(), which encodes its accents (G2); positions, the status line, a clear screen and
- * repetitions with position(), line0(), clearScreen() and repeat(), MiniPaviCli's helpers
- * as Vdt; raw Videotex with new Vdt().
+ * repetitions with position(), line0(), clearScreen() and repeat(), which encode as
+ * MiniPaviCli's helpers do; raw Videotex with new Vdt().
  *
  * It keeps the bytes, and doesn't draw them itself: what the content shows is Screen's
- * (screen()), moving it Offset's (offset()), both played by Player. A file is read by its
+ * (Screen::of()), moving it Offset's (Offset::apply()), both played by Player. A file is read by its
  * caller (e.g. ElementFactory), with its own error.
  */
 final readonly class Vdt
@@ -34,7 +32,7 @@ final readonly class Vdt
      */
     public static function text(string $text): self
     {
-        return new self(MiniPaviCli::toG2($text));
+        return new self(G2::encode($text));
     }
 
     /**
@@ -42,7 +40,7 @@ final readonly class Vdt
      */
     public static function position(Position $position): self
     {
-        return new self(MiniPaviCli::setPos($position->col, $position->row));
+        return new self(Videotex::POSITION . \chr(0x40 + $position->row) . \chr(0x40 + $position->col));
     }
 
     /**
@@ -51,7 +49,13 @@ final readonly class Vdt
      */
     public static function line0(string $text): self
     {
-        return new self(MiniPaviCli::writeLine0($text));
+        return new self(
+            self::position(new Position(row: 0))->bytes
+            . G2::encode($text)
+            . Videotex::BLINK_OFF
+            . Videotex::CLEAR_LINE
+            . Videotex::CURSOR_DOWN,
+        );
     }
 
     /**
@@ -59,7 +63,14 @@ final readonly class Vdt
      */
     public static function clearScreen(): self
     {
-        return new self(MiniPaviCli::clearScreen());
+        // Row 0 cleared with spaces, as FF doesn't clear it, then the rest of the screen
+        return self::join(
+            self::position(new Position(row: 0)),
+            new self(' '),
+            self::repeat(' ', count: 39),
+            self::position(new Position(row: 1)),
+            new self(Videotex::CLEAR_SCREEN . Videotex::CURSOR_OFF),
+        );
     }
 
     /**
@@ -67,7 +78,7 @@ final readonly class Vdt
      */
     public static function repeat(string $char, int $count): self
     {
-        return new self(MiniPaviCli::repeatChar($char, $count));
+        return new self($char . Videotex::REPEAT . \chr(0x40 + $count - 1));
     }
 
     /**
@@ -92,56 +103,10 @@ final readonly class Vdt
     }
 
     /**
-     * The content from its last clear screen (FF), which erases what comes before it but row
-     * 0: what still shows, without the content drawn over since
-     */
-    public function fromLastClear(): self
-    {
-        $tokens = (new Parser())->parse($this->bytes);
-        $start = 0;
-        foreach ($tokens as $i => $token) {
-            if ($token->type !== TokenType::Clear) {
-                continue;
-            }
-
-            $start = $i;
-        }
-
-        return new self(implode('', array_map(
-            static fn(Token $token) => $token->source,
-            \array_slice($tokens, $start),
-        )));
-    }
-
-    /**
      * The bytes sent to the Minitel
      */
     public function toString(): string
     {
         return $this->bytes;
-    }
-
-    public function screen(): Screen
-    {
-        return Screen::of($this);
-    }
-
-    /**
-     * Content moved by x columns right and y rows down (negative: left, up): see Offset
-     */
-    public function offset(int $x, int $y): self
-    {
-        return (new Offset($x, $y))->apply($this);
-    }
-
-    /**
-     * Content that doesn't clear the screen, to be drawn over other content: its clear
-     * screens (FF) only bring the cursor home, as RS
-     */
-    public function withoutClear(): self
-    {
-        return new self(implode('', array_map(static fn(Token $token) => $token->type === TokenType::Clear
-            ? Videotex::HOME
-            : $token->source, (new Parser())->parse($this->bytes))));
     }
 }

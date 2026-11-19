@@ -9,6 +9,7 @@ use MiniPaviService\Minitel\ScreenSize;
 use MiniPaviService\Minitel\Terminal;
 use MiniPaviService\Page\Display\Key;
 use MiniPaviService\Vdt\Screen\HtmlRenderer;
+use MiniPaviService\Vdt\Screen\Screen;
 use MiniPaviService\Vdt\Vdt;
 use PHPUnit\Framework\TestCase;
 
@@ -43,7 +44,7 @@ final class HtmlRendererTest extends TestCase
     {
         $renderer = new HtmlRenderer('/missing.ttf');
         // The screen doesn't need it
-        $renderer->render((new Vdt())->screen());
+        $renderer->render(Screen::of(new Vdt()));
 
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('Font file not found: /missing.ttf');
@@ -55,7 +56,7 @@ final class HtmlRendererTest extends TestCase
     {
         self::assertStringEndsWith('<input class="field"></div>', (new HtmlRenderer(
             HtmlRenderer::MINITEL_FONT,
-        ))->render((new Vdt())->screen(), overlay: '<input class="field">'));
+        ))->render(Screen::of(new Vdt()), overlay: '<input class="field">'));
     }
 
     public function testDrawsTextInItsColoursWithItsAccents(): void
@@ -150,7 +151,7 @@ final class HtmlRendererTest extends TestCase
 
     private function render(Vdt $vdt): string
     {
-        return (new HtmlRenderer(HtmlRenderer::MINITEL_FONT))->render($vdt->screen());
+        return (new HtmlRenderer(HtmlRenderer::MINITEL_FONT))->render(Screen::of($vdt));
     }
 
     /**

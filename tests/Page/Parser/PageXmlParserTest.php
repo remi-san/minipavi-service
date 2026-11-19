@@ -23,6 +23,7 @@ use MiniPaviService\Tests\Support\FailingProperties;
 use MiniPaviService\Tests\Support\PrivateProperties;
 use MiniPaviService\Tests\Support\StarsElements;
 use MiniPaviService\Tests\Support\TestMessage;
+use MiniPaviService\Vdt\Screen\Screen;
 use MiniPaviService\Vdt\Vdt;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
@@ -634,7 +635,7 @@ final class PageXmlParserTest extends TestCase
      */
     private function drawnRows(Vdt $vdt): array
     {
-        $rows = explode("\n", rtrim($vdt->screen()->preview(), characters: "\n"));
+        $rows = explode("\n", rtrim(Screen::of($vdt)->preview(), characters: "\n"));
 
         return array_values(array_filter(
             $rows,

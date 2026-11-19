@@ -34,6 +34,7 @@ use MiniPaviService\Minitel\Terminal;
 use MiniPaviService\Tests\Support\CallbackController;
 use MiniPaviService\Tests\Support\ClearAndShow;
 use MiniPaviService\Tests\Support\MemoryLogger;
+use MiniPaviService\Vdt\Screen\Screen;
 use MiniPaviService\Vdt\Vdt;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
@@ -364,7 +365,7 @@ final class ServiceTest extends TestCase
     {
         $response = $this->responseTo(new ClearAndShow('Hello'));
 
-        self::assertStringStartsWith('Hello', $response->vdt->screen()->line(1));
+        self::assertStringStartsWith('Hello', Screen::of($response->vdt)->line(1));
         // Its state and parameters are kept, as for any response
         $next = $this->nextRequest($response);
         self::assertSame(ControllerState::Display, $next->state());
@@ -579,7 +580,7 @@ final class ServiceTest extends TestCase
      */
     private static function line0(?GatewayResponse $response): string
     {
-        return $response?->vdt->screen()->line(0) ?? self::fail('No response');
+        return Screen::of($response->vdt ?? self::fail('No response'))->line(0);
     }
 
     /**

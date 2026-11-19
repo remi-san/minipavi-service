@@ -696,43 +696,48 @@ Codes to send as they are have names: `Vdt\Videotex` for Videotex (`CLEAR_LINE`,
 `<page>` (see [Page XML format](#page-xml-format)); `Page\Setup` sends them for other content.
 
 They replace MiniPaviCli's global `VDT_*` and `PRO_*` constants, which are only defined once
-`MiniPaviCli` is loaded. `Vdt` gives MiniPaviCli's Videotex helpers as its constructors:
-`Vdt::text()` (its `toG2()`), `Vdt::position($position)` (a `Minitel\Position`, `setPos()`), `Vdt::line0()`
-(`writeLine0()`), `Vdt::clearScreen()` and `Vdt::repeat($char, $count)` (`repeatChar()`).
+`MiniPaviCli` is loaded. `Vdt` holds Videotex content, its bytes, and joins it (`join()`,
+`append()`). Its constructors encode as MiniPaviCli's Videotex helpers do, without calling
+them: `Vdt::text()` (as `toG2()`), `Vdt::position($position)` (a `Minitel\Position`,
+`setPos()`), `Vdt::line0()` (`writeLine0()`), `Vdt::clearScreen()` and
+`Vdt::repeat($char, $count)` (`repeatChar()`).
 
-`Vdt` also reads Videotex content, e.g. of a `.vdt` file, and moves it on the screen;
-`<image>` uses it.
+Other classes read Videotex content, e.g. of a `.vdt` file: `Screen::of()` draws it, `Offset`
+moves it on the screen, and `ClearScreens` works on its clear screens; `<image>` uses them.
 
 ```php
+use MiniPaviService\Vdt\Offset;
+use MiniPaviService\Vdt\Screen\Screen;
 use MiniPaviService\Vdt\Vdt;
 
 $picture = new Vdt(file_get_contents('picture.vdt'));
-$moved = $picture->offset(8, -2);     // 8 columns right, 2 rows up (negative: left, up)
-echo $moved->toString();               // the Videotex content
-echo $moved->screen()->preview();      // the screen, as text
+$moved = (new Offset(8, -2))->apply($picture);   // 8 columns right, 2 rows up (negative: left, up)
+echo $moved->toString();                         // the Videotex content
+echo Screen::of($moved)->preview();              // the screen, as text
 ```
 
-- **`offset($x, $y)`** (`Vdt\Offset`): Videotex positions are mostly absolute, but text also flows from cell
+- **`(new Offset($x, $y))->apply($vdt)`**: Videotex positions are mostly absolute, but text also flows from cell
   to cell and wraps at column 40, so the content is played on a simulated screen (`Vdt\Player`) rather than
   having its positions patched. Characters that end up off the screen are dropped instead of
   wrapping onto the next row, and the cursor is positioned again where needed, with the
   current attributes (character set, colors, size...), which a positioning resets. Row 0,
   the status line, is not moved. A double-height or double-size character moved onto row 1,
   where the Minitel discards `ESC M` and `ESC O`, is written without them: at normal size, or
-  double width for double size, in the columns it had. Text keeps its zone (see `screen()`):
+  double width for double size, in the columns it had. Text keeps its zone (see `Screen::of()`):
   each delimiter is written with `ESC Z` or `ESC Y` before it, and a space that would
   otherwise start another zone (a background colour sent again waits for it) or lose its own
   (its delimiter went off the screen) is written as a delimiter of its zone. That space isn't
   underlined, as a delimiter isn't. Text moved to column 1 before such a space has no column
   left for its delimiter, and loses its zone.
-- **`withoutClear()`**: the same content without its clear screens (FF), to draw it over
-  other content.
+- **`ClearScreens`**: `removed($vdt)` is the same content without its clear screens (FF), to
+  draw it over other content, and `fromLast($vdt)` the content from its last one, what still
+  shows.
 - **`HtmlRenderer::render($screen, $overlay)`**: the screen in HTML (a `<div class="minitel">`,
   with `$overlay` over it), `style()` its CSS (the cell size in `--w`, `--h`, the Minitel font
   in `--font`) with the font embedded, and `place($position, $length)` the style placing an
   element over a cell; the page around it is the HTML client's (`Client\HtmlForm`, see
   `HtmlClient` above).
-- **`screen()`**: the `Screen` drawn by the content: a `Cell` (character and attributes) or
+- **`Screen::of($vdt)`**: the `Screen` drawn by the content: a `Cell` (character and attributes) or
   `null` per row and column. `line($row)` and `text()` give the text of a row and of the
   screen, G2 characters decoded (`é`, `£`, `½`, `Œ`...; `Cell::text()`), and `preview()`
   the same rows framed and numbered, to read in a terminal. As on a Minitel, `ESC M` (double
@@ -752,13 +757,13 @@ echo $moved->screen()->preview();      // the screen, as text
   and SO ends the zone. CAN clears with spaces, so while a zone attribute waits, the first one
   is a delimiter. A mosaic character uses up nothing that waits. Background colour and masking
   are still applied at once.
-- **`Vdt\Player::play($vdt, $listener)`** (internal, what `screen()` and `offset()` are
+- **`Vdt\Player::play($vdt, $listener)`** (internal, what `Screen::of()` and `Offset` are
   built on): plays the content on the simulated screen, telling a `Vdt\ScreenListener` each
   character (`glyph()`, with its row, column, width and attributes), each delimiter
   (`delimiter()`, with the `Screen\Zone` it starts), each CAN (`clearLine()`, with the zone
   its first space starts if it is a delimiter) and the other `Token`s (`sequence()`, with a
   copy of the cursor). `Screen\ScreenCells::of()` collects the cells of
-  `screen()`, `Vdt\OffsetWriter::write()` writes the content moved by `offset()`: each listens
+  `Screen::of()`, `Vdt\OffsetWriter::write()` writes the content moved by `Offset`: each listens
   to one content, built by that static method only.
 
 `bin/minipavi vdt-offset` does the same from the command line (see [Command line](#command-line)).
@@ -786,7 +791,7 @@ vendor/bin/minipavi vdt-offset --preview -- images/background.vdt 8 -2 # move a 
   draws, as text (`Screen::preview()`): a template with the variables of a JSON object (e.g.
   `{"games": [{"name": "Rocket Rescue"}]}`).
 - **`vdt-offset [--preview] <input.vdt> <x> <y> [<output.vdt>]`** moves the content of a
-  Videotex page by `x` columns and `y` rows (negative: left, up), with `Vdt::offset()` (see
+  Videotex page by `x` columns and `y` rows (negative: left, up), with `Offset` (see
   [Videotex content](#videotex-content)): to the output file, or the standard output; input `-`
   reads the standard input. `--preview` prints the screen as text, before and after. A
   negative number would be read as an option: put `--` before the arguments
@@ -817,7 +822,7 @@ composer coverage   # tests with coverage, as text and in coverage.xml (needs pc
 ```
 
 Tests are in `tests/`, with their files in `tests/fixtures/`. Pages are checked through the
-screen they draw (`Screen::preview()`). `Vdt::offset()` is checked in two ways: against the
+screen they draw (`Screen::preview()`). `Offset` is checked in two ways: against the
 property that the moved screen is the original one moved, and byte for byte against golden
 files (`tests/fixtures/vdt/*.offset_*.vdt`). Run `UPDATE_GOLDEN=1 composer test` to rewrite
 the golden files after an intended change.

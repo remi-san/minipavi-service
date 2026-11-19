@@ -30,6 +30,7 @@ use MiniPaviService\Minitel\Span;
 use MiniPaviService\Tests\Support\CallbackController;
 use MiniPaviService\Tests\Support\HttpRequests;
 use MiniPaviService\Tests\Support\MemoryLogger;
+use MiniPaviService\Vdt\ClearScreens;
 use MiniPaviService\Vdt\Screen\HtmlRenderer;
 use MiniPaviService\Vdt\Vdt;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -182,7 +183,13 @@ final class HtmlClientTest extends TestCase
         );
         // The screen from its clear screen (FF)
         self::assertStringContainsString(
-            '<input type="hidden" name="screen" value="' . base64_encode($vdt->fromLastClear()->toString()) . '">',
+            '<input type="hidden" name="screen" value="'
+            . base64_encode(
+                (new ClearScreens())
+                    ->fromLast($vdt)
+                    ->toString(),
+            )
+            . '">',
             $html,
         );
     }
@@ -238,7 +245,13 @@ final class HtmlClientTest extends TestCase
         ]);
 
         self::assertStringContainsString(
-            '<input type="hidden" name="screen" value="' . base64_encode($response->fromLastClear()->toString()) . '">',
+            '<input type="hidden" name="screen" value="'
+            . base64_encode(
+                (new ClearScreens())
+                    ->fromLast($response)
+                    ->toString(),
+            )
+            . '">',
             $html,
         );
         self::assertStringNotContainsString('Avant', self::shownText($html));

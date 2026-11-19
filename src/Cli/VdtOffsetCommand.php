@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace MiniPaviService\Cli;
 
 use MiniPaviService\Io\Files;
+use MiniPaviService\Vdt\Offset;
+use MiniPaviService\Vdt\Screen\Screen;
 use MiniPaviService\Vdt\Vdt;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -66,11 +68,11 @@ final class VdtOffsetCommand extends Command
             return self::FAILURE;
         }
         $vdt = new Vdt($bytes);
-        $moved = $vdt->offset($x, $y);
+        $moved = (new Offset($x, $y))->apply($vdt);
 
         if ($input->getOption('preview') === true) {
             $output->write(
-                "Before:\n" . $vdt->screen()->preview() . "After ({$x}, {$y}):\n" . $moved->screen()->preview(),
+                "Before:\n" . Screen::of($vdt)->preview() . "After ({$x}, {$y}):\n" . Screen::of($moved)->preview(),
                 newline: false,
                 options: OutputInterface::OUTPUT_RAW,
             );
