@@ -53,13 +53,14 @@ final readonly class ServiceRunner implements RequestHandlerInterface
             return $this->respond($exchange, $this->service->error($e));
         }
         try {
-            $response = $this->service->handle($exchange->request());
+            $gatewayRequest = $exchange->request();
         } catch (\Throwable $e) {
             // Responded to through the exchange read (e.g. over the page the browser showed)
-            $response = $this->service->error($e);
+            return $this->respond($exchange, $this->service->error($e));
         }
 
-        return $this->respond($exchange, $response);
+        // The service responds to its own errors (Service::handle())
+        return $this->respond($exchange, $this->service->handle($gatewayRequest));
     }
 
     /**
