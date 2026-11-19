@@ -30,6 +30,26 @@ final class ClearScreensTest extends TestCase
         );
     }
 
+    public function testKeepsTheOtherSequencesAsTheyAre(): void
+    {
+        // A position in digits (row 7, column 12), A, B, a repetition of B, SEP and SS3 each
+        // with their byte, then a clear screen
+        $kept = "\x1F0712AB\x12\x43\x13\x49\x1D\x49";
+
+        self::assertSame(
+            "{$kept}\x1E\x1F\x41\x41C",
+            (new ClearScreens())
+                ->removed(new Vdt("{$kept}\x0C\x1F\x41\x41C"))
+                ->toString(),
+        );
+        self::assertSame(
+            $kept,
+            (new ClearScreens())
+                ->fromLast(new Vdt($kept))
+                ->toString(),
+        );
+    }
+
     public function testRemovedDrawsOverWhatIsShown(): void
     {
         $screen = Screen::of((new Vdt("\x1F\x43\x41shown"))->append((new ClearScreens())->removed(new Vdt("\x0CAB"))));
