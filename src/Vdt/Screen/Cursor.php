@@ -60,8 +60,8 @@ final class Cursor
      * Sets the attribute of ESC byte (Attributes::with()), as the Minitel does: ESC M and ESC
      * O received on rows 0 and 1, which can't have double height, are discarded, the size
      * staying as it was, and so are a size and inverse video received in mosaic (MiniPavi's
-     * emulator, setSize() and setInvert()). Underline in text waits for a delimiter instead
-     * (Zone), as background colour and masking also do there
+     * emulator, setSize() and setInvert()). A zone attribute (masking, and underline and
+     * background colour in text) waits for a delimiter instead (Zone::waits())
      *
      * @param string $byte the byte after ESC
      */
@@ -70,25 +70,25 @@ final class Cursor
         if (!Attributes::allowsDoubleHeight($this->row) && Attributes::isTallSize($byte)) {
             return;
         }
-        $mosaic = $this->attributes->isMosaic();
-        if ($mosaic && !Attributes::appliesInMosaic($byte)) {
+        if ($this->attributes->isMosaic() && !Attributes::appliesInMosaic($byte)) {
             return;
         }
-        $this->zone = $this->zone->with($byte, $this->attributes);
-        if (!$mosaic && Attributes::isUnderline($byte)) {
+        if (Zone::waits($byte, $this->attributes)) {
+            $this->zone = $this->zone->with($byte);
             return;
         }
         $this->attributes = $this->attributes->with($byte);
     }
 
     /**
-     * Sets the character set of SI or SO (Attributes::withCharset())
+     * Sets the character set of SI or SO (Attributes::withCharset()); SO applies the
+     * background colour waiting (Zone::attributesAfter())
      *
      * @param string $byte SI (text) or SO (mosaic)
      */
     public function setCharset(string $byte): void
     {
-        $this->attributes = $this->attributes->withCharset($byte);
+        $this->attributes = $this->zone->attributesAfter($byte, $this->attributes->withCharset($byte));
         $this->zone = $this->zone->withCharset($byte);
     }
 
@@ -102,11 +102,13 @@ final class Cursor
     }
 
     /**
-     * Draws a delimiter (delimits()): starts the zone of what waited
+     * Draws a delimiter (delimits()): starts the zone of what waited, whose background colour
+     * is then the last one applied
      */
     public function delimit(): void
     {
-        $this->zone = $this->zone->delimited();
+        $this->zone = $this->zone->delimited($this->attributes);
+        $this->attributes = $this->attributes->with(Attributes::backgroundColor($this->zone->background()));
     }
 
     /**

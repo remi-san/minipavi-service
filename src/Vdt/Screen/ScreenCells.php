@@ -13,8 +13,8 @@ use MiniPaviService\Vdt\Vdt;
 
 /**
  * The cells of the screen as content draws them: what Screen::of() collects while playing it.
- * As the Minitel shows them, a text cell is underlined when its zone is (Zone): one started,
- * on its row, by the last delimiter before it, with no mosaic or empty cell between them.
+ * As the Minitel shows them, each cell has the background, masking and (in text) underline of
+ * its zone (Zone, Zones::of()).
  *
  * It fills its cells as it listens (so it isn't readonly), for one content only: it is only
  * built, and played to, by of().
@@ -88,7 +88,7 @@ final class ScreenCells implements ScreenListener
     }
 
     /**
-     * The cells of a row, each text cell underlined as its zone is (Zones::of())
+     * The cells of a row, each as its zone shows it (Zones::of())
      *
      * @param array<int, ?Cell> $cells by column
      *
@@ -97,7 +97,7 @@ final class ScreenCells implements ScreenListener
     private function inZones(array $cells, int $row): array
     {
         foreach ($cells as $col => $cell) {
-            if ($cell === null || $cell->attributes->isMosaic()) {
+            if ($cell === null) {
                 continue;
             }
             $cells[$col] = $cell->inZone($this->zones->of($row, $col));

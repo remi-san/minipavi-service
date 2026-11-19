@@ -12,8 +12,10 @@ use MiniPaviService\Vdt\Videotex;
  * the colours, the size, blinking, masking, underlining and inverse video. A positioning (US),
  * a home (RS) or a clear screen (FF) sets them back to defaults(). Immutable.
  *
- * Underlining is the separation of mosaic characters. In text, it is a zone's (Zone): the
- * cursor doesn't set it, and the Screen's cells have it when their zone is underlined.
+ * Underlining is the separation of mosaic characters. In text, it is a zone's (Zone), as the
+ * background colour and masking are: the cursor doesn't set them there, and the Screen's cells
+ * have those their zone shows. The cursor's background colour is the last one applied: what a
+ * mosaic character is drawn on, and a delimiter with no background colour waiting.
  */
 final readonly class Attributes
 {
@@ -110,7 +112,7 @@ final readonly class Attributes
 
     public function background(): Color
     {
-        return Color::fromIndex(\ord($this->values['bg']) - self::BACKGROUND_COLOR);
+        return self::backgroundOf($this->values['bg']);
     }
 
     /**
@@ -119,6 +121,14 @@ final readonly class Attributes
     public static function textColor(Color $color): string
     {
         return \chr(self::TEXT_COLOR + $color->index());
+    }
+
+    /**
+     * The background color set by ESC byte (isBackground())
+     */
+    public static function backgroundOf(string $byte): Color
+    {
+        return Color::fromIndex(\ord($byte) - self::BACKGROUND_COLOR);
     }
 
     /**

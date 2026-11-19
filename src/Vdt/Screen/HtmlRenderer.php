@@ -13,9 +13,11 @@ use MiniPaviService\Minitel\ScreenSize;
 
 /**
  * Draws a Screen in HTML, as the Minitel would show it (checked against MiniPavi's emulator):
- * row 0 (the status line) and the ROWS × COLS cells, in the Minitel's colours, with their
- * sizes, inverse video, underlining (of the zones a delimiter starts, Zone, but not in inverse
- * video, as the emulator draws the key badges) and blinking. Text is drawn with a Minitel font
+ * row 0 (the status line) and the ROWS × COLS cells, in the Minitel's colours (text on the
+ * background of its zone, Zone), with their sizes, inverse video (the text colour swapped with
+ * that background), underlining (of the zones a delimiter starts, but not in inverse video, as
+ * the emulator draws the key badges), masking (of a zone too: only the background shown) and
+ * blinking. Text is drawn with a Minitel font
  * (MINITEL_FONT: Minitel-Canvas's, whose glyphs fill the cells), embedded in style(). Mosaic
  * cells are drawn as their 2 × 3 pixels (separated when underlined), without depending on a
  * font. No JavaScript.

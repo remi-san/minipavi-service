@@ -95,14 +95,12 @@ final readonly class Cell
     ) {}
 
     /**
-     * This text cell as shown in zone (ScreenCells): underlined if the zone is
+     * This cell as shown in zone (ScreenCells, Zones::of()): on its background, masked if it
+     * is, and in text underlined if it is (Zone::shownWith())
      */
     public function inZone(Zone $zone): self
     {
-        return new self(
-            $this->bytes,
-            $this->attributes->with($zone->isUnderlined() ? Attributes::UNDERLINE : Attributes::NO_UNDERLINE),
-        );
+        return new self($this->bytes, $zone->shownWith($this->attributes));
     }
 
     /**

@@ -10,7 +10,9 @@ use MiniPaviService\Minitel\Position;
 use MiniPaviService\Minitel\ScreenSize;
 use MiniPaviService\Tests\Vdt\Screen\ScreenTest;
 use MiniPaviService\Vdt\Offset;
+use MiniPaviService\Vdt\Screen\Cell;
 use MiniPaviService\Vdt\Screen\Screen;
+use MiniPaviService\Vdt\Screen\Zone;
 use MiniPaviService\Vdt\Vdt;
 use MiniPaviService\Vdt\Videotex;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -171,21 +173,26 @@ final class VdtTest extends TestCase
     }
 
     /**
+     * A zone (#28, #30) is kept moved, its delimiter written again, and its background,
+     * masking and underline sent only before it, as on the Minitel they wait for one
+     */
+    #[DataProviderExternal(ScreenTest::class, 'backgroundZones')]
+    #[DataProviderExternal(ScreenTest::class, 'maskZones')]
+    #[DataProviderExternal(ScreenTest::class, 'underlineZones')]
+    public function testOffsetKeepsTheZones(string $sent): void
+    {
+        $original = Vdt::join(Vdt::position(new Position(row: 10)), new Vdt($sent));
+
+        self::assertScreenMoved($original, x: 2, y: 1);
+    }
+
+    /**
      * @return iterable<string, array{string, int, string}> content (after positioning at row
      *                                                     10, column 1), x, and the underline
      *                                                     of columns 1 to 6 once moved by x
      */
     public static function spacesKeepingTheirZone(): iterable
     {
-        $red = Videotex::backgroundColor(Color::Red);
-        $green = Videotex::backgroundColor(Color::Green);
-        $back = str_repeat(Videotex::CURSOR_LEFT, times: 3);
-
-        // Written again after a positioning, the background waits: the space is a delimiter,
-        // of the zone it was in
-        yield 'a background sent again after a positioning' => ["{$red}\x1B\x5A ABCD{$back} ", 0, '.U.UU '];
-        // A background set in mosaic is sent in text
-        yield 'a background set in mosaic' => ["\x1B\x5A AB\x0E{$green}\x0F CD", 0, '.UU.UU'];
         // The delimiter goes off the screen: the first space after it starts its zone again,
         // what is before that space can't be (no column left for a delimiter)
         yield 'a delimiter off the screen' => ["\x1B\x5A AB CD", -1, '...UU '];
@@ -231,6 +238,17 @@ final class VdtTest extends TestCase
                 "offset {$x}, {$y}",
             );
         }
+    }
+
+    public function testOffsetSetsTheAttributesBackAfterAClearScreen(): void
+    {
+        // Red X at row 1, column 1, a clear screen, then Y there, white: nothing to send again
+        self::assertSame(
+            "\x1F\x41\x41\x1B\x41X\x0CY",
+            (new Offset(x: 0, y: 0))
+                ->apply(new Vdt("\x1B\x41X\x0CY"))
+                ->toString(),
+        );
     }
 
     public function testOffsetDropsWhatGoesOffTheScreenInsteadOfWrapping(): void
@@ -349,7 +367,20 @@ final class VdtTest extends TestCase
     #[DataProvider('offsets')]
     public function testOffsetDrawsTheSameScreenMoved(string $file, int $x, int $y): void
     {
-        $original = self::fixture($file);
+        self::assertScreenMoved(self::fixture($file), $x, $y);
+    }
+
+    /**
+     * The screen drawn by the original content, moved by offset(x, y), is the original one,
+     * moved: every cell is found x columns right and y rows down, with the same character and
+     * attributes, except on row 0 (the status row), which stays as it is; nothing else is
+     * drawn. A double-width character that would be partly off the screen is not drawn at
+     * all. On a row moved left, a zone whose delimiter goes off the screen can only start
+     * again at a space (Writer): the cells before it show what they do without it
+     * (withoutZoneFromOffTheScreen())
+     */
+    private static function assertScreenMoved(Vdt $original, int $x, int $y): void
+    {
         $before = Screen::of($original);
         $after = Screen::of((new Offset($x, $y))->apply($original));
         $glyphs = self::glyphColumns($before);
@@ -369,9 +400,47 @@ final class VdtTest extends TestCase
                     && ($start + $x) >= 1
                     && ($start + $x + $width - 1) <= ScreenSize::COLS;
                 $expected = $onScreen ? $before->cell($fromRow, $fromCol) : null;
-                self::assertEquals($expected, $after->cell($row, $col), "row {$row}, column {$col}");
+                $actual = $after->cell($row, $col);
+                if ($x < 0 && self::isBeforeTheFirstSpace($before, $fromRow, $fromCol, firstCol: 1 - $x)) {
+                    [$expected, $actual] = [
+                        self::withoutZoneFromOffTheScreen($expected),
+                        self::withoutZoneFromOffTheScreen($actual),
+                    ];
+                }
+                self::assertEquals($expected, $actual, "row {$row}, column {$col}");
             }
         }
+    }
+
+    /**
+     * Whether the cell at row, col comes before the first text space of its row, or is that
+     * space, from firstCol
+     */
+    private static function isBeforeTheFirstSpace(Screen $screen, int $row, int $col, int $firstCol): bool
+    {
+        for ($before = $firstCol; $before < $col; $before++) {
+            $cell = $screen->cell($row, $before);
+            if ($cell?->bytes === ' ' && !$cell->attributes->isMosaic()) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * A cell without the zone attributes it may have from a zone started off the screen: its
+     * masking, and in text its underline and background, unless a mosaic or empty cell
+     * before it gives it (compared apart, as the cells around them are)
+     */
+    private static function withoutZoneFromOffTheScreen(?Cell $cell): ?Cell
+    {
+        if ($cell === null) {
+            return null;
+        }
+        $zone = $cell->attributes->isMosaic() ? Zone::none()->on($cell->attributes->background()) : Zone::none();
+
+        return $cell->inZone($zone);
     }
 
     /**

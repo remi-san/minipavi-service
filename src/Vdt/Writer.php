@@ -6,6 +6,7 @@ namespace MiniPaviService\Vdt;
 
 use MiniPaviService\Minitel\ScreenSize;
 use MiniPaviService\Vdt\Screen\Attributes;
+use MiniPaviService\Vdt\Screen\Cursor;
 use MiniPaviService\Vdt\Screen\Zone;
 use MiniPaviService\Vdt\Screen\Zones;
 
@@ -13,21 +14,22 @@ use MiniPaviService\Vdt\Screen\Zones;
  * Writes Videotex content cell by cell: positions the cursor only where the next character
  * isn't already, sends only the attributes that changed, and repeats characters with REP.
  *
- * It keeps the zones of the text it writes (Zone): a space it is given is written as a
- * delimiter of its zone when it would be one anyway, because a zone attribute it sent waits
- * (a positioning sets the background back, which is sent again), or when the zone the cells
- * before it are in isn't its own (its delimiter wasn't written). Such a space isn't underlined
- * itself, as a delimiter isn't, but the text after it is in its zone again.
+ * It keeps the zones of the text it writes (Zone): their background, masking and underline
+ * are sent only before a delimiter, as on the Minitel they wait for one (a text character's
+ * background isn't sent with it). A space it is given is written as a delimiter of its zone
+ * when the zone the cells before it are in isn't its own (its delimiter wasn't written). Such
+ * a space isn't underlined itself, as a delimiter isn't, but the text after it is in its zone
+ * again.
  */
 final class Writer
 {
     private string $vdt = '';
-    // Where the next character would go, and with which attributes (null: unknown)
+    // Where the next character would go (null: unknown)
     private ?int $row = null;
     private ?int $col = null;
-    private Attributes $attributes;
-    // The zone attributes as what was sent leaves them, and the zones of what was written
-    private Zone $zone;
+    // The attributes and the zone attributes as what was sent leaves them (the Minitel's
+    // cursor), and the zones of what was written
+    private Cursor $cursor;
     private Zones $zones;
     // Last character sent, and how many more times it is to be repeated
     private ?string $pending = null;
@@ -35,8 +37,7 @@ final class Writer
 
     public function __construct()
     {
-        $this->attributes = Attributes::defaults();
-        $this->zone = Zone::none();
+        $this->cursor = new Cursor();
         $this->zones = new Zones();
     }
 
@@ -53,13 +54,13 @@ final class Writer
             return;
         }
         $this->put($bytes);
-        $this->zones->draw($row, $col, $width, $attributes);
+        $this->zones->draw($row, $col, $width, $this->cursor->attributes());
         $this->movePast($col, $width);
     }
 
     /**
-     * A delimiter: a space starting zone, made one by ESC Z or ESC Y just before it
-     * (Zone::delimiterCodes())
+     * A delimiter: a space starting zone, made one by the zone attributes sent just before it
+     * (Zone::delimiterCodesFrom())
      */
     public function delimiter(int $row, int $col, int $width, Attributes $attributes, Zone $zone): void
     {
@@ -70,9 +71,9 @@ final class Writer
 
     /**
      * CAN at row, col: clears to the end of the row, the cells in zone, the zone before them,
-     * or the first a delimiter starting zone delimiter, if not null, made one by ESC Z or ESC Y
-     * just before it (Zone::delimiterCodes()). As with a space, the first is a delimiter of
-     * zone when the cells would lose it otherwise (glyph())
+     * or the first a delimiter starting zone delimiter, if not null, made one by the zone
+     * attributes sent just before it (Zone::delimiterCodesFrom()). As with a space, the first
+     * is a delimiter of zone when the cells would lose it otherwise (glyph())
      */
     public function clearLine(int $row, int $col, Attributes $attributes, Zone $zone, ?Zone $delimiter): void
     {
@@ -81,16 +82,15 @@ final class Writer
         $cleared = $delimiter ?? $zone;
         $delimits = $delimiter !== null || $this->losesZone($row, $col, $attributes, $cleared);
         if ($delimits) {
-            $this->follow($cleared->delimiterCodes(), $attributes);
-            $this->send($cleared->delimiterCodes());
-            $this->zone = $this->zone->delimited();
+            $this->sendZone($cleared);
+            $this->cursor->delimit();
         }
         $this->send(Videotex::CLEAR_LINE);
         for ($i = $col; $i <= ScreenSize::COLS; $i++) {
-            $this->zones->draw($row, $i, width: 1, attributes: $attributes);
+            $this->zones->draw($row, $i, width: 1, attributes: $this->cursor->attributes());
         }
         if ($delimits) {
-            $this->zones->text($row, $col, width: 1, delimiter: $this->zone);
+            $this->zones->text($row, $col, width: 1, delimiter: $this->cursor->zone());
         }
     }
 
@@ -99,8 +99,7 @@ final class Writer
         $this->send(Videotex::CLEAR_SCREEN);
         $this->row = 1;
         $this->col = 1;
-        $this->attributes = Attributes::defaults();
-        $this->zone = Zone::none();
+        $this->cursor = new Cursor();
         $this->zones->clear();
     }
 
@@ -128,40 +127,45 @@ final class Writer
         $this->pending = $bytes;
     }
 
-    // Whether a text space at row, col (at the cursor, its attributes sent) loses zone: it is a
-    // delimiter anyway, as a zone attribute waits, or the cells before it are in another zone
+    // Whether a text space at row, col (at the cursor, its attributes sent) loses zone: the
+    // cells before it are in another zone
     private function losesZone(int $row, int $col, Attributes $attributes, Zone $zone): bool
     {
-        if ($attributes->isMosaic()) {
-            return false;
-        }
-
-        return $this->zone->isWaiting() || $this->zones->before($row, $col)->isUnderlined() !== $zone->isUnderlined();
+        return !$attributes->isMosaic() && !$this->zones->before($row, $col)->showsAs($zone);
     }
 
     // Writes a delimiter starting zone at row, col (at the cursor, its attributes sent)
     private function delimit(int $row, int $col, int $width, Zone $zone): void
     {
-        $this->follow($zone->delimiterCodes(), $this->attributes);
-        $this->send($zone->delimiterCodes());
+        $this->sendZone($zone);
         $this->put(' ');
-        $this->zone = $this->zone->delimited();
-        $this->zones->text($row, $col, $width, delimiter: $this->zone);
+        $this->cursor->delimit();
+        $this->zones->text($row, $col, $width, delimiter: $this->cursor->zone());
         $this->movePast($col, $width);
     }
 
-    // Follows the zone attributes codes sent with these attributes set (the charset, SI or SO,
-    // first, then ESC <byte>s: Attributes::codesFrom(), Zone::delimiterCodes())
-    private function follow(string $codes, Attributes $attributes): void
+    // Sends the zone attributes making the next space a delimiter starting zone
+    private function sendZone(Zone $zone): void
     {
+        $this->sendCodes($zone->delimiterCodesFrom($this->cursor->zone(), $this->cursor->attributes()));
+    }
+
+    // Sends codes (the charset, SI or SO, first, then ESC <byte>s: Attributes::codesFrom(),
+    // Zone::delimiterCodesFrom()), the cursor following them as the Minitel does
+    private function sendCodes(string $codes): void
+    {
+        if ($codes === '') {
+            return;
+        }
         $bytes = explode(Videotex::ESC, $codes);
         $charset = array_shift($bytes);
         if ($charset !== '') {
-            $this->zone = $this->zone->withCharset($charset);
+            $this->cursor->setCharset($charset);
         }
         foreach ($bytes as $byte) {
-            $this->zone = $this->zone->with($byte, $attributes);
+            $this->cursor->setAttribute($byte);
         }
+        $this->send($codes);
     }
 
     // Where the next character goes, after one at col, width cells wide (at col since moveTo())
@@ -184,21 +188,18 @@ final class Writer
         $this->send(Videotex::POSITION . chr(0x40 + $row) . chr(0x40 + $col));
         $this->row = $row;
         $this->col = $col;
-        $this->attributes = Attributes::defaults();
-        $this->zone = Zone::none();
+        $this->cursor->reset($row, $col);
     }
 
-    // Sends the attributes that differ from the current ones
+    // Sends the character attributes that differ from the current ones: in text, the
+    // background isn't the character's, but its zone's, sent with its delimiter (delimit())
     private function setAttributes(Attributes $attributes): void
     {
-        $codes = $attributes->codesFrom($this->attributes);
-        $this->attributes = $attributes;
-        if ($codes === '') {
-            return;
+        $current = $this->cursor->attributes();
+        if (!$attributes->isMosaic()) {
+            $attributes = $attributes->with(Attributes::backgroundColor($current->background()));
         }
-
-        $this->follow($codes, $attributes);
-        $this->send($codes);
+        $this->sendCodes($attributes->codesFrom($current));
     }
 
     private function send(string $bytes): void

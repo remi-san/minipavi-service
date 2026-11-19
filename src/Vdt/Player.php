@@ -15,8 +15,8 @@ use MiniPaviService\Vdt\Screen\Cursor;
  * at the end of a row goes 2 rows down (Cursor::advance()); a move right (HT) from the last
  * column goes 1 row down, as BS, LF and VT do. SO and SI set the size back to normal and
  * turn off inverse video and separation (SO also underline), and a size or inverse video
- * received in mosaic is discarded. Underline in text is a zone's, which a delimiter starts
- * (Screen\Zone). What Screen and Offset are built on.
+ * received in mosaic is discarded. Underline, background colour and masking in text are a
+ * zone's, which a delimiter starts (Screen\Zone). What Screen and Offset are built on.
  *
  * @internal
  */

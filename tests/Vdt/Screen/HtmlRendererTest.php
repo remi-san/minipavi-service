@@ -85,9 +85,15 @@ final class HtmlRendererTest extends TestCase
 
     public function testInverseVideoSwapsTheColours(): void
     {
-        $html = $this->renderCell("\x1B\x44\x1B\x57\x1B\x5Dx");
+        // Blue text, in a zone on white (from its delimiter, a space): the text white on blue
+        $html = $this->renderCell("\x1B\x44\x1B\x57 \x1B\x5Dx");
 
         self::assertStringContainsString('style="color:#ffffff;background:#0000ff">x</span>', $html);
+        // With no delimiter, the zone is black: the text black on blue
+        self::assertStringContainsString(
+            'style="color:#000000;background:#0000ff">x</span>',
+            $this->renderCell("\x1B\x44\x1B\x57\x1B\x5Dx"),
+        );
     }
 
     public function testDoubleWidthTakesTwoColumns(): void
@@ -131,11 +137,31 @@ final class HtmlRendererTest extends TestCase
         self::assertStringNotContainsString(' u"', $html);
     }
 
-    public function testMaskedTextIsHidden(): void
+    public function testMaskedZoneIsHidden(): void
     {
-        $html = $this->renderCell("\x1B\x58s");
+        // Masking starts at a delimiter (Screen\Zone): s, then its background, then a masked
+        // mosaic character
+        $html = $this->renderCell("\x1B\x58\x1B\x54 s\x0E\x7F");
 
         self::assertStringNotContainsString('>s<', $html);
+        self::assertStringContainsString('style="color:#ffffff;background:#0000ff"> </span>', $html);
+        self::assertStringNotContainsString('<i class="on">', $html);
+        // Not before one
+        self::assertStringContainsString('>s<', $this->renderCell("\x1B\x58s"));
+    }
+
+    public function testDrawsTextOnTheBackgroundOfItsZone(): void
+    {
+        // From a delimiter, a space
+        self::assertStringContainsString(
+            'style="color:#ffffff;background:#0000ff">A</span>',
+            $this->renderCell("\x1B\x54 A"),
+        );
+        // Not before one
+        self::assertStringContainsString(
+            'style="color:#ffffff;background:#000000">A</span>',
+            $this->renderCell("\x1B\x54A"),
+        );
     }
 
     public function testDrawsMosaicPixels(): void
