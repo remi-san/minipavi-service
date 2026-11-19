@@ -18,6 +18,7 @@
     },
     "require-dev": {
         "carthage-software/mago": "^1.60",
+        "infection/infection": "^0.32.6",
         "phpunit/phpunit": "^11.5"
     },
     "suggest": {
@@ -40,6 +41,10 @@
             "mago lint",
             "mago analyze"
         ],
+        "mutation": [
+            "@putenv UPDATE_GOLDEN=0",
+            "@php -d memory_limit=1G vendor/bin/infection --threads=max"
+        ],
         "cs": "mago format --check",
         "cs-fix": "mago format"
     },
@@ -47,6 +52,7 @@
         "test": "Runs the tests",
         "coverage": "Runs the tests with coverage (needs pcov or Xdebug): as text, and in coverage.xml; fails below 97% of lines",
         "analyse": "Runs the linter and the static analysis (Mago)",
+        "mutation": "Runs the mutation testing (Infection, needs pcov or Xdebug), its logs in build/infection/",
         "cs": "Checks the formatting (Mago)",
         "cs-fix": "Formats the code (Mago)"
     },
@@ -54,6 +60,9 @@
         "platform": {
             "php": "8.2.0"
         },
-        "sort-packages": true
+        "sort-packages": true,
+        "allow-plugins": {
+            "infection/extension-installer": false
+        }
     }
 }
