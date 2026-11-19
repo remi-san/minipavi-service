@@ -88,11 +88,11 @@ final class Cursor
      * Moves right after a character: wraps to the next row of text, as many rows down as the
      * character is tall (Attributes::height()), as the Minitel does
      *
-     * @param int $width the width of the character
+     * @param int $columns the width of the character
      */
-    public function advance(int $width): void
+    public function advance(int $columns): void
     {
-        $this->right($width, rows: $this->attributes->height());
+        $this->right($columns, rows: $this->attributes->height());
     }
 
     /**
