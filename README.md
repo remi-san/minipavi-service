@@ -169,8 +169,9 @@ KernelBuilder::for($router, $messages)
   URL, the page `HtmlClient`'s browser showed), stays in the exchange. A request that can't be
   read gets an error as its response (see `Service`), through the client's `unreadable()` exchange;
   nothing to respond to (a disconnection, a background call of the
-  gateway) is a `204`, and an
-  response the client can't give a `500` (logged as critical).
+  gateway) is a `204`, and a
+  response the client can't give (or an `unreadable()` exchange it can't give) a `500` (logged
+  as critical).
   **The context is signed** on its way through the gateway (or the browser), so that the user
   can't change it: anyone could otherwise send another route, or other parameters.
   `Service` takes its **`Core\ContextSerializer`** (`KernelBuilder` gives it), which signs the
@@ -627,7 +628,7 @@ elements are drawn in order:
 
 | Element | Draws |
 |---|---|
-| `<background>file.vdt</background>` | Videotex page from the page's folder or one of its subfolders (e.g. `images/logo.vdt`), sent as is (e.g. made with a Videotex editor). Put it first to draw over it. |
+| `<background>file.vdt</background>` | Videotex page from the page's folder or one of its subfolders (e.g. `images/logo.vdt`; `/` or `\` between folders, but not first, nor `..` or a Windows drive such as `C:`), sent as is (e.g. made with a Videotex editor). Put it first to draw over it. |
 | `<image row col>file.vdt</image>` | Videotex picture from the page's folder or one of its subfolders, drawn with its top-left cell (row 1, column 1 of the file) at `row`, `col` (default 1, 1): what goes past the screen is cut, and it doesn't clear the screen. In a template, the file name can be a placeholder (`{{game.image}}`), and in a `<foreach>`, `row` is relative to the item, to show a picture per item |
 | `<text row col align="center" color bg size fill="yes">…</text>` | text; `size`: normal, double-height, double-width, double; `fill="yes"` paints the rest of the row with `bg` |
 | `<line row col length char color/>` | horizontal line; `char`: top (`_`), middle (`` ` ``), bottom (`~`) or any character |
@@ -750,7 +751,9 @@ They replace MiniPaviCli's global `VDT_*` and `PRO_*` constants, which are only 
 `append()`). Its constructors encode as MiniPaviCli's Videotex helpers do, without calling
 them: `Vdt::text()` (as `toG2()`), `Vdt::position($position)` (a `Minitel\Position`,
 `setPos()`), `Vdt::line0()` (`writeLine0()`), `Vdt::clearScreen()` and
-`Vdt::repeat($char, $count)` (`repeatChar()`).
+`Vdt::repeat($char, $count)` (`repeatChar()`, up to 64; beyond, as one REP can't count more,
+more follow, as the MiniPavi emulator writes them; a count below 1 is an
+`InvalidValueException`).
 
 Other classes read Videotex content, e.g. of a `.vdt` file: `Screen::of()` draws it, `Offset`
 moves it on the screen, and `ClearScreens` works on its clear screens; `<image>` uses them.
