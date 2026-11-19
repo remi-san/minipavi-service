@@ -10,23 +10,15 @@ changes, and the XML Schemas (`schema/page.xsd`, `schema/messages.xsd`) when the
 change. `bin/minipavi` is its command line (`lint`, `preview`, `vdt-offset`), `vendor/bin/minipavi`
 in a service.
 
-It is on [Packagist](https://packagist.org/packages/remi-san/minipavi-service). Services
-require its `dev-main`, so **whatever is merged into `main` is what they get** on their next
-`composer update`.
+It is on [Packagist](https://packagist.org/packages/remi-san/minipavi-service), and versioned
+(tags such as `v0.1.0`).
 
 ## Its users
 
-The framework's real user is the skeleton,
-[remi-san/minipavi-service-skeleton](https://github.com/remi-san/minipavi-service-skeleton) (the
-service to start from). It has no other users: change its API freely, without deprecation
-shims, but:
-
-1. Before changing an API, check how the skeleton calls it (`grep -rn` in a clone: `src/`,
-   `public/`, `config/`).
-2. When a change breaks it, update it in step, in a PR on the skeleton once the framework's PR
-   is merged: its CI checks it against the framework's `main`.
-3. To try a change in it before it is merged, point a service created from it at a local clone
-   with a `path` repository (see "Installing" in the README), without committing that.
+Services hold a fixed version of the framework, and move to a new one when they choose to.
+Changing the framework doesn't need checking or updating them: change its API freely, without
+deprecation shims. Do mark each breaking change (`BREAKING CHANGE:` in the commit footer, and
+in the PR), so that it shows when a service updates.
 
 ## Workflow for fixing an issue
 
@@ -98,10 +90,9 @@ moved ones link to them as `remi-san/minipavi-stack#<n>`. For each issue:
 - **Videotex output**: `tests/Vdt` compares `offset()` with golden files. After an intended
   change to the bytes written, regenerate them with `UPDATE_GOLDEN=1 composer test`, and
   explain the change in the commit.
-- **The skeleton**: for a change to an API it uses, or to what it shows, run its tests
-  (`composer test` in a service created from the skeleton) against the change, through a
-  local `path` repository; and, for what a user sees, a local MiniPavi stack (see the
-  skeleton's README).
+- **What a user sees**: for a change to what is shown on a Minitel, try it in a service on a
+  local MiniPavi stack (the skeleton's README says how), pointing the service at a local clone
+  with a `path` repository (see "Installing" in the README), without committing that.
 
 Say in the PR which of these checks were run, and which weren't.
 
