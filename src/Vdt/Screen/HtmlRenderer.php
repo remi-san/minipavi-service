@@ -126,7 +126,7 @@ final readonly class HtmlRenderer
         if ($attributes->width() === 2) {
             $classes[] = 'w2';
         }
-        if ($attributes->isDoubleHeight()) {
+        if ($attributes->height() === 2) {
             $classes[] = 'h2';
         }
         if ($attributes->isBlinking()) {

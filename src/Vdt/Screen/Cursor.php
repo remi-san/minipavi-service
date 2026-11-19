@@ -48,13 +48,16 @@ final class Cursor
     /**
      * Sets the attribute of ESC byte (Attributes::with()), as the Minitel does: ESC M and ESC
      * O received on rows 0 and 1, which can't have double height, are discarded, the size
-     * staying as it was
+     * staying as it was, and so is any size received in mosaic (MiniPavi's emulator)
      *
      * @param string $byte the byte after ESC
      */
     public function setAttribute(string $byte): void
     {
         if (!Attributes::allowsDoubleHeight($this->row) && Attributes::isTallSize($byte)) {
+            return;
+        }
+        if ($this->attributes->isMosaic() && Attributes::isSize($byte)) {
             return;
         }
         $this->attributes = $this->attributes->with($byte);
@@ -82,22 +85,14 @@ final class Cursor
     }
 
     /**
-     * Moves right after a character, or a move right: wraps to the next row, from the last
-     * one to the first (row 0 stays on its last column)
+     * Moves right after a character: wraps to the next row of text, as many rows down as the
+     * character is tall (Attributes::height()), as the Minitel does
      *
-     * @param int $columns the width of the character, or 1
+     * @param int $columns the width of the character
      */
     public function advance(int $columns): void
     {
-        $this->col += $columns;
-        if ($this->col > ScreenSize::COLS) {
-            if ($this->row === 0) {
-                $this->col = ScreenSize::COLS;
-                return;
-            }
-            $this->col = 1;
-            $this->row = $this->row === ScreenSize::ROWS ? 1 : $this->row + 1;
-        }
+        $this->right($columns, rows: $this->attributes->height());
     }
 
     /**
@@ -116,7 +111,8 @@ final class Cursor
                 }
                 break;
             case Videotex::CURSOR_RIGHT:
-                $this->advance(1);
+                // 1 row down from the last column, even in double height
+                $this->right(1, rows: 1);
                 break;
             case Videotex::CURSOR_DOWN:
                 $this->row = $this->row >= ScreenSize::ROWS ? 1 : $this->row + 1;
@@ -128,5 +124,23 @@ final class Cursor
                 $this->col = 1;
                 break;
         }
+    }
+
+    /**
+     * Moves right by columns, wrapping past the last column rows down, cycling through rows 1
+     * to ScreenSize::ROWS (row 0 stays on its last column)
+     */
+    private function right(int $columns, int $rows): void
+    {
+        $this->col += $columns;
+        if ($this->col <= ScreenSize::COLS) {
+            return;
+        }
+        if ($this->row === 0) {
+            $this->col = ScreenSize::COLS;
+            return;
+        }
+        $this->col = 1;
+        $this->row = (($this->row - 1 + $rows) % ScreenSize::ROWS) + 1;
     }
 }

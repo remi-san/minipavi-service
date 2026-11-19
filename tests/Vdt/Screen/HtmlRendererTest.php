@@ -97,6 +97,12 @@ final class HtmlRendererTest extends TestCase
         self::assertStringNotContainsString('class="c u"', $this->renderCell("\x1B\x5A "));
     }
 
+    public function testMosaicIsNeverDoubleHeight(): void
+    {
+        // ESC M then SO on row 2: the Minitel draws mosaic at normal size
+        self::assertStringNotContainsString(' h2', $this->render(new Vdt("\x1F\x42\x41\x1B\x4D\x0E\x7F")));
+    }
+
     public function testKeyBadgesArentUnderlined(): void
     {
         $html = $this->render((new Key('Envoi', new Position(1, 1)))->toVdt(new Terminal()));

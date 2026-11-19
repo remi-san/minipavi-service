@@ -80,12 +80,16 @@ final readonly class Attributes
     }
 
     /**
-     * These attributes, in the charset SO (mosaic) or SI (text) selects
+     * These attributes, in the charset SO (mosaic) or SI (text) selects, at normal size: the
+     * Minitel sets the size back to normal on every SO and SI, even one that doesn't change
+     * the charset (checked in MiniPavi's emulator, #26)
      */
     public function withCharset(string $byte): self
     {
-        return new self(['charset' => $byte === Videotex::MOSAIC_SET ? Videotex::MOSAIC_SET : Videotex::TEXT_SET]
-        + $this->values);
+        return new self([
+            'charset' => $byte === Videotex::MOSAIC_SET ? Videotex::MOSAIC_SET : Videotex::TEXT_SET,
+            'size' => self::SIZE_NORMAL,
+        ] + $this->values);
     }
 
     public function isMosaic(): bool
@@ -159,6 +163,14 @@ final readonly class Attributes
     }
 
     /**
+     * Whether ESC byte sets the size: ESC L, M, N or O
+     */
+    public static function isSize(string $byte): bool
+    {
+        return self::group($byte) === 'size';
+    }
+
+    /**
      * Whether ESC byte sets double height: ESC M (double height) or ESC O (double size)
      */
     public static function isTallSize(string $byte): bool
@@ -191,12 +203,26 @@ final readonly class Attributes
     }
 
     /**
+     * Rows taken by a character: double height only applies to text characters, as on the
+     * Minitel (which ignores ESC M and ESC O for mosaic)
+     */
+    public function height(): int
+    {
+        return $this->isDoubleHeight() && !$this->isMosaic() ? 2 : 1;
+    }
+
+    /**
      * Videotex codes setting these attributes where current ones are: the charset (SI or SO),
-     * then ESC <byte> for each other attribute that differs; '' if none does
+     * then ESC <byte> for each other attribute that differs from what follows it (SI and SO
+     * set the size back to normal, withCharset()); '' if none does
      */
     public function codesFrom(self $current): string
     {
-        $codes = $this->values['charset'] !== $current->values['charset'] ? $this->values['charset'] : '';
+        $codes = '';
+        if ($this->values['charset'] !== $current->values['charset']) {
+            $codes = $this->values['charset'];
+            $current = $current->withCharset($codes);
+        }
         foreach (self::DEFAULTS as $group => $_) {
             if ($group === 'charset' || $this->values[$group] === $current->values[$group]) {
                 continue;
