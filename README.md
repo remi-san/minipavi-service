@@ -16,7 +16,8 @@ The code (namespace `MiniPaviService`, in `src/`) is organized by layer. The run
 controllers, which use the pages, and none uses those above it: `Core\` → `Controller\` →
 `Page\` → `Message\`, `Minitel\`, `Vdt\`, and the clients and the entry point sit on top:
 `Client\` → `Http\` → `Core\` (`Gateway\`'s requests and responses are values all of them use,
-which depend on nothing above them):
+which depend on nothing above them). Below `Page\`, `Vdt\` uses `Minitel\`, and neither uses
+the layers above it (`LayersTest` checks it):
 
 | Namespace | Holds |
 |---|---|
@@ -27,7 +28,7 @@ which depend on nothing above them):
 | `Controller\Pagination\` | `PaginatedController`, the `PaginatedList` it shows and its `ShownPage`, `Paginator`, `PageParameters` |
 | `Page\` | static and template pages, their display elements, and the page XML parser |
 | `Message\` | the messages shown on screen: `Message`, `FrameworkMessage`, `Messages` and their XML parser |
-| `Minitel\` | the user's terminal: `Terminal`, its `FunctionKey`s, its settings (`Keyboard`, `LocalEcho`, `Scroll`), and the `InputField` where the user types |
+| `Minitel\` | the user's terminal: `Terminal`, its `FunctionKey`s, its settings (`Keyboard`, `LocalEcho`, `Scroll`), its `ScreenSize` and `Color`s, and the `InputField` where the user types |
 | `Vdt\` | Videotex: codes, reading, writing and moving Videotex content (`Vdt`, `Videotex`); in `Screen\`, the Minitel screen it draws (`Screen`, `Cell`) and its HTML rendering (`HtmlRenderer`) |
 | `Gateway\` | the requests and responses the service handles (`GatewayRequest`, `GatewayResponse`), the commands a response sends (`Command`: the `WaitForKeyCommand` waiting for a key, the `InputCommand` reading a field, the `ServiceCallCommand` calling a service, with its `CallMode`), and the `Client` interface reading and sending them |
 | `Client\` | the clients: `MiniPaviClient` for the MiniPavi gateway, `HtmlClient` for a browser (`?web=true`) |
@@ -687,7 +688,8 @@ Vdt::join($a, $b, $c);
 A `Vdt` keeps its bytes, and reads them only to play, show or move them (below).
 
 Codes to send as they are have names: `Vdt\Videotex` for Videotex (`CLEAR_LINE`,
-`CURSOR_OFF`, `INVERSE_ON`, sizes, `RESET_CHARSETS`...), and the `Minitel\Keyboard`,
+`CURSOR_OFF`, `INVERSE_ON`, sizes, `RESET_CHARSETS`..., and the colors of a
+`Minitel\Color`: `Videotex::textColor($color)` and `backgroundColor($color)`), and the `Minitel\Keyboard`,
 `Minitel\LocalEcho` and `Minitel\Scroll` enums for the sequences configuring the Minitel
 (`Keyboard::Lowercase->sequence()`...). A page sends them itself, from the attributes of
 `<page>` (see [Page XML format](#page-xml-format)); `Page\Setup` sends them for other content.
