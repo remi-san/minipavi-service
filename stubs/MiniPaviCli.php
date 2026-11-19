@@ -27,7 +27,7 @@ class MiniPaviCli
     public static function start($ignoreWMState = true) {}
 
     /**
-     * Writes the answer to the gateway
+     * Writes the response to the gateway
      *
      * @param string $content
      * @param string $next

@@ -6,7 +6,7 @@ official [`ludosevilla/minipavi-cli`](https://packagist.org/packages/ludosevilla
 - **Pages** described in XML: static, or templates with placeholders, loops and conditions
 - **Controllers**, one per screen, each a small state machine returning **responses**
 - A **router** and a **context** keeping each controller's state between requests
-- A **service without I/O**: it answers a `GatewayRequest` with a `GatewayResponse`, which
+- A **service without I/O**: it responds to a `GatewayRequest` with a `GatewayResponse`, which
   `MiniPaviClient` reads from and sends to the gateway, through the static `MiniPaviCli`
 - **`Vdt`**, to read Videotex content (e.g. pictures made with a Videotex editor) and move it on the screen
 
@@ -15,7 +15,7 @@ Requires PHP 8.2.
 The code (namespace `MiniPaviService`, in `src/`) is organized by layer. The runtime uses the
 controllers, which use the pages, and none uses those above it: `Core\` → `Controller\` →
 `Page\` → `Message\`, `Minitel\`, `Vdt\`, and the clients and the entry point sit on top:
-`Client\` → `Http\` → `Core\` (`Gateway\`'s requests and answers are values all of them use,
+`Client\` → `Http\` → `Core\` (`Gateway\`'s requests and responses are values all of them use,
 which depend on nothing above them):
 
 | Namespace | Holds |
@@ -29,7 +29,7 @@ which depend on nothing above them):
 | `Message\` | the messages shown on screen: `Message`, `FrameworkMessage`, `Messages` and their XML parser |
 | `Minitel\` | the user's terminal: `Terminal`, its `FunctionKey`s, its settings (`Keyboard`, `LocalEcho`, `Scroll`), and the `InputField` where the user types |
 | `Vdt\` | Videotex: codes, reading, writing and moving Videotex content (`Vdt`, `Videotex`); in `Screen\`, the Minitel screen it draws (`Screen`, `Cell`) and its HTML rendering (`HtmlRenderer`) |
-| `Gateway\` | the requests and answers the service handles (`GatewayRequest`, `GatewayResponse`), the commands an answer sends (`Command`: the `WaitForKeyCommand` waiting for a key, the `InputCommand` reading a field, the `ServiceCallCommand` calling a service, with its `CallMode`), and the `Client` interface reading and sending them |
+| `Gateway\` | the requests and responses the service handles (`GatewayRequest`, `GatewayResponse`), the commands a response sends (`Command`: the `WaitForKeyCommand` waiting for a key, the `InputCommand` reading a field, the `ServiceCallCommand` calling a service, with its `CallMode`), and the `Client` interface reading and sending them |
 | `Client\` | the clients: `MiniPaviClient` for the MiniPavi gateway, `HtmlClient` for a browser (`?web=true`) |
 | `Http\` | the entry point for the web server, on PSR-7 / PSR-15: `Kernel`, `ResponseEmitter`, `ServiceRunner`; in `Dispatch\`, who handles the request (`Dispatcher`, `ConditionalRequestHandler`, `RequestMatcher`s); in `Url\`, the request's URLs (`RequestUrl`, `UrlAttribute`, `WithUrls`); in `Emulator\`, the emulator browsers are sent to (`EmulatorConfig`, `EmulatorRedirect`) |
 | `Testing\` | `ServiceTester`, functional tests of a service (needs PHPUnit) |
@@ -156,21 +156,21 @@ KernelBuilder::for($router, $messages)
 - **`ServiceRunner`** runs the service for an HTTP request, through a client
   (`Gateway\Client`, in `Client\`) translating between HTTP and the service's values: the
   client reads the HTTP request into a **`Gateway\ClientExchange`** (`exchange()`), whose
-  `request()` the service answers, and whose `respond()` turns the `GatewayResponse` into the
-  HTTP response. What the client needs to answer, besides what the service gets (the service's
+  `request()` the service responds to, and whose `respond()` turns the `GatewayResponse` into the
+  HTTP response. What the client needs to respond, besides what the service gets (the service's
   URL, the page `HtmlClient`'s browser showed), stays in the exchange. A request that can't be
-  read is answered as an error (see `Service`), through the client's `unreadable()` exchange;
-  nothing to answer (a disconnection, a background call of the
+  read gets an error as its response (see `Service`), through the client's `unreadable()` exchange;
+  nothing to respond to (a disconnection, a background call of the
   gateway) is a `204`, and an
-  answer the client can't give a `500` (logged as critical).
+  response the client can't give a `500` (logged as critical).
   **The context is signed** on its way through the gateway (or the browser), so that the user
   can't change it: anyone could otherwise send another route, or other parameters.
   `Service` takes its **`Core\ContextSerializer`** (`KernelBuilder` gives it), which signs the
-  context of each answer and checks the one of each request it reads with a
+  context of each response and checks the one of each request it reads with a
   **`Core\Signing\ContextSigner`** (that of a connection, a disconnection or a
   background call isn't read, so it isn't checked). **`HmacContextSigner`** signs it with an
   HMAC-SHA256 of a secret key (`<signature>.<context>`), **`UnsignedContext`** doesn't. A context
-  the signer didn't sign (`ForgedContextException`) is answered as one that can't be read.
+  the signer didn't sign (`ForgedContextException`) is responded to as one that can't be read.
   Keep the key out of the repository: the services read it from the environment,
   **`CONTEXT_SECRET`** (`openssl rand -base64 32`), and don't sign the context without it, with
   a warning. Changing the key makes the users of sessions in progress start again at the
@@ -178,24 +178,24 @@ KernelBuilder::for($router, $messages)
   `ServiceTester`) doesn't sign it (`UnsignedContext`). Two clients:
   - **`MiniPaviClient`**, for the MiniPavi gateway, through `MiniPaviCli` used unchanged: it
     reads the gateway's request itself (background calls included, which the service doesn't
-    answer), and writes the answer itself: `MiniPaviClient` captures it as the body of the
+    response), and writes the response itself: `MiniPaviClient` captures it as the body of the
     HTTP response;
   - **`HtmlClient`**, for a browser: it shows the service's screen as an HTML page
     (`Vdt\Screen\HtmlRenderer`), and lets the user navigate it as on a Minitel. The first request is a
     connection, at the default route, as the gateway's. The page is a form posting back to its URL,
     which `Client\HtmlForm` renders and reads back (`PostedForm`), `HtmlClient` turning it into
-    a `GatewayRequest`, and an answer into the page:
-    - the answer's **input field** (the `InputField` of its `InputCommand`: a text field, or a message of several lines) over the screen, at its position
+    a `GatewayRequest`, and a response into the page:
+    - the response's **input field** (the `InputField` of its `InputCommand`: a text field, or a message of several lines) over the screen, at its position
       and size, one input per line;
     - the 8 **function keys** under the screen, in the Minitel's 2 × 4 layout, those the
       input doesn't accept (`validwith`) disabled; Enter in a field presses Envoi;
-    - hidden, the context of the answer, its input command (as JSON,
-      `Client\InputCommandJson`), and the **screen so far**: an answer drawing part of the
+    - hidden, the context of the response, its input command (as JSON,
+      `Client\InputCommandJson`), and the **screen so far**: a response drawing part of the
       screen (e.g. "Dernière page" on line 0) is drawn over it, as on a Minitel (kept from its
       last clear screen). The page's screen and command come back
       with the key as the client's state (`HtmlPageState`).
 
-    A key that would **leave the service** (an answer calling another service, a
+    A key that would **leave the service** (a response calling another service, a
     `ServiceCallCommand`, as `Response::connectTo()` gives) is blocked: the page stays as it was, with
     `FrameworkMessage::WebLeave` on line 0. The key labels and that error are messages
     (`key.send`, `key.next`…, `web.leave`). The screen is drawn in the Minitel's colours, with
@@ -210,16 +210,16 @@ KernelBuilder::for($router, $messages)
   `SERVICES_INTERNAL_HOST`; otherwise (a public server), the minipavi.fr emulator and gateway,
   with the URL the browser asked for. `EmulatorConfig::fromValues()` takes those values, read
   from the environment in the service's container.
-- **`Service`** answers a request of the gateway, without I/O:
+- **`Service`** responds to a request of the gateway, without I/O:
   `$service->handle(GatewayRequest): ?GatewayResponse` (null for a disconnection or a
-  background call of the gateway, `BGCALL-WM-...`, which have nothing to answer). It restores the `Context`, and runs the controller of the current route
-  until a response answers the gateway. `Service` owns the context: a response says, through
+  background call of the gateway, `BGCALL-WM-...`, which have nothing to respond to). It restores the `Context`, and runs the controller of the current route
+  until a response responds to the gateway. `Service` owns the context: a response says, through
   a `Flow` (see below), the state and parameters its controller keeps and what comes next. A context without route
   starts at the default route. One whose route the service doesn't have (e.g. removed in a new
   version) starts again there too, without what the user typed, which was for a screen that
   doesn't exist any more (the serializer refuses it with an `UnknownRouteException`).
   More than 10 page changes (`Response::goTo()`) in one request are taken as controllers
-  changing to each other endlessly, and answered as an error; give another limit with
+  changing to each other endlessly, and responded to with an error; give another limit with
   `new Service(..., maxPageChanges: 20)`.
   If serving a request fails (an exception or a PHP error, in a controller, a template, the
   context...), the error is logged, and the user gets a message on line 0
@@ -228,7 +228,7 @@ KernelBuilder::for($router, $messages)
 - **`GatewayRequest`** is what the gateway sends: `key` (a `Minitel\Key`: a `FunctionKey` or a
   `ConnectionCode`, which its `functionKey()` and `connectionCode()` tell apart, or null for
   another key; `GatewayRequest::keyOf()` reads it from what the
-  gateway sends, `fctn()` gives its name back), `content` (the text typed), `context` (given back from the previous answer) and
+  gateway sends, `fctn()` gives its name back), `content` (the text typed), `context` (given back from the previous response) and
   `terminal`. **`GatewayResponse`** is what is sent back: `vdt`, `context` and `command`, what
   the gateway does next (a `Gateway\Command`: a `WaitForKeyCommand`, the default, waiting for
   a key, then calling this service; an `InputCommand` reading a field; a `ServiceCallCommand`
@@ -277,7 +277,7 @@ KernelBuilder::for($router, $messages)
   | `Response::goTo($route, $parameters)` | switches to another controller, which runs at once: at `ControllerState::Init`, with `$parameters` (a `Parameters` object, or none), without the user's input; this controller is reset | `ControllerState::Init` |
   | `Response::connectTo($url, $vdt)` | sends the user to another service, as a new connection (a `ServiceCallCommand` with `CallMode::Connect`) | `ControllerState::Init` |
 
-  Every response but `goTo()` answers the gateway and ends the request. The state and
+  Every response but `goTo()` responds to the gateway and ends the request. The state and
   parameters are what this controller keeps for its next run (for `connectTo()`, when the
   user comes back to it): a `State`, and a `Parameters` object (none by default). Give
   others by name, e.g. `Response::readInput($vdt, $command, parameters: new
@@ -286,9 +286,9 @@ KernelBuilder::for($router, $messages)
   They are readonly, and don't change the context. `Service` calls the response's
   `continueWith(Flow $flow): GatewayResponse`, where it says what comes next:
   `$flow->keep($state, $parameters)` keeps them for this controller,
-  `$flow->answer($vdt, $command)` ends the request with that answer to
+  `$flow->respond($vdt, $command)` ends the request with that response to
   the gateway, and `$flow->goTo($route, $parameters)` resets this controller and runs
-  another one, giving its answer. Every response but `ChangePage` extends
+  another one, giving its gateway response. Every response but `ChangePage` extends
   `KeepingResponse`, which keeps the state and parameters it is built with, then calls its
   `next(Flow $flow)`. A response of your own does the same, without a change to `Service`:
 
@@ -302,7 +302,7 @@ KernelBuilder::for($router, $messages)
 
       protected function next(Flow $flow): GatewayResponse
       {
-          return $flow->answer(Vdt::clearScreen()->append($this->vdt));
+          return $flow->respond(Vdt::clearScreen()->append($this->vdt));
       }
   }
   ```
@@ -485,7 +485,7 @@ KernelBuilder::for($router, $messages)
 `Testing\ServiceTester` scripts a session of a user against a `Service`, without the gateway,
 in a PHPUnit test (PHPUnit is suggested by the framework, not required: add it to the
 service's `require-dev`). It runs the service on requests built in memory, gives the context
-of each answer back with the next request, and plays every answer since the connection on a
+of each response back with the next request, and plays every response since the connection on a
 simulated `Screen`, as the Minitel keeps what isn't cleared:
 
 ```php
@@ -498,13 +498,13 @@ $tester->connect()->assertRoute('home')->assertScreenContains('BIENVENUE')
 
 - `connect()` starts a new session (an empty screen, no context), `type(...$lines)` gives
   the text of the input field for the next key (one string per line), `press(FunctionKey)`
-  sends a key, and `disconnect()` checks a disconnection isn't answered.
+  sends a key, and `disconnect()` checks a disconnection gets no response.
 - `assertScreenContains()`, `assertScreenNotContains()`, `assertLineContains($row, ...)` and
   `assertLine0()` check the screen as text, accented characters included
   (`Screen::text()`); `assertRoute()` the route the user's next key goes to, and
   `assertConnectsTo($url)` a connection to another service (`Response::connectTo()`). A
   failed assertion shows the screen.
-- `screen()`, `answer()` (the last `GatewayResponse`) and `context()` give the rest, for
+- `screen()`, `response()` (the last `GatewayResponse`) and `context()` give the rest, for
   other assertions.
 
 To test the service as it is served, build its `Service` from the same wiring as its
@@ -664,7 +664,7 @@ format changes, change `page.xsd` with the parser.
 ## Videotex content
 
 Videotex goes through the framework as a **`Vdt` value**, never as a string: pages display
-one (`Page::display()`), responses and `Flow::answer()` take one, and `GatewayResponse` holds
+one (`Page::display()`), responses and `Flow::respond()` take one, and `GatewayResponse` holds
 one. Only the gateway client (`MiniPaviClient::send()`) turns it into bytes. Text and
 Videotex can't be mixed up:
 
