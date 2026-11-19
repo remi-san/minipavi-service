@@ -44,13 +44,12 @@ final readonly class Player
                     $repeat = $token->type === TokenType::Repeat;
                     $bytes = $repeat ? $last : $token->bytes;
                     // REP with no character before: nothing to draw, nor to tell
-                    if ($bytes === null) {
-                        continue 2;
+                    if ($bytes !== null) {
+                        for ($n = 0; $n < ($repeat ? $token->count : 1); $n++) {
+                            $this->draw($cursor, $bytes, $listener);
+                        }
+                        $last = $bytes;
                     }
-                    for ($n = 0; $n < ($repeat ? $token->count : 1); $n++) {
-                        $this->draw($cursor, $bytes, $listener);
-                    }
-                    $last = $bytes;
                     continue 2;
                 case TokenType::Attribute:
                     $cursor->setAttribute($token->bytes);
