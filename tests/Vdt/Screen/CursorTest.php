@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Tests\Vdt\Screen;
 
+use MiniPaviService\Minitel\Color;
 use MiniPaviService\Minitel\ScreenSize;
-use MiniPaviService\Page\Display\Color;
 use MiniPaviService\Vdt\Screen\Attributes;
 use MiniPaviService\Vdt\Screen\Cursor;
 use PHPUnit\Framework\TestCase;

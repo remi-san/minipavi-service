@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace MiniPaviService\Tests\Page\Parser;
 
 use MiniPaviService\Message\MessagesXmlParser;
+use MiniPaviService\Minitel\Color;
 use MiniPaviService\Minitel\FunctionKey;
 use MiniPaviService\Minitel\Keyboard;
 use MiniPaviService\Minitel\LocalEcho;
 use MiniPaviService\Minitel\Scroll;
-use MiniPaviService\Page\Display\Color;
 use MiniPaviService\Page\Display\Size;
 use MiniPaviService\Page\Parser\ElementFactory;
 use MiniPaviService\Page\Parser\PageFiles;

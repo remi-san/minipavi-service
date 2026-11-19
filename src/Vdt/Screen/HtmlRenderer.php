@@ -6,8 +6,8 @@ namespace MiniPaviService\Vdt\Screen;
 
 use MiniPaviService\Html\Html;
 use MiniPaviService\Io\Files;
+use MiniPaviService\Minitel\Color;
 use MiniPaviService\Minitel\ScreenSize;
-use MiniPaviService\Page\Display\Color;
 
 /**
  * Draws a Screen in HTML, as the Minitel would show it (checked against MiniPavi's emulator):

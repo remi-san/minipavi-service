@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Tests\Page\Display;
 
+use MiniPaviService\Minitel\Color;
 use MiniPaviService\Minitel\Position;
 use MiniPaviService\Minitel\Terminal;
-use MiniPaviService\Page\Display\Color;
 use MiniPaviService\Page\Display\EndKey;
 use MiniPaviService\Page\Display\Key;
 use MiniPaviService\Vdt\Vdt;

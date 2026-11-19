@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Tests\Vdt;
 
+use MiniPaviService\Minitel\Color;
 use MiniPaviService\Minitel\ScreenSize;
-use MiniPaviService\Page\Display\Color;
 use MiniPaviService\Vdt\Player;
 use MiniPaviService\Vdt\Screen\Attributes;
 use MiniPaviService\Vdt\Screen\Cursor;

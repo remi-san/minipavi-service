@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Page\Display;
 
+use MiniPaviService\Minitel\Color;
 use MiniPaviService\Minitel\Position;
 use MiniPaviService\Minitel\ScreenSize;
 use MiniPaviService\Minitel\Terminal;
 use MiniPaviService\Vdt\Vdt;
+use MiniPaviService\Vdt\Videotex;
 
 /**
  * Hint telling how to come back to this screen (<endkey> in the page XML format): the key
@@ -39,7 +41,7 @@ final readonly class EndKey implements Element
 
             return Vdt::join(
                 Vdt::position(self::centered($width), $this->position->row ?? (ScreenSize::ROWS - 1)),
-                Color::White->text(),
+                new Vdt(Videotex::textColor(Color::White)),
                 Vdt::text($this->shiftLabel),
                 $badge,
             );

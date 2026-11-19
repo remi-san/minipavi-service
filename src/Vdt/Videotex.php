@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Vdt;
 
+use MiniPaviService\Minitel\Color;
 use MiniPaviService\Vdt\Screen\Attributes;
 
 /**
@@ -59,4 +60,20 @@ final class Videotex
     public const SIZE_DOUBLE = self::ESC . Attributes::DOUBLE;
     // Back to the standard character sets G0 and G1, after redefined characters (DRCS)
     public const RESET_CHARSETS = "\x1B\x28\x40\x1B\x29\x63";
+
+    /**
+     * Sets the text (foreground) color: ESC and the byte Screen\Attributes names for it
+     */
+    public static function textColor(Color $color): string
+    {
+        return self::ESC . Attributes::textColor($color);
+    }
+
+    /**
+     * Sets the background color: ESC and the byte Screen\Attributes names for it
+     */
+    public static function backgroundColor(Color $color): string
+    {
+        return self::ESC . Attributes::backgroundColor($color);
+    }
 }
