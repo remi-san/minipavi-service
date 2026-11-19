@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Tests\Page\Template;
 
+use MiniPaviService\InvalidValueException;
 use MiniPaviService\Page\Parser\AttributeValues;
 use MiniPaviService\Page\Template\Scope;
 use PHPUnit\Framework\TestCase;
@@ -39,7 +40,7 @@ final class ScopeTest extends TestCase
 
     public function testUnknownVariableThrows(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidValueException::class);
         $this->expectExceptionMessage('unknown variable {{game.year}}: no "year" in array');
 
         (new Scope(['game' => ['title' => 'Chess']]))->substitute('{{game.year}}');
@@ -47,7 +48,7 @@ final class ScopeTest extends TestCase
 
     public function testValueThatIsNotTextThrows(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidValueException::class);
         $this->expectExceptionMessage('{{game}} is not text (array)');
 
         (new Scope(['game' => []]))->substitute('{{game}}');
@@ -78,7 +79,7 @@ final class ScopeTest extends TestCase
             $scope->value('game.year'),
             $scope->value('game.studio'),
         ]);
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidValueException::class);
         $this->expectExceptionMessage('no "city" in class@anonymous');
         $scope->value('game.city');
     }

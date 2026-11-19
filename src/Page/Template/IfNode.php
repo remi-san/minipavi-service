@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Page\Template;
 
+use MiniPaviService\InvalidValueException;
+
 /**
  * <if test="loop.last"> or <if test="!loop.last">: draws its children only if the
  * variable is set to something other than false, 0, an empty text or an empty list
@@ -26,7 +28,7 @@ final readonly class IfNode implements Node
     {
         try {
             $value = $scope->value($this->test);
-        } catch (\InvalidArgumentException $e) {
+        } catch (InvalidValueException $e) {
             throw new TemplateException("{$this->location}: <if>: " . $e->getMessage(), 0, $e);
         }
         // PHP's truthiness, and a collection is true when it has elements

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Page\Parser\Element;
 
+use MiniPaviService\InvalidValueException;
 use MiniPaviService\Page\Display\Element;
 use MiniPaviService\Page\Parser\AttributeValues;
 use MiniPaviService\Page\Parser\PageXmlException;
@@ -23,7 +24,7 @@ interface ElementBuilder
     /**
      * Element for these attributes and text (placeholders replaced in a template)
      *
-     * @throws PageXmlException|\InvalidArgumentException for invalid values, without location
+     * @throws PageXmlException|InvalidValueException for invalid values, without location
      */
     public function build(AttributeValues $attributes, string $text): Element;
 

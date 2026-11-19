@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Page\Parser\Tag;
 
+use MiniPaviService\InvalidValueException;
 use MiniPaviService\Page\Parser\AttributeValues;
 use MiniPaviService\Page\Parser\PageXmlException;
 use MiniPaviService\Text\Placeholders;
@@ -76,7 +77,7 @@ final readonly class XmlTag
     {
         try {
             return $check();
-        } catch (PageXmlException|\InvalidArgumentException $e) {
+        } catch (PageXmlException|InvalidValueException $e) {
             throw new PageXmlException("{$this->at}: <{$this->name}>: " . $e->getMessage(), 0, $e);
         }
     }

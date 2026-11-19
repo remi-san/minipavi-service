@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Page\Display;
 
+use MiniPaviService\InvalidValueException;
 use MiniPaviService\Minitel\Position;
 use MiniPaviService\Minitel\Terminal;
 use MiniPaviService\Vdt\Vdt;
@@ -24,7 +25,7 @@ final readonly class Image implements Element
         public Position $position = new Position(1),
     ) {
         if ($position->row < 1) {
-            throw new \InvalidArgumentException('An image starts at row 1 at least');
+            throw new InvalidValueException('An image starts at row 1 at least');
         }
         $this->vdt = $image->withoutClear()->offset($position->col - 1, $position->row - 1);
     }

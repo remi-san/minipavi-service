@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Message;
 
+use MiniPaviService\InvalidValueException;
 use MiniPaviService\Text\Placeholders;
 
 /**
@@ -57,11 +58,11 @@ final readonly class Messages
             // Unlike in a page, it would be left in the text: a mistake in the message
             $malformed = Placeholders::malformed($text);
             if ($malformed !== null) {
-                throw new \InvalidArgumentException("{$malformed} is not a placeholder");
+                throw new InvalidValueException("{$malformed} is not a placeholder");
             }
 
             return (new Placeholders($variables))->substitute($text);
-        } catch (\InvalidArgumentException $e) {
+        } catch (InvalidValueException $e) {
             throw new \LogicException("Message \"{$name}\": " . $e->getMessage(), 0, $e);
         }
     }

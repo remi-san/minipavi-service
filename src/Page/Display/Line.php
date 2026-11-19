@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Page\Display;
 
+use MiniPaviService\InvalidValueException;
 use MiniPaviService\Minitel\Span;
 use MiniPaviService\Minitel\Terminal;
 use MiniPaviService\Vdt\Vdt;
@@ -24,7 +25,7 @@ final readonly class Line implements Element
         public Color $color = Color::White,
     ) {
         if (strlen($char) !== 1) {
-            throw new \InvalidArgumentException("A line is made of a single character, got '{$char}'");
+            throw new InvalidValueException("A line is made of a single character, got '{$char}'");
         }
     }
 
