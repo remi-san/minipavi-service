@@ -102,6 +102,11 @@ final class HtmlClientTest extends TestCase
             . '"',
             $html,
         );
+        // Placed over its cell by that style alone, since the field's class doesn't position it
+        self::assertMatchesRegularExpression(
+            '/value="ab" style="position: absolute; [^"]*height: var\(--h\); box-sizing: border-box; z-index: 2;"/',
+            $html,
+        );
         // Its keys: Envoi and Suite only
         self::assertSame(6, substr_count($html, needle: ' disabled>'));
         // The whole command, cursor and space character included, posted back as it came
