@@ -30,17 +30,7 @@ final readonly class NodesParser
         ElementFactory $elements,
         private string $file,
     ) {
-        foreach ($elements->tags() as $tag) {
-            if (!array_key_exists($tag, $parsers)) {
-                continue;
-            }
-            throw new \LogicException(\sprintf(
-                '%s: <%s> (%s) is a tag of the page format, not a display element',
-                $file,
-                $tag,
-                get_debug_type($elements->builder($tag)),
-            ));
-        }
+        self::checkTags(array_keys($parsers), $elements, $file);
         $this->elements = new ElementTagParser($elements);
     }
 
@@ -51,16 +41,54 @@ final readonly class NodesParser
      */
     public static function standard(ElementFactory $factory, string $file): self
     {
-        return new self(
-            [
-                'message' => new MessageTagParser(),
-                'input' => new InputTagParser(),
-                'foreach' => new ForeachTagParser(),
-                'if' => new IfTagParser(),
-            ],
-            $factory,
-            $file,
-        );
+        return new self(self::standardParsers(), $factory, $file);
+    }
+
+    /**
+     * Checks the display elements of factory can be read with the parsers of the page XML
+     * format (standard()), without parsing a page
+     *
+     * @param string $file what the elements are checked for, in the error message
+     *
+     * @throws \LogicException for a display element of the tag of an instruction (e.g. <if>)
+     */
+    public static function check(ElementFactory $factory, string $file): void
+    {
+        self::checkTags(array_keys(self::standardParsers()), $factory, $file);
+    }
+
+    /**
+     * @return array<string, TagParser> the parsers of the page XML format, by tag
+     */
+    private static function standardParsers(): array
+    {
+        return [
+            'message' => new MessageTagParser(),
+            'input' => new InputTagParser(),
+            'foreach' => new ForeachTagParser(),
+            'if' => new IfTagParser(),
+        ];
+    }
+
+    /**
+     * @param list<string> $tags the tags of the parsers
+     *
+     * @throws \LogicException for a display element of one of the tags, which its parser
+     *                         would read instead
+     */
+    private static function checkTags(array $tags, ElementFactory $elements, string $file): void
+    {
+        foreach ($elements->tags() as $tag) {
+            if (!\in_array($tag, $tags, strict: true)) {
+                continue;
+            }
+            throw new \LogicException(\sprintf(
+                '%s: <%s> (%s) is a tag of the page format, not a display element',
+                $file,
+                $tag,
+                get_debug_type($elements->builder($tag)),
+            ));
+        }
     }
 
     /**
