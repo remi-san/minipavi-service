@@ -10,7 +10,7 @@ use MiniPaviService\Minitel\Terminal;
 
 /**
  * Request of the MiniPavi gateway: what the user did (the key pressed, the text typed), the
- * context sent with the previous answer, and where the user connects from
+ * context sent with the previous response, and where the user connects from
  */
 final readonly class GatewayRequest
 {
@@ -18,7 +18,7 @@ final readonly class GatewayRequest
      * @param ?Key $key function key pressed (FunctionKey), or connection code (ConnectionCode);
      *                  null for another key (see keyOf())
      * @param list<string> $content text typed, one string per line of the input field
-     * @param string $context context sent with the previous answer ('' if none), as it comes
+     * @param string $context context sent with the previous response ('' if none), as it comes
      *                        from the gateway: signed (ContextSerializer)
      */
     public function __construct(

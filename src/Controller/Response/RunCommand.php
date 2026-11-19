@@ -35,6 +35,6 @@ final readonly class RunCommand extends KeepingResponse
 
     protected function next(Flow $flow): GatewayResponse
     {
-        return $flow->answer($this->vdt, $this->command);
+        return $flow->respond($this->vdt, $this->command);
     }
 }

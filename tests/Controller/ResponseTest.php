@@ -80,27 +80,27 @@ final class ResponseTest extends TestCase
         );
     }
 
-    public function testDisplayAnswersWithItsContent(): void
+    public function testDisplayRespondsWithItsContent(): void
     {
-        [[$method, $arguments]] = $this->answersOf(Response::display(new Vdt('Hello')));
+        [[$method, $arguments]] = $this->respondCallsOf(Response::display(new Vdt('Hello')));
 
-        self::assertSame(['answer', 'Hello'], [$method, $arguments['vdt']]);
+        self::assertSame(['respond', 'Hello'], [$method, $arguments['vdt']]);
         self::assertEquals(new WaitForKeyCommand(), $arguments['command']);
     }
 
-    public function testReadInputAnswersWithTheCommand(): void
+    public function testReadInputRespondsWithTheCommand(): void
     {
         $command = new InputCommand(new InputField(new Span(new Position(2, 1), 4), validWith: [FunctionKey::Send]));
 
         self::assertSame(
-            [['answer', ['vdt' => 'Code ?', 'command' => $command]]],
-            $this->answersOf(Response::readInput(new Vdt('Code ?'), $command)),
+            [['respond', ['vdt' => 'Code ?', 'command' => $command]]],
+            $this->respondCallsOf(Response::readInput(new Vdt('Code ?'), $command)),
         );
         // Without content: none sent
         $wait = new WaitForKeyCommand();
         self::assertSame(
-            [['answer', ['vdt' => '', 'command' => $wait]]],
-            $this->answersOf(new RunCommand(ControllerState::ReadInput, null, new Vdt(), $wait)),
+            [['respond', ['vdt' => '', 'command' => $wait]]],
+            $this->respondCallsOf(new RunCommand(ControllerState::ReadInput, null, new Vdt(), $wait)),
         );
     }
 
@@ -114,14 +114,14 @@ final class ResponseTest extends TestCase
         );
     }
 
-    public function testConnectToAnswersWithTheOtherService(): void
+    public function testConnectToRespondsWithTheOtherService(): void
     {
-        [[$method, $arguments]] = $this->answersOf(Response::connectTo(
+        [[$method, $arguments]] = $this->respondCallsOf(Response::connectTo(
             'https://example.org/service',
             new Vdt('Cnx en cours'),
         ));
 
-        self::assertSame(['answer', 'Cnx en cours'], [$method, $arguments['vdt']]);
+        self::assertSame(['respond', 'Cnx en cours'], [$method, $arguments['vdt']]);
         self::assertEquals(
             new ServiceCallCommand('https://example.org/service', CallMode::Connect),
             $arguments['command'],
@@ -134,8 +134,8 @@ final class ResponseTest extends TestCase
         $command = new ServiceCallCommand('https://example.org/', CallMode::Direct);
 
         self::assertSame(
-            [['answer', ['vdt' => '', 'command' => $command]]],
-            $this->answersOf(new RunCommand(null, null, new Vdt(), $command)),
+            [['respond', ['vdt' => '', 'command' => $command]]],
+            $this->respondCallsOf(new RunCommand(null, null, new Vdt(), $command)),
         );
     }
 
@@ -157,7 +157,7 @@ final class ResponseTest extends TestCase
      *
      * @return list<array{string, array<string, mixed>}>
      */
-    private function answersOf(Response $response): array
+    private function respondCallsOf(Response $response): array
     {
         return array_values(array_filter($this->callsOf($response), static fn(array $call) => $call[0] !== 'keep'));
     }

@@ -18,7 +18,7 @@ use MiniPaviService\Vdt\Vdt;
 /**
  * What a controller returns: what comes next (continueWith()), through a Flow. Responses are
  * readonly and don't change the context: they ask the Flow to keep the state and parameters
- * of this controller for its next run (KeepingResponse), and to answer the gateway or run
+ * of this controller for its next run (KeepingResponse), and to respond to the gateway or run
  * another controller.
  *
  * The named constructors give each response the state it usually keeps: read the next
@@ -81,8 +81,8 @@ abstract readonly class Response
 
     /**
      * What comes next: keep a state and parameters for this controller (Flow::keep()), then
-     * answer the gateway (Flow::answer()) or run another controller (Flow::goTo()); gives the
-     * answer the request ends with
+     * respond to the gateway (Flow::respond()) or run another controller (Flow::goTo()); gives
+     * the gateway response the request ends with
      */
     abstract public function continueWith(Flow $flow): GatewayResponse;
 }

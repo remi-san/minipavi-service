@@ -35,7 +35,7 @@ final class RequestFlow implements Flow
 
     /**
      * Runs the controller of the context's route on what the user did (key, content), and
-     * gives the answer the request ends with
+     * gives the gateway response the request ends with
      *
      * @param list<string> $content
      */
@@ -52,7 +52,7 @@ final class RequestFlow implements Flow
         $this->context->keep($state, $parameters);
     }
 
-    public function answer(Vdt $vdt, Command $command = new WaitForKeyCommand()): GatewayResponse
+    public function respond(Vdt $vdt, Command $command = new WaitForKeyCommand()): GatewayResponse
     {
         return new GatewayResponse($vdt, $this->serializer->serialize($this->context), $command);
     }

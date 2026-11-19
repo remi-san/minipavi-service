@@ -18,10 +18,10 @@ use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 
 /**
- * Answers a request of the gateway: restores the context, and runs the controller of its route
- * until a response answers the gateway (RequestFlow). It owns the context: it keeps the state
- * and parameters of each response, then the response says what comes next, through a Flow.
- * Without I/O: reading the request and sending the answer are the gateway client's
+ * Responds to a request of the gateway: restores the context, and runs the controller of its
+ * route until a response responds to the gateway (RequestFlow). It owns the context: it keeps
+ * the state and parameters of each response, then the response says what comes next, through a
+ * Flow. Without I/O: reading the request and sending the response are the gateway client's
  * (MiniPaviClient), run by ServiceRunner.
  */
 final class Service
@@ -33,8 +33,9 @@ final class Service
     /**
      * @param Messages $messages the service's, for the message of a failed request
      *                           (FrameworkMessage::Error), e.g. MessagesXmlParser::defaults()
-     * @param ContextSerializer $serializer of the context of the answers and requests, for the
-     *                                      same router, signing it (e.g. with HmacContextSigner)
+     * @param ContextSerializer $serializer of the context of the responses and requests, for
+     *                                      the same router, signing it (e.g. with
+     *                                      HmacContextSigner)
      * @param int $maxPageChanges page changes (ChangePage) allowed in one request: more is
      *                            taken as controllers changing to each other endlessly
      * @param ?LoggerInterface $logger where connections, disconnections and errors are logged;
@@ -54,52 +55,52 @@ final class Service
     }
 
     /**
-     * Answer to a request of the gateway, null for a disconnection or a background call
-     * (nothing to answer). An
-     * error (exception or PHP error) is logged and answered: see error()
+     * Response to a request of the gateway, null for a disconnection or a background call
+     * (nothing to respond to). An
+     * error (exception or PHP error) is logged and responded to: see error()
      */
     public function handle(GatewayRequest $request): ?GatewayResponse
     {
         try {
-            return $this->answer($request);
+            return $this->respond($request);
         } catch (\Throwable $e) {
             return $this->error($e);
         }
     }
 
     /**
-     * Answer to a request that failed, e.g. that couldn't be read: the error is logged, and
+     * Response to a request that failed, e.g. that couldn't be read: the error is logged, and
      * the error message shown on line 0, with a new context at the default route, whose
      * controller the user's next function key runs. It is not run now: if it is the one
      * failing, the user would get the same error again at once.
      *
-     * Null if even that answer fails: logged as critical.
+     * Null if even that response fails: logged as critical.
      */
     public function error(\Throwable $error): ?GatewayResponse
     {
         $this->logger->error('Error serving the request: ' . $error->getMessage(), ['exception' => $error]);
         try {
             // The context keeps nothing: the default controller starts at its initial state
-            return $this->flow($this->newContext(), new Terminal())->answer(Vdt::line0($this->messages->get(
+            return $this->flow($this->newContext(), new Terminal())->respond(Vdt::line0($this->messages->get(
                 FrameworkMessage::Error,
             )));
         } catch (\Throwable $e) {
-            $this->logger->critical('Cannot answer the error: ' . $e->getMessage(), ['exception' => $e]);
+            $this->logger->critical('Cannot respond to the error: ' . $e->getMessage(), ['exception' => $e]);
 
             return null;
         }
     }
 
-    private function answer(GatewayRequest $request): ?GatewayResponse
+    private function respond(GatewayRequest $request): ?GatewayResponse
     {
-        // Nothing to answer, nor to do with the context, which may be missing
+        // Nothing to respond to, nor to do with the context, which may be missing
         if ($request->isDisconnecting()) {
             $this->logger->info('Disconnection');
             return null;
         }
 
         if ($request->isBackgroundCall()) {
-            $this->logger->info('Background call, not answered', ['fctn' => $request->fctn()]);
+            $this->logger->info('Background call, not responded to', ['fctn' => $request->fctn()]);
             return null;
         }
 
@@ -126,7 +127,7 @@ final class Service
     }
 
     /**
-     * Context sent with a previous answer (GatewayResponse::$context), typed with the
+     * Context sent with a previous response (GatewayResponse::$context), typed with the
      * declarations of this service's controllers (ContextSerializer::unserialize()): what
      * ServiceTester checks the route of
      *
@@ -149,7 +150,7 @@ final class Service
 
     /**
      * Runs the controller of the context's route on what the user did (key, content), then
-     * the controllers it changes to, until a response answers the gateway
+     * the controllers it changes to, until a response responds to the gateway
      *
      * @throws \LogicException after more than maxPageChanges page changes
      *

@@ -12,8 +12,8 @@ use Nyholm\Psr7\Response;
 use Psr\Http\Message\ResponseInterface;
 
 /**
- * A request of HtmlClient's page, answered with the next page: the answer's screen drawn over
- * the screen the page showed, its input fields and the function keys; or, for an answer
+ * A request of HtmlClient's page, responded to with the next page: the response's screen drawn
+ * over the screen the page showed, its input fields and the function keys; or, for a response
  * calling another service (ServiceCallCommand), the page as it was, with
  * FrameworkMessage::WebLeave on line 0
  */
@@ -43,14 +43,14 @@ final readonly class HtmlExchange implements ClientExchange
     }
 
     /**
-     * The next page (HtmlCommandRenderer): the answer's screen drawn over the one the page
-     * showed, its input fields and the keys; for an answer calling another service, the page
+     * The next page (HtmlCommandRenderer): the response's screen drawn over the one the page
+     * showed, its input fields and the keys; for a response calling another service, the page
      * as it was, with FrameworkMessage::WebLeave on line 0
      */
-    public function respond(GatewayResponse $answer): ResponseInterface
+    public function respond(GatewayResponse $response): ResponseInterface
     {
         $html = (new HtmlCommandRenderer(
-            $answer,
+            $response,
             $this->page,
             $this->request->context,
             $this->serviceUrl,

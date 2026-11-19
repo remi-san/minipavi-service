@@ -7,7 +7,7 @@ namespace MiniPaviService\Gateway;
 use MiniPaviService\Vdt\Vdt;
 
 /**
- * Answer to a request of the MiniPavi gateway: the Videotex content to show, the context to
+ * Response to a request of the MiniPavi gateway: the Videotex content to show, the context to
  * give back with the next request, and what the gateway does next
  */
 final readonly class GatewayResponse

@@ -13,9 +13,9 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 
 /**
- * Client giving a request (or failing to read it), and answering with the Videotex of the
- * answer (or failing to give the request, or the response, once read); keeps the requests and
- * answers it gave responses for in $responded, and the service URL of each exchange in
+ * Client giving a request (or failing to read it), and responding with the Videotex of the
+ * response (or failing to give the request, or the response, once read); keeps the requests and
+ * responds to it gave responses for in $responded, and the service URL of each exchange in
  * $serviceUrls
  */
 final class MemoryClient implements Client
@@ -68,14 +68,14 @@ final class MemoryClient implements Client
                 return $this->request;
             }
 
-            public function respond(GatewayResponse $answer): ResponseInterface
+            public function respond(GatewayResponse $response): ResponseInterface
             {
                 if ($this->responseFailure !== null) {
                     throw $this->responseFailure;
                 }
-                $this->client->responded[] = [$this->request, $answer];
+                $this->client->responded[] = [$this->request, $response];
 
-                return new Response(200, [], $answer->vdt->toString());
+                return new Response(200, [], $response->vdt->toString());
             }
         };
     }

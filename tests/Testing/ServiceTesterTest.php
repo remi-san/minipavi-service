@@ -66,7 +66,7 @@ final class ServiceTesterTest extends TestCase
         self::assertEquals(new Terminal('192.0.2.1', 'websocket', 'Cv5'), $this->requests[1]->terminal());
     }
 
-    public function testScreenKeepsWhatAnswersDontClear(): void
+    public function testScreenKeepsWhatResponsesDontClear(): void
     {
         $this->tester
             ->connect()
@@ -123,9 +123,9 @@ final class ServiceTesterTest extends TestCase
         $this->tester->connect()->assertConnectsTo('https://example.org/');
     }
 
-    public function testDisconnectIsNotAnswered(): void
+    public function testDisconnectGetsNoResponse(): void
     {
-        // Fails if the service answers it
+        // Fails if the service responds to it
         $this->tester->connect()->disconnect();
     }
 

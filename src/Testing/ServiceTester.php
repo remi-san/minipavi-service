@@ -19,8 +19,8 @@ use PHPUnit\Framework\Assert;
 
 /**
  * Scripts a session of a user against a service, without the gateway, for functional tests
- * (PHPUnit): it runs the service on requests built in memory, plays the answers on a
- * simulated Screen, and gives the context of each answer back with the next request, as the
+ * (PHPUnit): it runs the service on requests built in memory, plays the responses on a
+ * simulated Screen, and gives the context of each response back with the next request, as the
  * gateway does.
  *
  *     $tester = new ServiceTester($service);
@@ -33,12 +33,12 @@ use PHPUnit\Framework\Assert;
 final class ServiceTester
 {
     // PHPUnit's assertions take no named arguments: their messages are constants
-    private const DISCONNECTION_ANSWERED = 'A disconnection is answered';
+    private const DISCONNECTION_RESPONDED = 'A disconnection got a response';
 
     // Videotex the session received, since the connection: the screen is all of it, played
     private Vdt $vdt;
 
-    private ?GatewayResponse $answer = null;
+    private ?GatewayResponse $response = null;
 
     /** @var list<string> text typed for the next key, one string per line */
     private array $typed = [];
@@ -56,7 +56,7 @@ final class ServiceTester
     public function connect(): self
     {
         $this->vdt = new Vdt();
-        $this->answer = null;
+        $this->response = null;
 
         return $this->send(new GatewayRequest(ConnectionCode::Connect, terminal: $this->terminal));
     }
@@ -76,21 +76,21 @@ final class ServiceTester
      */
     public function press(FunctionKey $key): self
     {
-        $request = new GatewayRequest($key, $this->typed, $this->answer()->context, $this->terminal);
+        $request = new GatewayRequest($key, $this->typed, $this->response()->context, $this->terminal);
         $this->typed = [];
 
         return $this->send($request);
     }
 
     /**
-     * Disconnects: the service answers nothing (Service::handle() gives null)
+     * Disconnects: the service gives no response (Service::handle() gives null)
      */
     public function disconnect(): self
     {
-        $answer = $this->service->handle(
-            new GatewayRequest(ConnectionCode::Disconnect, [], $this->answer->context ?? '', $this->terminal),
+        $response = $this->service->handle(
+            new GatewayRequest(ConnectionCode::Disconnect, [], $this->response->context ?? '', $this->terminal),
         );
-        Assert::assertNull($answer, self::DISCONNECTION_ANSWERED);
+        Assert::assertNull($response, self::DISCONNECTION_RESPONDED);
 
         return $this;
     }
@@ -140,7 +140,8 @@ final class ServiceTester
     }
 
     /**
-     * Asserts the route the user is at, after the last answer (the one their next key goes to)
+     * Asserts the route the user is at, after the last response (the one their next key goes
+     * to)
      */
     public function assertRoute(string $route): self
     {
@@ -156,7 +157,7 @@ final class ServiceTester
     {
         Assert::assertEquals(
             new ServiceCallCommand($url, CallMode::Connect),
-            $this->answer()->command,
+            $this->response()->command,
             $this->failure('Not connected at once to the expected service'),
         );
 
@@ -164,7 +165,7 @@ final class ServiceTester
     }
 
     /**
-     * Screen the user sees: every answer since the connection, played
+     * Screen the user sees: every response since the connection, played
      */
     public function screen(): Screen
     {
@@ -172,27 +173,27 @@ final class ServiceTester
     }
 
     /**
-     * Last answer of the service
+     * Last response of the service
      */
-    public function answer(): GatewayResponse
+    public function response(): GatewayResponse
     {
-        return $this->answer ?? throw new \LogicException('No answer yet: connect() first');
+        return $this->response ?? throw new \LogicException('No response yet: connect() first');
     }
 
     /**
-     * Context of the last answer, as the service will restore it
+     * Context of the last response, as the service will restore it
      */
     public function context(): Context
     {
-        return $this->service->restore($this->answer()->context);
+        return $this->service->restore($this->response()->context);
     }
 
     private function send(GatewayRequest $request): self
     {
-        $this->answer = $this->service->handle($request) ?? throw new \LogicException(
-            'No answer to ' . $request->fctn(),
+        $this->response = $this->service->handle($request) ?? throw new \LogicException(
+            'No response to ' . $request->fctn(),
         );
-        $this->vdt = $this->vdt->append($this->answer->vdt);
+        $this->vdt = $this->vdt->append($this->response->vdt);
 
         return $this;
     }

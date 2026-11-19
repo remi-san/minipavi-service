@@ -13,7 +13,7 @@ use MiniPaviService\Gateway\WaitForKeyCommand;
 use MiniPaviService\Vdt\Vdt;
 
 /**
- * Flow recording what a response asks for, in $calls, and answering with an empty context
+ * Flow recording what a response asks for, in $calls, and responding with an empty context
  */
 final class RecordingFlow implements Flow
 {
@@ -25,9 +25,9 @@ final class RecordingFlow implements Flow
         $this->calls[] = ['keep', ['state' => $state, 'parameters' => $parameters]];
     }
 
-    public function answer(Vdt $vdt, Command $command = new WaitForKeyCommand()): GatewayResponse
+    public function respond(Vdt $vdt, Command $command = new WaitForKeyCommand()): GatewayResponse
     {
-        $this->calls[] = ['answer', ['vdt' => $vdt->toString(), 'command' => $command]];
+        $this->calls[] = ['respond', ['vdt' => $vdt->toString(), 'command' => $command]];
 
         return new GatewayResponse($vdt, '{}');
     }

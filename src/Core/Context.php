@@ -11,7 +11,7 @@ use MiniPaviService\Minitel\Key;
 use MiniPaviService\Minitel\Terminal;
 
 /**
- * User context, sent to the gateway with each answer (ContextSerializer) and given back with
+ * User context, sent to the gateway with each response (ContextSerializer) and given back with
  * the next request: the current route, and the state and parameters each route keeps, typed
  * as its controller declares them (a RouteContext per route). A route without any has its controller's initial
  * state and the defaults of its parameters.

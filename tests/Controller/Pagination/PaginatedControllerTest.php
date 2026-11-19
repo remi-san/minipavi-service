@@ -117,8 +117,8 @@ final class PaginatedControllerTest extends TestCase
     {
         $tester = $this->tester(['a', 'b', 'c'])->press(FunctionKey::Next)->press(FunctionKey::Refresh);
 
-        // The whole page again: the answer alone draws it
-        $redrawn = $tester->answer()->vdt->screen();
+        // The whole page again: the response alone draws it
+        $redrawn = $tester->response()->vdt->screen();
         self::assertStringContainsString('Page 2/2', $redrawn->text());
         self::assertStringStartsWith('c', $redrawn->line(2));
         $tester->assertScreenContains('Page 2/2')->assertLineContains(2, text: 'c');
@@ -143,16 +143,18 @@ final class PaginatedControllerTest extends TestCase
             ->press(FunctionKey::Next)
             ->press(FunctionKey::Next)
             ->assertScreenContains('Page 3/3')
-            ->answer()
+            ->response()
             ->context;
         $this->routes->addRoute('list', new PaginatedController($this->page(), new ListItems(['a', 'b', 'c'])));
 
         $router = $this->routes->build();
-        $answer = (new Service($router, (new MessagesXmlParser())->defaults(), new ContextSerializer($router)))->handle(
-            new GatewayRequest(FunctionKey::Refresh, [], $context),
-        );
+        $response = (new Service(
+            $router,
+            (new MessagesXmlParser())->defaults(),
+            new ContextSerializer($router),
+        ))->handle(new GatewayRequest(FunctionKey::Refresh, [], $context));
 
-        $screen = $answer?->vdt->screen() ?? self::fail('No answer');
+        $screen = $response?->vdt->screen() ?? self::fail('No response');
         self::assertStringContainsString('Page 2/2', $screen->text());
         self::assertStringStartsWith('c', $screen->line(2));
     }

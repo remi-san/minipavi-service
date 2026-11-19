@@ -35,9 +35,9 @@ abstract readonly class KeepingResponse extends Response
     }
 
     /**
-     * What comes next, once the flow keeps this response's state and parameters: answer the
-     * gateway (Flow::answer()) or run another controller (Flow::goTo()); gives the answer the
-     * request ends with
+     * What comes next, once the flow keeps this response's state and parameters: respond to
+     * the gateway (Flow::respond()) or run another controller (Flow::goTo()); gives the
+     * gateway response the request ends with
      */
     abstract protected function next(Flow $flow): GatewayResponse;
 }

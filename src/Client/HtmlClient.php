@@ -13,8 +13,8 @@ use Psr\Http\Message\ServerRequestInterface;
 /**
  * Client of a browser instead of the gateway: shows the service's screen as an HTML page, a
  * form posting back to its URL (HtmlForm), and lets the user navigate it as on a Minitel. The
- * screen so far is posted back with the page, and an answer drawing part of the screen is
- * drawn over it. A key leaving the service (an answer whose next URL is another one) is
+ * screen so far is posted back with the page, and a response drawing part of the screen is
+ * drawn over it. A key leaving the service (a response whose next URL is another one) is
  * blocked: the screen stays, with FrameworkMessage::WebLeave on line 0.
  *
  * The first request (no key posted) is a connection, as the gateway's: at the default route.
@@ -31,7 +31,7 @@ final readonly class HtmlClient implements Client
     ) {}
 
     /**
-     * The key posted, with the lines typed and the context of the last answer, and the page
+     * The key posted, with the lines typed and the context of the last response, and the page
      * they were posted from; without a key, a connection
      */
     public function exchange(ServerRequestInterface $request, string $serviceUrl): HtmlExchange

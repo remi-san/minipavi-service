@@ -13,7 +13,7 @@ use MiniPaviService\Gateway\WaitForKeyCommand;
 use MiniPaviService\Minitel\FunctionKey;
 
 /**
- * Writes an answer as MiniPaviCli::send() does (MiniPaviExchange), sending its command as
+ * Writes a response as MiniPaviCli::send() does (MiniPaviExchange), sending its command as
  * what send() takes: the next URL, cmd and directCall. By default
  * (WaitForKeyCommand), the gateway waits for a key, then calls this service again.
  *
@@ -28,16 +28,16 @@ final readonly class MiniPaviCommandWriter implements CommandSender
      *                           calls another service
      */
     public function __construct(
-        private GatewayResponse $answer,
+        private GatewayResponse $response,
         private string $serviceUrl,
     ) {}
 
     /**
-     * What MiniPaviCli::send() writes for the answer
+     * What MiniPaviCli::send() writes for the response
      */
     public function body(): string
     {
-        return $this->answer->command->sendWith($this);
+        return $this->response->command->sendWith($this);
     }
 
     /**
@@ -74,9 +74,9 @@ final readonly class MiniPaviCommandWriter implements CommandSender
         ob_start();
         try {
             MiniPaviCli::send(
-                $this->answer->vdt->toString(),
+                $this->response->vdt->toString(),
                 $next,
-                $this->answer->context,
+                $this->response->context,
                 // The gateway echoes what the user types: no response turns it off
                 echo: true,
                 cmd: $cmd,
