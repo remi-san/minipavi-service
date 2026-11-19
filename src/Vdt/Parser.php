@@ -125,7 +125,7 @@ final class Parser
                     TokenType::Position,
                     Videotex::POSITION . $digits,
                     row: (int) substr($digits, offset: 0, length: 2),
-                    col: (int) substr($digits, offset: 2, length: 2),
+                    col: (int) substr($digits, offset: 2),
                 ),
                 4,
             ];
