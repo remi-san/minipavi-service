@@ -38,7 +38,7 @@ final readonly class HtmlForm
         body { margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center; background: #1c1c1c; }
         .page { font: var(--font); }
         .field { padding: 0; border: 0; border-bottom: 1px dotted #888; background: transparent;
-            color: #fff; caret-color: #fff; font: inherit; letter-spacing: 0; outline: none; z-index: 2; }
+            color: #fff; caret-color: #fff; font: inherit; letter-spacing: 0; outline: none; }
         .field:focus { border-bottom-color: #fff; }
         .keys { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 10px; }
         .keys button { padding: 6px 0; border: 0; border-radius: 3px; background: #6b4b32; color: #fff; font: inherit; cursor: pointer; }

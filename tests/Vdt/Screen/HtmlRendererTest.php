@@ -61,10 +61,9 @@ final class HtmlRendererTest extends TestCase
     public function testPlacesAnElementOverACellWithAllOfItsGeometry(): void
     {
         self::assertSame('position: absolute; left: calc(var(--pad) + 3*var(--w) - var(--w)); top: calc(var(--pad) + 2*var(--h));'
-        . ' width: calc(4*var(--w)); height: var(--h);', (new HtmlRenderer(HtmlRenderer::MINITEL_FONT))->place(
-            new Position(row: 2, col: 3),
-            length: 4,
-        ));
+        . ' width: calc(4*var(--w)); height: var(--h); box-sizing: border-box; z-index: 2;', (new HtmlRenderer(
+            HtmlRenderer::MINITEL_FONT,
+        ))->place(new Position(row: 2, col: 3), length: 4));
     }
 
     public function testDrawsTextInItsColoursWithItsAccents(): void

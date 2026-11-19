@@ -82,12 +82,18 @@ final readonly class HtmlRenderer
 
     /**
      * Style placing an element over the screen (e.g. an input field of the overlay) at a cell,
-     * length cells wide and a cell high: all of the screen's geometry, kept with its CSS, so
-     * the element's own style needn't know it
+     * length cells wide and a cell high, its border included, and above the screen's double
+     * height cells: all of the screen's geometry, kept with its CSS, so the element's own style
+     * needn't know it
+     *
+     * @param Position $position the cell of the element's first character
+     * @param int $length the element's width, in cells
+     * @return string an inline style (style="..."): it takes over the element's own position,
+     *                size, box-sizing and z-index
      */
     public function place(Position $position, int $length): string
     {
-        return "position: absolute; left: calc(var(--pad) + {$position->col}*var(--w) - var(--w)); top: calc(var(--pad) + {$position->row}*var(--h)); width: calc({$length}*var(--w)); height: var(--h);";
+        return "position: absolute; left: calc(var(--pad) + {$position->col}*var(--w) - var(--w)); top: calc(var(--pad) + {$position->row}*var(--h)); width: calc({$length}*var(--w)); height: var(--h); box-sizing: border-box; z-index: 2;";
     }
 
     /**
