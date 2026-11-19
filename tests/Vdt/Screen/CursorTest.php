@@ -24,11 +24,12 @@ final class CursorTest extends TestCase
     {
         $cursor = new Cursor();
         $cursor->reset(5, col: 1);
-        $cursor->setAttribute(Attributes::INVERSE);
-        $cursor->setAttribute("\x41");
+        // SO first: it would turn off what is set before it (separation, here, in mosaic)
         $cursor->setCharset("\x0E");
+        $cursor->setAttribute(Attributes::UNDERLINE);
+        $cursor->setAttribute("\x41");
 
-        self::assertTrue($cursor->attributes()->isInverse());
+        self::assertTrue($cursor->attributes()->isUnderlined());
         self::assertSame(Color::Red, $cursor->attributes()->foreground());
         self::assertTrue($cursor->attributes()->isMosaic());
     }
