@@ -37,6 +37,8 @@ interface PaginatedList
      * page shown: stay on it, turn it, or any other response
      *
      * @param Request<ControllerState, PageParameters> $request
+     *
+     * @return Response<ControllerState>
      */
     public function onOtherKey(Request $request, ShownPage $page): Response;
 }

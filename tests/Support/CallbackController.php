@@ -25,7 +25,7 @@ final readonly class CallbackController implements Controller
 
     /**
      * @param class-string<TParameters> $parameters the class of its parameters
-     * @param \Closure(Request<ControllerState, TParameters>): Response $run
+     * @param \Closure(Request<ControllerState, TParameters>): Response<ControllerState> $run
      */
     public function __construct(
         string $parameters,

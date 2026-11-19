@@ -173,7 +173,7 @@ final class ServiceTesterTest extends TestCase
     /**
      * Controller without parameters, recording the requests it runs on, in $this->requests
      *
-     * @param \Closure(Request<ControllerState, NoParameters>): Response $run
+     * @param \Closure(Request<ControllerState, NoParameters>): Response<ControllerState> $run
      *
      * @return CallbackController<NoParameters>
      */
@@ -181,7 +181,11 @@ final class ServiceTesterTest extends TestCase
     {
         return new CallbackController(
             NoParameters::class,
-            /** @param Request<ControllerState, NoParameters> $request */
+            /**
+             * @param Request<ControllerState, NoParameters> $request
+             *
+             * @return Response<ControllerState>
+             */
             function (Request $request) use ($run): Response {
                 $this->requests[] = $request;
 

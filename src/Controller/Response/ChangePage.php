@@ -14,6 +14,9 @@ use MiniPaviService\Gateway\GatewayResponse;
  * state, with the given parameters, and without the user's input (that was for the controller
  * left). The controller left is reset: its initial state, the defaults of its parameters.
  * Unlike a KeepingResponse's, its parameters are the target controller's, not this one's.
+ * Keeping no state, it is a response of any controller.
+ *
+ * @extends Response<never>
  */
 final readonly class ChangePage extends Response
 {

@@ -13,11 +13,15 @@ use MiniPaviService\Gateway\GatewayResponse;
 /**
  * A response that keeps a state and parameters for this controller's next run, before saying
  * what comes next (next()): every response but ChangePage, which resets the controller left
+ *
+ * @template-covariant TState of State
+ *
+ * @extends Response<TState>
  */
 abstract readonly class KeepingResponse extends Response
 {
     /**
-     * @param ?State $state state this controller keeps; null: its initial state
+     * @param ?TState $state state this controller keeps; null: its initial state
      *                      (Controller::initialState())
      * @param ?Parameters $parameters parameters this controller keeps, of the class it declares
      *                                (Controller::parametersType()); null: their defaults

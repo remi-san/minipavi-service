@@ -470,7 +470,7 @@ final class ServiceTest extends TestCase
      * @template TParameters of Parameters
      *
      * @param class-string<TParameters> $parametersType
-     * @param \Closure(Request<ControllerState, TParameters>): Response $run
+     * @param \Closure(Request<ControllerState, TParameters>): Response<ControllerState> $run
      *
      * @return CallbackController<TParameters>
      */
@@ -478,7 +478,11 @@ final class ServiceTest extends TestCase
     {
         return new CallbackController(
             $parametersType,
-            /** @param Request<ControllerState, TParameters> $request */
+            /**
+             * @param Request<ControllerState, TParameters> $request
+             *
+             * @return Response<ControllerState>
+             */
             function (Request $request) use ($route, $run): Response {
                 $this->requests[$route][] = $request;
 
@@ -490,6 +494,8 @@ final class ServiceTest extends TestCase
     /**
      * Response of the service on a connection, when the controller of its default route returns
      * response
+     *
+     * @param Response<ControllerState> $response
      */
     private function responseTo(Response $response): GatewayResponse
     {

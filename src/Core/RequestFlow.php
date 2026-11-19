@@ -20,6 +20,8 @@ use MiniPaviService\Vdt\Vdt;
  * comes next. Owns every change to the context, in this order.
  *
  * @internal
+ *
+ * @implements Flow<State>
  */
 final class RequestFlow implements Flow
 {

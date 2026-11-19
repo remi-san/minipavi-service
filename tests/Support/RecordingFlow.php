@@ -14,6 +14,8 @@ use MiniPaviService\Vdt\Vdt;
 
 /**
  * Flow recording what a response asks for, in $calls, and responding with an empty context
+ *
+ * @implements Flow<State>
  */
 final class RecordingFlow implements Flow
 {

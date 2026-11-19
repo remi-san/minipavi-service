@@ -31,6 +31,8 @@ final readonly class ShownPage
 
     /**
      * Shows the page, and reads the next input on it
+     *
+     * @return Response<ControllerState>
      */
     public function display(): Response
     {
@@ -41,6 +43,8 @@ final readonly class ShownPage
 
     /**
      * Stays on the page: sends vdt (e.g. a message on line 0), and reads the next input on it
+     *
+     * @return Response<ControllerState>
      */
     public function stay(Vdt $vdt = new Vdt()): Response
     {
@@ -53,6 +57,8 @@ final readonly class ShownPage
 
     /**
      * The next page, or this one with FrameworkMessage::LastPage on line 0 on the last
+     *
+     * @return Response<ControllerState>
      */
     public function next(): Response
     {
@@ -65,6 +71,8 @@ final readonly class ShownPage
 
     /**
      * The previous page, or this one with FrameworkMessage::FirstPage on line 0 on the first
+     *
+     * @return Response<ControllerState>
      */
     public function previous(): Response
     {

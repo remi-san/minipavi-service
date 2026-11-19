@@ -15,6 +15,8 @@ use MiniPaviService\Vdt\Vdt;
  * gateway, or run another controller, after keeping a state and parameters for the controller
  * that ran. Implemented by the runtime (Service), which owns the context: a response can't
  * change it otherwise.
+ *
+ * @template-contravariant TState of State
  */
 interface Flow
 {
@@ -22,7 +24,7 @@ interface Flow
      * Keeps, for the controller that ran, a state and parameters for its next run; called
      * before respond() or goTo(). Without it, the controller keeps what it had.
      *
-     * @param ?State $state null: its initial state
+     * @param ?TState $state null: its initial state
      * @param ?Parameters $parameters null: their defaults
      */
     public function keep(?State $state, ?Parameters $parameters): void;

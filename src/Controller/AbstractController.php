@@ -53,6 +53,8 @@ abstract class AbstractController implements Controller
      * First run, or the user comes back to the controller: shows the screen
      *
      * @param Request<ControllerState, TParameters> $request
+     *
+     * @return Response<ControllerState>
      */
     protected function onInit(Request $request): Response
     {
@@ -63,6 +65,8 @@ abstract class AbstractController implements Controller
      * Shows the screen, usually with RunCommand::readInput() to read what the user types
      *
      * @param Request<ControllerState, TParameters> $request
+     *
+     * @return Response<ControllerState>
      */
     abstract protected function onDisplay(Request $request): Response;
 
@@ -70,6 +74,8 @@ abstract class AbstractController implements Controller
      * Asks for input again: shows the screen again
      *
      * @param Request<ControllerState, TParameters> $request
+     *
+     * @return Response<ControllerState>
      */
     protected function onInitInput(Request $request): Response
     {
@@ -80,6 +86,8 @@ abstract class AbstractController implements Controller
      * Handles the key pressed (Request::key()) and the text typed (Request::content())
      *
      * @param Request<ControllerState, TParameters> $request
+     *
+     * @return Response<ControllerState>
      */
     abstract protected function onReadInput(Request $request): Response;
 }
