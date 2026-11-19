@@ -15,9 +15,10 @@ use MiniPaviService\Gateway\GatewayResponse;
  * Each response is built from its own class, which gives it the state it usually keeps: read
  * the next input after showing something (new DisplayPage(), RunCommand::readInput()), start
  * again after leaving (new ChangePage(), RunCommand::connectTo()). Pass $state or $parameters
- * (by name) to keep others: a case of the controller's State enum (ControllerState for an
- * AbstractController), and a Parameters object of the class it declares (null: the
- * defaults). A service can add its own responses the same way.
+ * after the content and the command (by name to give only one) to keep others: a case of the
+ * controller's State enum (ControllerState for an AbstractController), and a Parameters
+ * object of the class it declares (null: the defaults). A service can add its own responses
+ * the same way.
  */
 abstract readonly class Response
 {
