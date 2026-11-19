@@ -590,9 +590,15 @@ be read. By default it is `Io\Files`, which reads them from disk. Give another a
 argument to read them from elsewhere, e.g. from memory in a test:
 
 ```php
-$parser = new PageXmlParser($messages, files: $files);   // $files implements FileReader
-$messages = (new MessagesXmlParser($files))->defaults();
+// $files implements FileReader
+$messages = (new MessagesXmlParser($files))->parseFile('messages.xml', (new MessagesXmlParser())->defaults());
+$parser = new PageXmlParser($messages, files: $files);
 ```
+
+`MessagesXmlParser::defaults()` reads the framework's messages (`config/messages.xml`, in the
+framework's folder) through its reader too. With a reader that doesn't have them (e.g. one
+from memory), read them with a `MessagesXmlParser` built without a reader, as above, or have
+the reader fall back to `Io\Files`.
 
 ## Page XML format
 
