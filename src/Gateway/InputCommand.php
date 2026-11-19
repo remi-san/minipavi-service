@@ -11,7 +11,7 @@ use MiniPaviService\Minitel\InputField;
  * with Response::readInput(): the field, and what it is prefilled with. Each client sends it
  * its own way (MiniPaviClient as MiniPavi's InputTxt or InputMsg, HtmlClient as form fields).
  */
-final readonly class InputCommand
+final readonly class InputCommand implements Command
 {
     /**
      * @param list<string> $prefill text of the field, one string per line
@@ -20,4 +20,9 @@ final readonly class InputCommand
         public InputField $field,
         public array $prefill = [],
     ) {}
+
+    public function sendWith(CommandSender $sender): mixed
+    {
+        return $sender->readInput($this);
+    }
 }

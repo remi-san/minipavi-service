@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace MiniPaviService\Controller;
 
 use MiniPaviService\Controller\Parameters\Parameters;
-use MiniPaviService\Gateway\CallMode;
+use MiniPaviService\Gateway\Command;
 use MiniPaviService\Gateway\GatewayResponse;
-use MiniPaviService\Gateway\InputCommand;
+use MiniPaviService\Gateway\WaitForKeyCommand;
 use MiniPaviService\Vdt\Vdt;
 
 /**
@@ -31,16 +31,10 @@ interface Flow
      * Ends the request: answers the gateway with this content, and the context
      *
      * @param Vdt $vdt Videotex content
-     * @param ?InputCommand $command command for the gateway (e.g. Page::inputCommand()); null: none
-     * @param ?string $next URL the gateway calls next; null: this service's
-     * @param ?CallMode $directCall calls next at once, without waiting for the user; null: waits
+     * @param Command $command what the gateway does next (e.g. Page::inputCommand()); by
+     *                         default, waits for a key
      */
-    public function answer(
-        Vdt $vdt,
-        ?InputCommand $command = null,
-        ?string $next = null,
-        ?CallMode $directCall = null,
-    ): GatewayResponse;
+    public function answer(Vdt $vdt, Command $command = new WaitForKeyCommand()): GatewayResponse;
 
     /**
      * Runs the controller of route at once, at its initial state with parameters, and

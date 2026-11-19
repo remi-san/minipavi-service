@@ -9,6 +9,7 @@ use MiniPaviService\Controller\Parameters\Parameters;
 use MiniPaviService\Controller\State;
 use MiniPaviService\Gateway\CallMode;
 use MiniPaviService\Gateway\GatewayResponse;
+use MiniPaviService\Gateway\ServiceCallCommand;
 use MiniPaviService\Vdt\Vdt;
 
 /**
@@ -34,6 +35,6 @@ final readonly class RunExternalService extends KeepingResponse
 
     protected function next(Flow $flow): GatewayResponse
     {
-        return $flow->answer($this->vdt, next: $this->url, directCall: $this->callMode);
+        return $flow->answer($this->vdt, new ServiceCallCommand($this->url, $this->callMode));
     }
 }

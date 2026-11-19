@@ -7,8 +7,8 @@ namespace MiniPaviService\Controller\Response;
 use MiniPaviService\Controller\Flow;
 use MiniPaviService\Controller\Parameters\Parameters;
 use MiniPaviService\Controller\State;
+use MiniPaviService\Gateway\Command;
 use MiniPaviService\Gateway\GatewayResponse;
-use MiniPaviService\Gateway\InputCommand;
 use MiniPaviService\Vdt\Vdt;
 
 /**
@@ -19,13 +19,14 @@ final readonly class RunCommand extends KeepingResponse
 {
     /**
      * @param Vdt $vdt Videotex content (empty: none)
-     * @param ?InputCommand $command from Page::inputCommand(); null: only the content is sent
+     * @param Command $command e.g. Page::inputCommand(); WaitForKeyCommand: only the content is
+     *                         sent
      */
     public function __construct(
         ?State $state,
         ?Parameters $parameters,
         public Vdt $vdt,
-        public ?InputCommand $command,
+        public Command $command,
     ) {
         parent::__construct($state, $parameters);
     }

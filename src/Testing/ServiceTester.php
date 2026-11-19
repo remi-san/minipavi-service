@@ -10,6 +10,7 @@ use MiniPaviService\Gateway\CallMode;
 use MiniPaviService\Gateway\ConnectionCode;
 use MiniPaviService\Gateway\GatewayRequest;
 use MiniPaviService\Gateway\GatewayResponse;
+use MiniPaviService\Gateway\ServiceCallCommand;
 use MiniPaviService\Minitel\FunctionKey;
 use MiniPaviService\Minitel\Terminal;
 use MiniPaviService\Vdt\Screen\Screen;
@@ -153,11 +154,10 @@ final class ServiceTester
      */
     public function assertConnectsTo(string $url): self
     {
-        Assert::assertSame($url, $this->answer()->next, $this->failure('Not sent to the expected service'));
-        Assert::assertSame(
-            CallMode::Connect,
-            $this->answer()->directCall,
-            $this->failure('Not connected at once to the other service'),
+        Assert::assertEquals(
+            new ServiceCallCommand($url, CallMode::Connect),
+            $this->answer()->command,
+            $this->failure('Not connected at once to the expected service'),
         );
 
         return $this;

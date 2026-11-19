@@ -20,6 +20,8 @@ use MiniPaviService\Gateway\ConnectionCode;
 use MiniPaviService\Gateway\GatewayRequest;
 use MiniPaviService\Gateway\GatewayResponse;
 use MiniPaviService\Gateway\InputCommand;
+use MiniPaviService\Gateway\ServiceCallCommand;
+use MiniPaviService\Gateway\WaitForKeyCommand;
 use MiniPaviService\Message\FrameworkMessage;
 use MiniPaviService\Message\Messages;
 use MiniPaviService\Message\MessagesException;
@@ -159,7 +161,7 @@ final class ServiceTest extends TestCase
         $answer = $this->goTo('broken');
 
         self::assertStringContainsString(self::errorMessage(), self::line0($answer));
-        self::assertNull($answer->command);
+        self::assertEquals(new WaitForKeyCommand(), $answer->command);
         [$message, $context] = $this->error();
         self::assertStringContainsString('Template data missing', $message);
         self::assertInstanceOf(\RuntimeException::class, $context['exception'] ?? null);
@@ -306,9 +308,7 @@ final class ServiceTest extends TestCase
 
         self::assertSame('Hello', $answer->vdt->toString());
         // To this service, waiting for the user
-        self::assertNull($answer->next);
-        self::assertNull($answer->directCall);
-        self::assertNull($answer->command);
+        self::assertEquals(new WaitForKeyCommand(), $answer->command);
         $next = $this->nextRequest($answer);
         self::assertSame(ControllerState::Display, $next->state());
         self::assertEquals(new PageParameters(2), $next->parameters());
@@ -322,8 +322,6 @@ final class ServiceTest extends TestCase
 
         self::assertSame('Code ?', $answer->vdt->toString());
         self::assertSame($command, $answer->command);
-        self::assertNull($answer->next);
-        self::assertNull($answer->directCall);
         // What is typed comes back to the controller, reading it
         $next = $this->nextRequest($answer);
         self::assertSame(ControllerState::ReadInput, $next->state());
@@ -336,7 +334,7 @@ final class ServiceTest extends TestCase
         $answer = $this->answerTo(Response::readInput(new Vdt('Hello'), command: null));
 
         self::assertSame('Hello', $answer->vdt->toString());
-        self::assertNull($answer->command);
+        self::assertEquals(new WaitForKeyCommand(), $answer->command);
     }
 
     public function testConnectToSendsTheUserToTheOtherServiceAndKeepsWhatItIsGiven(): void
@@ -348,8 +346,7 @@ final class ServiceTest extends TestCase
         ));
 
         self::assertSame('Cnx en cours', $answer->vdt->toString());
-        self::assertSame('https://example.org/service', $answer->next);
-        self::assertSame(CallMode::Connect, $answer->directCall);
+        self::assertEquals(new ServiceCallCommand('https://example.org/service', CallMode::Connect), $answer->command);
         // For when the user comes back
         $next = $this->nextRequest($answer);
         self::assertSame(ControllerState::Init, $next->state());

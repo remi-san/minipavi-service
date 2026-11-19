@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace MiniPaviService\Gateway;
 
 /**
- * How the gateway calls another service, right away (RunExternalService)
+ * How the gateway calls another service, right away (ServiceCallCommand)
  */
 enum CallMode: string
 {

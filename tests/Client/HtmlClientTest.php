@@ -13,10 +13,12 @@ use MiniPaviService\Core\ContextSerializer;
 use MiniPaviService\Core\RouterBuilder;
 use MiniPaviService\Core\Service;
 use MiniPaviService\Core\Signing\HmacContextSigner;
+use MiniPaviService\Gateway\CallMode;
 use MiniPaviService\Gateway\ConnectionCode;
 use MiniPaviService\Gateway\GatewayRequest;
 use MiniPaviService\Gateway\GatewayResponse;
 use MiniPaviService\Gateway\InputCommand;
+use MiniPaviService\Gateway\ServiceCallCommand;
 use MiniPaviService\Http\ServiceRunner;
 use MiniPaviService\Message\FrameworkMessage;
 use MiniPaviService\Message\Messages;
@@ -92,7 +94,7 @@ final class HtmlClientTest extends TestCase
         );
         // With the page posted back: an answer leaving the service shows it again, its screen
         // and its input field
-        $html = (string) $exchange->respond(new GatewayResponse(new Vdt(), '{}', 'https://example.org/'))->getBody();
+        $html = (string) $exchange->respond(new GatewayResponse(new Vdt(), '{}', self::leaving()))->getBody();
         self::assertStringContainsString('Menu', self::shownText($html));
         self::assertStringContainsString(
             'value="ab" style="' . (new HtmlRenderer(HtmlRenderer::MINITEL_FONT))->place(1, row: 2, length: 4) . '"',
@@ -123,7 +125,7 @@ final class HtmlClientTest extends TestCase
             ->exchange(HttpRequests::posting('Mozilla/5.0', ['web' => 'true'], $form), self::SERVICE_URL);
 
         // Shown again when leaving the service is blocked: no field
-        $html = (string) $exchange->respond(new GatewayResponse(new Vdt(), '{}', 'https://example.org/'))->getBody();
+        $html = (string) $exchange->respond(new GatewayResponse(new Vdt(), '{}', self::leaving()))->getBody();
         self::assertStringNotContainsString('class="field"', $html);
     }
 
@@ -343,7 +345,7 @@ final class HtmlClientTest extends TestCase
         $form = ['key' => 'ENVOI'] + self::hiddenValues($page);
 
         $html = self::page(
-            new GatewayResponse(Vdt::line0('Cnx en cours'), '{"route":"elsewhere"}', 'https://example.org/'),
+            new GatewayResponse(Vdt::line0('Cnx en cours'), '{"route":"elsewhere"}', self::leaving()),
             $form,
         );
 
@@ -363,10 +365,14 @@ final class HtmlClientTest extends TestCase
         self::assertSame(7, substr_count($html, needle: ' disabled>'));
     }
 
-    public function testNextUrlOfTheServiceIsntLeaving(): void
+    public function testCallingTheServiceIsntLeaving(): void
     {
         $html = self::page(
-            new GatewayResponse(Vdt::position(1, row: 1)->append(Vdt::text('Ici')), '{}', self::SERVICE_URL),
+            new GatewayResponse(
+                Vdt::position(1, row: 1)->append(Vdt::text('Ici')),
+                '{}',
+                new ServiceCallCommand(self::SERVICE_URL, CallMode::Direct),
+            ),
         );
 
         self::assertStringContainsString('Ici', self::shownText($html));
@@ -479,5 +485,13 @@ final class HtmlClientTest extends TestCase
         );
 
         return html_entity_decode(strip_tags($html));
+    }
+
+    /**
+     * A command calling another service, which the HTML view blocks
+     */
+    private static function leaving(): ServiceCallCommand
+    {
+        return new ServiceCallCommand('https://example.org/', CallMode::Connect);
     }
 }

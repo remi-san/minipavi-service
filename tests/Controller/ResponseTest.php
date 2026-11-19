@@ -11,6 +11,8 @@ use MiniPaviService\Controller\Response\RunCommand;
 use MiniPaviService\Controller\Response\RunExternalService;
 use MiniPaviService\Gateway\CallMode;
 use MiniPaviService\Gateway\InputCommand;
+use MiniPaviService\Gateway\ServiceCallCommand;
+use MiniPaviService\Gateway\WaitForKeyCommand;
 use MiniPaviService\Minitel\FunctionKey;
 use MiniPaviService\Minitel\InputField;
 use MiniPaviService\Minitel\Position;
@@ -81,10 +83,10 @@ final class ResponseTest extends TestCase
 
     public function testDisplayAnswersWithItsContent(): void
     {
-        self::assertSame(
-            [['answer', ['vdt' => 'Hello', 'command' => null, 'next' => null, 'directCall' => null]]],
-            $this->answersOf(Response::display(new Vdt('Hello'))),
-        );
+        [[$method, $arguments]] = $this->answersOf(Response::display(new Vdt('Hello')));
+
+        self::assertSame(['answer', 'Hello'], [$method, $arguments['vdt']]);
+        self::assertEquals(new WaitForKeyCommand(), $arguments['command']);
     }
 
     public function testReadInputAnswersWithTheCommand(): void
@@ -92,13 +94,14 @@ final class ResponseTest extends TestCase
         $command = new InputCommand(new InputField(new Span(new Position(2, 1), 4), validWith: [FunctionKey::Send]));
 
         self::assertSame(
-            [['answer', ['vdt' => 'Code ?', 'command' => $command, 'next' => null, 'directCall' => null]]],
+            [['answer', ['vdt' => 'Code ?', 'command' => $command]]],
             $this->answersOf(Response::readInput(new Vdt('Code ?'), $command)),
         );
         // Without content: none sent
+        $wait = new WaitForKeyCommand();
         self::assertSame(
-            [['answer', ['vdt' => '', 'command' => null, 'next' => null, 'directCall' => null]]],
-            $this->answersOf(new RunCommand(ControllerState::ReadInput, null, new Vdt(), null)),
+            [['answer', ['vdt' => '', 'command' => $wait]]],
+            $this->answersOf(new RunCommand(ControllerState::ReadInput, null, new Vdt(), $wait)),
         );
     }
 
@@ -114,14 +117,12 @@ final class ResponseTest extends TestCase
 
     public function testConnectToAnswersWithTheOtherService(): void
     {
-        self::assertSame(
+        self::assertEquals(
             [[
                 'answer',
                 [
                     'vdt' => 'Cnx en cours',
-                    'command' => null,
-                    'next' => 'https://example.org/service',
-                    'directCall' => CallMode::Connect,
+                    'command' => new ServiceCallCommand('https://example.org/service', CallMode::Connect),
                 ],
             ]],
             $this->answersOf(Response::connectTo('https://example.org/service', new Vdt('Cnx en cours'))),
@@ -132,10 +133,10 @@ final class ResponseTest extends TestCase
     {
         $answer = [
             'answer',
-            ['vdt' => '', 'command' => null, 'next' => 'https://example.org/', 'directCall' => CallMode::Direct],
+            ['vdt' => '', 'command' => new ServiceCallCommand('https://example.org/', CallMode::Direct)],
         ];
 
-        self::assertSame(
+        self::assertEquals(
             [$answer],
             $this->answersOf(new RunExternalService(null, null, new Vdt(), 'https://example.org/', CallMode::Direct)),
         );

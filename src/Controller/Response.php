@@ -12,6 +12,7 @@ use MiniPaviService\Controller\Response\RunExternalService;
 use MiniPaviService\Gateway\CallMode;
 use MiniPaviService\Gateway\GatewayResponse;
 use MiniPaviService\Gateway\InputCommand;
+use MiniPaviService\Gateway\WaitForKeyCommand;
 use MiniPaviService\Vdt\Vdt;
 
 /**
@@ -49,7 +50,7 @@ abstract readonly class Response
         State $state = ControllerState::ReadInput,
         ?Parameters $parameters = null,
     ): RunCommand {
-        return new RunCommand($state, $parameters, $vdt, $command);
+        return new RunCommand($state, $parameters, $vdt, $command ?? new WaitForKeyCommand());
     }
 
     /**

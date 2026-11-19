@@ -12,6 +12,7 @@ use MiniPaviService\Gateway\ClientExchange;
 use MiniPaviService\Gateway\GatewayRequest;
 use MiniPaviService\Gateway\GatewayResponse;
 use MiniPaviService\Gateway\InputCommand;
+use MiniPaviService\Gateway\ServiceCallCommand;
 use MiniPaviService\Minitel\FunctionKey;
 use MiniPaviService\Minitel\InputField;
 use MiniPaviService\Minitel\Position;
@@ -198,14 +199,24 @@ final class MiniPaviClientTest extends TestCase
     public function testSendsTheUserToAnotherService(): void
     {
         $connect = $this->sent(
-            new GatewayResponse(new Vdt(''), '{}', 'https://example.org/service', directCall: CallMode::Connect),
+            new GatewayResponse(
+                new Vdt(''),
+                '{}',
+                new ServiceCallCommand('https://example.org/service', CallMode::Connect),
+            ),
         );
         $direct = $this->sent(
-            new GatewayResponse(new Vdt(''), '{}', 'https://example.org/service', directCall: CallMode::Direct),
+            new GatewayResponse(
+                new Vdt(''),
+                '{}',
+                new ServiceCallCommand('https://example.org/service', CallMode::Direct),
+            ),
         );
 
         self::assertSame(['https://example.org/service', 'yes-cnx'], [$connect['next'], $connect['directcall']]);
         self::assertSame(['yes', 'on'], [$direct['directcall'], $direct['echo']]);
+        // Not a command of MiniPavi's: its next URL and directcall
+        self::assertArrayNotHasKey('COMMAND', $connect);
     }
 
     /**
