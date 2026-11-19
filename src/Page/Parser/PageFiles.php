@@ -33,9 +33,13 @@ final readonly class PageFiles
         if ($file === '') {
             throw new PageXmlException('the file is missing');
         }
+        // Either separator, as on Windows
+        $path = str_replace('\\', replace: '/', subject: $file);
         if (
-            str_starts_with($file, '/')
-            || \in_array('..', explode('/', str_replace('\\', replace: '/', subject: $file)), strict: true)
+            str_starts_with($path, '/')
+            // A Windows drive (C:/..., or C:... relative to its current folder)
+            || preg_match('/^[a-z]:/i', $path) === 1
+            || \in_array('..', explode('/', $path), strict: true)
         ) {
             throw new PageXmlException("{$file}: only files from the page's folder or its subfolders");
         }

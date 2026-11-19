@@ -630,6 +630,26 @@ final class PageXmlParserTest extends TestCase
             '<page type="static"><background>/etc/passwd</background></page>',
             "/etc/passwd: only files from the page's folder or its subfolders",
         ];
+        yield 'file outside the folder with backslashes' => [
+            '<page type="static"><image>images\\..\\..\\secret.vdt</image></page>',
+            "images\\..\\..\\secret.vdt: only files from the page's folder or its subfolders",
+        ];
+        yield 'absolute file with a backslash' => [
+            '<page type="static"><background>\\secret.vdt</background></page>',
+            "\\secret.vdt: only files from the page's folder or its subfolders",
+        ];
+        yield 'file on a Windows drive' => [
+            '<page type="static"><image>C:/secret.vdt</image></page>',
+            "C:/secret.vdt: only files from the page's folder or its subfolders",
+        ];
+        yield 'file on a Windows drive with a backslash' => [
+            '<page type="static"><image>c:\\secret.vdt</image></page>',
+            "c:\\secret.vdt: only files from the page's folder or its subfolders",
+        ];
+        yield 'file relative to a Windows drive' => [
+            '<page type="static"><image>C:secret.vdt</image></page>',
+            "C:secret.vdt: only files from the page's folder or its subfolders",
+        ];
     }
 
     #[DataProvider('invalidPages')]

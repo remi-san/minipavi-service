@@ -179,6 +179,35 @@ final class ServiceRunnerTest extends TestCase
         self::assertSame('Connection reset', $error->getMessage());
     }
 
+    public function testLogsAnUnreadableRequestThatTheClientCantRespondTo(): void
+    {
+        $logger = new MemoryLogger();
+        $client = new MemoryClient(
+            new \RuntimeException('Not JSON'),
+            unreadableFailure: new \RuntimeException('Connection reset'),
+        );
+
+        $httpResponse = (new ServiceRunner($this->service, $client, $logger))->handle(HttpRequests::to('MiniPAVI'));
+
+        self::assertSame(500, $httpResponse->getStatusCode());
+        self::assertSame([], $client->responded);
+        // The request's error, logged by the service, then why it couldn't be responded to
+        self::assertSame([LogLevel::ERROR, 'Error serving the request'], [
+            $this->logger->records[0][0],
+            $this->logger->records[0][1],
+        ]);
+        $error = $this->logger->records[0][2]['exception'] ?? null;
+        self::assertInstanceOf(\Throwable::class, $error);
+        self::assertSame('Not JSON', $error->getMessage());
+        self::assertSame([LogLevel::CRITICAL, 'Cannot send the response'], [
+            $logger->records[0][0],
+            $logger->records[0][1],
+        ]);
+        $failure = $logger->records[0][2]['exception'] ?? null;
+        self::assertInstanceOf(\Throwable::class, $failure);
+        self::assertSame('Connection reset', $failure->getMessage());
+    }
+
     /**
      * With the gateway's client. In a separate process: MiniPaviCli::start() reads the body of
      * the request (empty here, so not JSON), and MiniPaviCli::send() writes the response,

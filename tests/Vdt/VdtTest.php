@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Tests\Vdt;
 
+use MiniPaviService\InvalidValueException;
 use MiniPaviService\Minitel\Color;
 use MiniPaviService\Minitel\Position;
 use MiniPaviService\Minitel\ScreenSize;
@@ -60,6 +61,45 @@ final class VdtTest extends TestCase
         $drawn = new Vdt("\x1F\x41\x41Hi");
         Screen::of($drawn);
         self::assertEquals(new Vdt("\x1F\x41\x41Hi"), $drawn);
+    }
+
+    /**
+     * A REP counts 63 more at most (0x7F): beyond, the count is no longer a 7-bit byte, which
+     * the gateway's client (MiniPaviCli::send()) turns into "?", so the character would be shown
+     * once. More repetitions follow.
+     */
+    public function testRepeatsACharacterAsManyTimesAsAsked(): void
+    {
+        foreach ([1, 40, 64, 65, 100, 128, 129] as $count) {
+            $vdt = Vdt::repeat('-', $count);
+
+            self::assertSame(0, preg_match('/[\x80-\xFF]/', $vdt->toString()), "{$count} times: 7-bit");
+            self::assertSame(
+                str_repeat('-', $count),
+                str_replace(["\n", ' '], replace: '', subject: Screen::of($vdt)->text()),
+                "{$count} times",
+            );
+        }
+        // The character, 63 more, then 1 more
+        self::assertSame("-\x12\x7F\x12\x41", Vdt::repeat('-', count: 65)->toString());
+    }
+
+    /**
+     * @return iterable<string, array{int}>
+     */
+    public static function countsBelowOne(): iterable
+    {
+        yield 'none' => [0];
+        yield 'negative' => [-1];
+    }
+
+    #[DataProvider('countsBelowOne')]
+    public function testRefusesToRepeatACharacterLessThanOnce(int $count): void
+    {
+        $this->expectException(InvalidValueException::class);
+        $this->expectExceptionMessage("A character is repeated once at least, got {$count}");
+
+        Vdt::repeat('-', $count);
     }
 
     public function testOffsetMovesTextAndKeepsItsAttributes(): void

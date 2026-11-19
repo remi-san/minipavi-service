@@ -350,10 +350,10 @@ Unknown elements and attributes are rejected, which the parser does for elements
 
 	<xs:simpleType name="file">
 		<xs:annotation>
-			<xs:documentation>Path relative to the page's folder, without leading / nor .. (e.g. images/logo.vdt)</xs:documentation>
+			<xs:documentation>Path relative to the page's folder, separated by / or \, without leading separator, Windows drive (C:) nor .. (e.g. images/logo.vdt)</xs:documentation>
 		</xs:annotation>
 		<xs:restriction base="xs:token">
-			<xs:pattern value="([^/.][^/]*|\.([^/.][^/]*)?|\.\.[^/]+)(/([^/.][^/]*|\.([^/.][^/]*)?|\.\.[^/]+))*"/>
+			<xs:pattern value="([^/\\.A-Za-z][^/\\]*|[A-Za-z]([^/\\:][^/\\]*)?|\.([^/\\.][^/\\]*)?|\.\.[^/\\]+)([/\\]([^/\\.][^/\\]*|\.([^/\\.][^/\\]*)?|\.\.[^/\\]+))*"/>
 		</xs:restriction>
 	</xs:simpleType>
 

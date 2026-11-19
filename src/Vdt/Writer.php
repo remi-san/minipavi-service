@@ -119,7 +119,7 @@ final class Writer
     // position, attributes) sends the repetitions first (flush())
     private function put(string $bytes): void
     {
-        if ($this->pending === $bytes && $this->repeat < 63) {
+        if ($this->pending === $bytes && $this->repeat < Videotex::MAX_REPEAT) {
             $this->repeat++;
             return;
         }
