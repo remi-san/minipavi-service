@@ -43,6 +43,9 @@ excessive-parameter-list = { enabled = false }
 cyclomatic-complexity = { enabled = false }
 halstead = { enabled = false }
 kan-defect = { enabled = false }
+# A test makes PCRE fail (no JIT, a backtrack limit of 0), which only ini_set() can do at run
+# time: only that test helper changes a setting, and it puts it back
+no-ini-set = { exclude = ["tests/Support/ExhaustedBacktrackLimit.php"] }
 
 # Layers of src/, each using only those below it (mago guard, in composer analyse). At the
 # bottom, the helpers; then Minitel (the terminal's facts) <- Vdt (Videotex, and the screen it
