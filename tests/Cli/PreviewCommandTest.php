@@ -51,16 +51,21 @@ final class PreviewCommandTest extends TestCase
     {
         $this->write(
             'list.xml',
-            content: '<page type="template"><foreach items="games" as="game" row="3"><text>{{game.name}}</text></foreach></page>',
+            content: '<page type="template"><text row="1">{{title}}</text>'
+            . '<foreach items="games" as="game" row="3"><text>{{game.name}}</text></foreach></page>',
         );
-        $this->write('data.json', content: '{"games": [{"name": "Rocket Rescue"}, {"name": "Harbour Pirates"}]}');
+        $this->write(
+            'data.json',
+            content: '{"title": "Games", "games": [{"name": "Rocket Rescue"}, {"name": "Harbour Pirates"}]}',
+        );
 
         self::assertSame(Command::SUCCESS, $this->preview([$this->dir . '/list.xml', $this->dir . '/data.json']));
         $rows = explode("\n", $this->tester->getDisplay());
         self::assertSame([
+            ' 1|Games                                   |',
             ' 3|Rocket Rescue                           |',
             ' 4|Harbour Pirates                         |',
-        ], [$rows[3], $rows[4]]);
+        ], [$rows[1], $rows[3], $rows[4]]);
     }
 
     public function testReadsThePageWithTheMessagesOfTheService(): void
@@ -112,6 +117,15 @@ final class PreviewCommandTest extends TestCase
     {
         self::assertSame(Command::FAILURE, $this->preview([$this->dir . '/nope.xml']));
         self::assertSame("{$this->dir}/nope.xml: file not found\n", $this->tester->getErrorOutput());
+    }
+
+    public function testFailsOnADataFileNotFound(): void
+    {
+        $this->write('page.xml', content: '<page type="static"/>');
+
+        self::assertSame(Command::FAILURE, $this->preview([$this->dir . '/page.xml', $this->dir . '/nope.json']));
+        self::assertSame("{$this->dir}/nope.json: file not found\n", $this->tester->getErrorOutput());
+        self::assertSame('', $this->tester->getDisplay());
     }
 
     public function testFailsOnAMessagesFileItCannotRead(): void

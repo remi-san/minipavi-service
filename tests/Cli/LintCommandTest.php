@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MiniPaviService\Tests\Cli;
 
 use MiniPaviService\Cli\LintCommand;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Exception\RuntimeException;
@@ -34,7 +35,7 @@ final class LintCommandTest extends TestCase
                 continue;
             }
 
-            $file->isDir() ? rmdir($file->getPathname()) : unlink($file->getPathname());
+            $file->isDir() && !$file->isLink() ? rmdir($file->getPathname()) : unlink($file->getPathname());
         }
         rmdir($this->dir);
     }
@@ -43,13 +44,42 @@ final class LintCommandTest extends TestCase
     {
         $this->write('pages/home.xml', content: '<page type="static"><text>Home</text></page>');
         $this->write('pages/sub/list.xml', content: '<page type="template"><text>{{title}}</text></page>');
+        $this->write('pages/sub/MENU.XML', content: '<page type="static"><text>Menu</text></page>');
         // Not pages: skipped
         $this->write('pages/messages.xml', content: '<messages><message name="x">X</message></messages>');
         $this->write('pages/notes.txt', content: 'not XML');
 
         self::assertSame(Command::SUCCESS, $this->lint([$this->dir . '/pages']));
-        self::assertSame("2 pages checked, 0 errors\n", $this->tester->getDisplay());
+        self::assertSame("3 pages checked, 0 errors\n", $this->tester->getDisplay());
         self::assertSame('', $this->tester->getErrorOutput());
+    }
+
+    public function testSkipsALinkToAFolder(): void
+    {
+        $this->write('pages/home.xml', content: '<page type="static"><text>Home</text></page>');
+        symlink($this->dir . '/pages/sub', $this->dir . '/pages/archive.xml');
+
+        self::assertSame(Command::SUCCESS, $this->lint([$this->dir . '/pages']));
+        self::assertSame("1 page checked, 0 errors\n", $this->tester->getDisplay());
+        self::assertSame('', $this->tester->getErrorOutput());
+    }
+
+    public function testGivesTheErrorsInTheOrderOfTheFiles(): void
+    {
+        // Written out of order: a folder lists its files in no particular order
+        foreach (['d', 'b', 'f', 'a', 'e', 'c'] as $name) {
+            $this->write("pages/{$name}.xml", content: "<page type=\"static\">\n<text>");
+        }
+
+        self::assertSame(Command::FAILURE, $this->lint([$this->dir . '/pages']));
+        self::assertSame("6 pages checked, 6 errors\n", $this->tester->getDisplay());
+        self::assertSame(
+            ['a.xml', 'b.xml', 'c.xml', 'd.xml', 'e.xml', 'f.xml'],
+            array_map(
+                static fn(string $error): string => explode(' ', $error)[0],
+                explode("\n", trim($this->tester->getErrorOutput())),
+            ),
+        );
     }
 
     public function testFailsWithTheErrorsOfThePages(): void
@@ -99,8 +129,36 @@ final class LintCommandTest extends TestCase
     {
         $this->write('pages/home.xml', content: '<page type="static"/>');
 
-        self::assertSame(Command::FAILURE, $this->lint([$this->dir . '/pages', $this->dir . '/nope']));
+        self::assertSame(Command::FAILURE, $this->lint([$this->dir . '/nope', $this->dir . '/pages']));
+        self::assertSame("1 page checked, 1 error\n", $this->tester->getDisplay());
         self::assertSame("{$this->dir}/nope: not found\n", $this->tester->getErrorOutput());
+    }
+
+    /**
+     * @return iterable<string, array{bool}>
+     */
+    public static function libxmlErrorModes(): iterable
+    {
+        yield 'PHP warnings' => [false];
+        yield 'internal errors' => [true];
+    }
+
+    #[DataProvider('libxmlErrorModes')]
+    public function testLeavesLibxmlAsItFoundIt(bool $internalErrors): void
+    {
+        $this->write('pages/home.xml', content: '<page type="static"><text>Home</text></page>');
+        // Not a page, with an error libxml finds reading its root element (an unknown prefix),
+        // read last
+        $this->write('pages/sub/feed.xml', content: '<atom:feed/>');
+
+        $previous = libxml_use_internal_errors($internalErrors);
+        try {
+            self::assertSame(Command::SUCCESS, $this->lint([$this->dir . '/pages']));
+            self::assertSame($internalErrors, libxml_use_internal_errors($internalErrors));
+            self::assertSame([], libxml_get_errors());
+        } finally {
+            libxml_use_internal_errors($previous);
+        }
     }
 
     public function testFailsOnAMessagesFileItCannotRead(): void

@@ -75,7 +75,7 @@ final class PreviewCommand extends Command
             throw new \UnexpectedValueException("{$file}: file not found");
         }
         try {
-            $data = json_decode($json, associative: true, depth: 512, flags: JSON_THROW_ON_ERROR);
+            $data = json_decode($json, associative: true, flags: JSON_THROW_ON_ERROR);
         } catch (\JsonException $e) {
             throw new \UnexpectedValueException("{$file}: " . $e->getMessage(), previous: $e);
         }
