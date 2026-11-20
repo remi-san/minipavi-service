@@ -90,7 +90,7 @@ final readonly class Paginator
      */
     public function itemCountOnPage(): int
     {
-        return max(0, min($this->perPage, $this->itemCount - $this->offset()));
+        return min($this->perPage, $this->itemCount - $this->offset());
     }
 
     /**
