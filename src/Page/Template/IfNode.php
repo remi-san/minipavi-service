@@ -29,7 +29,7 @@ final readonly class IfNode implements Node
         try {
             $value = $scope->value($this->test);
         } catch (InvalidValueException $e) {
-            throw new TemplateException("{$this->location}: <if>: " . $e->getMessage(), 0, $e);
+            throw new TemplateException("{$this->location}: <if>: " . $e->getMessage(), previous: $e);
         }
         // PHP's truthiness, and a collection is true when it has elements
         $true = $value instanceof \Countable

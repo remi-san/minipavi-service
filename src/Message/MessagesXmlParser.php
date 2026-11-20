@@ -69,7 +69,7 @@ final class MessagesXmlParser
 
             return $base->with(self::texts($root, $name));
         } catch (XmlException $e) {
-            throw new MessagesException($e->getMessage(), 0, $e);
+            throw new MessagesException($e->getMessage(), previous: $e);
         }
     }
 

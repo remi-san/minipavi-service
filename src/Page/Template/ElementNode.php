@@ -38,7 +38,10 @@ final readonly class ElementNode implements Node
 
             return [$this->builder->build($attributes, $scope->substitute($this->text))];
         } catch (PageXmlException|InvalidValueException $e) {
-            throw new TemplateException("{$this->location}: <{$this->builder->tag()}>: " . $e->getMessage(), 0, $e);
+            throw new TemplateException(
+                "{$this->location}: <{$this->builder->tag()}>: " . $e->getMessage(),
+                previous: $e,
+            );
         }
     }
 }

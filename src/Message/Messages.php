@@ -63,7 +63,7 @@ final readonly class Messages
 
             return (new Placeholders($variables))->substitute($text);
         } catch (InvalidValueException $e) {
-            throw new \LogicException("Message \"{$name}\": " . $e->getMessage(), 0, $e);
+            throw new \LogicException("Message \"{$name}\": " . $e->getMessage(), previous: $e);
         }
     }
 

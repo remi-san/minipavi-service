@@ -77,7 +77,7 @@ final class PageXmlParser
         try {
             $root = XmlDocument::withRoot($xml, $name, root: 'page');
         } catch (XmlException $e) {
-            throw new PageXmlException($e->getMessage(), 0, $e);
+            throw new PageXmlException($e->getMessage(), previous: $e);
         }
         $type = self::setting(
             $root,
@@ -183,7 +183,7 @@ final class PageXmlParser
         try {
             return new StaticContent($template->display([]));
         } catch (TemplateException $e) {
-            throw new PageXmlException($e->getMessage(), 0, $e);
+            throw new PageXmlException($e->getMessage(), previous: $e);
         }
     }
 
@@ -211,7 +211,7 @@ final class PageXmlParser
                 $texts->add($message);
             }
         } catch (XmlException $e) {
-            throw new PageXmlException($e->getMessage(), 0, $e);
+            throw new PageXmlException($e->getMessage(), previous: $e);
         }
 
         return $texts->texts();
