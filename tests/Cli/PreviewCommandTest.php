@@ -114,6 +114,19 @@ final class PreviewCommandTest extends TestCase
         self::assertSame("{$this->dir}/nope.xml: file not found\n", $this->tester->getErrorOutput());
     }
 
+    public function testFailsOnAMessagesFileItCannotRead(): void
+    {
+        $this->write('page.xml', content: '<page type="static"/>');
+
+        self::assertSame(Command::FAILURE, $this->preview([
+            '--messages',
+            $this->dir . '/nope.xml',
+            $this->dir . '/page.xml',
+        ]));
+        self::assertSame("{$this->dir}/nope.xml: file not found\n", $this->tester->getErrorOutput());
+        self::assertSame('', $this->tester->getDisplay());
+    }
+
     public function testNeedsAPage(): void
     {
         $this->expectException(RuntimeException::class);

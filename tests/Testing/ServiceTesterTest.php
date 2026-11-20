@@ -20,6 +20,7 @@ use MiniPaviService\Minitel\Position;
 use MiniPaviService\Minitel\Terminal;
 use MiniPaviService\Testing\ServiceTester;
 use MiniPaviService\Tests\Support\CallbackController;
+use MiniPaviService\Tests\Support\FailingSigner;
 use MiniPaviService\Vdt\Vdt;
 use PHPUnit\Framework\AssertionFailedError;
 use PHPUnit\Framework\TestCase;
@@ -169,6 +170,28 @@ final class ServiceTesterTest extends TestCase
         $this->expectException(AssertionFailedError::class);
 
         $this->tester->connect()->assertRoute('directory');
+    }
+
+    public function testNoResponseIsAnError(): void
+    {
+        // Not even to the error: the context can't be sent
+        $router = (new RouterBuilder('menu'))
+            ->addRoute('menu', $this->controller(static fn() => new DisplayPage(Vdt::text('MENU'))))
+            ->build();
+        $serializer = new ContextSerializer($router, new FailingSigner());
+        $tester = new ServiceTester(
+            new Service($router, (new MessagesXmlParser())->defaults(), $serializer),
+            $serializer,
+        );
+
+        try {
+            $tester->connect();
+        } catch (\LogicException $e) {
+            self::assertSame('No response to CNX', $e->getMessage());
+
+            return;
+        }
+        self::fail('A connection without response was taken for one');
     }
 
     public function testKeyBeforeConnectingIsAnError(): void

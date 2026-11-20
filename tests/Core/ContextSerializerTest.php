@@ -105,10 +105,19 @@ final class ContextSerializerTest extends TestCase
         $context = new Context($this->router, 'origin');
         $context->keep(null, new FromParameters("\xE9t\xE9"));
 
-        $this->expectException(\RuntimeException::class);
-        $this->expectExceptionMessage('Cannot serialize context');
+        try {
+            $this->serializer()->serialize($context);
+        } catch (\RuntimeException $e) {
+            self::assertSame(
+                'Cannot serialize context: Malformed UTF-8 characters, possibly incorrectly encoded',
+                $e->getMessage(),
+            );
+            // For the log: what JSON failed on
+            self::assertInstanceOf(\JsonException::class, $e->getPrevious());
 
-        $this->serializer()->serialize($context);
+            return;
+        }
+        self::fail('Parameters that are not JSON were serialized');
     }
 
     public function testUnserializeWithoutRouteStartsAtTheDefaultRoute(): void
@@ -166,24 +175,30 @@ final class ContextSerializerTest extends TestCase
     }
 
     /**
-     * @return iterable<string, array{string}>
+     * @return iterable<string, array{string, string}>
      */
     public static function notContexts(): iterable
     {
-        yield 'text' => ['not a context'];
-        yield 'JSON scalar' => ['123'];
-        yield 'truncated JSON' => ['{"route":"ho'];
+        yield 'text' => ['not a context', 'Cannot unserialize context: Syntax error'];
+        yield 'JSON scalar' => ['123', 'Cannot unserialize context: not a JSON object'];
+        yield 'truncated JSON' => ['{"route":', 'Cannot unserialize context: Syntax error'];
         // PHP's serialize(), the format used before JSON
-        yield 'PHP serialized context' => [serialize(['route' => 'home', 'states' => [], 'parameters' => []])];
+        yield 'PHP serialized context' => [
+            serialize(['route' => 'home', 'states' => [], 'parameters' => []]),
+            'Cannot unserialize context: Syntax error',
+        ];
     }
 
     #[DataProvider('notContexts')]
-    public function testUnserializeRejectsWhatIsNotAContext(string $serialized): void
+    public function testUnserializeRejectsWhatIsNotAContext(string $serialized, string $error): void
     {
-        $this->expectException(\RuntimeException::class);
-        $this->expectExceptionMessage('Cannot unserialize context');
+        self::assertSame($error, $this->unserializeError($serialized)->getMessage());
+    }
 
-        $this->serializer()->unserialize($serialized);
+    public function testUnserializeKeepsTheJsonError(): void
+    {
+        // For the log: what JSON failed on
+        self::assertInstanceOf(\JsonException::class, $this->unserializeError('{"route":')->getPrevious());
     }
 
     public function testSignsTheContextItSendsAndChecksTheOneGivenBack(): void
@@ -219,5 +234,19 @@ final class ContextSerializerTest extends TestCase
     private function serializer(): ContextSerializer
     {
         return new ContextSerializer($this->router);
+    }
+
+    /**
+     * Error unserializing what isn't a context
+     */
+    private function unserializeError(string $serialized): \RuntimeException
+    {
+        try {
+            $this->serializer()->unserialize($serialized);
+        } catch (\RuntimeException $e) {
+            return $e;
+        }
+
+        self::fail('Not a context, unserialized');
     }
 }
