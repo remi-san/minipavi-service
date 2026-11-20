@@ -900,8 +900,11 @@ the code of `src/` in small ways (mutants), and runs the tests that cover each o
 the tests don't notice (escaped, listed in `build/infection/infection.log`) is a test missing,
 or code nothing needs. It gives the Mutation Score Indicator (MSI, the share of mutants
 noticed) and the covered MSI (among the mutants of covered code), and fails when either is
-below its minimum in `infection.json5` (92%). CI runs it on every pull request. It runs the
-tests without `UPDATE_GOLDEN`, so it never writes the golden files.
+below its minimum in `infection.json5` (92%). CI runs it on the pull requests and the pushes
+to `main` that change code: any file but the docs (`README.md`), the Claude files (`CLAUDE.md`,
+`.claude/`), and those neither Infection nor the tests read (`bin/`, `tools/`, `stubs/`,
+`mago.toml`, `.gitignore`). It runs the tests without `UPDATE_GOLDEN`, so it never writes the
+golden files.
 
 Tests are in `tests/`, with their files in `tests/fixtures/`. Pages are checked through the
 screen they draw (`Screen::preview()`). `Offset` is checked in two ways: against the
@@ -918,4 +921,4 @@ of an element with them, and gives the nodes and the page's `<input>` (`ParsedNo
 
 GitHub Actions runs the three checks on PHP 8.2, 8.3, 8.4 and 8.5 for every change to the
 framework, and the coverage (with its minimum) and the mutation testing (its MSI in the job's
-summary, with its minimum) on PHP 8.4.
+summary, with its minimum, when the change touches code) on PHP 8.4.
