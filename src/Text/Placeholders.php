@@ -51,9 +51,7 @@ final readonly class Placeholders
             self::PLACEHOLDER,
             function ($m) {
                 $value = $this->value($m[1]);
-                if (is_bool($value)) {
-                    return $value ? '1' : '';
-                }
+                // As PHP writes them: true is '1', false and null ''
                 if ($value === null || is_scalar($value) || $value instanceof \Stringable) {
                     return (string) $value;
                 }
