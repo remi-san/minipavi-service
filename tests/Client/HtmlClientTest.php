@@ -549,21 +549,36 @@ final class HtmlClientTest extends TestCase
     }
 
     /**
-     * XPath of the input fields: what the form posts as the content, in its order
+     * XPath of the input fields, wherever they are on the page: what the form posts as the
+     * content, in its order
      */
     private static function fieldInputs(): string
     {
-        return '//form//input[@name="content[]"]';
+        return '//input[@name="content[]"]';
+    }
+
+    /**
+     * XPath of the input fields outside the screen
+     */
+    private static function fieldsOutsideTheScreen(): string
+    {
+        return (
+            self::fieldInputs()
+            . '[not(ancestor::div[contains(concat(" ", normalize-space(@class), " "), " minitel ")])]'
+        );
     }
 
     /**
      * The input fields over the screen, in the form's order: what each shows, and the style
-     * placing it
+     * placing it. Every field of the form is one: in the screen, the container its style places
+     * it against (a field elsewhere would be placed against the page, not over its cell)
      *
      * @return list<array{value: string, style: string}>
      */
     private static function fields(string $html): array
     {
+        self::assertCount(0, self::nodes($html, query: self::fieldsOutsideTheScreen()));
+
         return array_map(
             static fn(DOMElement $input) => [
                 'value' => $input->getAttribute('value'),
