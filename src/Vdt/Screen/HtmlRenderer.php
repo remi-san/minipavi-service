@@ -10,6 +10,7 @@ use MiniPaviService\Io\Files;
 use MiniPaviService\Minitel\Color;
 use MiniPaviService\Minitel\Position;
 use MiniPaviService\Minitel\ScreenSize;
+use MiniPaviService\Vdt\Videotex;
 
 /**
  * Draws a Screen in HTML, as the Minitel would show it (checked against MiniPavi's emulator):
@@ -20,7 +21,7 @@ use MiniPaviService\Minitel\ScreenSize;
  * blinking. Text is drawn with a Minitel font
  * (MINITEL_FONT: Minitel-Canvas's, whose glyphs fill the cells), embedded in style(). Mosaic
  * cells are drawn as their 2 × 3 pixels (separated when underlined), without depending on a
- * font. No JavaScript.
+ * font, and so is 0x7F, a full block in text too, as SUB is shown. No JavaScript.
  *
  * It draws the screen only: the page around it (e.g. Client\HtmlForm's) puts render() in its
  * body, and style() in its <style>. style() sets, for the whole page, --w and --h, the size
@@ -35,6 +36,9 @@ final readonly class HtmlRenderer
 
     // Pixels of a mosaic character, top left to bottom right, and the bit of each
     private const MOSAIC_BITS = [0x01, 0x02, 0x04, 0x08, 0x10, 0x40];
+
+    // All six pixels in mosaic, a full block in text too
+    private const FULL_BLOCK = "\x7F";
 
     private const STYLE = <<<'CSS'
         :root { --w: 16px; --h: 20px; --pad: 12px; --font: var(--w)/var(--h) Minitel, "DejaVu Sans Mono", Menlo, Consolas, monospace; }
@@ -160,7 +164,11 @@ final readonly class HtmlRenderer
             return '<span class="' . implode(' ', $classes) . '" style="' . $style . '"> </span>';
         }
 
-        $content = $mosaic && self::isMosaic($cell->bytes) ? self::mosaic($cell) : Html::escape($cell->text());
+        // SUB is shown as 0x7F, as MiniPavi's emulator prints it
+        $bytes = $cell->bytes === Videotex::SUB ? self::FULL_BLOCK : $cell->bytes;
+        $content = self::isPixels($bytes, $attributes)
+            ? self::mosaic($bytes, $attributes)
+            : Html::escape($cell->text());
 
         return '<span class="' . implode(' ', $classes) . '" style="' . $style . '">' . $content . '</span>';
     }
@@ -168,11 +176,11 @@ final readonly class HtmlRenderer
     /**
      * A mosaic character, drawn as its pixels: separated ones when they are (Attributes)
      */
-    private static function mosaic(Cell $cell): string
+    private static function mosaic(string $byte, Attributes $attributes): string
     {
-        $classes = $cell->attributes->isSeparated() ? 'm sep' : 'm';
+        $classes = $attributes->isSeparated() ? 'm sep' : 'm';
 
-        return '<span class="' . $classes . '">' . self::pixels($cell->bytes) . '</span>';
+        return '<span class="' . $classes . '">' . self::pixels($byte) . '</span>';
     }
 
     /**
@@ -190,10 +198,11 @@ final readonly class HtmlRenderer
     }
 
     // Every character of the mosaic set is pixels (0x40 to 0x5F included, as MiniPavi's
-    // emulator draws them); G2 ones (more than a byte) are shown as text
-    private static function isMosaic(string $bytes): bool
+    // emulator draws them), G2 ones (more than a byte) shown as text; 0x7F is a full block
+    // in text too (the emulator's G0 character)
+    private static function isPixels(string $bytes, Attributes $attributes): bool
     {
-        return \strlen($bytes) === 1 && \ord($bytes) >= 0x20;
+        return $bytes === self::FULL_BLOCK || $attributes->isMosaic() && \strlen($bytes) === 1;
     }
 
     private static function color(Color $color): string

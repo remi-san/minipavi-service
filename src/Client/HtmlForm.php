@@ -156,9 +156,8 @@ final readonly class HtmlForm
      */
     private function keys(?InputCommand $command): string
     {
-        $keys = FunctionKey::cases();
-        $buttons = [];
-        foreach ($keys as $position => $key) {
+        $buttons = '';
+        foreach (FunctionKey::cases() as $position => $key) {
             $enabled = $command === null || $command->field->isValidatedWith($key);
             $button =
                 '<button type="submit" name="'
@@ -172,11 +171,10 @@ final readonly class HtmlForm
                 . '>'
                 . Html::escape($this->messages->get(FrameworkMessage::keyLabel($key)))
                 . '</button>';
-            $buttons[$key === FunctionKey::Send ? 0 : $position + 1] = $button;
+            $buttons = $key === FunctionKey::Send ? $button . $buttons : $buttons . $button;
         }
-        ksort($buttons);
 
-        return '<div class="keys">' . implode('', $buttons) . '</div>';
+        return '<div class="keys">' . $buttons . '</div>';
     }
 
     /**
