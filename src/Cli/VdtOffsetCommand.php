@@ -100,7 +100,8 @@ final class VdtOffsetCommand extends Command
     private static function int(InputInterface $input, string $name): int
     {
         $value = Input::string($input, $name);
-        if (!preg_match('/^-?\d+$/', $value)) {
+        // \z, as $ allows a final newline
+        if (!preg_match('/^-?\d+\z/', $value)) {
             throw new InvalidArgumentException("{$name} must be an integer, not {$value}");
         }
 

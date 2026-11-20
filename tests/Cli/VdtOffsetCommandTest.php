@@ -8,6 +8,7 @@ use MiniPaviService\Cli\VdtOffsetCommand;
 use MiniPaviService\Vdt\Offset;
 use MiniPaviService\Vdt\Screen\Screen;
 use MiniPaviService\Vdt\Vdt;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Exception\InvalidArgumentException;
@@ -90,11 +91,35 @@ final class VdtOffsetCommandTest extends TestCase
         $this->tester->execute(['input' => 'a.vdt', 'x' => '1']);
     }
 
-    public function testRefusesAnOffsetThatIsNotAnInteger(): void
+    /**
+     * @return iterable<string, array{string}>
+     */
+    public static function notIntegers(): iterable
+    {
+        yield 'a word' => ['one'];
+        yield 'something after it' => ['12abc'];
+        yield 'something before it' => ['abc12'];
+        yield 'two numbers' => ['1 2'];
+        yield 'spaces around it' => [' 12 '];
+        yield 'a final newline' => ["12\n"];
+        yield 'a sign alone' => ['-'];
+        yield 'a decimal' => ['1.5'];
+    }
+
+    #[DataProvider('notIntegers')]
+    public function testRefusesAnOffsetThatIsNotAnInteger(string $offset): void
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('x must be an integer, not one');
+        $this->expectExceptionMessage("x must be an integer, not {$offset}");
 
-        $this->tester->execute(['input' => 'a.vdt', 'x' => 'one', 'y' => '1']);
+        $this->tester->execute(['input' => 'a.vdt', 'x' => $offset, 'y' => '1']);
+    }
+
+    public function testRefusesAYOffsetThatIsNotAnInteger(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('y must be an integer, not 2abc');
+
+        $this->tester->execute(['input' => 'a.vdt', 'x' => '1', 'y' => '2abc']);
     }
 }
