@@ -263,6 +263,18 @@ final class VdtTest extends TestCase
         self::assertScreenMoved(new Vdt($sent), $x, $y);
     }
 
+    public function testOffsetWritesAClearLineMovedLeftAsSpaces(): void
+    {
+        // Row 10: A, ESC Z, CAN from column 2, moved to column 1: its delimiter, then spaces
+        // up to column 39, as column 40 came from beyond the screen
+        self::assertSame(
+            "\x1F\x4A\x41\x1B\x5A \x12\x66",
+            (new Offset(x: -1, y: 0))
+                ->apply(new Vdt("\x1F\x4A\x41A\x1B\x5A\x18"))
+                ->toString(),
+        );
+    }
+
     public function testOffsetWritesNoDelimiterForAZoneAClearScreenEnded(): void
     {
         // Row 10: an underlined zone, a clear screen, then a space in column 3 of row 10,
