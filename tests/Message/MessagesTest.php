@@ -170,6 +170,17 @@ final class MessagesTest extends TestCase
             ->check(FrameworkMessage::class, TestMessage::class);
     }
 
+    public function testCheckNamesTheMessagesWithoutTextAfterOneWithText(): void
+    {
+        $this->expectException(MessagesException::class);
+        $this->expectExceptionMessage('No text for the messages: code.unknown');
+
+        (new MessagesXmlParser())
+            ->defaults()
+            ->with(['welcome' => 'Bienvenue'])
+            ->check(TestMessage::class);
+    }
+
     public function testFileRedefinesTheBaseMessages(): void
     {
         $messages = (new MessagesXmlParser())->parse(<<<'XML'

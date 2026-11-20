@@ -100,8 +100,9 @@ final class Context
      */
     public function keep(?State $state, ?Parameters $parameters): void
     {
-        // Kept only once keep() succeeds: if it throws, a route that kept nothing still doesn't
-        $route = $this->routes[$this->route] ?? $this->router->route($this->route)->start();
+        // keep() replaces both the state and the parameters: what the route kept before doesn't
+        // matter. Kept only once keep() succeeds: if it throws, the route keeps what it did
+        $route = $this->router->route($this->route)->start();
         $route->keep($state, $parameters);
         $this->routes[$this->route] = $route;
     }

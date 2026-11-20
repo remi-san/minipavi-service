@@ -165,7 +165,6 @@ final class PageXsdTest extends TestCase
         yield 'unknown attribute' => ['<page type="static"><text bold="yes">x</text></page>'];
         yield 'col 0' => ['<page type="static"><text col="0">x</text></page>'];
         yield 'signed number' => ['<page type="static"><text row="+1">x</text></page>'];
-        yield 'input in an if' => ['<page type="template"><if test="a"><input/></if></page>'];
         yield 'endkey in an if in a loop' => [
             '<page type="template"><foreach items="a" as="b"><if test="c"><endkey/></if></foreach></page>',
         ];

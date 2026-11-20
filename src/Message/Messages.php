@@ -51,7 +51,7 @@ final readonly class Messages
      */
     public function get(Message $message, array $variables = []): string
     {
-        $name = (string) $message->value;
+        $name = $message->value;
         $text = $this->texts[$name] ?? throw new \LogicException("No text for the message \"{$name}\"");
 
         try {
@@ -83,7 +83,7 @@ final readonly class Messages
                     continue;
                 }
 
-                $missing[] = (string) $message->value;
+                $missing[] = $message->value;
             }
         }
         if ($missing !== []) {

@@ -94,4 +94,22 @@ final class InputCommandJsonTest extends TestCase
         self::assertSame([FunctionKey::Send], $command->field->validWith);
         self::assertSame(['a', ''], $command->prefill);
     }
+
+    public function testKeepsTheKnownKeysAfterAnUnknownOne(): void
+    {
+        $command = (new InputCommandJson())->decode(
+            '{"row": 2, "col": 3, "length": 4, "lines": 1, "validWith": ["BOGUS", "ENVOI", "SUITE"]}',
+        );
+
+        self::assertSame([FunctionKey::Send, FunctionKey::Next], $command?->field->validWith);
+    }
+
+    public function testReadsAPrefillGivenAsAnObjectAsItsLines(): void
+    {
+        $command = (new InputCommandJson())->decode(
+            '{"row": 2, "col": 3, "length": 4, "lines": 2, "prefill": {"first": "a", "second": "b"}}',
+        );
+
+        self::assertSame(['a', 'b'], $command?->prefill);
+    }
 }

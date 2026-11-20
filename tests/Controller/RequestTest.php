@@ -51,6 +51,7 @@ final class RequestTest extends TestCase
             (new Request(ControllerState::Init, key: ConnectionCode::Connect))->connectionCode(),
         );
         self::assertNull((new Request(ControllerState::Init, key: FunctionKey::Guide))->connectionCode());
+        self::assertNull((new Request(ControllerState::Init))->connectionCode());
     }
 
     public function testWithoutInputNothingWasTyped(): void

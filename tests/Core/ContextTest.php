@@ -213,6 +213,24 @@ final class ContextTest extends TestCase
         );
     }
 
+    public function testKeepingThatFailsLeavesWhatTheRouteKept(): void
+    {
+        $context = new Context($this->router, 'search');
+        $context->keep(SearchState::ReadQuery, new PageParameters(2));
+
+        $refused = false;
+        try {
+            // A state of another enum than the controller's
+            $context->keep(ControllerState::ReadInput, parameters: null);
+        } catch (\LogicException) {
+            $refused = true;
+        }
+
+        self::assertTrue($refused);
+        self::assertSame(SearchState::ReadQuery, $context->state());
+        self::assertEquals(new PageParameters(2), $context->parameters());
+    }
+
     public function testKeepingParametersOfAnotherClassThanTheControllersIsAnError(): void
     {
         $context = new Context($this->router, 'search');

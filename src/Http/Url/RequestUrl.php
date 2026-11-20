@@ -121,9 +121,10 @@ final readonly class RequestUrl
         if ($bits === 0) {
             return true;
         }
-        $mask = (0xFF << (8 - $bits)) & 0xFF;
+        // The first bits of the next byte: what is left once the others are shifted out
+        $shift = 8 - $bits;
 
-        return (\ord($remote[$bytes]) & $mask) === (\ord($address[$bytes]) & $mask);
+        return (\ord($remote[$bytes]) >> $shift) === (\ord($address[$bytes]) >> $shift);
     }
 
     private static function origin(string $serviceUrl): string
@@ -159,16 +160,21 @@ final readonly class RequestUrl
                 continue;
             }
             $parts = explode('/', $proxy, limit: 2);
-            $ip = $parts[0];
             $prefix = $parts[1] ?? null;
-            $address = self::packed($ip);
-            $bits = $address === null ? 0 : \strlen($address) * 8;
-            if ($address === null || $prefix !== null && (!ctype_digit($prefix) || (int) $prefix > $bits)) {
-                throw new \InvalidArgumentException("TRUSTED_PROXIES: \"{$proxy}\" is not an IP address or range");
+            $address = self::packed($parts[0]) ?? throw self::notAProxy($proxy);
+            $bits = \strlen($address) * 8;
+            // A number of bits, compared as a number
+            if ($prefix !== null && (!ctype_digit($prefix) || $prefix > $bits)) {
+                throw self::notAProxy($proxy);
             }
             $proxies[] = [$address, $prefix === null ? $bits : (int) $prefix];
         }
 
         return $proxies;
+    }
+
+    private static function notAProxy(string $proxy): \InvalidArgumentException
+    {
+        return new \InvalidArgumentException("TRUSTED_PROXIES: \"{$proxy}\" is not an IP address or range");
     }
 }
