@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace MiniPaviService\Vdt\Screen;
 
 use MiniPaviService\Minitel\ScreenSize;
-use MiniPaviService\Vdt\Videotex;
 
 /**
  * Cursor and attributes of a Minitel screen in page mode, as Videotex content moves them: the
@@ -146,32 +145,6 @@ final class Cursor
     public function advance(int $columns): void
     {
         $this->forward($columns, rows: $this->attributes->height());
-    }
-
-    /**
-     * Follows a cursor move: BS, HT, LF, VT or CR (Videotex::CURSOR_*, CARRIAGE_RETURN)
-     *
-     * @param string $byte the code of the move
-     */
-    public function move(string $byte): void
-    {
-        switch ($byte) {
-            case Videotex::CURSOR_LEFT:
-                $this->left();
-                break;
-            case Videotex::CURSOR_RIGHT:
-                $this->right();
-                break;
-            case Videotex::CURSOR_DOWN:
-                $this->down();
-                break;
-            case Videotex::CURSOR_UP:
-                $this->up();
-                break;
-            case Videotex::CARRIAGE_RETURN:
-                $this->carriageReturn();
-                break;
-        }
     }
 
     /**

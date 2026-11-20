@@ -5,6 +5,21 @@ declare(strict_types=1);
 namespace MiniPaviService\Vdt;
 
 use MiniPaviService\Vdt\Screen\Attributes;
+use MiniPaviService\Vdt\Token\Attribute;
+use MiniPaviService\Vdt\Token\CarriageReturn;
+use MiniPaviService\Vdt\Token\Charset;
+use MiniPaviService\Vdt\Token\ClearLine;
+use MiniPaviService\Vdt\Token\ClearScreen;
+use MiniPaviService\Vdt\Token\CursorDown;
+use MiniPaviService\Vdt\Token\CursorLeft;
+use MiniPaviService\Vdt\Token\CursorRight;
+use MiniPaviService\Vdt\Token\CursorUp;
+use MiniPaviService\Vdt\Token\Glyph;
+use MiniPaviService\Vdt\Token\Home;
+use MiniPaviService\Vdt\Token\Position;
+use MiniPaviService\Vdt\Token\Raw;
+use MiniPaviService\Vdt\Token\Repeat;
+use MiniPaviService\Vdt\Token\Token;
 
 /**
  * Cuts Videotex content into Tokens: how Vdt reads it, tested through what it draws
@@ -23,7 +38,7 @@ final class Parser
         for ($i = 0; $i < $length; $i++) {
             $byte = $vdt[$i];
             if (ord($byte) >= 0x20) {
-                $tokens[] = new Token(TokenType::Glyph, $byte, $byte);
+                $tokens[] = new Glyph($byte);
                 continue;
             }
             switch ($byte) {
@@ -33,23 +48,19 @@ final class Parser
                     if ($accent >= 0x41 && $accent <= 0x4F && ($i + 2) < \strlen($vdt) && ord($vdt[$i + 2]) >= 0x20) {
                         $glyph .= $vdt[$i + 2];
                     }
-                    $tokens[] = new Token(TokenType::Glyph, $glyph, $glyph);
+                    $tokens[] = new Glyph($glyph);
                     $i += strlen($glyph) - 1;
                     break;
                 case Videotex::SUB: // shown as an error character
-                    $tokens[] = new Token(TokenType::Glyph, $byte, $byte);
+                    $tokens[] = new Glyph($byte);
                     break;
                 case Videotex::REPEAT:
-                    $tokens[] = new Token(
-                        TokenType::Repeat,
-                        substr($vdt, $i, length: 2),
-                        count: ord($vdt[$i + 1] ?? "\x40") - 0x40,
-                    );
+                    $tokens[] = new Repeat(substr($vdt, $i, length: 2), count: ord($vdt[$i + 1] ?? "\x40") - 0x40);
                     $i++;
                     break;
                 case Videotex::MOSAIC_SET:
                 case Videotex::TEXT_SET:
-                    $tokens[] = new Token(TokenType::Charset, $byte, $byte);
+                    $tokens[] = new Charset($byte);
                     break;
                 case Videotex::POSITION: // row, column as 0x40+n, or a row as 2 digits
                     [$position, $skipped] = self::position($vdt, $i);
@@ -57,35 +68,43 @@ final class Parser
                     $i += $skipped;
                     break;
                 case Videotex::CURSOR_LEFT:
+                    $tokens[] = new CursorLeft();
+                    break;
                 case Videotex::CURSOR_RIGHT:
+                    $tokens[] = new CursorRight();
+                    break;
                 case Videotex::CURSOR_DOWN:
+                    $tokens[] = new CursorDown();
+                    break;
                 case Videotex::CURSOR_UP:
+                    $tokens[] = new CursorUp();
+                    break;
                 case Videotex::CARRIAGE_RETURN:
-                    $tokens[] = new Token(TokenType::Move, $byte, $byte);
+                    $tokens[] = new CarriageReturn();
                     break;
                 case Videotex::HOME:
-                    $tokens[] = new Token(TokenType::Home, $byte);
+                    $tokens[] = new Home();
                     break;
                 case Videotex::CLEAR_SCREEN:
-                    $tokens[] = new Token(TokenType::Clear, $byte);
+                    $tokens[] = new ClearScreen();
                     break;
                 case Videotex::CLEAR_LINE:
-                    $tokens[] = new Token(TokenType::ClearLine, $byte);
+                    $tokens[] = new ClearLine();
                     break;
                 case Videotex::SEP: // one byte follows each
                 case Videotex::SS3:
-                    $tokens[] = new Token(TokenType::Raw, substr($vdt, $i, length: 2), substr($vdt, $i, length: 2));
+                    $tokens[] = new Raw(substr($vdt, $i, length: 2));
                     $i++;
                     break;
                 case Videotex::ESC:
                     $sequence = $this->escapeSequence($vdt, $i);
                     $tokens[] = strlen($sequence) === 2 && Attributes::isAttribute($sequence[1])
-                        ? new Token(TokenType::Attribute, $sequence, $sequence[1])
-                        : new Token(TokenType::Raw, $sequence, $sequence);
+                        ? new Attribute($sequence[1])
+                        : new Raw($sequence);
                     $i += strlen($sequence) - 1;
                     break;
                 default:
-                    $tokens[] = new Token(TokenType::Raw, $byte, $byte);
+                    $tokens[] = new Raw($byte);
             }
         }
         return $tokens;
@@ -126,7 +145,7 @@ final class Parser
                 ? [(10 * ($first - 0x30)) + ($second - 0x30), 1]
                 : [$first - 0x40, $second - 0x40];
 
-        return [new Token(TokenType::Position, substr($vdt, $i, length: 3), row: $row, col: $col), 2];
+        return [new Position(substr($vdt, $i, length: 3), row: $row, col: $col), 2];
     }
 
     private function csiLength(string $vdt, int $start): int
