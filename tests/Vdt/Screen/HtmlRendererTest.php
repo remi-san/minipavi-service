@@ -13,6 +13,7 @@ use MiniPaviService\Tests\Support\MemoryFiles;
 use MiniPaviService\Vdt\Screen\HtmlRenderer;
 use MiniPaviService\Vdt\Screen\Screen;
 use MiniPaviService\Vdt\Vdt;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class HtmlRendererTest extends TestCase
@@ -190,6 +191,31 @@ final class HtmlRendererTest extends TestCase
         );
         // Underlined mosaic is separated
         self::assertStringContainsString('<span class="m sep">', $this->renderCell("\x0E\x1B\x5A\x7F"));
+    }
+
+    /**
+     * @return iterable<string, array{string}>
+     */
+    public static function fullBlocks(): iterable
+    {
+        // MiniPavi's emulator prints SUB as 0x7F, in mosaic all six pixels, and in text the
+        // G0 character 0x7F, a full block too
+        yield 'SUB in mosaic' => ["\x0E\x1A"];
+        yield 'SUB in text' => ["\x1A"];
+        yield '0x7F in text' => ["\x7F"];
+    }
+
+    #[DataProvider('fullBlocks')]
+    public function testDrawsAFullBlockAsTheEmulatorDoes(string $vdt): void
+    {
+        self::assertSame(
+            self::screenWith(
+                '<span class="c" style="color:#ffffff;background:#000000"><span class="m">'
+                . str_repeat('<i class="on"></i>', times: 6)
+                . '</span></span>',
+            ),
+            $this->renderCell($vdt),
+        );
     }
 
     public function testMosaicSpaceIsDrawnAsPixelsOnItsBackground(): void
