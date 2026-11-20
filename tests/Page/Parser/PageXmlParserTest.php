@@ -650,6 +650,76 @@ final class PageXmlParserTest extends TestCase
         self::fail('A row off the screen was displayed');
     }
 
+    /**
+     * @return iterable<string, array{string, array<string, mixed>, string}>
+     */
+    public static function templateErrorsFoundWhenDisplayed(): iterable
+    {
+        yield 'a loop on an unknown variable' => [
+            '<foreach items="games" as="game" row="1"><text>{{game}}</text></foreach>',
+            [],
+            'list.xml line 2: <foreach>: unknown variable {{games}}',
+        ];
+        yield 'a loop on a value that is not a list' => [
+            '<foreach items="games" as="game" row="1"><text>{{game}}</text></foreach>',
+            ['games' => 'Harbour Pirates'],
+            'list.xml line 2: <foreach>: {{games}} is not a list (string)',
+        ];
+        yield 'a condition on an unknown variable' => [
+            '<if test="!user.name"><text row="1">Anonymous</text></if>',
+            ['user' => []],
+            'list.xml line 2: <if>: unknown variable {{user.name}}: no "name" in array',
+        ];
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     */
+    #[DataProvider('templateErrorsFoundWhenDisplayed')]
+    public function testTemplateErrorOfAVariableGivesTheLine(string $xml, array $data, string $error): void
+    {
+        $page = $this->parse("<page type=\"template\">\n{$xml}</page>", name: 'list.xml');
+
+        try {
+            $page->display(new Terminal(), $data);
+        } catch (TemplateException $e) {
+            self::assertSame($error, $e->getMessage());
+
+            return;
+        }
+        self::fail('The page was displayed');
+    }
+
+    /**
+     * @return iterable<string, array{\Countable, list<string>}>
+     */
+    public static function collections(): iterable
+    {
+        yield 'empty' => [new \ArrayObject(), [' 1|No game                                 |']];
+        yield 'with elements' => [
+            new \ArrayObject(['Rocket Rescue']),
+            [' 1|Games                                   |'],
+        ];
+    }
+
+    /**
+     * A collection object is true when it has elements, as an array
+     *
+     * @param list<string> $rows
+     */
+    #[DataProvider('collections')]
+    public function testConditionOnACollectionTestsItsElements(\Countable $games, array $rows): void
+    {
+        $page = $this->parse(<<<'XML'
+            <page type="template">
+              <if test="games"><text row="1">Games</text></if>
+              <if test="!games"><text row="1">No game</text></if>
+            </page>
+            XML);
+
+        self::assertSame($rows, $this->drawnRows($page->display(new Terminal(), ['games' => $games])));
+    }
+
     public function testPrivatePropertyIsAnUnknownVariableOfTheTemplate(): void
     {
         $page = $this->parse("<page type=\"template\">\n<text row=\"1\">{{user.city}}</text></page>", name: 'user.xml');
@@ -848,6 +918,19 @@ final class PageXmlParserTest extends TestCase
         );
     }
 
+    public function testBackgroundInAForeachIsAtItsOwnPlace(): void
+    {
+        $page = $this->parse(
+            '<page type="template"><foreach items="xs" as="x" row="5"><background>images/logo.vdt</background></foreach></page>',
+        );
+
+        // Not moved to the item's row: its content positions itself
+        self::assertSame(
+            [' 1|##                                      |', ' 2|ok                                      |'],
+            $this->drawnRows($page->display(new Terminal(), ['xs' => [1]])),
+        );
+    }
+
     public function testParseFileThrowsWhenTheFileIsMissing(): void
     {
         $this->expectException(PageXmlException::class);
@@ -925,6 +1008,30 @@ final class PageXmlParserTest extends TestCase
             '<page type="static"><line row="1" col="30" length="20"/></page>',
             'f.xml line 1: <line>: Length 20 from column 30 goes past column 40',
         ];
+        yield 'unknown alignment' => [
+            '<page type="static"><text align="middle">x</text></page>',
+            'f.xml line 1: <text>: align="middle" must be left or center',
+        ];
+        yield 'unknown fill' => [
+            '<page type="static"><text fill="true">x</text></page>',
+            'f.xml line 1: <text>: fill="true" must be yes or no',
+        ];
+        yield 'line of two characters' => [
+            '<page type="static"><line char="=-"/></page>',
+            "f.xml line 1: <line>: A line is made of a single character, got '=-'",
+        ];
+        yield 'line of no character' => [
+            '<page type="static"><line char=""/></page>',
+            "f.xml line 1: <line>: A line is made of a single character, got ''",
+        ];
+        yield 'image on line 0' => [
+            '<page type="static"><image row="0">images/logo.vdt</image></page>',
+            'f.xml line 1: <image>: An image starts at row 1 at least',
+        ];
+        yield 'image without file' => [
+            '<page type="static"><image> </image></page>',
+            'f.xml line 1: <image>: the file is missing',
+        ];
         yield 'placeholder in a static page' => [
             '<page type="static"><text>{{x}}</text></page>',
             'f.xml line 1: <text>: {{placeholders}} only in a page of type="template"',
@@ -944,6 +1051,10 @@ final class PageXmlParserTest extends TestCase
         yield 'foreach as with a dash' => [
             '<page type="template"><foreach items="a" as="a-b"/></page>',
             'f.xml line 1: <foreach>: as="a-b" must be a variable name, other than loop',
+        ];
+        yield 'if in a static page' => [
+            '<page type="static"><if test="x"/></page>',
+            'f.xml line 1: <if>: only in a page of type="template"',
         ];
         yield 'if without test' => [
             '<page type="template"><if test="!"/></page>',

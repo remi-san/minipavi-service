@@ -35,9 +35,11 @@ final class PageXsdTest extends TestCase
         'line too long',
         'placeholder in a static page',
         'foreach in a static page',
+        'if in a static page',
         'foreach as loop',
         'two inputs',
         'input past the last row',
+        'image on line 0',
         'message of no service',
     ];
 
@@ -168,7 +170,6 @@ final class PageXsdTest extends TestCase
             '<page type="template"><foreach items="a" as="b"><if test="c"><endkey/></if></foreach></page>',
         ];
         yield 'foreach without items' => ['<page type="template"><foreach as="b"/></page>'];
-        yield 'line of two characters' => ['<page type="static"><line char="=="/></page>'];
         yield 'empty validwith' => ['<page type="static"><input validwith=""/></page>'];
     }
 
