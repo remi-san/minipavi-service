@@ -96,6 +96,7 @@ final class ValuesTest extends TestCase
         yield '1' => [1, true];
         yield '0' => [0, false];
         yield 'text 1' => ['1', true];
+        yield 'text 0' => ['0', false];
         yield 'text true' => ['true', true];
         yield 'text false' => ['false', false];
         yield 'missing' => [null, null];
