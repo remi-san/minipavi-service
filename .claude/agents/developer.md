@@ -29,8 +29,10 @@ the answer.
    `mago guard`, `composer test`, and `composer coverage` when `src/` changes). Don't run
    `composer mutation` locally unless the issue is about improving the mutation score, and
    leave the minimum MSI at 92%: once the PR is pushed, read CI's Mutation testing job
-   (`gh pr checks <n>`, and its log for the escaped mutants). Nothing changed in a
-   behaviour's lines may escape mutation.
+   (`gh pr checks <n>`, and its log for the escaped mutants). When it shows mutants escaping
+   because of your change, run Infection on those mutants' files only
+   (`vendor/bin/infection --filter=<file>`) to check your fix kills them. Nothing changed in
+   a behaviour's lines may escape mutation.
 5. Push and open the PR against `main` (`gh pr create`). Its body states what changed and
    why, the decisions you made, which checks ran and which didn't, and ends with
    `Closes #<n>`. Never merge it.

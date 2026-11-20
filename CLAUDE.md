@@ -138,9 +138,11 @@ messages between them, and keeps the user informed. It does write the Claude fil
   (Infection) fails below its minimum MSI (in `infection.json5`), which stays at 92%: don't
   raise it. It lists the escaped mutants in `build/infection/infection.log`: a changed
   behaviour's mutants should not escape. CI runs both on PHP 8.4 (the Mutation testing job's
-  log lists the escaped mutants). Don't run `composer mutation` locally, not even filtered to
-  some files, unless the issue is about improving the mutation score: rely on CI's run
-  (`gh pr checks <n>`). Both need pcov or Xdebug.
+  log lists the escaped mutants). Don't run `composer mutation` locally unless the issue is
+  about improving the mutation score: rely on CI's run (`gh pr checks <n>`). When CI shows
+  mutants escaping (or failing the run) because of a change, run Infection locally on those
+  mutants' files only (`vendor/bin/infection --filter=<file>`), to check the fix kills them.
+  Both need pcov or Xdebug.
 - **Videotex output**: `tests/Vdt` compares `offset()` with golden files. After an intended
   change to the bytes written, regenerate them with `UPDATE_GOLDEN=1 composer test`, and
   explain the change in the commit.
