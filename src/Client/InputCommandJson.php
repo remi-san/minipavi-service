@@ -24,9 +24,6 @@ final readonly class InputCommandJson
     public function decode(string $json): ?InputCommand
     {
         $command = json_decode($json, associative: true);
-        if (!\is_array($command)) {
-            return null;
-        }
         // Without its position and size, there is no field
         $row = $command['row'] ?? null;
         $col = $command['col'] ?? null;
@@ -77,15 +74,19 @@ final readonly class InputCommandJson
 
         // Text that isn't UTF-8 (e.g. a prefill from a service that isn't) is replaced (U+FFFD)
         // rather than losing the whole command; any other failure throws
-        return json_encode([
-            'row' => $field->span->start->row,
-            'col' => $field->span->start->col,
-            'length' => $field->span->length,
-            'lines' => $field->lines,
-            'validWith' => array_map(static fn(FunctionKey $key) => $key->value, $field->validWith),
-            'cursor' => $field->cursor,
-            'spaceChar' => $field->spaceChar,
-            'prefill' => $command->prefill,
-        ], JSON_THROW_ON_ERROR | JSON_INVALID_UTF8_SUBSTITUTE);
+        return json_encode(
+            [
+                'row' => $field->span->start->row,
+                'col' => $field->span->start->col,
+                'length' => $field->span->length,
+                'lines' => $field->lines,
+                // Each key as its value
+                'validWith' => $field->validWith,
+                'cursor' => $field->cursor,
+                'spaceChar' => $field->spaceChar,
+                'prefill' => $command->prefill,
+            ],
+            JSON_THROW_ON_ERROR | JSON_INVALID_UTF8_SUBSTITUTE,
+        );
     }
 }
