@@ -133,7 +133,7 @@ final readonly class AttributeValues
                 "unknown {$name} \""
                 . $this->values[$name]
                 . '" ('
-                . implode(', ', array_map(static fn(\BackedEnum $case) => (string) $case->value, $enum::cases()))
+                . implode(', ', array_map(static fn(\BackedEnum $case) => $case->value, $enum::cases()))
                 . ')',
             )
         );

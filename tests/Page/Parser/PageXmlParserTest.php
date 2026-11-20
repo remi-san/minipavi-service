@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MiniPaviService\Tests\Page\Parser;
 
 use MiniPaviService\Gateway\InputCommand;
+use MiniPaviService\InvalidValueException;
 use MiniPaviService\Message\FrameworkMessage;
 use MiniPaviService\Message\MessagesXmlParser;
 use MiniPaviService\Minitel\Color;
@@ -637,10 +638,16 @@ final class PageXmlParserTest extends TestCase
     {
         $page = $this->parse("<page type=\"template\">\n<text row=\"{{row}}\">x</text></page>", name: 'list.xml');
 
-        $this->expectException(TemplateException::class);
-        $this->expectExceptionMessage('list.xml line 2: <text>: Row 30 is off the screen (0 to 24)');
+        try {
+            $page->display(new Terminal(), ['row' => 30]);
+        } catch (TemplateException $e) {
+            self::assertSame('list.xml line 2: <text>: Row 30 is off the screen (0 to 24)', $e->getMessage());
+            // For the log: where the value was refused
+            self::assertInstanceOf(InvalidValueException::class, $e->getPrevious());
 
-        $page->display(new Terminal(), ['row' => 30]);
+            return;
+        }
+        self::fail('A row off the screen was displayed');
     }
 
     public function testPrivatePropertyIsAnUnknownVariableOfTheTemplate(): void
@@ -813,7 +820,7 @@ final class PageXmlParserTest extends TestCase
         ];
         yield 'unknown color' => [
             "<page type=\"template\">\n<text color=\"purple\">x</text></page>",
-            'f.xml line 2: <text>: ',
+            'f.xml line 2: <text>: unknown color "purple" (black, red, green, yellow, blue, magenta, cyan, white)',
         ];
     }
 
@@ -823,10 +830,7 @@ final class PageXmlParserTest extends TestCase
     #[DataProvider('templateErrorsFoundWhenParsing')]
     public function testTemplateElementWithoutPlaceholderIsCheckedWhenParsing(string $xml, string $error): void
     {
-        $this->expectException(PageXmlException::class);
-        $this->expectExceptionMessage($error);
-
-        $this->parser->parse($xml, self::FIXTURES, name: 'f.xml');
+        self::assertSame($error, $this->parseError($xml)->getMessage());
     }
 
     public function testTemplateRowInAForeachIsCheckedWhenDisplayed(): void
@@ -878,7 +882,7 @@ final class PageXmlParserTest extends TestCase
         ];
         yield 'message twice' => [
             '<page type="static"><message name="page.last">x</message><message name="page.last">y</message></page>',
-            'name="page.last" is already in the page',
+            'f.xml line 1: <message>: name="page.last" is already in the page',
         ];
         // The first error in the file: the second "page.last", before the unknown message
         yield 'first message error in the file' => [
@@ -887,7 +891,7 @@ final class PageXmlParserTest extends TestCase
         ];
         yield 'message in a loop' => [
             '<page type="template"><foreach items="a" as="b"><message name="page.last">x</message></foreach></page>',
-            '<message>: only at the top level of the page',
+            'f.xml line 1: <message>: only at the top level of the page',
         ];
         yield 'unknown keyboard' => [
             "\n<page type=\"static\" keyboard=\"caps\"/>",
@@ -915,33 +919,36 @@ final class PageXmlParserTest extends TestCase
         ];
         yield 'unknown color' => [
             '<page type="static"><text color="pink">x</text></page>',
-            'f.xml line 1: <text>: unknown color "pink"',
+            'f.xml line 1: <text>: unknown color "pink" (black, red, green, yellow, blue, magenta, cyan, white)',
         ];
         yield 'line too long' => [
             '<page type="static"><line row="1" col="30" length="20"/></page>',
-            'goes past column 40',
+            'f.xml line 1: <line>: Length 20 from column 30 goes past column 40',
         ];
         yield 'placeholder in a static page' => [
             '<page type="static"><text>{{x}}</text></page>',
-            '{{placeholders}} only in a page of type="template"',
+            'f.xml line 1: <text>: {{placeholders}} only in a page of type="template"',
         ];
         yield 'foreach in a static page' => [
             '<page type="static"><foreach items="a" as="b"/></page>',
-            '<foreach>: only in a page of type="template"',
+            'f.xml line 1: <foreach>: only in a page of type="template"',
         ];
         yield 'foreach as loop' => [
             '<page type="template"><foreach items="a" as="loop"/></page>',
-            'as="loop" must be a variable name, other than loop',
+            'f.xml line 1: <foreach>: as="loop" must be a variable name, other than loop',
         ];
         yield 'foreach as starting with a digit' => [
             '<page type="template"><foreach items="a" as="1a"/></page>',
-            'as="1a" must be a variable name, other than loop',
+            'f.xml line 1: <foreach>: as="1a" must be a variable name, other than loop',
         ];
         yield 'foreach as with a dash' => [
             '<page type="template"><foreach items="a" as="a-b"/></page>',
-            'as="a-b" must be a variable name, other than loop',
+            'f.xml line 1: <foreach>: as="a-b" must be a variable name, other than loop',
         ];
-        yield 'if without test' => ['<page type="template"><if test="!"/></page>', '<if>: test is missing'];
+        yield 'if without test' => [
+            '<page type="template"><if test="!"/></page>',
+            'f.xml line 1: <if>: test is missing',
+        ];
         // Found while parsing, with the file and line, not when displayed
         yield 'if test with a space' => [
             '<page type="template"><if test="! x"/></page>',
@@ -955,14 +962,21 @@ final class PageXmlParserTest extends TestCase
             '<page type="template"><if test="x y"/></page>',
             'f.xml line 1: <if>: test="x y" must be a variable, or !variable',
         ];
-        yield 'two inputs' => ['<page type="static"><input/><input/></page>', '<input>: only one <input> per page'];
+        yield 'two inputs' => [
+            '<page type="static"><input/><input/></page>',
+            'f.xml line 1: <input>: only one <input> per page',
+        ];
         yield 'input in a loop' => [
             '<page type="template"><foreach items="a" as="b"><input/></foreach></page>',
-            '<input>: only at the top level of the page',
+            'f.xml line 1: <input>: only at the top level of the page',
         ];
         yield 'placeholder in an input' => [
             '<page type="template"><input row="{{r}}"/></page>',
-            '<input>: no {{placeholders}} in <input>',
+            'f.xml line 1: <input>: no {{placeholders}} in <input>',
+        ];
+        yield 'input past the last row' => [
+            '<page type="static"><input row="23" lines="3"/></page>',
+            'f.xml line 1: <input>: Input of 3 lines from row 23 goes past row 24',
         ];
         yield 'unknown validwith key' => [
             '<page type="static"><input validwith="enter"/></page>',
@@ -971,49 +985,47 @@ final class PageXmlParserTest extends TestCase
         ];
         yield 'validwith keys separated by a comma' => [
             '<page type="static"><input validwith="envoi,suite"/></page>',
-            'unknown validwith key "envoi,suite"',
+            'f.xml line 1: <input>: unknown validwith key "envoi,suite" '
+                . '(sommaire, annulation, retour, repetition, guide, correction, suite, envoi)',
         ];
         yield 'endkey in a loop' => [
             '<page type="template"><foreach items="a" as="b"><endkey/></foreach></page>',
-            '<endkey>: not inside <foreach>',
+            'f.xml line 1: <endkey>: not inside <foreach>',
         ];
         yield 'file outside the folder' => [
             '<page type="static"><image>../secret.vdt</image></page>',
-            "../secret.vdt: only files from the page's folder or its subfolders",
+            "f.xml line 1: <image>: ../secret.vdt: only files from the page's folder or its subfolders",
         ];
         yield 'absolute file' => [
             '<page type="static"><background>/etc/passwd</background></page>',
-            "/etc/passwd: only files from the page's folder or its subfolders",
+            "f.xml line 1: <background>: /etc/passwd: only files from the page's folder or its subfolders",
         ];
         yield 'file outside the folder with backslashes' => [
             '<page type="static"><image>images\\..\\..\\secret.vdt</image></page>',
-            "images\\..\\..\\secret.vdt: only files from the page's folder or its subfolders",
+            "f.xml line 1: <image>: images\\..\\..\\secret.vdt: only files from the page's folder or its subfolders",
         ];
         yield 'absolute file with a backslash' => [
             '<page type="static"><background>\\secret.vdt</background></page>',
-            "\\secret.vdt: only files from the page's folder or its subfolders",
+            "f.xml line 1: <background>: \\secret.vdt: only files from the page's folder or its subfolders",
         ];
         yield 'file on a Windows drive' => [
             '<page type="static"><image>C:/secret.vdt</image></page>',
-            "C:/secret.vdt: only files from the page's folder or its subfolders",
+            "f.xml line 1: <image>: C:/secret.vdt: only files from the page's folder or its subfolders",
         ];
         yield 'file on a Windows drive with a backslash' => [
             '<page type="static"><image>c:\\secret.vdt</image></page>',
-            "c:\\secret.vdt: only files from the page's folder or its subfolders",
+            "f.xml line 1: <image>: c:\\secret.vdt: only files from the page's folder or its subfolders",
         ];
         yield 'file relative to a Windows drive' => [
             '<page type="static"><image>C:secret.vdt</image></page>',
-            "C:secret.vdt: only files from the page's folder or its subfolders",
+            "f.xml line 1: <image>: C:secret.vdt: only files from the page's folder or its subfolders",
         ];
     }
 
     #[DataProvider('invalidPages')]
     public function testInvalidPageThrowsWithItsLocation(string $xml, string $message): void
     {
-        $this->expectException(PageXmlException::class);
-        $this->expectExceptionMessage($message);
-
-        $this->parser->parse($xml, self::FIXTURES, name: 'f.xml');
+        self::assertSame($message, $this->parseError($xml)->getMessage());
     }
 
     public function testTemplateFileOutsideTheFolderIsRefusedAtDisplay(): void
@@ -1034,6 +1046,20 @@ final class PageXmlParserTest extends TestCase
     private function parse(string $xml, string $name = 'page'): Page
     {
         return $this->parser->parse($xml, self::FIXTURES, $name);
+    }
+
+    /**
+     * Error parsing the page, named f.xml
+     */
+    private function parseError(string $xml): PageXmlException
+    {
+        try {
+            $this->parser->parse($xml, self::FIXTURES, name: 'f.xml');
+        } catch (PageXmlException $e) {
+            return $e;
+        }
+
+        self::fail('The page was parsed');
     }
 
     /**

@@ -37,6 +37,7 @@ final class PageXsdTest extends TestCase
         'foreach in a static page',
         'foreach as loop',
         'two inputs',
+        'input past the last row',
         'message of no service',
     ];
 

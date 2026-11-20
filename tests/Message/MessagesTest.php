@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Tests\Message;
 
+use MiniPaviService\InvalidValueException;
 use MiniPaviService\Message\FrameworkMessage;
 use MiniPaviService\Message\Messages;
 use MiniPaviService\Message\MessagesException;
@@ -101,6 +102,20 @@ final class MessagesTest extends TestCase
         $this->expectExceptionMessage($error);
 
         (new Messages(['welcome' => $text]))->get(TestMessage::Welcome, $variables);
+    }
+
+    public function testPlaceholderErrorKeepsTheErrorOfTheVariable(): void
+    {
+        try {
+            (new Messages(['welcome' => 'Bonjour {{name}}']))->get(TestMessage::Welcome);
+        } catch (\LogicException $e) {
+            self::assertSame('Message "welcome": unknown variable {{name}}', $e->getMessage());
+            // For the log: where the variable was read
+            self::assertInstanceOf(InvalidValueException::class, $e->getPrevious());
+
+            return;
+        }
+        self::fail('A message with an unknown variable was given');
     }
 
     public function testPrivatePropertyIsAnUnknownVariableOfTheMessage(): void

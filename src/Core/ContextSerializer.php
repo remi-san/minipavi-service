@@ -50,7 +50,7 @@ final readonly class ContextSerializer
                 JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES,
             ));
         } catch (\JsonException $e) {
-            throw new \RuntimeException('Cannot serialize context: ' . $e->getMessage(), 0, $e);
+            throw new \RuntimeException('Cannot serialize context: ' . $e->getMessage(), previous: $e);
         }
     }
 
@@ -116,7 +116,7 @@ final readonly class ContextSerializer
         try {
             $context = json_decode($serialized, associative: true, depth: 512, flags: JSON_THROW_ON_ERROR);
         } catch (\JsonException $e) {
-            throw new \RuntimeException('Cannot unserialize context: ' . $e->getMessage(), 0, $e);
+            throw new \RuntimeException('Cannot unserialize context: ' . $e->getMessage(), previous: $e);
         }
         if (!\is_array($context)) {
             throw new \RuntimeException('Cannot unserialize context: not a JSON object');

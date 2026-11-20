@@ -77,7 +77,7 @@ final class PreviewCommand extends Command
         try {
             $data = json_decode($json, associative: true, depth: 512, flags: JSON_THROW_ON_ERROR);
         } catch (\JsonException $e) {
-            throw new \UnexpectedValueException("{$file}: " . $e->getMessage(), 0, $e);
+            throw new \UnexpectedValueException("{$file}: " . $e->getMessage(), previous: $e);
         }
         if (!\is_array($data) || $data !== [] && array_is_list($data)) {
             throw new \UnexpectedValueException("{$file}: not a JSON object");

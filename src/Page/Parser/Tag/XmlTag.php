@@ -85,7 +85,7 @@ final readonly class XmlTag
         try {
             return $check();
         } catch (PageXmlException|InvalidValueException $e) {
-            throw new PageXmlException("{$this->at}: <{$this->name}>: " . $e->getMessage(), 0, $e);
+            throw new PageXmlException("{$this->at}: <{$this->name}>: " . $e->getMessage(), previous: $e);
         }
     }
 }

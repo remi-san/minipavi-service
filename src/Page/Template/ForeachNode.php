@@ -32,7 +32,7 @@ final readonly class ForeachNode implements Node
         try {
             $items = $scope->value($this->items);
         } catch (InvalidValueException $e) {
-            throw new TemplateException("{$this->location}: <foreach>: " . $e->getMessage(), 0, $e);
+            throw new TemplateException("{$this->location}: <foreach>: " . $e->getMessage(), previous: $e);
         }
         if (!is_iterable($items)) {
             throw new TemplateException(
