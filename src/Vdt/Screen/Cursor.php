@@ -112,8 +112,22 @@ final class Cursor
     }
 
     /**
-     * Positions the cursor (US, or RS / FF at row 1, column 1), which sets the attributes back
-     * to their defaults, and drops the zone attributes
+     * Positions the cursor (US) at row, col, as reset() does; a position outside the screen
+     * (a row outside 0 to ScreenSize::ROWS, a column outside 1 to ScreenSize::COLS) is
+     * ignored, as the Minitel does (MiniPavi's emulator, locate()): the cursor and its
+     * attributes stay as they were
+     */
+    public function position(int $row, int $col): void
+    {
+        if ($row < 0 || $row > ScreenSize::ROWS || $col < 1 || $col > ScreenSize::COLS) {
+            return;
+        }
+        $this->reset($row, $col);
+    }
+
+    /**
+     * Positions the cursor (US on the screen, or RS / FF at row 1, column 1), which sets the
+     * attributes back to their defaults, and drops the zone attributes
      */
     public function reset(int $row, int $col): void
     {

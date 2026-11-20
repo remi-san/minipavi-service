@@ -49,31 +49,24 @@ final class ScreenCells implements ScreenListener
 
     public function glyph(int $row, int $col, string $bytes, int $width, Attributes $attributes): void
     {
-        if ($row < 0 || $row > ScreenSize::ROWS) {
-            return;
-        }
         for ($i = 0; $i < $width && ($col + $i) <= ScreenSize::COLS; $i++) {
             $this->cells[$row][$col + $i] = new Cell($bytes, $attributes);
-            $this->zones->draw($row, $col + $i, width: 1, attributes: $attributes);
         }
+        $this->zones->draw($row, $col, $width, $attributes);
     }
 
     public function delimiter(int $row, int $col, int $width, Attributes $attributes, Zone $zone): void
     {
         $this->glyph($row, $col, bytes: ' ', width: $width, attributes: $attributes);
-        if ($row >= 0 && $row <= ScreenSize::ROWS) {
-            $this->zones->text($row, $col, $width, delimiter: $zone);
-        }
+        $this->zones->delimiter($row, $col, $width, $zone);
     }
 
     public function clearLine(int $row, int $col, Attributes $attributes, ?Zone $delimiter): void
     {
         for ($cleared = $col; $cleared <= ScreenSize::COLS; $cleared++) {
-            $this->glyph($row, $cleared, bytes: ' ', width: 1, attributes: $attributes);
+            $this->cells[$row][$cleared] = new Cell(' ', $attributes);
         }
-        if ($delimiter !== null) {
-            $this->delimiter($row, $col, width: 1, attributes: $attributes, zone: $delimiter);
-        }
+        $this->zones->clearLine($row, $col, $attributes, $delimiter);
     }
 
     public function sequence(Token $sequence): void

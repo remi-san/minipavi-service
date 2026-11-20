@@ -240,6 +240,84 @@ final class VdtTest extends TestCase
         }
     }
 
+    /**
+     * @return iterable<string, array{string, int, int}> content, x and y
+     */
+    public static function clearLinesMoved(): iterable
+    {
+        // Row 2: ABC, then from column 2
+        yield 'onto row 1' => ["\x1F\x42\x41ABC\x1F\x42\x42\x18", 0, -1];
+        // Row 10, column 38
+        yield 'onto the last column' => ["\x1F\x4A\x66\x18", 2, 0];
+        // Row 10, column 1: the cleared cells stop before the column that came from beyond
+        yield 'left, from column 1' => ["\x1F\x4A\x41\x18", -1, 0];
+        // Row 10: A, ESC Z, CAN, its first space a delimiter, in column 1 once moved
+        yield 'left, with its delimiter' => ["\x1F\x4A\x41A\x1B\x5A\x18", -1, 0];
+        // Row 10: SO, a red background, applied at once in mosaic, CAN
+        yield 'in mosaic, on its background' => ["\x1F\x4A\x41\x0E\x1B\x51\x18", 2, 1];
+    }
+
+    #[DataProvider('clearLinesMoved')]
+    public function testOffsetMovesAClearLine(string $sent, int $x, int $y): void
+    {
+        self::assertScreenMoved(new Vdt($sent), $x, $y);
+    }
+
+    public function testOffsetWritesAClearLineMovedLeftAsSpaces(): void
+    {
+        // Row 10: A, ESC Z, CAN from column 2, moved to column 1: its delimiter, then spaces
+        // up to column 39, as column 40 came from beyond the screen
+        self::assertSame(
+            "\x1F\x4A\x41\x1B\x5A \x12\x66",
+            (new Offset(x: -1, y: 0))
+                ->apply(new Vdt("\x1F\x4A\x41A\x1B\x5A\x18"))
+                ->toString(),
+        );
+    }
+
+    public function testOffsetWritesNoDelimiterForAZoneAClearScreenEnded(): void
+    {
+        // Row 10: an underlined zone, a clear screen, then a space in column 3 of row 10,
+        // in no zone: written as it is, as nothing is left of the zone
+        $vdt = "\x1F\x4A\x41\x1B\x5A AB\x0C\x1F\x4A\x43 C";
+
+        self::assertSame(
+            $vdt,
+            (new Offset(x: 0, y: 0))
+                ->apply(new Vdt($vdt))
+                ->toString(),
+        );
+    }
+
+    /**
+     * A character repeated: REP once it is shorter, up to the end of its row (a row is
+     * shorter than the most repetitions a REP gives, see
+     * testRepeatsACharacterAsManyTimesAsAsked())
+     *
+     * @return iterable<string, array{string, string}> what is drawn from row 1, column 1, and
+     *                                                 how it is written
+     */
+    public static function repetitions(): iterable
+    {
+        yield 'twice more, in full' => ['AAA', 'AAA'];
+        yield 'three times more, with REP' => ['AAAA', "A\x12\x43"];
+        // Positioned again on the next row
+        yield 'over two rows' => [str_repeat('-', times: 42), "-\x12\x67\x1F\x42\x41--"];
+        // A G2 character takes 3 bytes: REP from once more
+        yield 'a G2 character' => ["\x19\x42e\x19\x42e", "\x19\x42e\x12\x41"];
+    }
+
+    #[DataProvider('repetitions')]
+    public function testOffsetRepeatsACharacter(string $drawn, string $written): void
+    {
+        self::assertSame(
+            "\x1F\x41\x41{$written}",
+            (new Offset(x: 0, y: 0))
+                ->apply(new Vdt("\x1F\x41\x41{$drawn}"))
+                ->toString(),
+        );
+    }
+
     public function testOffsetSetsTheAttributesBackAfterAClearScreen(): void
     {
         // Red X at row 1, column 1, a clear screen, then Y there, white: nothing to send again
@@ -276,6 +354,18 @@ final class VdtTest extends TestCase
         $screen = Screen::of(new Vdt($moved));
         self::assertSame('A', trim($screen->text()));
         self::assertStringStartsWith(' A ', $screen->line(2));
+    }
+
+    #[DataProviderExternal(ScreenTest::class, 'positionsOutsideTheScreen')]
+    public function testOffsetDropsAPositioningTheMinitelIgnores(string $position): void
+    {
+        // Row 5: red A, B, the positioning, then C, drawn after B, still red
+        self::assertSame(
+            "\x1F\x46\x43\x1B\x41ABC",
+            (new Offset(x: 2, y: 1))
+                ->apply(new Vdt("\x1F\x45\x41\x1B\x41AB{$position}C"))
+                ->toString(),
+        );
     }
 
     public function testOffsetDoesNotMoveTheStatusRow(): void

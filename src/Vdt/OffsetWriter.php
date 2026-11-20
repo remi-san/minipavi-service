@@ -59,7 +59,7 @@ final class OffsetWriter implements ScreenListener
 
     public function delimiter(int $row, int $col, int $width, Attributes $attributes, Zone $zone): void
     {
-        $this->zones->text($row, $col, $width, delimiter: $zone);
+        $this->zones->delimiter($row, $col, $width, $zone);
         $moved = $this->moved($row, $col, $attributes);
         if ($moved !== null) {
             [$row, $col, $attributes] = $moved;
@@ -111,12 +111,7 @@ final class OffsetWriter implements ScreenListener
     public function clearLine(int $row, int $col, Attributes $attributes, ?Zone $delimiter): void
     {
         $zone = $this->zones->before($row, $col);
-        for ($cleared = $col; $cleared <= ScreenSize::COLS; $cleared++) {
-            $this->zones->draw($row, $cleared, width: 1, attributes: $attributes);
-        }
-        if ($delimiter !== null) {
-            $this->zones->text($row, $col, width: 1, delimiter: $delimiter);
-        }
+        $this->zones->clearLine($row, $col, $attributes, $delimiter);
         if ($row === 0) {
             $this->out->clearLine(0, $col, $attributes, $zone, $delimiter);
             return;

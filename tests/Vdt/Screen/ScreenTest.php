@@ -33,10 +33,11 @@ final class ScreenTest extends TestCase
 
     public function testClearScreenEmptiesEveryRowButTheStatusRow(): void
     {
-        $screen = Screen::of(new Vdt("\x1F\x40\x41S\x1F\x45\x45X\x0C"));
+        $screen = Screen::of(new Vdt("\x1F\x40\x41S\x1F\x45\x45X\x1F\x58\x41Y\x0C"));
 
         self::assertSame('S', $screen->cell(row: 0, col: 1)?->bytes);
         self::assertNull($screen->cell(row: 5, col: 5));
+        self::assertNull($screen->cell(row: 24, col: 1));
     }
 
     public function testLineGivesTheTextOfARowWithItsAccents(): void
@@ -82,9 +83,59 @@ final class ScreenTest extends TestCase
         self::assertSame(Color::Red, $screen->cell(row: 1, col: 40)?->attributes->foreground());
     }
 
-    public function testPositionsCanBeGivenInDigits(): void
+    /**
+     * A positioning in digits: US, then 0, 1 or 2 and a digit, the row; the cursor goes to its
+     * column 1 (MiniPavi's emulator, locate())
+     *
+     * @return iterable<string, array{string, int, string}> what is sent after a clear screen,
+     *                                                      the row, and the start of its text
+     */
+    public static function positionsInDigits(): iterable
     {
-        self::assertSame('A', Screen::of(new Vdt("\x1F0712A"))->cell(row: 7, col: 12)?->text());
+        yield 'row 5, then text' => ["\x1F05Hello", 5, 'Hello'];
+        yield 'row 7, then digits' => ["\x1F0712A", 7, '12A'];
+        yield 'row 12' => ["\x1F1200X", 12, '00X'];
+        yield 'row 24' => ["\x1F24A", 24, 'A'];
+        yield 'the status row' => ["\x1F00S", 0, 'S'];
+    }
+
+    #[DataProvider('positionsInDigits')]
+    public function testPositionsCanBeGivenInDigits(string $sent, int $row, string $text): void
+    {
+        $screen = Screen::of(new Vdt("\x0C{$sent}"));
+
+        self::assertSame($text, rtrim($screen->line($row)));
+        self::assertSame('', trim($screen->line($row === 1 ? 2 : 1)));
+    }
+
+    /**
+     * A positioning (US) outside the screen, which the Minitel ignores (MiniPavi's emulator,
+     * locate(): neither the cursor nor the attributes change)
+     *
+     * @return iterable<string, array{string}>
+     */
+    public static function positionsOutsideTheScreen(): iterable
+    {
+        yield 'column 0' => ["\x1F\x4A\x40"];
+        yield 'column 41' => ["\x1F\x4A\x69"];
+        yield 'row 25' => ["\x1F\x59\x41"];
+        yield 'row -1' => ["\x1F\x3F\x41"];
+        // In digits (positionsInDigits()): 2 and 5, 1 and A (10 + 17), and 3, which isn't
+        // one of them, so it is the row of a positioning in bytes (0x33 - 0x40)
+        yield 'row 25 in digits' => ["\x1F25"];
+        yield 'row 27 in digits' => ["\x1F1A"];
+        yield 'a row 3 in digits' => ["\x1F30"];
+    }
+
+    #[DataProvider('positionsOutsideTheScreen')]
+    public function testPositioningOutsideTheScreenIsIgnored(string $position): void
+    {
+        // Row 5: red A, B, the positioning, then C
+        $screen = Screen::of(new Vdt("\x1F\x45\x41\x1B\x41AB{$position}C"));
+
+        self::assertSame('ABC', rtrim($screen->line(5)));
+        self::assertSame(Color::Red, $screen->cell(row: 5, col: 3)?->attributes->foreground());
+        self::assertSame(25, \count($screen->cells));
     }
 
     /**
@@ -470,6 +521,10 @@ final class ScreenTest extends TestCase
         yield 'CAN using up what waits' => ["{$on}{$can}{$ht}A B", '.UUU'];
         // The delimiter isn't underlined, the cleared spaces after it are
         yield 'CAN delimiting the same zone' => ["{$on} A{$on}{$can}", '.U.U'];
+        // The cleared spaces are text in the zone, the mosaic cells they replace gone
+        yield 'CAN over mosaic cells' => ["{$so}\x7F\x7F{$si}{$col1}{$on}{$can}{$ht}{$ht} A", '.UUU'];
+        // Back on row 10, column 4: the cells before are empty, so the space is in no zone
+        yield 'a clear screen ending the zone' => ["{$on} AB\x0C\x1F\x4A\x44 B", '   ..'];
         yield 'with a background' => ["{$blue}{$on} A", '.U'];
     }
 
@@ -636,6 +691,18 @@ final class ScreenTest extends TestCase
         return $cells;
     }
 
+    public function testClearLineClearsUpToTheLastColumn(): void
+    {
+        // Row 10: a mosaic character on red in column 40, then from column 1, a blue
+        // background and CAN, its first space a delimiter
+        $screen = Screen::of(new Vdt("\x1F\x4A\x68\x0E\x1B\x51\x7F\x1F\x4A\x41\x1B\x54\x18"));
+
+        $last = $screen->cell(10, col: 40) ?? self::fail('Nothing at row 10, column 40');
+        self::assertSame(' ', $last->bytes);
+        self::assertFalse($last->attributes->isMosaic());
+        self::assertSame(Color::Blue, $last->attributes->background());
+    }
+
     public function testUnderlinedZoneEndsWithItsRow(): void
     {
         // Row 10, column 38: ESC Z, a space, A, B, then C wrapped to row 11
@@ -702,6 +769,35 @@ final class ScreenTest extends TestCase
         $cell = $screen->cell($row, $col) ?? self::fail("Nothing at row {$row}, column {$col}");
         self::assertSame('A', $cell->bytes);
         self::assertEquals(Attributes::defaults(), $cell->attributes);
+    }
+
+    public function testDoubleWidthCharacterInTheLastColumnStaysInIt(): void
+    {
+        $screen = Screen::of(Vdt::join(
+            Vdt::position(new Position(row: 3, col: 40)),
+            new Vdt(Videotex::SIZE_DOUBLE_WIDTH . 'A'),
+        ));
+
+        self::assertSame('A', $screen->cell(3, col: 40)?->bytes);
+        self::assertSame(str_repeat(' ', times: 39) . 'A', $screen->line(3));
+    }
+
+    public function testMoveUpFromRow1GoesToTheLastRow(): void
+    {
+        // As the Minitel does in page mode, the status row skipped (moveCursor())
+        $screen = Screen::of(new Vdt("\x1F\x41\x43" . Videotex::CURSOR_UP . 'A'));
+
+        self::assertSame('A', $screen->cell(24, col: 3)?->bytes);
+        self::assertSame('', trim($screen->line(0)));
+    }
+
+    public function testTextOnTheStatusRowStaysInItsLastColumn(): void
+    {
+        // Row 0, column 39: A, B, then C over B, as the status row doesn't wrap (moveCursor())
+        $screen = Screen::of(new Vdt("\x1F\x40\x67ABC"));
+
+        self::assertSame(str_repeat(' ', times: 38) . 'AC', $screen->line(0));
+        self::assertSame('', trim($screen->line(1)));
     }
 
     public function testTextWrapsToTheNextRow(): void

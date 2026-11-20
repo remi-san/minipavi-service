@@ -32,7 +32,7 @@ final class ClearScreensTest extends TestCase
 
     public function testKeepsTheOtherSequencesAsTheyAre(): void
     {
-        // A position in digits (row 7, column 12), A, B, a repetition of B, SEP and SS3 each
+        // A position in digits (row 7), 1, 2, A, B, a repetition of B, SEP and SS3 each
         // with their byte, then a clear screen
         $kept = "\x1F0712AB\x12\x43\x13\x49\x1D\x49";
 

@@ -33,6 +33,7 @@ final class Writer
     private Zones $zones;
     // Last character sent, and how many more times it is to be repeated
     private ?string $pending = null;
+    /** @var non-negative-int */
     private int $repeat = 0;
 
     public function __construct()
@@ -86,12 +87,7 @@ final class Writer
             $this->cursor->delimit();
         }
         $this->send(Videotex::CLEAR_LINE);
-        for ($i = $col; $i <= ScreenSize::COLS; $i++) {
-            $this->zones->draw($row, $i, width: 1, attributes: $this->cursor->attributes());
-        }
-        if ($delimits) {
-            $this->zones->text($row, $col, width: 1, delimiter: $this->cursor->zone());
-        }
+        $this->zones->clearLine($row, $col, $this->cursor->attributes(), $delimits ? $this->cursor->zone() : null);
     }
 
     public function clear(): void
@@ -115,10 +111,12 @@ final class Writer
     }
 
     // A character, or one more repetition of the last one sent: sending anything else (a
-    // position, attributes) sends the repetitions first (flush())
+    // position, attributes) sends the repetitions first (flush()). They stop at the end of
+    // the row (movePast(): the next character is positioned again), so they are fewer than
+    // the most a REP gives (Videotex::MAX_REPEAT)
     private function put(string $bytes): void
     {
-        if ($this->pending === $bytes && $this->repeat < Videotex::MAX_REPEAT) {
+        if ($this->pending === $bytes) {
             $this->repeat++;
             return;
         }
@@ -140,7 +138,7 @@ final class Writer
         $this->sendZone($zone);
         $this->put(' ');
         $this->cursor->delimit();
-        $this->zones->text($row, $col, $width, delimiter: $this->cursor->zone());
+        $this->zones->delimiter($row, $col, $width, $this->cursor->zone());
         $this->movePast($col, $width);
     }
 
@@ -211,12 +209,8 @@ final class Writer
     // Sends the repetitions of the last character: REP, or the character again when shorter
     private function flush(): void
     {
-        // Repetitions are only counted after a character was sent
-        if ($this->repeat > 0 && $this->pending !== null) {
-            $this->vdt .= ($this->repeat * strlen($this->pending)) <= 2
-                ? str_repeat($this->pending, $this->repeat)
-                : Videotex::REPEAT . chr(0x40 + $this->repeat);
-        }
+        $repeated = str_repeat($this->pending ?? '', $this->repeat);
+        $this->vdt .= \strlen($repeated) <= 2 ? $repeated : Videotex::REPEAT . chr(0x40 + $this->repeat);
         $this->pending = null;
         $this->repeat = 0;
     }
