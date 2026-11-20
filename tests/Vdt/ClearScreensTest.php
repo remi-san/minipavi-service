@@ -7,6 +7,7 @@ namespace MiniPaviService\Tests\Vdt;
 use MiniPaviService\Vdt\ClearScreens;
 use MiniPaviService\Vdt\Screen\Screen;
 use MiniPaviService\Vdt\Vdt;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class ClearScreensTest extends TestCase
@@ -46,6 +47,50 @@ final class ClearScreensTest extends TestCase
             $kept,
             (new ClearScreens())
                 ->fromLast(new Vdt($kept))
+                ->toString(),
+        );
+    }
+
+    /**
+     * @return iterable<string, array{string}>
+     */
+    public static function sequences(): iterable
+    {
+        yield 'cursor left (BS)' => ["\x08"];
+        yield 'cursor right (HT)' => ["\x09"];
+        yield 'cursor down (LF)' => ["\x0A"];
+        yield 'cursor up (VT)' => ["\x0B"];
+        yield 'carriage return (CR)' => ["\x0D"];
+        yield 'home (RS)' => ["\x1E"];
+        yield 'clear line (CAN)' => ["\x18"];
+        yield 'mosaic (SO)' => ["\x0E"];
+        yield 'text (SI)' => ["\x0F"];
+        yield 'an attribute' => ["\x1BA"];
+        yield 'another escape sequence' => ["\x1B\x3A\x69\x43"];
+        yield 'a G2 character' => ["\x19\x42e"];
+        yield 'an error character (SUB)' => ["\x1A"];
+        yield 'cursor off' => ["\x14"];
+    }
+
+    #[DataProvider('sequences')]
+    public function testKeepsEachSequenceAsItIs(string $sequence): void
+    {
+        self::assertSame(
+            "A{$sequence}B",
+            (new ClearScreens())
+                ->fromLast(new Vdt("A{$sequence}B"))
+                ->toString(),
+        );
+        self::assertSame(
+            "\x0C{$sequence}",
+            (new ClearScreens())
+                ->fromLast(new Vdt("A\x0C{$sequence}"))
+                ->toString(),
+        );
+        self::assertSame(
+            "{$sequence}\x1E",
+            (new ClearScreens())
+                ->removed(new Vdt("{$sequence}\x0C"))
                 ->toString(),
         );
     }
