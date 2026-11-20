@@ -597,13 +597,21 @@ final class HtmlClientTest extends TestCase
     }
 
     /**
-     * The function keys' buttons, in the form's order
+     * The function keys' buttons, in the form's order. Every key of the form is one: an item of
+     * the keys' grid, which lays them out by their CSS order and styles the disabled ones (a key
+     * elsewhere would show in the form's order, without either)
      *
      * @return list<DOMElement>
      */
     private static function keys(string $html): array
     {
-        return self::elements($html, query: '//form//button[@type="submit"][@name="key"]');
+        $keys = '//form//button[@type="submit"][@name="key"]';
+        self::assertCount(0, self::nodes(
+            $html,
+            query: $keys . '[not(parent::*[contains(concat(" ", normalize-space(@class), " "), " keys ")])]',
+        ));
+
+        return self::elements($html, query: $keys);
     }
 
     /**
