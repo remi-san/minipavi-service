@@ -11,9 +11,11 @@ use MiniPaviService\Controller\Request;
 use MiniPaviService\Controller\Response;
 use MiniPaviService\Controller\Response\ChangePage;
 use MiniPaviService\Minitel\FunctionKey;
+use MiniPaviService\Vdt\Vdt;
 
 /**
- * List of items, shown $perPage at a time: Envoi turns the page, Sommaire goes to the menu
+ * List of items, shown $perPage at a time: Envoi turns the page, Sommaire goes to the menu,
+ * Guide stays on the page with its message welcome on line 0
  */
 final readonly class ListItems implements PaginatedList
 {
@@ -45,6 +47,7 @@ final readonly class ListItems implements PaginatedList
         return match ($request->functionKey()) {
             FunctionKey::Summary => new ChangePage('menu'),
             FunctionKey::Send => $page->next(),
+            FunctionKey::Guide => $page->stay(Vdt::line0($page->message(TestMessage::Welcome, ['name' => 'Léa']))),
             default => $page->stay(),
         };
     }

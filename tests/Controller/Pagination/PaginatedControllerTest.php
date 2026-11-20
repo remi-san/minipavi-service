@@ -138,6 +138,18 @@ final class PaginatedControllerTest extends TestCase
             ->assertRoute('menu');
     }
 
+    public function testListStaysOnThePageWithItsMessage(): void
+    {
+        $this
+            ->tester(['a', 'b', 'c'])
+            ->press(FunctionKey::Next)
+            ->press(FunctionKey::Guide)
+            ->assertLine0('Aide pour Léa')
+            ->assertScreenContains('Page 2/2')
+            ->press(FunctionKey::Refresh)
+            ->assertScreenContains('Page 2/2');
+    }
+
     public function testPageKeptBeyondTheLastOneShowsTheLastOne(): void
     {
         // At the third page of five items, when the list gets shorter: three items
@@ -188,8 +200,11 @@ final class PaginatedControllerTest extends TestCase
             ->press(FunctionKey::Send);
     }
 
+    // Its messages are the service's, with welcome
     private function page(): Page
     {
-        return (new PageXmlParser((new MessagesXmlParser())->defaults()))->parse(self::PAGE, __DIR__);
+        return (new PageXmlParser((new MessagesXmlParser())
+            ->defaults()
+            ->with(['welcome' => 'Aide pour {{name}}'])))->parse(self::PAGE, __DIR__);
     }
 }
