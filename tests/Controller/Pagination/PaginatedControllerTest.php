@@ -225,13 +225,14 @@ final class PaginatedControllerTest extends TestCase
     }
 
     /**
-     * Session at the first page of a list of items, reached from the menu
+     * Session at a list of items, reached from the menu: its controller is built with the
+     * opening page given, or without one (the controller's default)
      *
      * @param list<string> $items
      */
-    private function tester(array $items, OpeningPage $opening = OpeningPage::Given): ServiceTester
+    private function tester(array $items, OpeningPage ...$opening): ServiceTester
     {
-        $this->routes->addRoute('list', new PaginatedController($this->page(), new ListItems($items), $opening));
+        $this->routes->addRoute('list', new PaginatedController($this->page(), new ListItems($items), ...$opening));
 
         $router = $this->routes->build();
 
