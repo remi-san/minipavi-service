@@ -80,6 +80,8 @@ final class RequestUrlTest extends TestCase
         // A prefix ending inside a byte: 10.0.0.0 to 10.1.255.255
         yield 'in a /15' => ['10.0.0.0/15', '10.1.200.1', 'https'];
         yield 'outside a /15' => ['10.0.0.0/15', '10.2.0.1', 'http'];
+        // Written with the bits after the prefix set: the same range
+        yield 'in a /15 written from inside it' => ['10.1.0.0/15', '10.0.200.1', 'https'];
         yield 'a /32' => ['10.0.0.5/32', '10.0.0.5', 'https'];
         yield 'a /128' => ['::1/128', '::1', 'https'];
         yield 'empty entries' => [' , 10.0.0.5 ,', '10.0.0.5', 'https'];
