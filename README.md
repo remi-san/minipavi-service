@@ -898,7 +898,7 @@ composer coverage   # tests with coverage, as text and in coverage.xml (needs pc
 composer mutation   # mutation testing (Infection, needs pcov or Xdebug), logs in build/infection/
 ```
 
-`composer coverage` fails when the tests cover less than 98.6% of the lines of `src/`
+`composer coverage` fails when the tests cover less than 99.5% of the lines of `src/`
 (`tools/coverage-minimum.php` reads it from `coverage.xml`). The minimum is raised as the
 missing tests are added, never lowered to let a change through.
 

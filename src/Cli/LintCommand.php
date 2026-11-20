@@ -115,7 +115,15 @@ final class LintCommand extends Command
         $previous = libxml_use_internal_errors(true);
         try {
             $reader = new \XMLReader();
-            if (!$reader->open($file)) {
+            // A file it can't open (e.g. unreadable) without PHP's warnings: the parser gives
+            // its error, as Io\Files does
+            set_error_handler(static fn(): bool => true);
+            try {
+                $opened = $reader->open($file);
+            } finally {
+                restore_error_handler();
+            }
+            if (!$opened) {
                 return true;
             }
             while ($reader->read()) {

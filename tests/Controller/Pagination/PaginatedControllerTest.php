@@ -152,6 +152,38 @@ final class PaginatedControllerTest extends TestCase
             ->assertScreenContains('Page 2/2');
     }
 
+    public function testListKeptToBeShownAgainShowsItsPageOnTheReturn(): void
+    {
+        $tester = $this
+            ->tester(['a', 'b', 'c', 'd', 'e'])
+            ->press(FunctionKey::Next)
+            ->press(FunctionKey::Correction)
+            ->assertConnectsTo(ListItems::HELP)
+            // Back from the other service, on whatever key: the page it was at, drawn again
+            ->press(FunctionKey::Send);
+
+        $shown = Screen::of($tester->response()->vdt);
+        self::assertStringContainsString('Page 2/3', $shown->text());
+        self::assertStringStartsWith('c', $shown->line(2));
+        // Read on the page, as any page shown: Suite turns it
+        $tester->assertRoute('list')->press(FunctionKey::Next)->assertScreenContains('Page 3/3');
+    }
+
+    public function testListKeptToReadItsInputAgainReadsItWithoutDrawingThePage(): void
+    {
+        $tester = $this
+            ->tester(['a', 'b', 'c', 'd', 'e'])
+            ->press(FunctionKey::Next)
+            ->press(FunctionKey::Cancel)
+            ->assertLine0('Annulé')
+            ->press(FunctionKey::Send);
+
+        // Nothing drawn: the page is still on the screen
+        self::assertSame('', $tester->response()->vdt->toString());
+        self::assertEquals(new PageParameters(1), $tester->context()->parameters());
+        $tester->assertScreenContains('Page 2/3')->press(FunctionKey::Next)->assertScreenContains('Page 3/3');
+    }
+
     public function testListOpensAtThePageGiven(): void
     {
         $this->menuOpensTheListAt(new PageParameters(1));
