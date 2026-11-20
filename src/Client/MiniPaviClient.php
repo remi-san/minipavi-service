@@ -57,22 +57,22 @@ final class MiniPaviClient implements Client
         ?InputCommand $input = null,
         ?CallMode $directCall = null,
     ): string {
+        // Its command built first: MiniPaviCli::send() can't fail (only its json_encode() could,
+        // which it writes as false), so the buffer is always closed
+        $cmd = $input === null ? null : self::inputCmd($input);
         ob_start();
-        try {
-            MiniPaviCli::send(
-                $vdt->toString(),
-                $next,
-                $context,
-                // The gateway echoes what the user types: no response turns it off
-                echo: true,
-                cmd: $input === null ? null : self::inputCmd($input),
-                directCall: $directCall->value ?? false,
-            );
-        } finally {
-            $body = (string) ob_get_clean();
-        }
+        MiniPaviCli::send(
+            $vdt->toString(),
+            $next,
+            $context,
+            // The gateway echoes what the user types: no response turns it off
+            echo: true,
+            cmd: $cmd,
+            directCall: $directCall->value ?? false,
+        );
 
-        return $body;
+        // A string here (false only without a buffer)
+        return (string) ob_get_clean();
     }
 
     /**
