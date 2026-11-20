@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MiniPaviService\Tests\Text;
 
 use MiniPaviService\InvalidValueException;
+use MiniPaviService\Tests\Support\ExhaustedBacktrackLimit;
 use MiniPaviService\Text\Placeholders;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
@@ -94,6 +95,19 @@ final class PlaceholdersTest extends TestCase
         $this->expectExceptionMessage('{{games}} is not text (array)');
 
         (new Placeholders(['games' => ['a', 'b']]))->substitute('{{games}}');
+    }
+
+    public function testAFailureOfTheRegularExpressionIsAnError(): void
+    {
+        $limit = ExhaustedBacktrackLimit::exhaust();
+        try {
+            (new Placeholders(['name' => 'Ada']))->substitute('{{name}}');
+            self::fail('The placeholders were replaced');
+        } catch (InvalidValueException $e) {
+            self::assertSame('cannot replace the placeholders: Backtrack limit exhausted', $e->getMessage());
+        } finally {
+            $limit->restore();
+        }
     }
 
     public function testAnUnknownVariableIsAnError(): void
