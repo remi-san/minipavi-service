@@ -140,15 +140,20 @@ final class HtmlRendererTest extends TestCase
 
     public function testMaskedZoneIsHidden(): void
     {
-        // Masking starts at a delimiter (Screen\Zone): s, then its background, then a masked
-        // mosaic character
-        $html = $this->renderCell("\x1B\x58\x1B\x54 s\x0E\x7F");
+        // Masking starts at a delimiter (Screen\Zone): s, blinking, then a mosaic character,
+        // both masked, only the zone's background shown
+        $html = $this->renderCell("\x1B\x58\x1B\x54 \x1B\x48s\x0E\x7F");
 
-        self::assertStringNotContainsString('>s<', $html);
-        self::assertStringContainsString('style="color:#ffffff;background:#0000ff"> </span>', $html);
-        self::assertStringNotContainsString('<i class="on">', $html);
+        $masked = '<span class="c blink" style="color:#ffffff;background:#0000ff"> </span>';
+        self::assertSame(
+            self::screenWith('<span class="c" style="color:#ffffff;background:#0000ff"> </span>', $masked, $masked),
+            $html,
+        );
         // Not before one
-        self::assertStringContainsString('>s<', $this->renderCell("\x1B\x58s"));
+        self::assertSame(
+            self::screenWith('<span class="c" style="color:#ffffff;background:#000000">s</span>'),
+            $this->renderCell("\x1B\x58s"),
+        );
     }
 
     public function testDrawsTextOnTheBackgroundOfItsZone(): void
@@ -168,11 +173,16 @@ final class HtmlRendererTest extends TestCase
     public function testDrawsMosaicPixels(): void
     {
         // 0x21: the top left pixel; 0x7F: all six
-        self::assertStringContainsString(
-            '<span class="m"><i class="on"></i><i></i><i></i><i></i><i></i><i></i></span>',
-            $this->renderCell("\x0E\x21"),
+        self::assertSame(
+            self::screenWith(
+                '<span class="c" style="color:#ffffff;background:#000000"><span class="m">'
+                . '<i class="on"></i><i></i><i></i><i></i><i></i><i></i></span></span>',
+                '<span class="c" style="color:#ffffff;background:#000000"><span class="m">'
+                . str_repeat('<i class="on"></i>', times: 6)
+                . '</span></span>',
+            ),
+            $this->renderCell("\x0E\x21\x7F"),
         );
-        self::assertSame(6, substr_count($this->renderCell("\x0E\x7F"), needle: '<i class="on">'));
         // 0x40 to 0x5F too: 0x4A is the right column
         self::assertStringContainsString(
             '<span class="m"><i></i><i class="on"></i><i></i><i class="on"></i><i></i><i class="on"></i></span>',
@@ -182,6 +192,36 @@ final class HtmlRendererTest extends TestCase
         self::assertStringContainsString('<span class="m sep">', $this->renderCell("\x0E\x1B\x5A\x7F"));
     }
 
+    public function testMosaicSpaceIsDrawnAsPixelsOnItsBackground(): void
+    {
+        // No pixel, on the blue background: not as text (Cell::text() shows it as #)
+        self::assertSame(
+            self::screenWith(
+                '<span class="c" style="color:#ffffff;background:#0000ff"><span class="m">'
+                . str_repeat('<i></i>', times: 6)
+                . '</span></span>',
+            ),
+            $this->renderCell("\x1B\x54\x0E "),
+        );
+    }
+
+    public function testDrawsEachColour(): void
+    {
+        // A in each foreground colour, ESC 0x40 (black) to ESC 0x47 (white)
+        $html = $this->renderCell(implode('', array_map(
+            static fn(int $code) => "\x1B" . \chr($code) . 'A',
+            range(start: 0x40, end: 0x47),
+        )));
+
+        self::assertSame(
+            self::screenWith(...array_map(
+                static fn(string $color) => '<span class="c" style="color:' . $color . ';background:#000000">A</span>',
+                ['#000000', '#ff0000', '#00ff00', '#ffff00', '#0000ff', '#ff00ff', '#00ffff', '#ffffff'],
+            )),
+            $html,
+        );
+    }
+
     public function testDrawsTheStatusLine(): void
     {
         $html = $this->render(Vdt::line0('Bonjour'));
@@ -189,6 +229,23 @@ final class HtmlRendererTest extends TestCase
         self::assertStringContainsString(
             '<span class="c status" style="color:#ffffff;background:#000000">B</span>',
             $html,
+        );
+    }
+
+    /**
+     * HTML of a screen whose row 1 starts with these cells, the others empty
+     */
+    private static function screenWith(string ...$cells): string
+    {
+        return (
+            '<div class="minitel">'
+            . str_repeat('<span class="c status"> </span>', ScreenSize::COLS)
+            . implode('', array_pad(
+                $cells,
+                length: ScreenSize::ROWS * ScreenSize::COLS,
+                value: '<span class="c"> </span>',
+            ))
+            . '</div>'
         );
     }
 
