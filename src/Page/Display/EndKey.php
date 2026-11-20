@@ -40,21 +40,13 @@ final readonly class EndKey implements Element
             $width += mb_strlen($this->shiftLabel);
 
             return Vdt::join(
-                Vdt::position(new Position($this->position->row ?? (ScreenSize::ROWS - 1), self::centered($width))),
+                Vdt::position(Position::centered($this->position->row ?? (ScreenSize::ROWS - 1), $width)),
                 new Vdt(Videotex::textColor(Color::White)),
                 Vdt::text($this->shiftLabel),
                 $badge,
             );
         }
 
-        return Vdt::position(new Position($this->position->row ?? ScreenSize::ROWS, self::centered($width)))->append(
-            $badge,
-        );
-    }
-
-    // Column of the first cell of something width wide, centered on the row
-    private static function centered(int $width): int
-    {
-        return max(1, intdiv(ScreenSize::COLS - $width, num2: 2) + 1);
+        return Vdt::position(Position::centered($this->position->row ?? ScreenSize::ROWS, $width))->append($badge);
     }
 }
