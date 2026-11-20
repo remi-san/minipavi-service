@@ -21,6 +21,7 @@ use MiniPaviService\Page;
 use MiniPaviService\Page\Parser\PageXmlException;
 use MiniPaviService\Page\Parser\PageXmlParser;
 use MiniPaviService\Page\Template\TemplateException;
+use MiniPaviService\Tests\Support\ExhaustedBacktrackLimit;
 use MiniPaviService\Tests\Support\FailingProperties;
 use MiniPaviService\Tests\Support\MemoryFiles;
 use MiniPaviService\Tests\Support\PrivateProperties;
@@ -912,6 +913,18 @@ final class PageXmlParserTest extends TestCase
             $twoLines->inputCommand(),
         );
         self::assertNull($this->parse('<page type="static"/>')->inputCommand());
+    }
+
+    public function testAFailureToSplitTheValidwithKeysIsAnError(): void
+    {
+        $limit = ExhaustedBacktrackLimit::exhaust();
+        try {
+            $error = $this->parseError('<page type="static"><input validwith="envoi suite"/></page>');
+        } finally {
+            $limit->restore();
+        }
+
+        self::assertSame('f.xml line 1: <input>: validwith: Backtrack limit exhausted', $error->getMessage());
     }
 
     public function testParseFileReadsFilesFromTheFolderOfThePage(): void
