@@ -148,7 +148,15 @@ final class ServiceTesterTest extends TestCase
         try {
             $this->tester->connect()->assertScreenContains('Annuaire');
         } catch (AssertionFailedError $e) {
-            self::assertStringContainsString("The screen doesn't show \"Annuaire\". Screen:\n", $e->getMessage());
+            // The message, then the screen without its final newline, then PHPUnit's
+            $preview = $this->tester->screen()->preview();
+            self::assertStringEndsWith("\n", $preview);
+            self::assertStringStartsWith(
+                "The screen doesn't show \"Annuaire\". Screen:\n"
+                . substr($preview, offset: 0, length: -1)
+                . "\nFailed asserting that ",
+                $e->getMessage(),
+            );
             self::assertStringContainsString(' 1|MENU' . str_repeat(' ', times: 36) . '|', $e->getMessage());
 
             return;

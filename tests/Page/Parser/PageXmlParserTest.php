@@ -67,6 +67,45 @@ final class PageXmlParserTest extends TestCase
         );
     }
 
+    public function testValuesMayHaveSpacesAroundThem(): void
+    {
+        // As the schema reads them (it collapses the spaces of numbers, files, tests and keys)
+        $page = $this->parse(<<<'XML'
+            <page type="static">
+              <text row=" 4 " col=" 3 ">Left</text>
+              <image row="9" col="5">
+                images/logo.vdt
+              </image>
+              <input row=" 20 " col=" 5 " length=" 10 " lines=" 1 " validwith="  envoi   suite  "/>
+            </page>
+            XML);
+        $template = $this->parse(<<<'XML'
+            <page type="template">
+              <if test=" shown "><text row="1">shown</text></if>
+              <if test=" !hidden "><text row="2">not hidden</text></if>
+            </page>
+            XML);
+
+        self::assertSame(
+            [
+                ' 4|  Left                                  |',
+                ' 9|    ##                                  |',
+                '10|    ok                                  |',
+            ],
+            $this->drawnRows($page->display(new Terminal())),
+        );
+        self::assertEquals(
+            new InputCommand(
+                new InputField(new Span(new Position(20, 5), 10), validWith: [FunctionKey::Send, FunctionKey::Next]),
+            ),
+            $page->inputCommand(),
+        );
+        self::assertSame(
+            [' 1|shown                                   |', ' 2|not hidden                              |'],
+            $this->drawnRows($template->display(new Terminal(), ['shown' => true, 'hidden' => false])),
+        );
+    }
+
     public function testDisplayClearsTheScreenFirst(): void
     {
         $before = "\x1F\x45\x41previous screen";
@@ -615,6 +654,32 @@ final class PageXmlParserTest extends TestCase
         $page->display(new Terminal(), ['user' => new PrivateProperties()]);
     }
 
+    /**
+     * @return iterable<string, array{string}>
+     */
+    public static function bracesSplitAcrossValues(): iterable
+    {
+        yield 'between an attribute and the text' => ['<stars count="2" note="{{a">}}</stars>'];
+        yield 'between two attributes' => ['<stars count="2" note="{{a" end="}}"/>'];
+        yield 'with a name split' => ['<stars count="2" note="{{a">b}}</stars>'];
+    }
+
+    /**
+     * A placeholder is in one value: {{ in a value and }} in another make none
+     */
+    #[DataProvider('bracesSplitAcrossValues')]
+    public function testPlaceholderIsNotSplitAcrossValues(string $stars): void
+    {
+        $parser = new PageXmlParser((new MessagesXmlParser())->defaults(), new StarsElements());
+
+        $page = $parser->parse("<page type=\"static\">{$stars}</page>", self::FIXTURES);
+
+        self::assertSame(
+            [' 1|**                                      |'],
+            $this->drawnRows($page->display(new Terminal())),
+        );
+    }
+
     public function testInvalidValueOfAServiceElementGivesTheLine(): void
     {
         $parser = new PageXmlParser((new MessagesXmlParser())->defaults(), new StarsElements());
@@ -733,6 +798,18 @@ final class PageXmlParserTest extends TestCase
         yield 'missing image, in a <foreach>' => [
             "<page type=\"template\">\n<foreach items=\"xs\" as=\"x\">\n<image row=\"0\">images/missing.vdt</image></foreach></page>",
             'f.xml line 3: <image>: Videotex file not found: ' . self::FIXTURES . '/images/missing.vdt',
+        ];
+        yield 'number with something after it' => [
+            '<page type="static"><text row="4a">x</text></page>',
+            'f.xml line 1: <text>: row="4a" is not a number',
+        ];
+        yield 'number with something before it' => [
+            '<page type="static"><text col="a4">x</text></page>',
+            'f.xml line 1: <text>: col="a4" is not a number',
+        ];
+        yield 'two numbers' => [
+            '<page type="static"><input length="4 5"/></page>',
+            'f.xml line 1: <input>: length="4 5" is not a number',
         ];
         yield 'unknown color' => [
             "<page type=\"template\">\n<text color=\"purple\">x</text></page>",
@@ -874,6 +951,10 @@ final class PageXmlParserTest extends TestCase
             '<page type="template"><if test="!!x"/></page>',
             'f.xml line 1: <if>: test="!!x" must be a variable, or !variable',
         ];
+        yield 'if test of two variables' => [
+            '<page type="template"><if test="x y"/></page>',
+            'f.xml line 1: <if>: test="x y" must be a variable, or !variable',
+        ];
         yield 'two inputs' => ['<page type="static"><input/><input/></page>', '<input>: only one <input> per page'];
         yield 'input in a loop' => [
             '<page type="template"><foreach items="a" as="b"><input/></foreach></page>',
@@ -885,7 +966,12 @@ final class PageXmlParserTest extends TestCase
         ];
         yield 'unknown validwith key' => [
             '<page type="static"><input validwith="enter"/></page>',
-            'unknown validwith key "enter"',
+            'f.xml line 1: <input>: unknown validwith key "enter" '
+                . '(sommaire, annulation, retour, repetition, guide, correction, suite, envoi)',
+        ];
+        yield 'validwith keys separated by a comma' => [
+            '<page type="static"><input validwith="envoi,suite"/></page>',
+            'unknown validwith key "envoi,suite"',
         ];
         yield 'endkey in a loop' => [
             '<page type="template"><foreach items="a" as="b"><endkey/></foreach></page>',
