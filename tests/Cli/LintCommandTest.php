@@ -138,6 +138,20 @@ final class LintCommandTest extends TestCase
         }
     }
 
+    public function testFailsOnAPageItCannotRead(): void
+    {
+        $this->write('pages/home.xml', content: '<page type="static"/>');
+        chmod($this->dir . '/pages/home.xml', permissions: 0o000);
+        if (is_readable($this->dir . '/pages/home.xml')) {
+            self::markTestSkipped('Run as a user who can read any file (root)');
+        }
+
+        // The parser's error, without PHP's warnings
+        self::assertSame(Command::FAILURE, $this->lint([$this->dir . '/pages']));
+        self::assertSame("1 page checked, 1 error\n", $this->tester->getDisplay());
+        self::assertSame("{$this->dir}/pages/home.xml: file not found\n", $this->tester->getErrorOutput());
+    }
+
     public function testFailsWithoutPage(): void
     {
         self::assertSame(Command::FAILURE, $this->lint([$this->dir . '/pages']));
