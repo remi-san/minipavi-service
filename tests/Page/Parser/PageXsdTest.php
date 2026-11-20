@@ -81,6 +81,19 @@ final class PageXsdTest extends TestCase
               <input/>
             </page>
             XML];
+        // Spaces collapsed by the schema, trimmed by the parser
+        yield 'values with spaces around them' => [<<<'XML'
+            <page type="static">
+              <text row=" 4 " col=" 3 ">Left</text>
+              <image row="9" col="5">
+                images/logo.vdt
+              </image>
+              <input row=" 20 " col=" 5 " length=" 10 " lines=" 1 " validwith="  envoi   suite  "/>
+            </page>
+            XML];
+        yield 'test with spaces around it' => [
+            '<page type="template"><if test=" !hidden "><text row="2">x</text></if></page>',
+        ];
         yield 'messages' => [
             '<page type="static"><message name="page.last">Fin de l\'article</message><message name="endkey">Fin</message></page>',
         ];
