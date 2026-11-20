@@ -13,31 +13,22 @@ use MiniPaviService\Gateway\WaitForKeyCommand;
 use MiniPaviService\Vdt\Vdt;
 
 /**
- * Flow recording what a response asks for, in $calls, and responding with an empty context
+ * Flow responding with what a response sends, and an empty context, keeping nothing: to read
+ * the content of a response without a service (what the service does with it: ServiceTest)
  *
  * @implements Flow<State>
  */
-final class RecordingFlow implements Flow
+final class RespondingFlow implements Flow
 {
-    /** @var list<array{string, array<string, mixed>}> method and arguments of each call */
-    public array $calls = [];
-
-    public function keep(?State $state, ?Parameters $parameters): void
-    {
-        $this->calls[] = ['keep', ['state' => $state, 'parameters' => $parameters]];
-    }
+    public function keep(?State $state, ?Parameters $parameters): void {}
 
     public function respond(Vdt $vdt, Command $command = new WaitForKeyCommand()): GatewayResponse
     {
-        $this->calls[] = ['respond', ['vdt' => $vdt->toString(), 'command' => $command]];
-
-        return new GatewayResponse($vdt, '{}');
+        return new GatewayResponse($vdt, '{}', $command);
     }
 
     public function goTo(string $route, ?Parameters $parameters = null): GatewayResponse
     {
-        $this->calls[] = ['goTo', ['route' => $route, 'parameters' => $parameters]];
-
         return new GatewayResponse(new Vdt(''), '{}');
     }
 }

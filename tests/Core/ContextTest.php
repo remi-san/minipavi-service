@@ -19,7 +19,7 @@ use MiniPaviService\Minitel\FunctionKey;
 use MiniPaviService\Minitel\Terminal;
 use MiniPaviService\Tests\Support\CallbackController;
 use MiniPaviService\Tests\Support\FromParameters;
-use MiniPaviService\Tests\Support\RecordingFlow;
+use MiniPaviService\Tests\Support\RespondingFlow;
 use MiniPaviService\Tests\Support\SearchController;
 use MiniPaviService\Tests\Support\SearchState;
 use MiniPaviService\Vdt\Vdt;
@@ -90,7 +90,7 @@ final class ContextTest extends TestCase
             'home read-input 2 ENVOI abc 192.0.2.1',
             $context
                 ->run(FunctionKey::Send, ['abc'], new Terminal('192.0.2.1'))
-                ->continueWith(new RecordingFlow())
+                ->continueWith(new RespondingFlow())
                 ->vdt->toString(),
         );
     }
