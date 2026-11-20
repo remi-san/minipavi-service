@@ -140,13 +140,15 @@ messages between them, and keeps the user informed. It does write the Claude fil
   behaviour's mutants should not escape. CI runs both on PHP 8.4, the mutation testing only
   when the change touches code (its `changes` job lists the paths in
   `.github/workflows/ci.yml`), so a PR changing only docs or Claude files has no Mutation
-  testing result (the job's log lists the escaped mutants). Only CI runs Infection on the whole project: locally, the
-  developer and the reviewer run it on the `src/` files the PR concerns, with the tests that
-  cover them: the files it changes, or, for a PR that only changes tests, the files those
-  tests are about: `vendor/bin/infection --filter=src/A.php,src/B.php
-  --map-source-class-to-test --only-covering-test-cases --min-msi=0 --min-covered-msi=0`
-  (`--map-source-class-to-test` runs only the test files covering those files; the minimums
-  apply to the whole project, so they are off here). Both need pcov or Xdebug.
+  testing result (the job's log lists the escaped mutants). Only CI runs Infection on the
+  whole project: locally, the developer and the reviewer run it on the `src/` files the PR
+  concerns, with the tests that cover them: the files it changes, or, for a PR that only
+  changes tests, the files those tests are about: `vendor/bin/infection --filter=src/A.php,src/B.php
+  --only-covering-test-cases --min-msi=0 --min-covered-msi=0` (`--only-covering-test-cases`
+  runs, for each mutant, only the tests covering its line, whichever file they are in; don't
+  add `--map-source-class-to-test`, which keeps only `<Class>Test` and misses, e.g.,
+  `PageXmlParserTest` for the page builders; the minimums apply to the whole project, so they
+  are off here). Both need pcov or Xdebug.
 - **Videotex output**: `tests/Vdt` compares `offset()` with golden files. After an intended
   change to the bytes written, regenerate them with `UPDATE_GOLDEN=1 composer test`, and
   explain the change in the commit.
