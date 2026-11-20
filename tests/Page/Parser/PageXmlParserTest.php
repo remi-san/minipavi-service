@@ -966,7 +966,8 @@ final class PageXmlParserTest extends TestCase
         ];
         yield 'unknown validwith key' => [
             '<page type="static"><input validwith="enter"/></page>',
-            'unknown validwith key "enter"',
+            'f.xml line 1: <input>: unknown validwith key "enter" '
+                . '(sommaire, annulation, retour, repetition, guide, correction, suite, envoi)',
         ];
         yield 'validwith keys separated by a comma' => [
             '<page type="static"><input validwith="envoi,suite"/></page>',
