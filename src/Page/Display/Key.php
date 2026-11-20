@@ -48,7 +48,8 @@ final readonly class Key implements Element
             new Vdt(Videotex::INVERSE_ON),
             Vdt::text(' ' . $label . ' '),
             new Vdt(Videotex::textColor(Color::White)),
-            new Vdt(Videotex::INVERSE_OFF . Videotex::UNDERLINE_OFF),
+            new Vdt(Videotex::INVERSE_OFF),
+            new Vdt(Videotex::UNDERLINE_OFF),
             Vdt::text(' '),
         );
     }
