@@ -38,7 +38,14 @@ final class ValuesTest extends TestCase
         yield 'integral float' => [3.0, 3];
         yield 'missing' => [null, 7];
         yield 'float' => [2.5, 7];
+        // A float holds integers exactly up to 2^53, beyond only some
+        yield 'integral float at 2^53' => [2.0 ** 53, 2 ** 53];
+        yield 'negative integral float at -2^53' => [-2.0 ** 53, -2 ** 53];
+        yield 'integral float beyond 2^53' => [2.0 ** 53 + 2, 7];
+        yield 'negative integral float beyond -2^53' => [-2.0 ** 53 - 2, 7];
+        yield 'negative float' => [-2.5, 7];
         yield 'huge float' => [1e20, 7];
+        yield 'not a number' => [NAN, 7];
         yield 'infinite float' => [INF, 7];
         yield 'integer text too large' => ['99999999999999999999', 7];
         yield 'other text' => ['2 pages', 7];
