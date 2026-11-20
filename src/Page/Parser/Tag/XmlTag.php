@@ -47,11 +47,18 @@ final readonly class XmlTag
     }
 
     /**
-     * Whether its attributes or text have {{placeholders}}
+     * Whether one of its attributes, or its text, has a {{placeholder}} (each is replaced on
+     * its own: {{ in one and }} in another make none)
      */
     public function hasPlaceholder(): bool
     {
-        return (bool) preg_match(Placeholders::PLACEHOLDER, implode("\n", $this->attributes) . "\n" . $this->text);
+        foreach ([...$this->attributes, $this->text] as $value) {
+            if (preg_match(Placeholders::PLACEHOLDER, $value) === 1) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

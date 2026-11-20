@@ -654,6 +654,32 @@ final class PageXmlParserTest extends TestCase
         $page->display(new Terminal(), ['user' => new PrivateProperties()]);
     }
 
+    /**
+     * @return iterable<string, array{string}>
+     */
+    public static function bracesSplitAcrossValues(): iterable
+    {
+        yield 'between an attribute and the text' => ['<stars count="2" note="{{a">}}</stars>'];
+        yield 'between two attributes' => ['<stars count="2" note="{{a" end="}}"/>'];
+        yield 'with a name split' => ['<stars count="2" note="{{a">b}}</stars>'];
+    }
+
+    /**
+     * A placeholder is in one value: {{ in a value and }} in another make none
+     */
+    #[DataProvider('bracesSplitAcrossValues')]
+    public function testPlaceholderIsNotSplitAcrossValues(string $stars): void
+    {
+        $parser = new PageXmlParser((new MessagesXmlParser())->defaults(), new StarsElements());
+
+        $page = $parser->parse("<page type=\"static\">{$stars}</page>", self::FIXTURES);
+
+        self::assertSame(
+            [' 1|**                                      |'],
+            $this->drawnRows($page->display(new Terminal())),
+        );
+    }
+
     public function testInvalidValueOfAServiceElementGivesTheLine(): void
     {
         $parser = new PageXmlParser((new MessagesXmlParser())->defaults(), new StarsElements());
