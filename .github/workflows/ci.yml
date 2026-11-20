@@ -84,7 +84,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - uses: dorny/paths-filter@v4.0.3
+      - uses: dorny/paths-filter@v4
         id: filter
         with:
           # A file is code when it matches every rule: '**', and none of the excluded paths
