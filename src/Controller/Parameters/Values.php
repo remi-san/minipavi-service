@@ -27,8 +27,9 @@ final readonly class Values
     public function int(string $name, int $default = 0): int
     {
         $value = $this->values[$name] ?? null;
-        // A float holds integers exactly up to 2^53
-        if (\is_float($value) && $value === floor($value) && abs($value) <= (2 ** 53)) {
+        // A float holds integers exactly up to 2^53: within them, an integer is the same as
+        // its int
+        if (\is_float($value) && abs($value) <= (2 ** 53) && (float) (int) $value === $value) {
             $value = (int) $value;
         }
         // filter_var() rejects leading zeros and accepts surrounding whitespace: the digits
