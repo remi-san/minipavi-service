@@ -468,6 +468,9 @@ final class ScreenTest extends TestCase
         $ht = Videotex::CURSOR_RIGHT;
         yield 'CAN drawing a delimiter' => ["A{$on}{$can}{$ht}BC", '..UUU'];
         yield 'CAN using up what waits' => ["{$on}{$can}{$ht}A B", '.UUU'];
+        // The delimiter isn't underlined, the cleared spaces after it are
+        yield 'CAN delimiting the same zone' => ["{$on} A{$on}{$can}", '.U.U'];
+        yield 'with a background' => ["{$blue}{$on} A", '.U'];
     }
 
     /**
@@ -487,6 +490,150 @@ final class ScreenTest extends TestCase
             };
         }
         self::assertSame($expected, $cells);
+    }
+
+    /**
+     * The background colour in text, a zone attribute: ESC P to ESC W wait for a delimiter
+     * there, and a text cell is drawn on the background of the last delimiter or mosaic cell
+     * before it on its row, black from column 1 and after an empty cell. In mosaic, the colour
+     * applies at once, and SO applies the waiting one; a delimiter with no background waiting
+     * takes the last one applied (MiniPavi's emulator, setBgColor(), setCharType(),
+     * printDelimiter(), drawRow(), #30: each case checked on its screen)
+     *
+     * @return iterable<string, array{string, string}> what is sent, and the background of
+     *                                                 each cell from column 1: B blue, R red,
+     *                                                 G green, . black, ' ' empty
+     */
+    public static function backgroundZones(): iterable
+    {
+        $so = Videotex::MOSAIC_SET;
+        $si = Videotex::TEXT_SET;
+        $can = Videotex::CLEAR_LINE;
+        $blue = Videotex::backgroundColor(Color::Blue);
+        $red = Videotex::backgroundColor(Color::Red);
+        $green = Videotex::backgroundColor(Color::Green);
+        $underline = Videotex::UNDERLINE_ON;
+        // Row 10, column 1
+        $col1 = "\x1F\x4A\x41";
+
+        yield 'background waiting for a delimiter' => ["{$blue}AB", '..'];
+        yield 'background from a delimiter' => ["{$blue} AB", 'BBB'];
+        yield 'background over what is already drawn' => ["ABC{$col1}{$blue} ", 'BBB'];
+        yield 'background waiting over text' => ["{$blue} AB{$green}CD E", 'BBBBBGG'];
+        yield 'background up to a mosaic cell' => ["{$blue} A{$so}{$red}\x21{$si}B", 'BBRR'];
+        // The mosaic cell on the background the delimiter applied
+        yield 'background of the zone on a mosaic cell' => ["{$blue} A{$so}\x21{$si}B", 'BBBB'];
+        yield 'background text after a mosaic cell' => ["{$so}{$red}\x21{$si}AB", 'RRR'];
+        yield 'background up to an empty cell' => ["{$blue} A" . Videotex::CURSOR_RIGHT . 'B', 'BB .'];
+        yield 'background SO applying the waiting background' => ["{$blue}A{$so}\x21", '.B'];
+        yield 'background not waiting after SO' => ["{$blue}{$so}{$si} A", '..'];
+        yield 'background not waiting after a positioning' => ["{$blue}{$col1} A", '..'];
+        yield 'background of a double-width delimiter' => [Videotex::SIZE_DOUBLE_WIDTH . "{$blue} A", 'BBBB'];
+        // Set in mosaic, applied at once: the next delimiter takes it, not the text before it
+        yield 'background set in mosaic, taken by a delimiter' => ["{$so}{$red}{$si}{$underline} A", 'RR'];
+        yield 'background set in mosaic, not shown on text' => ["{$so}{$blue}{$si}A{$underline} C", '.BB'];
+        // CAN draws spaces, its first a delimiter while something waits (clear())
+        yield 'background CAN colouring the row' => ["{$blue}{$can}", 'BBBB'];
+        yield 'background CAN in a zone' => ["{$blue} AB{$can}", 'BBBB'];
+        yield 'background CAN after text' => ["{$blue}Hello{$can}", '.....BB'];
+        // A overwrites CAN's delimiter, so nothing starts a zone
+        yield 'background CAN delimiter drawn over' => ["{$blue}{$can}AB", '....'];
+    }
+
+    /**
+     * @param string $sent after positioning the cursor at row 10, column 1
+     */
+    #[DataProvider('backgroundZones')]
+    public function testBackgroundIsAZoneStartedByADelimiter(string $sent, string $expected): void
+    {
+        $screen = Screen::of(Vdt::join(Vdt::position(new Position(row: 10)), new Vdt($sent)));
+
+        self::assertSame($expected, self::cellsOfRow10(
+            $screen,
+            \strlen($expected),
+            static fn(Attributes $a): string => match ($a->background()) {
+                Color::Blue => 'B',
+                Color::Red => 'R',
+                Color::Green => 'G',
+                Color::Black => '.',
+                default => '?',
+            },
+        ));
+    }
+
+    /**
+     * Masking, a zone attribute in text and in mosaic: ESC X and ESC _ wait for a delimiter,
+     * and masking runs from it to the next delimiter that sets it, across mosaic and empty
+     * cells, the delimiters themselves masked as what is before them (MiniPavi's emulator,
+     * setMask(), printDelimiter(), drawRow(), #30: each case checked on its screen)
+     *
+     * @return iterable<string, array{string, string}> what is sent, and each cell from
+     *                                                 column 1: M masked, . not, ' ' empty
+     */
+    public static function maskZones(): iterable
+    {
+        $so = Videotex::MOSAIC_SET;
+        $si = Videotex::TEXT_SET;
+        $mask = Videotex::MASK_ON;
+
+        yield 'masking waiting for a delimiter' => ["{$mask}AB", '..'];
+        yield 'masking across a mosaic cell' => ["{$mask} A{$so}\x21{$si}B", '.MMM'];
+        yield 'masking up to a delimiter unmasking' => ["{$mask} A" . Videotex::MASK_OFF . ' B', '.MM.'];
+        yield 'masking kept by a delimiter of another attribute' => [
+            "{$mask} A" . Videotex::backgroundColor(Color::Blue) . ' B',
+            '.MMM',
+        ];
+        yield 'masking with a background' => [Videotex::backgroundColor(Color::Blue) . "{$mask} A", '.M'];
+        yield 'masking across an empty cell' => ["{$mask} A" . Videotex::CURSOR_RIGHT . 'B', '.M M'];
+        // Waiting in mosaic, for a text space
+        yield 'masking waiting in mosaic for a text space' => ["{$mask}{$so}\x21{$si} A{$so}\x21", '..MM'];
+    }
+
+    /**
+     * @param string $sent after positioning the cursor at row 10, column 1
+     */
+    #[DataProvider('maskZones')]
+    public function testMaskingIsAZoneStartedByADelimiter(string $sent, string $expected): void
+    {
+        $screen = Screen::of(Vdt::join(Vdt::position(new Position(row: 10)), new Vdt($sent)));
+
+        self::assertSame($expected, self::cellsOfRow10(
+            $screen,
+            \strlen($expected),
+            static fn(Attributes $a): string => $a->isMasked() ? 'M' : '.',
+        ));
+    }
+
+    public function testZonesOfBackgroundAndMaskingEndWithTheirRow(): void
+    {
+        // Row 10, column 39: blue, masking, a space, A, then B wrapped to row 11
+        $screen = Screen::of(Vdt::join(
+            Vdt::position(new Position(row: 10, col: 39)),
+            new Vdt(Videotex::backgroundColor(Color::Blue) . Videotex::MASK_ON . ' AB'),
+        ));
+
+        $a = $screen->cell(10, col: 40) ?? self::fail('Nothing at row 10, column 40');
+        self::assertSame(Color::Blue, $a->attributes->background());
+        self::assertTrue($a->attributes->isMasked());
+        $b = $screen->cell(11, col: 1) ?? self::fail('Nothing at row 11, column 1');
+        self::assertSame(Color::Black, $b->attributes->background());
+        self::assertFalse($b->attributes->isMasked());
+    }
+
+    /**
+     * Each cell of row 10, from column 1 to length, as shown: ' ' if empty
+     *
+     * @param \Closure(Attributes): string $shown
+     */
+    private static function cellsOfRow10(Screen $screen, int $length, \Closure $shown): string
+    {
+        $cells = '';
+        for ($col = 1; $col <= $length; $col++) {
+            $cell = $screen->cell(10, $col);
+            $cells .= $cell === null ? ' ' : $shown($cell->attributes);
+        }
+
+        return $cells;
     }
 
     public function testUnderlinedZoneEndsWithItsRow(): void

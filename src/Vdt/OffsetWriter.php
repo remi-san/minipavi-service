@@ -13,8 +13,8 @@ use MiniPaviService\Vdt\Screen\Zones;
  * Writes again (Writer) what content draws, moved by x columns right and y rows down: what
  * Offset listens to while playing the content. Characters that end up off the screen are
  * dropped, and row 0, the status line, is not moved. Each text cell is written with the zone
- * it is in, so that the Writer keeps it (as far as it can: a zone whose delimiter goes off the
- * screen starts again at its first space).
+ * it is in (its background, masking and underline), so that the Writer keeps it (as far as it
+ * can: a zone whose delimiter goes off the screen starts again at its first space).
  *
  * Its Writer keeps where it is and what it wrote (so it isn't readonly), so it listens to one
  * content only: it is only built, and played to, by write().
