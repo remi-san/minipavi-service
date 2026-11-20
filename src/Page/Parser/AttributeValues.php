@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Page\Parser;
 
+use MiniPaviService\InvalidValueException;
+use MiniPaviService\Minitel\Position;
+
 /**
  * Attributes of an element of the page XML format, read typed: a value missing gets its
  * default, an invalid one throws a PageXmlException naming the attribute, without location
@@ -70,6 +73,17 @@ final readonly class AttributeValues
         }
 
         return (int) $value;
+    }
+
+    /**
+     * The cell of the row and col attributes: row defaultRow and column 1 when they are absent
+     *
+     * @throws PageXmlException if one isn't a number
+     * @throws InvalidValueException for a cell off the screen
+     */
+    public function position(int $defaultRow = 1): Position
+    {
+        return new Position($this->int('row', $defaultRow), $this->int('col', default: 1));
     }
 
     /**

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Page\Parser\Element;
 
-use MiniPaviService\Minitel\Position;
 use MiniPaviService\Page\Display\Element;
 use MiniPaviService\Page\Display\Image;
 use MiniPaviService\Page\Parser\AttributeValues;
@@ -33,10 +32,7 @@ final class ImageBuilder implements ElementBuilder
     {
         $path = $this->files->path($text);
 
-        return new Image(
-            $this->pictures[$path] ??= new Vdt($this->files->read($text)),
-            new Position($attributes->int('row', default: 1), $attributes->int('col', default: 1)),
-        );
+        return new Image($this->pictures[$path] ??= new Vdt($this->files->read($text)), $attributes->position());
     }
 
     public function isPlacedByRow(): bool

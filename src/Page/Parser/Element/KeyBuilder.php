@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace MiniPaviService\Page\Parser\Element;
 
 use MiniPaviService\Minitel\Color;
-use MiniPaviService\Minitel\Position;
 use MiniPaviService\Page\Display\Element;
 use MiniPaviService\Page\Display\Key;
 use MiniPaviService\Page\Parser\AttributeValues;
@@ -24,7 +23,7 @@ final readonly class KeyBuilder implements ElementBuilder
     {
         return new Key(
             $text,
-            new Position($attributes->int('row', default: 1), $attributes->int('col', default: 1)),
+            $attributes->position(),
             color: $attributes->enum('color', Color::class) ?? Color::Green,
             bg: $attributes->enum('bg', Color::class),
         );
