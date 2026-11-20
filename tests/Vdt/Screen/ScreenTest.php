@@ -82,9 +82,29 @@ final class ScreenTest extends TestCase
         self::assertSame(Color::Red, $screen->cell(row: 1, col: 40)?->attributes->foreground());
     }
 
-    public function testPositionsCanBeGivenInDigits(): void
+    /**
+     * A positioning in digits: US, then 0, 1 or 2 and a digit, the row; the cursor goes to its
+     * column 1 (MiniPavi's emulator, locate())
+     *
+     * @return iterable<string, array{string, int, string}> what is sent after a clear screen,
+     *                                                      the row, and the start of its text
+     */
+    public static function positionsInDigits(): iterable
     {
-        self::assertSame('A', Screen::of(new Vdt("\x1F0712A"))->cell(row: 7, col: 12)?->text());
+        yield 'row 5, then text' => ["\x1F05Hello", 5, 'Hello'];
+        yield 'row 7, then digits' => ["\x1F0712A", 7, '12A'];
+        yield 'row 12' => ["\x1F1200X", 12, '00X'];
+        yield 'row 24' => ["\x1F24A", 24, 'A'];
+        yield 'the status row' => ["\x1F00S", 0, 'S'];
+    }
+
+    #[DataProvider('positionsInDigits')]
+    public function testPositionsCanBeGivenInDigits(string $sent, int $row, string $text): void
+    {
+        $screen = Screen::of(new Vdt("\x0C{$sent}"));
+
+        self::assertSame($text, rtrim($screen->line($row)));
+        self::assertSame('', trim($screen->line($row === 1 ? 2 : 1)));
     }
 
     /**
@@ -99,6 +119,11 @@ final class ScreenTest extends TestCase
         yield 'column 41' => ["\x1F\x4A\x69"];
         yield 'row 25' => ["\x1F\x59\x41"];
         yield 'row -1' => ["\x1F\x3F\x41"];
+        // In digits (positionsInDigits()): 2 and 5, 1 and A (10 + 17), and 3, which isn't
+        // one of them, so it is the row of a positioning in bytes (0x33 - 0x40)
+        yield 'row 25 in digits' => ["\x1F25"];
+        yield 'row 27 in digits' => ["\x1F1A"];
+        yield 'a row 3 in digits' => ["\x1F30"];
     }
 
     #[DataProvider('positionsOutsideTheScreen')]

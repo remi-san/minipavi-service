@@ -51,7 +51,7 @@ final class Parser
                 case Videotex::TEXT_SET:
                     $tokens[] = new Token(TokenType::Charset, $byte, $byte);
                     break;
-                case Videotex::POSITION: // row, column as 0x40+n, or as 4 decimal digits
+                case Videotex::POSITION: // row, column as 0x40+n, or a row as 2 digits
                     [$position, $skipped] = self::position($vdt, $i);
                     $tokens[] = $position;
                     $i += $skipped;
@@ -110,36 +110,23 @@ final class Parser
     }
 
     /**
-     * Position (US) at offset i: the token, and how many bytes it takes after US
+     * Position (US) at offset i: the token, and the 2 bytes it takes after US. As the Minitel
+     * reads them (MiniPavi's emulator, locate()): the row and the column as 0x40 + n, or, when
+     * the first is 0, 1 or 2, the row in digits (10 times the first, plus the second), the
+     * cursor in column 1. Off the screen, the Player ignores it (Cursor::position())
      *
      * @return array{Token, int}
      */
     private static function position(string $vdt, int $i): array
     {
-        $first = $vdt[$i + 1] ?? '';
-        if ($first !== '' && ctype_digit($first)) {
-            $digits = substr($vdt, $i + 1, length: 4);
+        $first = ord($vdt[$i + 1] ?? "\x41");
+        $second = ord($vdt[$i + 2] ?? "\x41");
+        [$row, $col] =
+            $first >= 0x30 && $first <= 0x32
+                ? [(10 * ($first - 0x30)) + ($second - 0x30), 1]
+                : [$first - 0x40, $second - 0x40];
 
-            return [
-                new Token(
-                    TokenType::Position,
-                    Videotex::POSITION . $digits,
-                    row: (int) substr($digits, offset: 0, length: 2),
-                    col: (int) substr($digits, offset: 2),
-                ),
-                4,
-            ];
-        }
-
-        return [
-            new Token(
-                TokenType::Position,
-                substr($vdt, $i, length: 3),
-                row: ord($first) - 0x40,
-                col: ord($vdt[$i + 2] ?? "\x41") - 0x40,
-            ),
-            2,
-        ];
+        return [new Token(TokenType::Position, substr($vdt, $i, length: 3), row: $row, col: $col), 2];
     }
 
     private function csiLength(string $vdt, int $start): int
