@@ -14,6 +14,8 @@ use MiniPaviService\Core\RouterBuilder;
 use MiniPaviService\Core\UnknownRouteException;
 use MiniPaviService\Minitel\Terminal;
 use MiniPaviService\Tests\Support\CallbackController;
+use MiniPaviService\Tests\Support\StepController;
+use MiniPaviService\Tests\Support\StepState;
 use MiniPaviService\Vdt\Vdt;
 use PHPUnit\Framework\TestCase;
 
@@ -42,6 +44,16 @@ final class RouterTest extends TestCase
         self::assertTrue($router->has('home'));
         self::assertFalse($router->has('menu'));
         self::assertSame('home', $router->defaultRoute());
+    }
+
+    public function testRestoresAStateBackedByANumberFromItsText(): void
+    {
+        $route = (new RouterBuilder('form'))
+            ->addRoute('form', new StepController())
+            ->build()
+            ->route('form');
+
+        self::assertSame(StepState::Second, $route->restore('2', new Values())->state());
     }
 
     public function testDefaultRouteMustBeARoute(): void

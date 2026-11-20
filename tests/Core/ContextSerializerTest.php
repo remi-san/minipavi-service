@@ -20,6 +20,7 @@ use MiniPaviService\Core\Signing\HmacContextSigner;
 use MiniPaviService\Core\UnknownRouteException;
 use MiniPaviService\Tests\Support\CallbackController;
 use MiniPaviService\Tests\Support\FromParameters;
+use MiniPaviService\Tests\Support\QueryParameters;
 use MiniPaviService\Tests\Support\SearchController;
 use MiniPaviService\Tests\Support\SearchState;
 use MiniPaviService\Vdt\Vdt;
@@ -33,7 +34,7 @@ final class ContextSerializerTest extends TestCase
     protected function setUp(): void
     {
         // home: built-in states, a page; search: states of its own, a page; menu: nothing;
-        // origin: the route it was opened from
+        // origin: the route it was opened from; results: what was searched, and a page
         $routes = new RouterBuilder('home');
         $routes->addRoute(
             'home',
@@ -70,6 +71,13 @@ final class ContextSerializerTest extends TestCase
                 static fn(Request $request) => new DisplayPage(Vdt::text('from ' . $request->parameters()->from)),
             ),
         );
+        $routes->addRoute(
+            'results',
+            new CallbackController(
+                QueryParameters::class,
+                static fn(Request $request) => new DisplayPage(new Vdt('results')),
+            ),
+        );
         $this->router = $routes->build();
     }
 
@@ -98,6 +106,36 @@ final class ContextSerializerTest extends TestCase
             new FromParameters('café/thé "1"'),
             $this->serializer()->unserialize($this->serializer()->serialize($context))->parameters(),
         );
+    }
+
+    public function testSerializesTextAsItIs(): void
+    {
+        $context = new Context($this->router, 'origin');
+        $context->keep(ControllerState::ReadInput, new FromParameters('café/thé'));
+
+        // Neither é nor \/: the context goes to the gateway, the shorter the better
+        self::assertStringContainsString('"from":"café/thé"', $this->serializer()->serialize($context));
+    }
+
+    public function testEveryParameterSurvivesSerialization(): void
+    {
+        $context = new Context($this->router, 'results');
+        $context->keep(null, new QueryParameters('minitel', 3));
+
+        self::assertEquals(
+            new QueryParameters('minitel', 3),
+            $this->serializer()->unserialize($this->serializer()->serialize($context))->parameters(),
+        );
+    }
+
+    public function testParametersWithoutANameDontHideTheOthers(): void
+    {
+        $context = $this->serializer()->unserialize((string) json_encode([
+            'route' => 'results',
+            'parameters' => ['results' => [0 => 'no name', 'query' => 'minitel', 'page' => 3]],
+        ]));
+
+        self::assertEquals(new QueryParameters('minitel', 3), $context->parameters());
     }
 
     public function testParametersThatAreNotJsonCannotBeSerialized(): void

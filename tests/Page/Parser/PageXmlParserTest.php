@@ -915,6 +915,13 @@ final class PageXmlParserTest extends TestCase
         self::assertNull($this->parse('<page type="static"/>')->inputCommand());
     }
 
+    public function testInputCommandPrefillsTheLinesInOrder(): void
+    {
+        $page = $this->parse('<page type="static"><input/></page>');
+
+        self::assertSame(['a', 'b'], $page->inputCommand(['first' => 'a', 'second' => 'b'])?->prefill);
+    }
+
     public function testAFailureToSplitTheValidwithKeysIsAnError(): void
     {
         $limit = ExhaustedBacktrackLimit::exhaust();
@@ -1068,6 +1075,10 @@ final class PageXmlParserTest extends TestCase
             '<page type="template"><foreach items="a" as="b"><message name="page.last">x</message></foreach></page>',
             'f.xml line 1: <message>: only at the top level of the page',
         ];
+        yield 'message in an if' => [
+            '<page type="template"><if test="a"><message name="page.last">x</message></if></page>',
+            'f.xml line 1: <message>: only at the top level of the page',
+        ];
         yield 'unknown keyboard' => [
             "\n<page type=\"static\" keyboard=\"caps\"/>",
             'f.xml line 2: <page>: keyboard="caps" is unknown (keyboard="uppercase" or keyboard="lowercase")',
@@ -1171,6 +1182,10 @@ final class PageXmlParserTest extends TestCase
         ];
         yield 'input in a loop' => [
             '<page type="template"><foreach items="a" as="b"><input/></foreach></page>',
+            'f.xml line 1: <input>: only at the top level of the page',
+        ];
+        yield 'input in an if' => [
+            '<page type="template"><if test="a"><input/></if></page>',
             'f.xml line 1: <input>: only at the top level of the page',
         ];
         yield 'placeholder in an input' => [

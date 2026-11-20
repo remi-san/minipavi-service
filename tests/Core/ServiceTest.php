@@ -37,6 +37,7 @@ use MiniPaviService\Minitel\Span;
 use MiniPaviService\Minitel\Terminal;
 use MiniPaviService\Tests\Support\CallbackController;
 use MiniPaviService\Tests\Support\ClearAndShow;
+use MiniPaviService\Tests\Support\FailingSigner;
 use MiniPaviService\Tests\Support\MemoryLogger;
 use MiniPaviService\Vdt\Screen\Screen;
 use MiniPaviService\Vdt\Vdt;
@@ -97,6 +98,36 @@ final class ServiceTest extends TestCase
         self::assertNull($this->handle(new GatewayRequest(ConnectionCode::BackgroundCall, [], $context)));
         self::assertSame([], $this->requests);
         self::assertSame([LogLevel::INFO], $this->levels());
+    }
+
+    public function testBackgroundCallIsLoggedWithItsCode(): void
+    {
+        $this->handle(new GatewayRequest(ConnectionCode::BackgroundCall));
+
+        self::assertSame(
+            [[LogLevel::INFO, 'Background call, not responded to', ['fctn' => 'BGCALL-WM-']]],
+            $this->logger->records,
+        );
+    }
+
+    public function testAnErrorThatCantBeRespondedToIsCritical(): void
+    {
+        // No context can be signed: not even the error response's
+        $router = $this->routes->build();
+        $service = new Service(
+            $router,
+            (new MessagesXmlParser())->defaults(),
+            new ContextSerializer($router, new FailingSigner()),
+            logger: $this->logger,
+        );
+
+        self::assertNull($service->handle(new GatewayRequest(ConnectionCode::Connect)));
+        self::assertSame([LogLevel::INFO, LogLevel::ERROR, LogLevel::CRITICAL], $this->levels());
+        [, $message, $context] = $this->logger->records[2];
+        self::assertSame('Cannot respond to the error', $message);
+        $exception = $context['exception'] ?? null;
+        self::assertInstanceOf(\RuntimeException::class, $exception);
+        self::assertSame('Cannot sign', $exception->getMessage());
     }
 
     public function testContextsOfConnectionsAndBackgroundCallsArentChecked(): void

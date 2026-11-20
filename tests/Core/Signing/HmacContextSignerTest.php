@@ -20,6 +20,14 @@ final class HmacContextSignerTest extends TestCase
         self::assertSame(self::CONTEXT, $signer->verify($signer->sign(self::CONTEXT)));
     }
 
+    public function testGivesBackAContextContainingTheSeparator(): void
+    {
+        $signer = new HmacContextSigner('secret');
+        $context = '{"route":"home","states":{},"parameters":{"home":{"price":"1.50","site":"a.b.c"}}}';
+
+        self::assertSame($context, $signer->verify($signer->sign($context)));
+    }
+
     public function testSignsWithAnUnpaddedBase64UrlSignature(): void
     {
         self::assertMatchesRegularExpression(

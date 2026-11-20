@@ -101,6 +101,25 @@ final class ServiceTesterTest extends TestCase
         self::assertSame([], $this->requests[2]->content());
     }
 
+    public function testTypedLinesAreAListWhateverTheirKeys(): void
+    {
+        $this->tester->connect()->type(...['first' => 'a', 'second' => 'b'])->press(FunctionKey::Send);
+
+        self::assertSame(['a', 'b'], $this->requests[1]->content());
+    }
+
+    public function testFailsWhenTheScreenShowsWhatItShouldnt(): void
+    {
+        try {
+            $this->tester->connect()->assertScreenNotContains('MENU');
+        } catch (AssertionFailedError $e) {
+            self::assertStringStartsWith("The screen shows \"MENU\". Screen:\n", $e->getMessage());
+
+            return;
+        }
+        self::fail('The assertion passed');
+    }
+
     public function testConnectStartsANewSession(): void
     {
         $this->tester

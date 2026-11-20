@@ -83,6 +83,15 @@ final class MiniPaviClientTest extends TestCase
         self::assertFalse((new MiniPaviClient())->decoded()->terminal->isTelnetOrPhone());
     }
 
+    public function testAVersionThatIsANumberIsReadAsItsText(): void
+    {
+        MiniPaviCli::$typeSocket = 'websocket';
+        MiniPaviCli::$versionMinitel = 5;
+
+        // A known Minitel, as '5' would be
+        self::assertTrue((new MiniPaviClient())->decoded()->terminal->isAdapter());
+    }
+
     public function testReadsABackgroundCallTheServiceDoesntRespondTo(): void
     {
         MiniPaviCli::$fctn = 'BGCALL-WM-1';
