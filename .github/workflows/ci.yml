@@ -69,11 +69,46 @@ jobs:
           name: coverage
           path: coverage.xml
 
-  # Mutation testing (Infection, infection.json5), on one PHP version: the Mutation Score
-  # Indicator (MSI) and the covered MSI in the job's summary, and the escaped mutants kept as the
-  # job's artifact. Fails below a minimum MSI (infection.json5), raised as mutants are killed
+  # Whether the change touches code: any file but those listed here (the docs, the Claude
+  # files, and what neither Infection nor the tests read: the CLI's entry point, the coverage
+  # tools, Mago's stubs and configuration). A new file counts as code unless it is listed.
+  # On a pull request, the files it changes; on a push to main, those of the pushed commits
+  changes:
+    name: Changes
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      code: ${{ steps.filter.outputs.code }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: dorny/paths-filter@v4.0.3
+        id: filter
+        with:
+          # A file is code when it matches every rule: '**', and none of the excluded paths
+          predicate-quantifier: every
+          filters: |
+            code:
+              - '**'
+              - '!README.md'
+              - '!CLAUDE.md'
+              - '!.claude/**'
+              - '!bin/**'
+              - '!tools/**'
+              - '!stubs/**'
+              - '!mago.toml'
+              - '!.gitignore'
+
+  # Mutation testing (Infection, infection.json5), on one PHP version, when the change touches
+  # code (see changes): the Mutation Score Indicator (MSI) and the covered MSI in the job's
+  # summary, and the escaped mutants kept as the job's artifact. Fails below a minimum MSI
+  # (infection.json5), raised as mutants are killed
   mutation:
     name: Mutation testing
+    needs: changes
+    if: ${{ needs.changes.outputs.code == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
