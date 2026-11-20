@@ -523,6 +523,85 @@ final class PageXmlParserTest extends TestCase
         self::assertSame(['/pages/home.xml', '/pages/images/logo.vdt'], $files->read);
     }
 
+    /**
+     * @return iterable<string, array{iterable<mixed>}>
+     */
+    public static function keyedItems(): iterable
+    {
+        yield 'an array with keys' => [['pirates' => 'Harbour Pirates', 'rocket' => 'Rocket Rescue']];
+        yield 'an iterator with keys' => [new \ArrayIterator(['pirates' => 'Harbour Pirates', 'rocket' => 'Rescue'])];
+        // The same key twice: both items kept
+        yield 'a generator repeating a key' => [(static function (): \Generator {
+            yield 'game' => 'Harbour Pirates';
+            yield 'game' => 'Rocket Rescue';
+        })()];
+    }
+
+    /**
+     * The items in their order, whatever their keys: numbered from 1, one row each
+     *
+     * @param iterable<mixed> $games
+     */
+    #[DataProvider('keyedItems')]
+    public function testForeachTakesItemsInTheirOrderWhateverTheirKeys(iterable $games): void
+    {
+        $page = $this->parse(<<<'XML'
+            <page type="template">
+              <foreach items="games" as="game" row="3">
+                <text>{{loop.index}}/{{loop.count}}</text>
+                <if test="loop.first"><text col="6">first</text></if>
+                <if test="loop.last"><text col="6">last</text></if>
+              </foreach>
+            </page>
+            XML);
+
+        self::assertSame(
+            [' 3|' . str_pad('1/2  first', length: 40) . '|', ' 4|' . str_pad('2/2  last', length: 40) . '|'],
+            $this->drawnRows($page->display(new Terminal(), ['games' => $games])),
+        );
+    }
+
+    /**
+     * @return iterable<string, array{mixed, string}>
+     */
+    public static function conditions(): iterable
+    {
+        yield 'null' => [null, 'false'];
+        yield 'false' => [false, 'false'];
+        yield 'true' => [true, 'true'];
+        yield 'zero' => [0, 'false'];
+        yield 'one' => [1, 'true'];
+        yield 'a negative number' => [-1, 'true'];
+        yield 'zero as a float' => [0.0, 'false'];
+        yield 'one as a float' => [1.0, 'true'];
+        yield 'an empty string' => ['', 'false'];
+        yield 'the string 0' => ['0', 'false'];
+        yield 'a space' => [' ', 'true'];
+        yield 'an empty array' => [[], 'false'];
+        yield 'an array' => [[0], 'true'];
+        yield 'an object' => [new \stdClass(), 'true'];
+    }
+
+    /**
+     * PHP's truthiness
+     *
+     * @param string $shown the text of the <if> shown: true or false
+     */
+    #[DataProvider('conditions')]
+    public function testConditionIsTrueAsInPhp(mixed $value, string $shown): void
+    {
+        $page = $this->parse(<<<'XML'
+            <page type="template">
+              <if test="value"><text row="1">true</text></if>
+              <if test="!value"><text row="1">false</text></if>
+            </page>
+            XML);
+
+        self::assertSame([' 1|' . str_pad($shown, length: 40) . '|'], $this->drawnRows($page->display(new Terminal(), [
+            'value' => $value,
+        ])));
+    }
+
     public function testForeachItemNameIsTrimmed(): void
     {
         $page = $this->parse(<<<'XML'

@@ -39,6 +39,18 @@ final class AttributeValuesTest extends TestCase
         (new AttributeValues($values))->required('items');
     }
 
+    /**
+     * For a service's element (ElementBuilder): an attribute given empty is given
+     */
+    public function testTellsWhetherAnAttributeIsGiven(): void
+    {
+        $values = new AttributeValues(['note' => '', 'count' => '2']);
+
+        self::assertTrue($values->has('note'));
+        self::assertTrue($values->has('count'));
+        self::assertFalse($values->has('end'));
+    }
+
     public function testAPositionIsAtRowAndCol(): void
     {
         $position = (new AttributeValues(['row' => '3', 'col' => '7']))->position();
