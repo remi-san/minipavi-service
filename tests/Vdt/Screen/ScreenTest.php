@@ -791,6 +791,32 @@ final class ScreenTest extends TestCase
         self::assertSame('', trim($screen->line(0)));
     }
 
+    /**
+     * @return iterable<string, array{string, int}>
+     */
+    public static function movesLeftFromColumn1(): iterable
+    {
+        yield 'to the row above' => ["\x1F\x43\x41", 2];
+        // As moving up, the status row skipped
+        yield 'from row 1, to the last row' => ["\x1F\x41\x41", 24];
+    }
+
+    #[DataProvider('movesLeftFromColumn1')]
+    public function testMoveLeftFromColumn1GoesToTheLastColumnOfTheRowAbove(string $position, int $row): void
+    {
+        $screen = Screen::of(new Vdt($position . Videotex::CURSOR_LEFT . 'A'));
+
+        self::assertSame('A', $screen->cell($row, col: 40)?->bytes);
+        self::assertSame(str_repeat(' ', times: 39) . 'A', $screen->line($row));
+    }
+
+    public function testErrorCharacterIsAQuestionMarkInTheText(): void
+    {
+        $screen = Screen::of(new Vdt("\x1F\x41\x41A" . Videotex::SUB . 'B'));
+
+        self::assertSame('A?B', rtrim($screen->line(1)));
+    }
+
     public function testTextOnTheStatusRowStaysInItsLastColumn(): void
     {
         // Row 0, column 39: A, B, then C over B, as the status row doesn't wrap (moveCursor())
