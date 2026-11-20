@@ -33,10 +33,11 @@ final class ScreenTest extends TestCase
 
     public function testClearScreenEmptiesEveryRowButTheStatusRow(): void
     {
-        $screen = Screen::of(new Vdt("\x1F\x40\x41S\x1F\x45\x45X\x0C"));
+        $screen = Screen::of(new Vdt("\x1F\x40\x41S\x1F\x45\x45X\x1F\x58\x41Y\x0C"));
 
         self::assertSame('S', $screen->cell(row: 0, col: 1)?->bytes);
         self::assertNull($screen->cell(row: 5, col: 5));
+        self::assertNull($screen->cell(row: 24, col: 1));
     }
 
     public function testLineGivesTheTextOfARowWithItsAccents(): void
@@ -520,6 +521,10 @@ final class ScreenTest extends TestCase
         yield 'CAN using up what waits' => ["{$on}{$can}{$ht}A B", '.UUU'];
         // The delimiter isn't underlined, the cleared spaces after it are
         yield 'CAN delimiting the same zone' => ["{$on} A{$on}{$can}", '.U.U'];
+        // The cleared spaces are text in the zone, the mosaic cells they replace gone
+        yield 'CAN over mosaic cells' => ["{$so}\x7F\x7F{$si}{$col1}{$on}{$can}{$ht}{$ht} A", '.UUU'];
+        // Back on row 10, column 4: the cells before are empty, so the space is in no zone
+        yield 'a clear screen ending the zone' => ["{$on} AB\x0C\x1F\x4A\x44 B", '   ..'];
         yield 'with a background' => ["{$blue}{$on} A", '.U'];
     }
 
@@ -686,6 +691,18 @@ final class ScreenTest extends TestCase
         return $cells;
     }
 
+    public function testClearLineClearsUpToTheLastColumn(): void
+    {
+        // Row 10: a mosaic character on red in column 40, then from column 1, a blue
+        // background and CAN, its first space a delimiter
+        $screen = Screen::of(new Vdt("\x1F\x4A\x68\x0E\x1B\x51\x7F\x1F\x4A\x41\x1B\x54\x18"));
+
+        $last = $screen->cell(10, col: 40) ?? self::fail('Nothing at row 10, column 40');
+        self::assertSame(' ', $last->bytes);
+        self::assertFalse($last->attributes->isMosaic());
+        self::assertSame(Color::Blue, $last->attributes->background());
+    }
+
     public function testUnderlinedZoneEndsWithItsRow(): void
     {
         // Row 10, column 38: ESC Z, a space, A, B, then C wrapped to row 11
@@ -752,6 +769,35 @@ final class ScreenTest extends TestCase
         $cell = $screen->cell($row, $col) ?? self::fail("Nothing at row {$row}, column {$col}");
         self::assertSame('A', $cell->bytes);
         self::assertEquals(Attributes::defaults(), $cell->attributes);
+    }
+
+    public function testDoubleWidthCharacterInTheLastColumnStaysInIt(): void
+    {
+        $screen = Screen::of(Vdt::join(
+            Vdt::position(new Position(row: 3, col: 40)),
+            new Vdt(Videotex::SIZE_DOUBLE_WIDTH . 'A'),
+        ));
+
+        self::assertSame('A', $screen->cell(3, col: 40)?->bytes);
+        self::assertSame(str_repeat(' ', times: 39) . 'A', $screen->line(3));
+    }
+
+    public function testMoveUpFromRow1GoesToTheLastRow(): void
+    {
+        // As the Minitel does in page mode, the status row skipped (moveCursor())
+        $screen = Screen::of(new Vdt("\x1F\x41\x43" . Videotex::CURSOR_UP . 'A'));
+
+        self::assertSame('A', $screen->cell(24, col: 3)?->bytes);
+        self::assertSame('', trim($screen->line(0)));
+    }
+
+    public function testTextOnTheStatusRowStaysInItsLastColumn(): void
+    {
+        // Row 0, column 39: A, B, then C over B, as the status row doesn't wrap (moveCursor())
+        $screen = Screen::of(new Vdt("\x1F\x40\x67ABC"));
+
+        self::assertSame(str_repeat(' ', times: 38) . 'AC', $screen->line(0));
+        self::assertSame('', trim($screen->line(1)));
     }
 
     public function testTextWrapsToTheNextRow(): void
