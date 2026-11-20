@@ -34,28 +34,39 @@ final class Zones
     private array $mosaic = [];
 
     /**
-     * Draws a text character at row, col, width cells wide: a delimiter starting zone, or
-     * another one if delimiter is null
+     * Draws a delimiter starting zone at row, col, width cells wide
      */
-    public function text(int $row, int $col, int $width, ?Zone $delimiter = null): void
+    public function delimiter(int $row, int $col, int $width, Zone $zone): void
     {
-        for ($i = 0; $i < $width && ($col + $i) <= ScreenSize::COLS; $i++) {
-            $this->text[$row][$col + $i] = $delimiter;
+        for ($i = 0; $i < $width; $i++) {
+            $this->text[$row][$col + $i] = $zone;
         }
     }
 
     /**
-     * Draws a character at row, col, width cells wide, with these attributes: a text one
-     * (text()), or a mosaic one, on its background
+     * Draws a character at row, col, width cells wide, with these attributes: a text one, or
+     * a mosaic one, on its background. A cell past the last column (a double-width character
+     * in it) is kept, but never read
      */
     public function draw(int $row, int $col, int $width, Attributes $attributes): void
     {
-        if ($attributes->isMosaic()) {
-            unset($this->text[$row][$col]);
-            $this->mosaic[$row][$col] = $attributes->background();
-            return;
+        for ($i = 0; $i < $width; $i++) {
+            $this->drawCell($row, $col + $i, $attributes);
         }
-        $this->text($row, $col, $width);
+    }
+
+    /**
+     * CAN at row, col: spaces with these attributes up to the last column, the first one a
+     * delimiter starting zone delimiter, if not null
+     */
+    public function clearLine(int $row, int $col, Attributes $attributes, ?Zone $delimiter): void
+    {
+        for ($cleared = $col; $cleared <= ScreenSize::COLS; $cleared++) {
+            $this->drawCell($row, $cleared, $attributes);
+        }
+        if ($delimiter !== null) {
+            $this->delimiter($row, $col, width: 1, zone: $delimiter);
+        }
     }
 
     /**
@@ -96,6 +107,20 @@ final class Zones
         $delimiter = $this->text[$row][$col];
 
         return $delimiter === null ? $before : $before->on($delimiter->background());
+    }
+
+    /**
+     * Draws a character in the cell at row, col, with these attributes: a text one, or a
+     * mosaic one, on its background
+     */
+    private function drawCell(int $row, int $col, Attributes $attributes): void
+    {
+        if ($attributes->isMosaic()) {
+            unset($this->text[$row][$col]);
+            $this->mosaic[$row][$col] = $attributes->background();
+            return;
+        }
+        $this->text[$row][$col] = null;
     }
 
     /**

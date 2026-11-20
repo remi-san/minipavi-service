@@ -86,12 +86,7 @@ final class Writer
             $this->cursor->delimit();
         }
         $this->send(Videotex::CLEAR_LINE);
-        for ($i = $col; $i <= ScreenSize::COLS; $i++) {
-            $this->zones->draw($row, $i, width: 1, attributes: $this->cursor->attributes());
-        }
-        if ($delimits) {
-            $this->zones->text($row, $col, width: 1, delimiter: $this->cursor->zone());
-        }
+        $this->zones->clearLine($row, $col, $this->cursor->attributes(), $delimits ? $this->cursor->zone() : null);
     }
 
     public function clear(): void
@@ -140,7 +135,7 @@ final class Writer
         $this->sendZone($zone);
         $this->put(' ');
         $this->cursor->delimit();
-        $this->zones->text($row, $col, $width, delimiter: $this->cursor->zone());
+        $this->zones->delimiter($row, $col, $width, $this->cursor->zone());
         $this->movePast($col, $width);
     }
 
