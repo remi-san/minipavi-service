@@ -28,8 +28,10 @@ whole diff (`git diff main...`), then the code around it.
 2. **Correctness**: bugs, edge cases, error handling, what a user or a service would see.
 3. **Tests**: each behaviour change has a test that fails without it (check it: revert the
    `src/` change and run the test). Tests check behaviour through the public API, not
-   implementation, and aren't loosened (`assertSame` kept). Run `composer mutation` (or
-   Infection filtered to the changed files) and report any escaped mutant on a changed line.
+   implementation, and aren't loosened (`assertSame` kept). Don't run Infection locally
+   unless the issue is about improving the mutation score: read CI's Mutation testing job
+   (`gh pr checks <n>`, and its log) and report any escaped mutant on a changed line. The
+   minimum MSI stays at 92%; a PR raising it is a finding.
 4. **Design**, against the rules in `.claude/agents/developer.md` ("Design rules of this
    codebase"): no dispatch on type, typed APIs, no callables or container, constructor order,
    names by purpose, layers (`mago guard`), no Mago rule turned off, breaking changes marked.
