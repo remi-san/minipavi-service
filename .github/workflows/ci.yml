@@ -40,7 +40,7 @@ jobs:
         run: composer test
 
   # Coverage, on one PHP version: printed in the log, and kept as the job's artifact (Clover
-  # XML). Fails below a minimum share of lines (composer coverage), raised as tests are added
+  # XML). Fails below a fixed minimum share of lines (composer coverage), 99%
   coverage:
     name: Coverage
     runs-on: ubuntu-latest
@@ -104,7 +104,7 @@ jobs:
   # Mutation testing (Infection, infection.json5), on one PHP version, when the change touches
   # code (see changes): the Mutation Score Indicator (MSI) and the covered MSI in the job's
   # summary, and the escaped mutants kept as the job's artifact. Fails below a minimum MSI
-  # (infection.json5), which stays at 92%
+  # and covered MSI (infection.json5), fixed at 95%
   mutation:
     name: Mutation testing
     needs: changes
