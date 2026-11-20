@@ -150,6 +150,17 @@ final class PaginatedControllerTest extends TestCase
             ->assertScreenContains('Page 2/2');
     }
 
+    public function testListOpensAtThePageGiven(): void
+    {
+        $this->routes->addRoute('menu', new CallbackController(NoParameters::class, static fn(
+            Request $request,
+        ) => $request->functionKey() === FunctionKey::Send
+            ? new ChangePage('list', new PageParameters(1))
+            : new DisplayPage(new Vdt('MENU'))));
+
+        $this->tester(['a', 'b', 'c', 'd', 'e'])->assertLineContains(2, text: 'c')->assertScreenContains('Page 2/3');
+    }
+
     public function testPageKeptBeyondTheLastOneShowsTheLastOne(): void
     {
         // At the third page of five items, when the list gets shorter: three items

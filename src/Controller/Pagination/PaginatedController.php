@@ -38,11 +38,6 @@ final class PaginatedController extends AbstractController
         return ParametersType::of(PageParameters::class);
     }
 
-    protected function onInit(Request $request): Response
-    {
-        return $this->shown($request, index: 0)->display();
-    }
-
     protected function onDisplay(Request $request): Response
     {
         return $this->shown($request)->display();
@@ -66,21 +61,17 @@ final class PaginatedController extends AbstractController
     }
 
     /**
-     * Page the request is on, or at index
+     * Page the request is on
      *
      * @param Request<ControllerState, PageParameters> $request
      */
-    private function shown(Request $request, ?int $index = null): ShownPage
+    private function shown(Request $request): ShownPage
     {
         return new ShownPage(
             $this->page,
             $this->list,
             $request,
-            new Paginator(
-                $this->list->itemCount(),
-                $this->list->itemsPerPage(),
-                $index ?? $request->parameters()->page,
-            ),
+            new Paginator($this->list->itemCount(), $this->list->itemsPerPage(), $request->parameters()->page),
         );
     }
 }
