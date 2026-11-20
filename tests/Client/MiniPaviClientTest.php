@@ -104,6 +104,17 @@ final class MiniPaviClientTest extends TestCase
         self::assertSame([], $client->decoded()->content);
     }
 
+    public function testARequestItCouldntReadIsEmpty(): void
+    {
+        $request = (new MiniPaviClient())
+            ->unreadable(self::SERVICE_URL)
+            ->request();
+
+        self::assertNull($request->key);
+        self::assertSame([], $request->content);
+        self::assertSame('', $request->context);
+    }
+
     public function testRespondsToARequestItCouldntReadAtThisService(): void
     {
         $response = $this->sent(
