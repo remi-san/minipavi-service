@@ -32,7 +32,7 @@ final readonly class Player
 
     /**
      * Plays the content, telling the listener each character drawn (repetitions included),
-     * delimiter or CAN, and the other tokens once the cursor has followed them
+     * delimiter, CAN, FF and the bytes sent as they are
      */
     public function play(Vdt $vdt, ScreenListener $listener): void
     {
@@ -68,11 +68,16 @@ final readonly class Player
                     $this->clearLine($cursor, $listener);
                     continue 2;
                 case TokenType::Home:
-                case TokenType::Clear:
                     $cursor->reset(1, col: 1);
                     break;
+                case TokenType::Clear:
+                    $cursor->reset(1, col: 1);
+                    $listener->clear();
+                    break;
+                case TokenType::Raw:
+                    $listener->raw($token->bytes);
+                    break;
             }
-            $listener->sequence($token);
         }
     }
 

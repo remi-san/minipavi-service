@@ -33,7 +33,14 @@ interface ScreenListener
     public function clearLine(int $row, int $col, Attributes $attributes, ?Zone $delimiter): void;
 
     /**
-     * Any other sequence (a move, an attribute, a clear...), once the cursor has followed it
+     * FF: the screen cleared but row 0, the status line, which stays; the cursor home
      */
-    public function sequence(Token $sequence): void;
+    public function clear(): void;
+
+    /**
+     * Bytes sent as they are, which don't change what the screen shows here (protocol,
+     * cursor on or off, bell, SEP or SS3 and their byte, an escape sequence other than an
+     * attribute...)
+     */
+    public function raw(string $bytes): void;
 }

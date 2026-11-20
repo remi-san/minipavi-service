@@ -7,8 +7,6 @@ namespace MiniPaviService\Vdt\Screen;
 use MiniPaviService\Minitel\ScreenSize;
 use MiniPaviService\Vdt\Player;
 use MiniPaviService\Vdt\ScreenListener;
-use MiniPaviService\Vdt\Token;
-use MiniPaviService\Vdt\TokenType;
 use MiniPaviService\Vdt\Vdt;
 
 /**
@@ -69,15 +67,18 @@ final class ScreenCells implements ScreenListener
         $this->zones->clearLine($row, $col, $attributes, $delimiter);
     }
 
-    public function sequence(Token $sequence): void
+    public function clear(): void
     {
-        if ($sequence->type === TokenType::Clear) {
-            // The status line stays
-            for ($row = 1; $row <= ScreenSize::ROWS; $row++) {
-                $this->cells[$row] = self::emptyRow();
-            }
-            $this->zones->clear();
+        // The status line stays
+        for ($row = 1; $row <= ScreenSize::ROWS; $row++) {
+            $this->cells[$row] = self::emptyRow();
         }
+        $this->zones->clear();
+    }
+
+    public function raw(string $bytes): void
+    {
+        // Changes nothing the screen shows
     }
 
     /**
