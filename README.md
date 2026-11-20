@@ -27,7 +27,7 @@ and `Testing\` (on `Core\`) sit on top. The one exception: `Minitel\Key` names
 | `Core\` | the runtime: `Service`, `Router` and its `Route`s, `Context` and its `RouteContext`s, `RequestFlow` |
 | `Controller\` | `AbstractController`, `Request`, `Response` and the response types, `Flow`, the states (`State`, `ControllerState`) |
 | `Controller\Parameters\` | what a controller keeps: `Parameters`, `NoParameters`, their `ParametersType` (what `Controller::parametersType()` returns), and the raw `Values` they are read from |
-| `Controller\Pagination\` | `PaginatedController`, the `PaginatedList` it shows and its `ShownPage`, `Paginator`, `PageParameters` |
+| `Controller\Pagination\` | `PaginatedController`, the `PaginatedList` it shows and its `ShownPage`, `Paginator`, `PageParameters`, `OpeningPage` |
 | `Page\` | static and template pages, their display elements, and the page XML parser |
 | `Message\` | the messages shown on screen: `Message`, `FrameworkMessage`, `Messages` and their XML parser |
 | `Minitel\` | the user's terminal: `Terminal`, its `FunctionKey`s, its settings (`Keyboard`, `LocalEcho`, `Scroll`), its `ScreenSize` and `Color`s, and the `InputField` where the user types |
@@ -365,8 +365,10 @@ KernelBuilder::for($router, $messages)
 - **`PaginatedController`** shows the items of a `PaginatedList` one page at a time: Suite
   and Retour change page, with "Première page" / "Dernière page" on line 0 at the ends
   (`FrameworkMessage::FirstPage`, `LastPage`: see [Messages](#messages)), Répétition redraws
-  the page, and the page index is kept in `PageParameters` (a `ChangePage` to it with
-  `PageParameters` opens it at that page, the first one without). The list gives the number
+  the page, and the page index is kept in `PageParameters`. A `ChangePage` to it with
+  `PageParameters` opens it at that page (`OpeningPage::Given`, the default), or at the first
+  one with `new PaginatedController($page, $list, OpeningPage::First)`; without parameters, as
+  when the user comes back to a list left before, at the first page. The list gives the number
   of items and of items per page, the data of a page from its `Paginator`, and handles the
   other keys on the `ShownPage`, with `$page->display()`, `$page->stay($vdt)` (reads the next
   input on the page, after `$vdt`), `$page->next()` / `previous()` (the next or previous page,
