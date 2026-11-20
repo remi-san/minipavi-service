@@ -12,7 +12,7 @@ use MiniPaviService\Controller\Parameters\ParametersType;
 use MiniPaviService\Controller\Request;
 use MiniPaviService\Controller\Response;
 use MiniPaviService\Controller\Response\DisplayPage;
-use MiniPaviService\Tests\Support\RecordingFlow;
+use MiniPaviService\Tests\Support\RespondingFlow;
 use MiniPaviService\Vdt\Vdt;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
@@ -131,6 +131,6 @@ final class AbstractControllerTest extends TestCase
      */
     private static function vdt(Response $response): string
     {
-        return $response->continueWith(new RecordingFlow())->vdt->toString();
+        return $response->continueWith(new RespondingFlow())->vdt->toString();
     }
 }

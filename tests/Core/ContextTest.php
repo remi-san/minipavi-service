@@ -11,7 +11,7 @@ use MiniPaviService\Controller\Parameters\Values;
 use MiniPaviService\Controller\Request;
 use MiniPaviService\Controller\Response\DisplayPage;
 use MiniPaviService\Core\Context;
-use MiniPaviService\Core\KeptRoute;
+use MiniPaviService\Core\ContextSerializer;
 use MiniPaviService\Core\Router;
 use MiniPaviService\Core\RouterBuilder;
 use MiniPaviService\Core\UnknownRouteException;
@@ -19,7 +19,7 @@ use MiniPaviService\Minitel\FunctionKey;
 use MiniPaviService\Minitel\Terminal;
 use MiniPaviService\Tests\Support\CallbackController;
 use MiniPaviService\Tests\Support\FromParameters;
-use MiniPaviService\Tests\Support\RecordingFlow;
+use MiniPaviService\Tests\Support\RespondingFlow;
 use MiniPaviService\Tests\Support\SearchController;
 use MiniPaviService\Tests\Support\SearchState;
 use MiniPaviService\Vdt\Vdt;
@@ -90,35 +90,37 @@ final class ContextTest extends TestCase
             'home read-input 2 ENVOI abc 192.0.2.1',
             $context
                 ->run(FunctionKey::Send, ['abc'], new Terminal('192.0.2.1'))
-                ->continueWith(new RecordingFlow())
+                ->continueWith(new RespondingFlow())
                 ->vdt->toString(),
         );
     }
 
-    public function testKeepsStateAndParametersPerRoute(): void
+    public function testWhatTheCurrentRouteKeepsComesBackWithTheNextRequest(): void
     {
         $context = new Context($this->router, 'home', [
             'search' => $this->router->route('search')->restore('read-query', new Values(['page' => 5])),
         ]);
         $context->keep(ControllerState::ReadInput, new PageParameters(2));
 
-        self::assertEquals(
-            [
-                'search' => new KeptRoute(SearchState::ReadQuery, new PageParameters(5)),
-                'home' => new KeptRoute(ControllerState::ReadInput, new PageParameters(2)),
-            ],
-            $context->kept(),
-        );
+        // Another route's, restored, comes back too: ContextSerializerTest
+        $next = $this->nextRequestOf($context);
+        self::assertSame('home', $next->route());
+        self::assertSame(ControllerState::ReadInput, $next->state());
+        self::assertEquals(new PageParameters(2), $next->parameters());
     }
 
-    public function testTheCurrentRouteIsKeptOnceUsed(): void
+    public function testRouteThatKeptNothingComesBackAtItsInitialStateReadOrNot(): void
     {
-        $context = new Context($this->router, 'search');
+        $unread = new Context($this->router, 'search');
+        $read = new Context($this->router, 'search');
+        self::assertSame(SearchState::Init, $read->state());
+        self::assertEquals(new PageParameters(), $read->parameters());
 
-        self::assertSame([], $context->kept());
-        self::assertSame(SearchState::Init, $context->state());
-        // The same one as state() read, at its initial state
-        self::assertEquals(['search' => new KeptRoute(SearchState::Init, new PageParameters())], $context->kept());
+        foreach ([$unread, $read] as $context) {
+            $next = $this->nextRequestOf($context);
+            self::assertSame(SearchState::Init, $next->state());
+            self::assertEquals(new PageParameters(), $next->parameters());
+        }
     }
 
     public function testLeavingForARouteStartsBothControllersAgain(): void
@@ -134,8 +136,11 @@ final class ContextTest extends TestCase
         // Whatever it kept before
         self::assertSame(SearchState::Init, $context->state());
         self::assertEquals(new PageParameters(2), $context->parameters());
-        // The controller left keeps nothing
-        self::assertArrayNotHasKey('home', $context->kept());
+        // The controller left keeps nothing: the next request gets the context of a user who
+        // was only ever at the route
+        $only = new Context($this->router, 'search');
+        $only->keep(null, new PageParameters(2));
+        self::assertSame($this->serializer()->serialize($only), $this->serializer()->serialize($context));
     }
 
     /**
@@ -201,7 +206,11 @@ final class ContextTest extends TestCase
         }
 
         self::assertTrue($refused);
-        self::assertSame([], $context->kept());
+        // The next request gets the context of a user who did nothing
+        self::assertSame(
+            $this->serializer()->serialize(new Context($this->router, 'search')),
+            $this->serializer()->serialize($context),
+        );
     }
 
     public function testKeepingParametersOfAnotherClassThanTheControllersIsAnError(): void
@@ -218,5 +227,19 @@ final class ContextTest extends TestCase
         );
 
         $context->keep(null, new FromParameters('home'));
+    }
+
+    /**
+     * The context the next request gets back: sent to the gateway with the response, and given
+     * back with the request
+     */
+    private function nextRequestOf(Context $context): Context
+    {
+        return $this->serializer()->unserialize($this->serializer()->serialize($context));
+    }
+
+    private function serializer(): ContextSerializer
+    {
+        return new ContextSerializer($this->router);
     }
 }

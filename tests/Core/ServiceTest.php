@@ -346,6 +346,21 @@ final class ServiceTest extends TestCase
         self::assertEquals(new PageParameters(2), $next->parameters());
     }
 
+    public function testDisplayReadsTheNextKeyWithTheDefaultParameters(): void
+    {
+        $next = $this->nextRequest($this->responseTo(new DisplayPage(new Vdt('Hello'))));
+
+        self::assertSame(ControllerState::ReadInput, $next->state());
+        self::assertEquals(new PageParameters(), $next->parameters());
+    }
+
+    public function testDisplayCanKeepTheInitialState(): void
+    {
+        $next = $this->nextRequest($this->responseTo(new DisplayPage(new Vdt('Hello'), state: null)));
+
+        self::assertSame(ControllerState::Init, $next->state());
+    }
+
     public function testReadInputRespondsWithTheCommand(): void
     {
         $command = new InputCommand(new InputField(new Span(new Position(2, 1), 4), validWith: [FunctionKey::Send]));
@@ -360,6 +375,44 @@ final class ServiceTest extends TestCase
         self::assertEquals(new PageParameters(), $next->parameters());
     }
 
+    public function testReadInputKeepsItsParameters(): void
+    {
+        $next = $this->nextRequest($this->responseTo(RunCommand::readInput(
+            new Vdt('Code ?'),
+            command: null,
+            parameters: new PageParameters(2),
+        )));
+
+        self::assertSame(ControllerState::ReadInput, $next->state());
+        self::assertEquals(new PageParameters(2), $next->parameters());
+    }
+
+    /**
+     * @return iterable<string, array{Response<ControllerState>}>
+     */
+    public static function inputsRead(): iterable
+    {
+        $command = new InputCommand(new InputField(new Span(new Position(2, 1), 4), validWith: [FunctionKey::Send]));
+
+        yield 'readInput()' => [RunCommand::readInput(new Vdt('Code ?'), $command)];
+        // Given its state, as it is built directly
+        yield 'a command built directly' => [new RunCommand(new Vdt('Code ?'), $command, ControllerState::ReadInput)];
+    }
+
+    /**
+     * @param Response<ControllerState> $response
+     */
+    #[DataProvider('inputsRead')]
+    public function testWhatIsTypedReachesTheControllerReadingIt(Response $response): void
+    {
+        $this->press($this->responseTo($response), key: FunctionKey::Send, content: ['3615']);
+
+        // Not dropped: the controller reads it, rather than starting again (onInit())
+        $next = $this->lastRequest('respond');
+        self::assertSame(ControllerState::ReadInput, $next->state());
+        self::assertSame([FunctionKey::Send, ['3615']], [$next->key(), $next->content()]);
+    }
+
     public function testReadInputWithoutCommandOnlySendsTheContent(): void
     {
         // Page::inputCommand() gives null for a page without <input>
@@ -369,12 +422,34 @@ final class ServiceTest extends TestCase
         self::assertEquals(new WaitForKeyCommand(), $response->command);
     }
 
-    public function testConnectToSendsTheUserToTheOtherServiceAndKeepsWhatItIsGiven(): void
+    /**
+     * @return iterable<string, array{?ControllerState, ?PageParameters, ControllerState, PageParameters}>
+     */
+    public static function keptForTheReturn(): iterable
     {
+        // Given, then as the next request gets them
+        yield 'nothing' => [null, null, ControllerState::Init, new PageParameters()];
+        yield 'parameters' => [null, new PageParameters(4), ControllerState::Init, new PageParameters(4)];
+        yield 'a state and parameters' => [
+            ControllerState::Display,
+            new PageParameters(4),
+            ControllerState::Display,
+            new PageParameters(4),
+        ];
+    }
+
+    #[DataProvider('keptForTheReturn')]
+    public function testConnectToSendsTheUserToTheOtherServiceAndKeepsWhatItIsGiven(
+        ?ControllerState $state,
+        ?PageParameters $parameters,
+        ControllerState $nextState,
+        PageParameters $nextParameters,
+    ): void {
         $response = $this->responseTo(RunCommand::connectTo(
             'https://example.org/service',
             new Vdt('Cnx en cours'),
-            parameters: new PageParameters(4),
+            $state,
+            $parameters,
         ));
 
         self::assertSame('Cnx en cours', $response->vdt->toString());
@@ -384,8 +459,22 @@ final class ServiceTest extends TestCase
         );
         // For when the user comes back
         $next = $this->nextRequest($response);
-        self::assertSame(ControllerState::Init, $next->state());
-        self::assertEquals(new PageParameters(4), $next->parameters());
+        self::assertSame($nextState, $next->state());
+        self::assertEquals($nextParameters, $next->parameters());
+    }
+
+    public function testRunCommandSendsAnyCommand(): void
+    {
+        // A direct call, as the continuation of the session: neither readInput() nor connectTo()
+        // gives one
+        $command = new ServiceCallCommand('https://example.org/', CallMode::Direct);
+
+        $response = $this->responseTo(new RunCommand(new Vdt(), $command, null));
+
+        // Without content: none sent
+        self::assertSame('', $response->vdt->toString());
+        self::assertSame($command, $response->command);
+        self::assertSame(ControllerState::Init, $this->nextRequest($response)->state());
     }
 
     public function testAResponseOfItsOwnNeedsNoChangeToTheService(): void
