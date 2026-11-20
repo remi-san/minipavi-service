@@ -145,7 +145,7 @@ final class Cursor
      */
     public function advance(int $columns): void
     {
-        $this->right($columns, rows: $this->attributes->height());
+        $this->forward($columns, rows: $this->attributes->height());
     }
 
     /**
@@ -157,33 +157,73 @@ final class Cursor
     {
         switch ($byte) {
             case Videotex::CURSOR_LEFT:
-                $this->col--;
-                if ($this->col < 1) {
-                    $this->col = ScreenSize::COLS;
-                    $this->row = $this->row <= 1 ? ScreenSize::ROWS : $this->row - 1;
-                }
+                $this->left();
                 break;
             case Videotex::CURSOR_RIGHT:
-                // 1 row down from the last column, even in double height
-                $this->right(1, rows: 1);
+                $this->right();
                 break;
             case Videotex::CURSOR_DOWN:
-                $this->row = $this->row >= ScreenSize::ROWS ? 1 : $this->row + 1;
+                $this->down();
                 break;
             case Videotex::CURSOR_UP:
-                $this->row = $this->row <= 1 ? ScreenSize::ROWS : $this->row - 1;
+                $this->up();
                 break;
             case Videotex::CARRIAGE_RETURN:
-                $this->col = 1;
+                $this->carriageReturn();
                 break;
         }
+    }
+
+    /**
+     * Moves 1 column left (BS), to the last column of the row above from the first one, of
+     * the last row from row 1
+     */
+    public function left(): void
+    {
+        $this->col--;
+        if ($this->col < 1) {
+            $this->col = ScreenSize::COLS;
+            $this->row = $this->row <= 1 ? ScreenSize::ROWS : $this->row - 1;
+        }
+    }
+
+    /**
+     * Moves 1 column right (HT), 1 row down from the last column, even in double height
+     */
+    public function right(): void
+    {
+        $this->forward(1, rows: 1);
+    }
+
+    /**
+     * Moves 1 row down (LF), to row 1 from the last row
+     */
+    public function down(): void
+    {
+        $this->row = $this->row >= ScreenSize::ROWS ? 1 : $this->row + 1;
+    }
+
+    /**
+     * Moves 1 row up (VT), to the last row from row 1
+     */
+    public function up(): void
+    {
+        $this->row = $this->row <= 1 ? ScreenSize::ROWS : $this->row - 1;
+    }
+
+    /**
+     * Moves to the first column of the row (CR)
+     */
+    public function carriageReturn(): void
+    {
+        $this->col = 1;
     }
 
     /**
      * Moves right by columns, wrapping past the last column rows down, cycling through rows 1
      * to ScreenSize::ROWS (row 0 stays on its last column)
      */
-    private function right(int $columns, int $rows): void
+    private function forward(int $columns, int $rows): void
     {
         $this->col += $columns;
         if ($this->col <= ScreenSize::COLS) {
