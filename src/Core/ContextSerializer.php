@@ -114,7 +114,7 @@ final readonly class ContextSerializer
     private static function decode(string $serialized): array
     {
         try {
-            $context = json_decode($serialized, associative: true, depth: 512, flags: JSON_THROW_ON_ERROR);
+            $context = json_decode($serialized, associative: true, flags: JSON_THROW_ON_ERROR);
         } catch (\JsonException $e) {
             throw new \RuntimeException('Cannot unserialize context: ' . $e->getMessage(), previous: $e);
         }
