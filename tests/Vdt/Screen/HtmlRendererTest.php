@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Tests\Vdt\Screen;
 
+use MiniPaviService\Minitel\Color;
 use MiniPaviService\Minitel\Position;
 use MiniPaviService\Minitel\ScreenSize;
 use MiniPaviService\Minitel\Terminal;
@@ -131,7 +132,7 @@ final class HtmlRendererTest extends TestCase
 
     public function testKeyBadgesArentUnderlined(): void
     {
-        $html = $this->render((new Key('Envoi', new Position(1, 1)))->toVdt(new Terminal()));
+        $html = $this->render((new Key('Envoi', new Position(1, 1), Color::Green, bg: null))->toVdt(new Terminal()));
 
         self::assertStringContainsString('>E</span>', $html);
         self::assertStringNotContainsString(' u"', $html);

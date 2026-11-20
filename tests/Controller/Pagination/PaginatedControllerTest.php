@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Tests\Controller\Pagination;
 
+use MiniPaviService\Controller\Pagination\OpeningPage;
 use MiniPaviService\Controller\Pagination\PageParameters;
 use MiniPaviService\Controller\Pagination\PaginatedController;
 use MiniPaviService\Controller\Parameters\NoParameters;
@@ -23,6 +24,7 @@ use MiniPaviService\Tests\Support\CallbackController;
 use MiniPaviService\Tests\Support\ListItems;
 use MiniPaviService\Vdt\Screen\Screen;
 use MiniPaviService\Vdt\Vdt;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class PaginatedControllerTest extends TestCase
@@ -138,6 +140,61 @@ final class PaginatedControllerTest extends TestCase
             ->assertRoute('menu');
     }
 
+    public function testListStaysOnThePageWithItsMessage(): void
+    {
+        $this
+            ->tester(['a', 'b', 'c'])
+            ->press(FunctionKey::Next)
+            ->press(FunctionKey::Guide)
+            ->assertLine0('Aide pour Léa')
+            ->assertScreenContains('Page 2/2')
+            ->press(FunctionKey::Refresh)
+            ->assertScreenContains('Page 2/2');
+    }
+
+    public function testListOpensAtThePageGiven(): void
+    {
+        $this->menuOpensTheListAt(new PageParameters(1));
+
+        $this->tester(['a', 'b', 'c', 'd', 'e'])->assertLineContains(2, text: 'c')->assertScreenContains('Page 2/3');
+    }
+
+    public function testListCanAlwaysOpenAtTheFirstPage(): void
+    {
+        $this->menuOpensTheListAt(new PageParameters(1));
+
+        $this
+            ->tester(['a', 'b', 'c', 'd', 'e'], OpeningPage::First)
+            ->assertLineContains(2, text: 'a')
+            ->assertScreenContains('Page 1/3')
+            // Then it turns its pages as any list
+            ->press(FunctionKey::Next)
+            ->assertScreenContains('Page 2/3');
+    }
+
+    /**
+     * @return iterable<string, array{OpeningPage}>
+     */
+    public static function openingPages(): iterable
+    {
+        yield 'the page given' => [OpeningPage::Given];
+        yield 'the first page' => [OpeningPage::First];
+    }
+
+    #[DataProvider('openingPages')]
+    public function testListLeftOpensAgainAtTheFirstPage(OpeningPage $opening): void
+    {
+        $this
+            ->tester(['a', 'b', 'c', 'd', 'e'], $opening)
+            ->press(FunctionKey::Next)
+            ->assertScreenContains('Page 2/3')
+            ->press(FunctionKey::Summary)
+            ->assertRoute('menu')
+            ->press(FunctionKey::Send)
+            ->assertRoute('list')
+            ->assertScreenContains('Page 1/3');
+    }
+
     public function testPageKeptBeyondTheLastOneShowsTheLastOne(): void
     {
         // At the third page of five items, when the list gets shorter: three items
@@ -168,13 +225,14 @@ final class PaginatedControllerTest extends TestCase
     }
 
     /**
-     * Session at the first page of a list of items, reached from the menu
+     * Session at a list of items, reached from the menu: its controller is built with the
+     * opening page given, or without one (the controller's default)
      *
      * @param list<string> $items
      */
-    private function tester(array $items): ServiceTester
+    private function tester(array $items, OpeningPage ...$opening): ServiceTester
     {
-        $this->routes->addRoute('list', new PaginatedController($this->page(), new ListItems($items)));
+        $this->routes->addRoute('list', new PaginatedController($this->page(), new ListItems($items), ...$opening));
 
         $router = $this->routes->build();
 
@@ -188,8 +246,21 @@ final class PaginatedControllerTest extends TestCase
             ->press(FunctionKey::Send);
     }
 
+    // The menu's Envoi goes to the list with these parameters
+    private function menuOpensTheListAt(PageParameters $parameters): void
+    {
+        $this->routes->addRoute('menu', new CallbackController(NoParameters::class, static fn(
+            Request $request,
+        ) => $request->functionKey() === FunctionKey::Send
+            ? new ChangePage('list', $parameters)
+            : new DisplayPage(new Vdt('MENU'))));
+    }
+
+    // Its messages are the service's, with welcome
     private function page(): Page
     {
-        return (new PageXmlParser((new MessagesXmlParser())->defaults()))->parse(self::PAGE, __DIR__);
+        return (new PageXmlParser((new MessagesXmlParser())
+            ->defaults()
+            ->with(['welcome' => 'Aide pour {{name}}'])))->parse(self::PAGE, __DIR__);
     }
 }

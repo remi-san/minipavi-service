@@ -7,6 +7,7 @@ namespace MiniPaviService\Tests\Page\Parser;
 use MiniPaviService\Gateway\InputCommand;
 use MiniPaviService\Message\FrameworkMessage;
 use MiniPaviService\Message\MessagesXmlParser;
+use MiniPaviService\Minitel\Color;
 use MiniPaviService\Minitel\FunctionKey;
 use MiniPaviService\Minitel\InputField;
 use MiniPaviService\Minitel\Keyboard;
@@ -24,6 +25,7 @@ use MiniPaviService\Tests\Support\MemoryFiles;
 use MiniPaviService\Tests\Support\PrivateProperties;
 use MiniPaviService\Tests\Support\StarsElements;
 use MiniPaviService\Tests\Support\TestMessage;
+use MiniPaviService\Vdt\Screen\Cell;
 use MiniPaviService\Vdt\Screen\Screen;
 use MiniPaviService\Vdt\Vdt;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -220,6 +222,265 @@ final class PageXmlParserTest extends TestCase
         // ESP32 / Minimit adapters: a websocket with a known Minitel, "[Maj] +" on row 23
         $adapter = new Terminal('192.0.2.1', 'websocket', 'Cv5');
         self::assertSame(['23|        [Maj] +  Connexion/fin          |'], $this->drawnRows($page->display($adapter)));
+    }
+
+    /**
+     * @return iterable<string, array{string, list<string>}>
+     */
+    public static function elementsWithoutPosition(): iterable
+    {
+        yield 'text' => ['<text>Top</text>', [' 1|Top' . str_repeat(' ', times: 37) . '|']];
+        yield 'line' => ['<line length="3"/>', [' 1|```' . str_repeat(' ', times: 37) . '|']];
+        // An underlined space, " Envoi " in reverse video, and a space
+        yield 'key' => ['<key>Envoi</key>', [' 1|  Envoi' . str_repeat(' ', times: 33) . '|']];
+        yield 'image' => [
+            '<image>images/logo.vdt</image>',
+            [' 1|##' . str_repeat(' ', times: 38) . '|', ' 2|ok' . str_repeat(' ', times: 38) . '|'],
+        ];
+    }
+
+    /**
+     * @param list<string> $rows
+     */
+    #[DataProvider('elementsWithoutPosition')]
+    public function testElementWithoutRowOrColStartsAtTheTopLeft(string $element, array $rows): void
+    {
+        $page = $this->parse("<page type=\"static\">{$element}</page>");
+
+        self::assertSame($rows, $this->drawnRows($page->display(new Terminal())));
+    }
+
+    public function testElementsWithoutColorHaveTheirOwn(): void
+    {
+        $page = $this->parse(<<<'XML'
+            <page type="static">
+              <text row="1">Text</text>
+              <line row="2" length="3"/>
+              <key row="3">Envoi</key>
+              <endkey/>
+            </page>
+            XML);
+        $screen = Screen::of($page->display(new Terminal()));
+
+        self::assertSame(Color::White, self::cell($screen, row: 1, col: 1)->attributes->foreground());
+        self::assertSame(Color::White, self::cell($screen, row: 2, col: 1)->attributes->foreground());
+        self::assertSame(Color::Green, self::cell($screen, row: 3, col: 3)->attributes->foreground());
+        self::assertSame(Color::Green, self::cell($screen, row: 24, col: 16)->attributes->foreground());
+    }
+
+    public function testElementsAreInTheColorGiven(): void
+    {
+        $page = $this->parse(<<<'XML'
+            <page type="static">
+              <text row="1" color="red">Text</text>
+              <line row="2" length="3" color="red"/>
+              <key row="3" color="red">Envoi</key>
+              <endkey color="red"/>
+            </page>
+            XML);
+        $screen = Screen::of($page->display(new Terminal()));
+
+        self::assertSame(Color::Red, self::cell($screen, row: 1, col: 1)->attributes->foreground());
+        self::assertSame(Color::Red, self::cell($screen, row: 2, col: 1)->attributes->foreground());
+        self::assertSame(Color::Red, self::cell($screen, row: 3, col: 3)->attributes->foreground());
+        self::assertSame(Color::Red, self::cell($screen, row: 24, col: 16)->attributes->foreground());
+    }
+
+    /**
+     * @return iterable<string, array{string}>
+     */
+    public static function leftAlignedTexts(): iterable
+    {
+        yield 'by default' => [''];
+        yield 'align="left"' => ['align="left"'];
+        yield 'fill="no"' => ['fill="no"'];
+    }
+
+    #[DataProvider('leftAlignedTexts')]
+    public function testTextIsAtItsColumnAndDoesntFillTheRow(string $attributes): void
+    {
+        $page = $this->parse(
+            "<page type=\"static\"><text row=\"2\" col=\"5\" bg=\"blue\" {$attributes}>ab</text></page>",
+        );
+        $screen = Screen::of($page->display(new Terminal()));
+
+        self::assertSame(
+            [' 2|    ab' . str_repeat(' ', times: 34) . '|'],
+            $this->drawnRows($page->display(new Terminal())),
+        );
+        self::assertNull($screen->cell(row: 2, col: 40));
+    }
+
+    public function testFilledTextPaintsTheRestOfTheRow(): void
+    {
+        $page = $this->parse('<page type="static"><text row="2" col="5" bg="blue" fill="yes">ab</text></page>');
+        $screen = Screen::of($page->display(new Terminal()));
+
+        self::assertSame(
+            [' 2|    ab' . str_repeat(' ', times: 34) . '|'],
+            $this->drawnRows($page->display(new Terminal())),
+        );
+        self::assertSame(Color::Blue, self::cell($screen, row: 2, col: 7)->attributes->background());
+        self::assertSame(Color::Blue, self::cell($screen, row: 2, col: 40)->attributes->background());
+        self::assertNull($screen->cell(row: 2, col: 4));
+    }
+
+    /**
+     * @return iterable<string, array{string, string}>
+     */
+    public static function centeredTexts(): iterable
+    {
+        // A column per character, not per byte: 3 columns, 18 on the left, 19 on the right
+        yield 'accented' => [
+            '<text row="1" align="center">Été</text>',
+            ' 1|' . str_repeat(' ', times: 18) . 'Été' . str_repeat(' ', times: 19) . '|',
+        ];
+        // Two columns per character: 8 columns, 16 on each side
+        yield 'double width' => [
+            '<text row="1" align="center" size="double-width">Jeux</text>',
+            ' 1|' . str_repeat(' ', times: 16) . 'JJeeuuxx' . str_repeat(' ', times: 16) . '|',
+        ];
+        yield 'as wide as the screen' => [
+            '<text row="1" align="center" size="double-width">ABCDEFGHIJKLMNOPQRST</text>',
+            ' 1|AABBCCDDEEFFGGHHIIJJKKLLMMNNOOPPQQRRSSTT|',
+        ];
+        // From the first column, the rest going on the next row
+        yield 'wider than the screen' => [
+            '<text row="1" align="center" size="double-width">ABCDEFGHIJKLMNOPQRSTUV</text>',
+            ' 1|AABBCCDDEEFFGGHHIIJJKKLLMMNNOOPPQQRRSSTT|',
+        ];
+        // The spaces before it paint the row from its first column
+        yield 'filled' => [
+            '<text row="1" align="center" bg="blue" fill="yes">Jeux</text>',
+            ' 1|' . str_repeat(' ', times: 18) . 'Jeux' . str_repeat(' ', times: 18) . '|',
+        ];
+        yield 'filled, as wide as the screen' => [
+            '<text row="1" align="center" size="double-width" bg="blue" fill="yes">ABCDEFGHIJKLMNOPQRST</text>',
+            ' 1|AABBCCDDEEFFGGHHIIJJKKLLMMNNOOPPQQRRSSTT|',
+        ];
+        yield 'filled, double width' => [
+            '<text row="1" align="center" size="double-width" bg="blue" fill="yes">Jeux</text>',
+            ' 1|' . str_repeat(' ', times: 16) . 'JJeeuuxx' . str_repeat(' ', times: 16) . '|',
+        ];
+    }
+
+    #[DataProvider('centeredTexts')]
+    public function testCenteredTextHasAsManyColumnsOnEachSide(string $text, string $row): void
+    {
+        $page = $this->parse("<page type=\"static\">{$text}</page>");
+
+        self::assertSame($row, $this->drawnRows($page->display(new Terminal()))[0]);
+    }
+
+    public function testFilledCenteredTextPaintsTheWholeRow(): void
+    {
+        $page = $this->parse(
+            '<page type="static"><text row="1" align="center" bg="blue" fill="yes">Jeux</text></page>',
+        );
+        $screen = Screen::of($page->display(new Terminal()));
+
+        self::assertSame(Color::Blue, self::cell($screen, row: 1, col: 1)->attributes->background());
+        self::assertSame(Color::Blue, self::cell($screen, row: 1, col: 40)->attributes->background());
+    }
+
+    public function testEndKeyIsCenteredByCharacters(): void
+    {
+        $page = $this->parse(<<<'XML'
+            <page type="static">
+              <message name="endkey">Élève</message>
+              <message name="endkey.shift">[Maj] é</message>
+              <endkey/>
+            </page>
+            XML);
+
+        // The badge " Élève " and a cell on each side: 9 columns, from column 16
+        self::assertSame(
+            ['24|' . str_repeat(' ', times: 17) . 'Élève' . str_repeat(' ', times: 18) . '|'],
+            $this->drawnRows($page->display(new Terminal())),
+        );
+        // "[Maj] é" before it: 16 columns, from column 13
+        self::assertSame(
+            ['23|' . str_repeat(' ', times: 12) . '[Maj] é  Élève' . str_repeat(' ', times: 14) . '|'],
+            $this->drawnRows($page->display(new Terminal('192.0.2.1', 'websocket', 'Cv5'))),
+        );
+    }
+
+    public function testEndKeyIsOnTheRowGiven(): void
+    {
+        $page = $this->parse('<page type="static"><endkey row="20"/></page>');
+
+        self::assertSame(
+            ['20|             Connexion/fin              |'],
+            $this->drawnRows($page->display(new Terminal())),
+        );
+        self::assertSame(
+            ['20|        [Maj] +  Connexion/fin          |'],
+            $this->drawnRows($page->display(new Terminal('192.0.2.1', 'websocket', 'Cv5'))),
+        );
+    }
+
+    public function testKeyEndsItsReverseVideoAndUnderline(): void
+    {
+        $screen = Screen::of($this->parse('<page type="static"><key row="1">A</key></page>')->display(new Terminal()));
+
+        // " A " in reverse video, underlined, then a space in neither
+        self::assertTrue(self::cell($screen, row: 1, col: 4)->attributes->isInverse());
+        self::assertTrue(self::cell($screen, row: 1, col: 4)->attributes->isUnderlined());
+        self::assertFalse(self::cell($screen, row: 1, col: 5)->attributes->isInverse());
+        self::assertFalse(self::cell($screen, row: 1, col: 5)->attributes->isUnderlined());
+    }
+
+    public function testKeyCanBeDrawnForEachItem(): void
+    {
+        $page = $this->parse(<<<'XML'
+            <page type="template">
+              <foreach items="keys" as="key" row="3"><key col="2">{{key}}</key></foreach>
+            </page>
+            XML);
+
+        self::assertSame(
+            [' 3|   Envoi' . str_repeat(' ', times: 32) . '|', ' 4|   Suite' . str_repeat(' ', times: 32) . '|'],
+            $this->drawnRows($page->display(new Terminal(), ['keys' => ['Envoi', 'Suite']])),
+        );
+    }
+
+    public function testForeachStartsAtTheFirstRowOrItsItemsAndGoesDownARowPerItem(): void
+    {
+        $page = $this->parse(<<<'XML'
+            <page type="template">
+              <foreach items="rows" as="row" step="2">
+                <text>{{row.name}}</text>
+                <foreach items="row.cells" as="cell"><text col="5">{{cell}}</text></foreach>
+              </foreach>
+            </page>
+            XML);
+
+        // Without row: row 1 of the page, the first row of the item inside a <foreach>
+        self::assertSame(
+            [
+                ' 1|A   a1                                  |',
+                ' 2|    a2                                  |',
+                ' 3|B   b1                                  |',
+            ],
+            $this->drawnRows($page->display(new Terminal(), [
+                'rows' => [['name' => 'A', 'cells' => ['a1', 'a2']], ['name' => 'B', 'cells' => ['b1']]],
+            ])),
+        );
+    }
+
+    public function testTemplateReadsEachImageOnce(): void
+    {
+        $files = new MemoryFiles([
+            '/pages/home.xml' => '<page type="template"><image row="{{row}}">images/logo.vdt</image></page>',
+            '/pages/images/logo.vdt' => 'ok',
+        ]);
+        $page = (new PageXmlParser((new MessagesXmlParser())->defaults(), files: $files))->parseFile('/pages/home.xml');
+
+        $page->display(new Terminal(), ['row' => 3]);
+        $vdt = $page->display(new Terminal(), ['row' => 5]);
+
+        self::assertSame([' 5|ok                                      |'], $this->drawnRows($vdt));
+        self::assertSame(['/pages/home.xml', '/pages/images/logo.vdt'], $files->read);
     }
 
     public function testForeachItemNameIsTrimmed(): void
@@ -595,6 +856,14 @@ final class PageXmlParserTest extends TestCase
             '<page type="template"><foreach items="a" as="loop"/></page>',
             'as="loop" must be a variable name, other than loop',
         ];
+        yield 'foreach as starting with a digit' => [
+            '<page type="template"><foreach items="a" as="1a"/></page>',
+            'as="1a" must be a variable name, other than loop',
+        ];
+        yield 'foreach as with a dash' => [
+            '<page type="template"><foreach items="a" as="a-b"/></page>',
+            'as="a-b" must be a variable name, other than loop',
+        ];
         yield 'if without test' => ['<page type="template"><if test="!"/></page>', '<if>: test is missing'];
         // Found while parsing, with the file and line, not when displayed
         yield 'if test with a space' => [
@@ -669,6 +938,11 @@ final class PageXmlParserTest extends TestCase
         $this->expectExceptionMessage("only files from the page's folder or its subfolders");
 
         $page->display(new Terminal(), ['file' => 'images/../../secret.vdt']);
+    }
+
+    private static function cell(Screen $screen, int $row, int $col): Cell
+    {
+        return $screen->cell($row, $col) ?? self::fail("Nothing drawn at row {$row}, column {$col}");
     }
 
     private function parse(string $xml, string $name = 'page'): Page

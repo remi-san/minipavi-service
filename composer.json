@@ -35,7 +35,7 @@
         "test": "phpunit",
         "coverage": [
             "phpunit --coverage-text --coverage-clover coverage.xml",
-            "@php tools/coverage-minimum.php coverage.xml 97.9"
+            "@php tools/coverage-minimum.php coverage.xml 98.3"
         ],
         "analyse": [
             "mago lint",
@@ -51,7 +51,7 @@
     },
     "scripts-descriptions": {
         "test": "Runs the tests",
-        "coverage": "Runs the tests with coverage (needs pcov or Xdebug): as text, and in coverage.xml; fails below 97.9% of lines",
+        "coverage": "Runs the tests with coverage (needs pcov or Xdebug): as text, and in coverage.xml; fails below 98.3% of lines",
         "analyse": "Runs the linter, the static analysis and the layers' dependencies check (Mago)",
         "mutation": "Runs the mutation testing (Infection, needs pcov or Xdebug), its logs in build/infection/",
         "cs": "Checks the formatting (Mago)",

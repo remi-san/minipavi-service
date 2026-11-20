@@ -24,7 +24,7 @@ final readonly class Image implements Element
 
     public function __construct(
         public Vdt $image,
-        public Position $position = new Position(1),
+        public Position $position,
     ) {
         if ($position->row < 1) {
             throw new InvalidValueException('An image starts at row 1 at least');

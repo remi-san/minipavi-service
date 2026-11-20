@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Tests\Page\Parser;
 
+use MiniPaviService\InvalidValueException;
 use MiniPaviService\Page\Parser\AttributeValues;
 use MiniPaviService\Page\Parser\PageXmlException;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -36,5 +37,29 @@ final class AttributeValuesTest extends TestCase
         $this->expectExceptionMessage('items is missing');
 
         (new AttributeValues($values))->required('items');
+    }
+
+    public function testAPositionIsAtRowAndCol(): void
+    {
+        $position = (new AttributeValues(['row' => '3', 'col' => '7']))->position();
+
+        self::assertSame([3, 7], [$position->row, $position->col]);
+    }
+
+    public function testAPositionWithoutRowOrColIsAtItsDefaultRowAndTheFirstColumn(): void
+    {
+        $top = (new AttributeValues([]))->position();
+        $input = (new AttributeValues(['col' => '5']))->position(defaultRow: 13);
+
+        self::assertSame([1, 1], [$top->row, $top->col]);
+        self::assertSame([13, 5], [$input->row, $input->col]);
+    }
+
+    public function testAPositionOffTheScreenIsAnError(): void
+    {
+        $this->expectException(InvalidValueException::class);
+        $this->expectExceptionMessage('Column 41 is off the screen (1 to 40)');
+
+        (new AttributeValues(['col' => '41']))->position();
     }
 }

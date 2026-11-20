@@ -6,7 +6,6 @@ namespace MiniPaviService\Page\Display;
 
 use MiniPaviService\Minitel\Color;
 use MiniPaviService\Minitel\Position;
-use MiniPaviService\Minitel\ScreenSize;
 use MiniPaviService\Minitel\Terminal;
 use MiniPaviService\Vdt\Vdt;
 use MiniPaviService\Vdt\Videotex;
@@ -22,11 +21,11 @@ final readonly class Text implements Element
     public function __construct(
         public string $text,
         public Position $position,
-        public bool $centered = false,
-        public Color $color = Color::White,
-        public ?Color $bg = null,
-        public ?Size $size = null,
-        public bool $fill = false,
+        public bool $centered,
+        public Color $color,
+        public ?Color $bg,
+        public ?Size $size,
+        public bool $fill,
     ) {}
 
     public function toVdt(Terminal $terminal): Vdt
@@ -55,7 +54,7 @@ final readonly class Text implements Element
         if ($this->fill) {
             // Starts at column 1 and pads with spaces up to the text (the spaces having the
             // text's width): the background color only applies from a space onwards
-            $pad = max(0, intdiv($this->centeredCol($charWidth) - 1, $charWidth));
+            $pad = max(0, intdiv($this->centered($charWidth)->col - 1, $charWidth));
 
             return Vdt::join(
                 Vdt::position(new Position($this->position->row)),
@@ -65,22 +64,16 @@ final readonly class Text implements Element
             );
         }
 
-        return Vdt::join(
-            Vdt::position(new Position($this->position->row, $this->centeredCol($charWidth))),
-            $attr,
-            $text,
-        );
+        return Vdt::join(Vdt::position($this->centered($charWidth)), $attr, $text);
     }
 
     /**
-     * First column of the centered text, with as many columns on its left as on its right (one
-     * more on the right when they can't be equal). MiniPaviCli::writeCentered counts one column
-     * per character, and starts one column too far left when the width is even
+     * First cell of the centered text (Position::centered()), its characters charWidth columns
+     * wide. MiniPaviCli::writeCentered counts one column per character, and starts one column
+     * too far left when the width is even
      */
-    private function centeredCol(int $charWidth): int
+    private function centered(int $charWidth): Position
     {
-        $width = mb_strlen($this->text) * $charWidth;
-
-        return $width >= ScreenSize::COLS ? 1 : intdiv(ScreenSize::COLS - $width, num2: 2) + 1;
+        return Position::centered($this->position->row, mb_strlen($this->text) * $charWidth);
     }
 }

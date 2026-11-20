@@ -17,7 +17,7 @@ final class KeyTest extends TestCase
 {
     public function testKeyIsABadgeInReverseVideo(): void
     {
-        $screen = Screen::of((new Key('Envoi', new Position(20, 30), Color::Red))->toVdt(new Terminal()));
+        $screen = Screen::of((new Key('Envoi', new Position(20, 30), Color::Red, bg: null))->toVdt(new Terminal()));
 
         // An underlined space, then " Envoi " in reverse video, red
         self::assertSame('Envoi', implode('', array_map(
@@ -34,7 +34,11 @@ final class KeyTest extends TestCase
 
     public function testEndKeyIsOnTheLastRowForAMinitel(): void
     {
-        $vdt = (new EndKey('Connexion/fin', '[Maj] +'))->toVdt(new Terminal('CALLFROM 0102030405', 'other', '???'));
+        $vdt = (new EndKey('Connexion/fin', '[Maj] +', position: null, color: Color::Green))->toVdt(new Terminal(
+            'CALLFROM 0102030405',
+            'other',
+            '???',
+        ));
 
         self::assertStringNotContainsString('[Maj] +', $vdt->toString());
         self::assertSame('Connexion/fin', self::text($vdt, row: 24, col: 14, length: 13));
@@ -43,7 +47,11 @@ final class KeyTest extends TestCase
     public function testEndKeyTellsAdaptersToPressShift(): void
     {
         // ESP32 / Minimit adapters: a websocket with a known Minitel
-        $vdt = (new EndKey('Connexion/fin', '[Maj] +'))->toVdt(new Terminal('192.0.2.1', 'websocket', 'Cv5'));
+        $vdt = (new EndKey('Connexion/fin', '[Maj] +', position: null, color: Color::Green))->toVdt(new Terminal(
+            '192.0.2.1',
+            'websocket',
+            'Cv5',
+        ));
 
         self::assertSame('[Maj] +', self::text($vdt, row: 23, col: 9, length: 7));
         self::assertSame('Connexion/fin', self::text($vdt, row: 23, col: 18, length: 13));
@@ -51,8 +59,16 @@ final class KeyTest extends TestCase
 
     public function testEndKeyIsCenteredWhateverItsLabels(): void
     {
-        $minitel = (new EndKey('Fin', 'Shift'))->toVdt(new Terminal('CALLFROM 0102030405', 'other', '???'));
-        $adapter = (new EndKey('Fin', 'Shift'))->toVdt(new Terminal('192.0.2.1', 'websocket', 'Cv5'));
+        $minitel = (new EndKey('Fin', 'Shift', position: null, color: Color::Green))->toVdt(new Terminal(
+            'CALLFROM 0102030405',
+            'other',
+            '???',
+        ));
+        $adapter = (new EndKey('Fin', 'Shift', position: null, color: Color::Green))->toVdt(new Terminal(
+            '192.0.2.1',
+            'websocket',
+            'Cv5',
+        ));
 
         // The badge " Fin " has a cell on each side: 7 cells, from column 17
         self::assertSame('Fin', self::text($minitel, row: 24, col: 19, length: 3));
@@ -64,7 +80,7 @@ final class KeyTest extends TestCase
     public function testEndKeyOfAnEmulatorIsOnTheLastRow(): void
     {
         // An emulator is a websocket without a known Minitel
-        $vdt = (new EndKey('Connexion/fin', '[Maj] +', position: new Position(22)))->toVdt(new Terminal(
+        $vdt = (new EndKey('Connexion/fin', '[Maj] +', new Position(22), Color::Green))->toVdt(new Terminal(
             '192.0.2.1',
             'websocket',
             '???',

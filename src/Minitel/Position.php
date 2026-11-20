@@ -26,4 +26,16 @@ final readonly class Position
             throw new InvalidValueException("Column {$col} is off the screen (1 to " . ScreenSize::COLS . ')');
         }
     }
+
+    /**
+     * First cell of something width columns wide, centered on row: as many columns on its left
+     * as on its right, one more on the right when they can't be equal; column 1 when it is as
+     * wide as the screen or wider
+     *
+     * @throws InvalidValueException for a row off the screen
+     */
+    public static function centered(int $row, int $width): self
+    {
+        return new self($row, max(1, intdiv(ScreenSize::COLS - $width, num2: 2) + 1));
+    }
 }

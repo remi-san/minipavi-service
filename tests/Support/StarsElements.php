@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MiniPaviService\Tests\Support;
 
 use MiniPaviService\Message\Messages;
+use MiniPaviService\Minitel\Color;
 use MiniPaviService\Minitel\Position;
 use MiniPaviService\Page\Display\Background;
 use MiniPaviService\Page\Display\Element;
@@ -39,6 +40,11 @@ final readonly class StarsElements implements PageElements
                 static fn(AttributeValues $attributes) => new Text(
                     str_repeat('*', max(0, $attributes->int('count', default: 1))),
                     new Position($attributes->int('row', default: 1)),
+                    centered: false,
+                    color: Color::White,
+                    bg: null,
+                    size: null,
+                    fill: false,
                 ),
             ),
             'picture' => self::builder(

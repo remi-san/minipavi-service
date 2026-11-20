@@ -25,7 +25,7 @@ final readonly class Paginator
     public function __construct(
         private int $itemCount,
         private int $perPage,
-        int $index = 0,
+        int $index,
     ) {
         if ($itemCount < 0) {
             throw new \InvalidArgumentException("Item count must not be negative, {$itemCount} given");
@@ -90,7 +90,7 @@ final readonly class Paginator
      */
     public function itemCountOnPage(): int
     {
-        return max(0, min($this->perPage, $this->itemCount - $this->offset()));
+        return min($this->perPage, $this->itemCount - $this->offset());
     }
 
     /**
