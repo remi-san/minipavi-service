@@ -84,6 +84,20 @@ final class VdtOffsetCommandTest extends TestCase
         self::assertSame('cannot read ' . self::FIXTURES . "/missing.vdt\n", $this->tester->getErrorOutput());
     }
 
+    public function testFailsOnAnOutputFileItCannotWrite(): void
+    {
+        $output = sys_get_temp_dir() . '/minipavi-missing-' . bin2hex(random_bytes(4)) . '/moved.vdt';
+
+        self::assertSame(Command::FAILURE, $this->tester->execute([
+            'input' => self::FIXTURES . '/background.vdt',
+            'x' => '1',
+            'y' => '1',
+            'output' => $output,
+        ], ['capture_stderr_separately' => true]));
+        self::assertSame("cannot write {$output}\n", $this->tester->getErrorOutput());
+        self::assertSame('', $this->tester->getDisplay());
+    }
+
     public function testNeedsXAndY(): void
     {
         $this->expectException(RuntimeException::class);
