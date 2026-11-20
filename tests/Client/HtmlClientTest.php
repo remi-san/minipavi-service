@@ -213,6 +213,16 @@ final class HtmlClientTest extends TestCase
         );
     }
 
+    public function testPageIsAnHtmlResponse(): void
+    {
+        $response = self::client()
+            ->exchange(HttpRequests::to('Mozilla/5.0', ['web' => 'true']), self::SERVICE_URL)
+            ->respond(new GatewayResponse(new Vdt(), '{}'));
+
+        self::assertSame(200, $response->getStatusCode());
+        self::assertSame(['text/html; charset=utf-8'], $response->getHeader('Content-Type'));
+    }
+
     public function testPageIsSelfContainedWithTheMinitelFont(): void
     {
         $html = self::page(new GatewayResponse(new Vdt(), ''));
