@@ -898,9 +898,9 @@ composer coverage   # tests with coverage, as text and in coverage.xml (needs pc
 composer mutation   # mutation testing (Infection, needs pcov or Xdebug), logs in build/infection/
 ```
 
-`composer coverage` fails when the tests cover less than 99.6% of the lines of `src/`
-(`tools/coverage-minimum.php` reads it from `coverage.xml`). The minimum is raised as the
-missing tests are added, never lowered to let a change through.
+`composer coverage` fails when the tests cover less than 99% of the lines of `src/`
+(`tools/coverage-minimum.php` reads it from `coverage.xml`). The minimum is fixed: neither
+raised as tests are added nor lowered to let a change through.
 
 Coverage says which code the tests run, not whether they would notice it being wrong:
 `composer mutation` ([Infection](https://infection.github.io), `infection.json5`) changes
@@ -908,11 +908,11 @@ the code of `src/` in small ways (mutants), and runs the tests that cover each o
 the tests don't notice (escaped, listed in `build/infection/infection.log`) is a test missing,
 or code nothing needs. It gives the Mutation Score Indicator (MSI, the share of mutants
 noticed) and the covered MSI (among the mutants of covered code), and fails when either is
-below its minimum in `infection.json5` (92%). CI runs it on the pull requests and the pushes
-to `main` that change code: any file but the docs (`README.md`), the Claude files (`CLAUDE.md`,
-`.claude/`), and those neither Infection nor the tests read (`bin/`, `tools/`, `stubs/`,
-`mago.toml`, `.gitignore`). It runs the tests without `UPDATE_GOLDEN`, so it never writes the
-golden files.
+below its minimum in `infection.json5`, fixed at 95%. CI runs it on the pull requests and
+the pushes to `main` that change code: any file but the docs (`README.md`), the Claude files
+(`CLAUDE.md`, `.claude/`), and those neither Infection nor the tests read (`bin/`, `tools/`,
+`stubs/`, `mago.toml`, `.gitignore`). It runs the tests without `UPDATE_GOLDEN`, so it never
+writes the golden files.
 
 Tests are in `tests/`, with their files in `tests/fixtures/`. Pages are checked through the
 screen they draw (`Screen::preview()`). `Offset` is checked in two ways: against the
