@@ -31,7 +31,7 @@ whole diff (`git diff main...`), then the code around it.
    implementation, and aren't loosened (`assertSame` kept). Run Infection on the `src/` files
    the PR concerns, as CLAUDE.md says, never on the whole project (CI does, read its
    Mutation testing job: `gh pr checks <n>`, and its log), and report any escaped mutant on a
-   changed line. The minimum MSI stays at 92%; a PR raising it is a finding.
+   changed line. The minimums stay at 99% of lines and 95% of MSI; a PR changing either is a finding.
 4. **Design**, against the rules in `.claude/agents/developer.md` ("Design rules of this
    codebase"): no dispatch on type, typed APIs, no callables or container, constructor order,
    names by purpose, layers (`mago guard`), no Mago rule turned off, breaking changes marked.

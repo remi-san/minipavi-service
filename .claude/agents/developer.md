@@ -28,7 +28,7 @@ the answer.
 4. Run every check CLAUDE.md lists (syntax, `composer cs`, `composer analyse`, which includes
    `mago guard`, `composer test`, `composer coverage` when `src/` changes, and Infection on
    the `src/` files the PR concerns, as CLAUDE.md says; never `composer mutation` on the whole
-   project, which CI runs). Leave the minimum MSI at 92%. Once the PR is pushed, also read
+   project, which CI runs). Leave the minimums as they are (99% of lines, 95% of MSI). Once the PR is pushed, also read
    CI's Mutation testing job (`gh pr checks <n>`, and its log for the escaped mutants).
    Nothing changed in a behaviour's lines may escape mutation.
 5. Push and open the PR against `main` (`gh pr create`). Its body states what changed and

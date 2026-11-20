@@ -133,11 +133,11 @@ messages between them, and keeps the user informed. It does write the Claude fil
   or update tests for the changed behaviour. A fix starts with a test that fails without it.
   CI runs `cs`, `analyse` and `test` on PHP 8.2–8.5 (`.github/workflows/ci.yml`); the PR
   must be green.
-- **Coverage and mutants**: `composer coverage` fails below its minimum share of lines (in
-  `composer.json`): raise it when tests are added, never lower it. `composer mutation`
-  (Infection) fails below its minimum MSI (in `infection.json5`), which stays at 92%: don't
-  raise it. It lists the escaped mutants in `build/infection/infection.log`: a changed
-  behaviour's mutants should not escape. CI runs both on PHP 8.4, the mutation testing only
+- **Coverage and mutants**: `composer coverage` fails below 99% of lines (in `composer.json`),
+  and `composer mutation` (Infection) below 95% of MSI and covered MSI (in `infection.json5`).
+  Both minimums are fixed: a PR doesn't change them, neither raising them when tests are
+  added nor lowering them to let a change through. Infection lists the escaped mutants in
+  `build/infection/infection.log`: a changed behaviour's mutants should not escape. CI runs both on PHP 8.4, the mutation testing only
   when the change touches code (its `changes` job lists the paths in
   `.github/workflows/ci.yml`), so a PR changing only docs or Claude files has no Mutation
   testing result (the job's log lists the escaped mutants). Only CI runs Infection on the
