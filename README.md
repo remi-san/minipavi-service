@@ -365,11 +365,12 @@ KernelBuilder::for($router, $messages)
 - **`PaginatedController`** shows the items of a `PaginatedList` one page at a time: Suite
   and Retour change page, with "Première page" / "Dernière page" on line 0 at the ends
   (`FrameworkMessage::FirstPage`, `LastPage`: see [Messages](#messages)), Répétition redraws
-  the page, and the page index is kept in `PageParameters`. The list gives the number of items
-  and of items per page, the data of a page from its `Paginator`, and handles the other keys
-  on the `ShownPage`, with `$page->display()`, `$page->stay($vdt)` (reads the next input on the
-  page, after `$vdt`), `$page->next()` / `previous()` (the next or previous page, or the end
-  message) and `$page->message()` (a message of the page):
+  the page, and the page index is kept in `PageParameters` (a `ChangePage` to it with
+  `PageParameters` opens it at that page, the first one without). The list gives the number
+  of items and of items per page, the data of a page from its `Paginator`, and handles the
+  other keys on the `ShownPage`, with `$page->display()`, `$page->stay($vdt)` (reads the next
+  input on the page, after `$vdt`), `$page->next()` / `previous()` (the next or previous page,
+  or the end message) and `$page->message()` (a message of the page):
 
   ```php
   final readonly class DirectoryList implements PaginatedList
@@ -639,7 +640,11 @@ elements are drawn in order:
 - `validwith`: keys validating the input, separated by spaces (default `envoi`): envoi, sommaire,
   annulation, retour, repetition, guide, correction, suite (`FunctionKey::xmlName()`). A one-line field is a text input
   where every key validates; with several lines, Suite and Retour move between them.
-- Colors: black, red, green, yellow, blue, magenta, cyan, white. `col` defaults to 1.
+- Colors: black, red, green, yellow, blue, magenta, cyan, white.
+- Without them, `row` and `col` are 1 (`row` is 0 in a `<foreach>`: the item's first row);
+  `color` is white for `<text>` and `<line>`, green for `<key>` and `<endkey>`; a `<text>` is
+  left aligned and doesn't fill its row; `<line>` is `middle`, to the end of the row; and
+  `<endkey>` is on the last row (row 23 for ESP32/Minimit adapters).
 
 `<page>` can also set up the Minitel, sent by `Page::display()` before the content (a setting
 left out is left as it is):
@@ -662,7 +667,7 @@ instructions, filled in with the data given to `Page::display($terminal, $data)`
 | Syntax | Meaning |
 |---|---|
 | `{{name}}`, `{{service.code}}` | placeholder, in any text or attribute (not in `<input>`); dotted paths go through arrays and public object properties (or those an object gives through `__isset()` and `__get()`): any other is an unknown variable |
-| `<foreach items="services" as="service" row="5" step="2">…</foreach>` | repeats its content for each item, `step` rows apart. Inside, rows are relative to the item (0 = its first row), and `loop.index` (from 1), `loop.count`, `loop.first` and `loop.last` are available |
+| `<foreach items="services" as="service" row="5" step="2">…</foreach>` | repeats its content for each item, `step` rows apart (default 1), from `row` (default 1, 0 inside another `<foreach>`). Inside, rows are relative to the item (0 = its first row), and `loop.index` (from 1), `loop.count`, `loop.first` and `loop.last` are available |
 | `<if test="loop.last">…</if>` | content shown only if the variable is set and not empty |
 | `<if test="!loop.last">…</if>` | … or only if it is not |
 
@@ -671,8 +676,9 @@ instructions, filled in with the data given to `Page::display($terminal, $data)`
 A service adds its own display elements by giving `PageXmlParser` a `Page\Parser\PageElements`
 after its messages. For each page, `builders()` gets the files of the page's folder
 (`PageFiles`) and the page's messages, and returns an `ElementBuilder` per element: its tag,
-how it is built from its attributes and text (placeholders already replaced), whether its
-`row` is relative inside a `<foreach>`, and whether it can be in one.
+how it is built from its attributes (an `AttributeValues`, reading them typed: `int()`,
+`enum()`, `position()` for `row` and `col`...) and text (placeholders already replaced),
+whether its `row` is relative inside a `<foreach>`, and whether it can be in one.
 
 ```php
 final readonly class GameElements implements PageElements
