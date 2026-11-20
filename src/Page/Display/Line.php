@@ -23,8 +23,8 @@ final readonly class Line implements Element
 
     public function __construct(
         public Span $span,
-        public string $char = self::MIDDLE,
-        public Color $color = Color::White,
+        public string $char,
+        public Color $color,
     ) {
         if (strlen($char) !== 1) {
             throw new InvalidValueException("A line is made of a single character, got '{$char}'");

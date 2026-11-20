@@ -22,8 +22,8 @@ final readonly class Key implements Element
     public function __construct(
         public string $label,
         public Position $position,
-        public Color $color = Color::Green,
-        public ?Color $bg = null,
+        public Color $color,
+        public ?Color $bg,
     ) {}
 
     public function toVdt(Terminal $terminal): Vdt

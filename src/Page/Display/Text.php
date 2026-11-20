@@ -21,11 +21,11 @@ final readonly class Text implements Element
     public function __construct(
         public string $text,
         public Position $position,
-        public bool $centered = false,
-        public Color $color = Color::White,
-        public ?Color $bg = null,
-        public ?Size $size = null,
-        public bool $fill = false,
+        public bool $centered,
+        public Color $color,
+        public ?Color $bg,
+        public ?Size $size,
+        public bool $fill,
     ) {}
 
     public function toVdt(Terminal $terminal): Vdt

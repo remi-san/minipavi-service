@@ -26,8 +26,8 @@ final readonly class EndKey implements Element
     public function __construct(
         public string $label,
         public string $shiftLabel,
-        public ?Position $position = null,
-        public Color $color = Color::Green,
+        public ?Position $position,
+        public Color $color,
     ) {}
 
     public function toVdt(Terminal $terminal): Vdt
