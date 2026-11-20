@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Tests\Client;
 
+use DOMDocument;
+use DOMElement;
+use DOMXPath;
 use MiniPaviService\Client\HtmlClient;
 use MiniPaviService\Client\HtmlForm;
 use MiniPaviService\Controller\Parameters\NoParameters;
@@ -37,6 +40,11 @@ use MiniPaviService\Vdt\Vdt;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
+/**
+ * The HTML view as the browser gets it: each page is parsed, and what is checked is what the
+ * user sees and posts back (the screen's text, the fields and where they are, the keys), not
+ * how the markup is written
+ */
 final class HtmlClientTest extends TestCase
 {
     private const SERVICE_URL = 'http://services/Svc/index.php';
@@ -98,22 +106,24 @@ final class HtmlClientTest extends TestCase
         // and its input field
         $html = (string) $exchange->respond(new GatewayResponse(new Vdt(), '{}', self::leaving()))->getBody();
         self::assertStringContainsString('Menu', self::shownText($html));
-        self::assertStringContainsString(
-            'value="ab" style="'
-            . (new HtmlRenderer(HtmlRenderer::MINITEL_FONT))->place(new Position(row: 2), length: 4)
-            . '"',
-            $html,
-        );
-        // Placed over its cell by that style alone, since the field's class doesn't position it
-        self::assertMatchesRegularExpression(
-            '/value="ab" style="position: absolute; [^"]*height: var\(--h\); box-sizing: border-box; z-index: 2;"/',
-            $html,
+        // Placed over its cell by that style alone (what it places: HtmlRendererTest)
+        self::assertSame(
+            [['value' => 'ab', 'style' => self::place(new Position(row: 2), length: 4)]],
+            self::fields($html),
         );
         // Underlined without a border, which would take a pixel of the cell from its text
-        self::assertMatchesRegularExpression('/\.field \{[^}]*border: 0;/', $html);
-        self::assertDoesNotMatchRegularExpression('/\.field[^{]*\{[^}]*border-(bottom|color)/', $html);
+        self::assertSame('0', self::cssRule($html, selector: '.field')['border'] ?? null);
+        foreach (['.field', '.field:focus'] as $selector) {
+            self::assertSame(
+                [],
+                array_filter(
+                    array_keys(self::cssRule($html, $selector)),
+                    static fn(string $property) => str_starts_with($property, 'border-'),
+                ),
+            );
+        }
         // Its keys: Envoi and Suite only
-        self::assertSame(6, substr_count($html, needle: ' disabled>'));
+        self::assertSame(['SUITE', 'ENVOI'], self::enabledKeys($html));
         // The whole command, cursor and space character included, posted back as it came
         self::assertSame(self::hiddenValues($page)['command'], self::hiddenValues($html)['command']);
     }
@@ -138,7 +148,7 @@ final class HtmlClientTest extends TestCase
 
         // Shown again when leaving the service is blocked: no field
         $html = (string) $exchange->respond(new GatewayResponse(new Vdt(), '{}', self::leaving()))->getBody();
-        self::assertStringNotContainsString('class="field"', $html);
+        self::assertSame([], self::fields($html));
     }
 
     public function testARequestItCouldntReadGetsABlankPageOfThisService(): void
@@ -148,10 +158,10 @@ final class HtmlClientTest extends TestCase
             ->respond(new GatewayResponse(Vdt::line0('Erreur'), '{}'))
             ->getBody();
 
-        self::assertStringContainsString('<title>http://services/Other/index.php</title>', $html);
+        self::assertSame('http://services/Other/index.php', self::title($html));
         self::assertStringContainsString('Erreur', self::shownText($html));
         // No field: no page was posted
-        self::assertStringNotContainsString('class="field"', $html);
+        self::assertSame([], self::fields($html));
     }
 
     public function testConnectionIsRespondedToAtTheUrlItWasSentTo(): void
@@ -163,7 +173,7 @@ final class HtmlClientTest extends TestCase
             ->respond(new GatewayResponse(new Vdt(), '{}'))
             ->getBody();
 
-        self::assertStringContainsString('<title>http://services/Other/index.php</title>', $html);
+        self::assertSame('http://services/Other/index.php', self::title($html));
     }
 
     public function testUnknownKeyIsAConnection(): void
@@ -182,24 +192,23 @@ final class HtmlClientTest extends TestCase
         $vdt = Vdt::clearScreen()->append(Vdt::position(new Position(row: 1)), Vdt::text('Bonjour <3'));
         $html = self::page(new GatewayResponse($vdt, '{"route":"home"}'));
 
+        // A standards mode page, posting its form back to the service
         self::assertStringStartsWith('<!doctype html>', $html);
-        self::assertStringContainsString('<form method="post" class="page">', $html);
-        self::assertStringContainsString('<title>' . self::SERVICE_URL . '</title>', $html);
+        self::assertSame(['post'], self::values($html, query: '//form/@method'));
+        self::assertSame(self::SERVICE_URL, self::title($html));
         self::assertStringContainsString('Bonjour <3', self::shownText($html));
-        self::assertStringContainsString(
-            '<input type="hidden" name="context" value="{&quot;route&quot;:&quot;home&quot;}">',
-            $html,
-        );
         // The screen from its clear screen (FF)
-        self::assertStringContainsString(
-            '<input type="hidden" name="screen" value="'
-            . base64_encode(
-                (new ClearScreens())
-                    ->fromLast($vdt)
-                    ->toString(),
-            )
-            . '">',
-            $html,
+        self::assertSame(
+            [
+                'context' => '{"route":"home"}',
+                'command' => '',
+                'screen' => base64_encode(
+                    (new ClearScreens())
+                        ->fromLast($vdt)
+                        ->toString(),
+                ),
+            ],
+            self::hiddenValues($html),
         );
     }
 
@@ -207,14 +216,14 @@ final class HtmlClientTest extends TestCase
     {
         $html = self::page(new GatewayResponse(new Vdt(), ''));
 
-        self::assertSame(1, substr_count($html, needle: '<div class="minitel">'));
+        self::assertCount(1, self::nodes($html, query: '//div[@class="minitel"]'));
         self::assertStringContainsString(
             '@font-face { font-family: Minitel; src: url(data:font/ttf;base64,'
             . base64_encode((string) file_get_contents(HtmlRenderer::MINITEL_FONT))
             . ') format("truetype"); }',
-            $html,
+            self::stylesheet($html),
         );
-        self::assertStringNotContainsString('<script', $html);
+        self::assertCount(0, self::nodes($html, query: '//script | //link'));
     }
 
     public function testTitleOfThePageIsEscaped(): void
@@ -253,15 +262,13 @@ final class HtmlClientTest extends TestCase
             'screen' => base64_encode($before->toString()),
         ]);
 
-        self::assertStringContainsString(
-            '<input type="hidden" name="screen" value="'
-            . base64_encode(
+        self::assertSame(
+            base64_encode(
                 (new ClearScreens())
                     ->fromLast($response)
                     ->toString(),
-            )
-            . '">',
-            $html,
+            ),
+            self::hiddenValues($html)['screen'] ?? null,
         );
         self::assertStringNotContainsString('Avant', self::shownText($html));
     }
@@ -279,13 +286,14 @@ final class HtmlClientTest extends TestCase
             ),
         );
 
-        self::assertSame(1, substr_count($html, needle: 'class="field"'));
-        self::assertStringContainsString(
-            'name="content[]" maxlength="2" value="ab" style="'
-            . (new HtmlRenderer(HtmlRenderer::MINITEL_FONT))->place(new Position(row: 24, col: 16), length: 2)
-            . '" autofocus',
-            $html,
+        self::assertSame(
+            [['value' => 'ab', 'style' => self::place(new Position(row: 24, col: 16), length: 2)]],
+            self::fields($html),
         );
+        // What the user types in it: posted as the content, as long as the field, typed in at once
+        self::assertSame(['content[]'], self::values($html, query: '//input[@class="field"]/@name'));
+        self::assertSame(['2'], self::values($html, query: '//input[@class="field"]/@maxlength'));
+        self::assertCount(1, self::nodes($html, query: '//input[@class="field"][@autofocus]'));
     }
 
     public function testMessageFieldHasAnInputPerLine(): void
@@ -301,18 +309,15 @@ final class HtmlClientTest extends TestCase
             ),
         );
 
-        self::assertStringContainsString(
-            'value="l1" style="'
-            . (new HtmlRenderer(HtmlRenderer::MINITEL_FONT))->place(new Position(row: 13), length: 40)
-            . '"',
-            $html,
+        self::assertSame(
+            [
+                ['value' => 'l1', 'style' => self::place(new Position(row: 13), length: 40)],
+                ['value' => 'l2', 'style' => self::place(new Position(row: 14), length: 40)],
+            ],
+            self::fields($html),
         );
-        self::assertStringContainsString(
-            'value="l2" style="'
-            . (new HtmlRenderer(HtmlRenderer::MINITEL_FONT))->place(new Position(row: 14), length: 40)
-            . '"',
-            $html,
-        );
+        // The first line typed in at once
+        self::assertSame(['l1'], self::values($html, query: '//input[@class="field"][@autofocus]/@value'));
     }
 
     public function testKeysTheInputDoesntAcceptAreDisabled(): void
@@ -327,13 +332,13 @@ final class HtmlClientTest extends TestCase
             ),
         );
 
-        self::assertSame(8, substr_count($html, needle: 'name="key"'));
-        self::assertSame(6, substr_count($html, needle: ' disabled>'));
-        self::assertMatchesRegularExpression('#value="SUITE" style="order: \d+">Suite</button>#', $html);
-        // Envoi first: the key Enter presses in a field
-        self::assertMatchesRegularExpression(
-            '#<div class="keys"><button type="submit" name="key" value="ENVOI"#',
-            $html,
+        self::assertSame(['SUITE', 'ENVOI'], self::enabledKeys($html));
+        // Envoi first in the form: the key Enter presses in a field
+        self::assertSame('ENVOI', self::keys($html)[0]->getAttribute('value'));
+        // Shown in the Minitel's layout, whatever their order in the form
+        self::assertSame(
+            array_map(static fn(FunctionKey $key) => $key->value, FunctionKey::cases()),
+            self::keysAsShown($html),
         );
     }
 
@@ -341,9 +346,12 @@ final class HtmlClientTest extends TestCase
     {
         $html = self::page(new GatewayResponse(new Vdt(), '{}'));
 
-        self::assertSame(8, substr_count($html, needle: 'name="key"'));
-        self::assertStringNotContainsString(' disabled>', $html);
-        self::assertStringNotContainsString('class="field"', $html);
+        self::assertSame(
+            array_map(static fn(FunctionKey $key) => $key->value, FunctionKey::cases()),
+            self::keysAsShown($html),
+        );
+        self::assertCount(8, self::enabledKeys($html));
+        self::assertSame([], self::fields($html));
     }
 
     public function testKeyLabelsAreMessages(): void
@@ -354,7 +362,7 @@ final class HtmlClientTest extends TestCase
                 'key.send' => 'Valider',
             ]));
 
-        self::assertStringContainsString('value="ENVOI" style="order: 7">Valider</button>', $html);
+        self::assertSame(['Valider'], self::values($html, query: '//div[@class="keys"]/button[@value="ENVOI"]'));
     }
 
     public function testLeavingTheServiceIsBlocked(): void
@@ -385,14 +393,12 @@ final class HtmlClientTest extends TestCase
         );
         self::assertStringNotContainsString('Cnx en cours', $shown);
         // Where the user was: their context and their input
-        self::assertStringContainsString('name="context" value="{&quot;route&quot;:&quot;directory&quot;}"', $html);
-        self::assertStringContainsString(
-            'style="'
-            . (new HtmlRenderer(HtmlRenderer::MINITEL_FONT))->place(new Position(row: 23, col: 7), length: 23)
-            . '"',
-            $html,
+        self::assertSame('{"route":"directory"}', self::hiddenValues($html)['context'] ?? null);
+        self::assertSame(
+            [['value' => '', 'style' => self::place(new Position(row: 23, col: 7), length: 23)]],
+            self::fields($html),
         );
-        self::assertSame(7, substr_count($html, needle: ' disabled>'));
+        self::assertSame(['ENVOI'], self::enabledKeys($html));
     }
 
     public function testCallingTheServiceIsntLeaving(): void
@@ -444,23 +450,11 @@ final class HtmlClientTest extends TestCase
         $home = (string) $runner->handle(HttpRequests::to('Mozilla/5.0', ['web' => 'true']))->getBody();
         self::assertStringContainsString('HOME', self::shownText($home));
 
-        // Envoi on the home page, with its context and screen
-        $context = [];
-        $screen = [];
-        preg_match('#name="context" value="([^"]*)"#', $home, $context);
-        preg_match('#name="screen" value="([^"]*)"#', $home, $screen);
-        $games = (string) $runner
-            ->handle(HttpRequests::posting(
-                'Mozilla/5.0',
-                ['web' => 'true'],
-                [
-                    'key' => 'ENVOI',
-                    'content' => ['2'],
-                    'context' => html_entity_decode($context[1] ?? ''),
-                    'screen' => $screen[1] ?? '',
-                ],
-            ))
-            ->getBody();
+        // Envoi on the home page, with its hidden values
+        $games = (string) $runner->handle(HttpRequests::posting('Mozilla/5.0', ['web' => 'true'], [
+            'key' => 'ENVOI',
+            'content' => ['2'],
+        ] + self::hiddenValues($home)))->getBody();
 
         self::assertStringContainsString('GAMES', self::shownText($games));
         self::assertStringNotContainsString('HOME', self::shownText($games));
@@ -488,37 +482,191 @@ final class HtmlClientTest extends TestCase
     }
 
     /**
+     * The page as the browser reads it
+     */
+    /**
+     * The nodes of the page, as the browser reads it, that the XPath query finds
+     *
+     * @return list<\DOMNode>
+     */
+    private static function nodes(string $html, string $query): array
+    {
+        $document = new DOMDocument();
+        // HTML5 elements libxml doesn't know aren't errors
+        $document->loadHTML($html, LIBXML_NOERROR);
+        $nodes = (new DOMXPath($document))->query($query);
+        if ($nodes === false) {
+            self::fail("Invalid query: {$query}");
+        }
+
+        return iterator_to_array($nodes, preserve_keys: false);
+    }
+
+    /**
+     * Text of each node the query finds (an attribute's value, an element's text)
+     *
+     * @return list<string>
+     */
+    private static function values(string $html, string $query): array
+    {
+        return array_map(static fn(\DOMNode $node) => $node->textContent, self::nodes($html, $query));
+    }
+
+    /**
+     * The title of the page, in the browser
+     */
+    private static function title(string $html): string
+    {
+        return implode('', self::values($html, query: '//title'));
+    }
+
+    /**
      * The hidden values of a page, as the browser posts them back
      *
      * @return array<string, string>
      */
     private static function hiddenValues(string $html): array
     {
-        $matches = [];
-        preg_match_all('#<input type="hidden" name="(\w+)" value="([^"]*)">#', $html, $matches, PREG_SET_ORDER);
+        $values = [];
+        foreach (self::elements($html, query: '//form//input[@type="hidden"]') as $input) {
+            $values[$input->getAttribute('name')] = $input->getAttribute('value');
+        }
 
-        return array_column(
-            array_map(static fn(array $match) => [
-                $match[1],
-                html_entity_decode($match[2], ENT_QUOTES | ENT_HTML5),
-            ], $matches),
-            1,
-            0,
+        return $values;
+    }
+
+    /**
+     * Text the page shows: its screen's cells, without the fields over it
+     */
+    private static function shownText(string $html): string
+    {
+        return implode('', self::values($html, query: '//div[@class="minitel"]'));
+    }
+
+    /**
+     * The input fields over the screen, in the form's order: what each shows, and the style
+     * placing it
+     *
+     * @return list<array{value: string, style: string}>
+     */
+    private static function fields(string $html): array
+    {
+        return array_map(
+            static fn(DOMElement $input) => [
+                'value' => $input->getAttribute('value'),
+                'style' => $input->getAttribute('style'),
+            ],
+            self::elements($html, query: '//div[@class="minitel"]/input[@class="field"]'),
         );
     }
 
     /**
-     * Text the page shows: its cells, without the markup, the style and the hidden values
+     * Style placing a field over the screen
      */
-    private static function shownText(string $html): string
+    private static function place(Position $position, int $length): string
     {
-        $html = (string) preg_replace(
-            ['#<style>.*</style>#s', '#<input[^>]*>#', '#<div class="keys">.*</div>#s'],
-            replacement: '',
-            subject: $html,
+        return (new HtmlRenderer(HtmlRenderer::MINITEL_FONT))->place($position, $length);
+    }
+
+    /**
+     * The function keys' buttons, in the form's order
+     *
+     * @return list<DOMElement>
+     */
+    private static function keys(string $html): array
+    {
+        return self::elements($html, query: '//div[@class="keys"]/button[@type="submit"][@name="key"]');
+    }
+
+    /**
+     * The keys the user can press, in the order they are shown
+     *
+     * @return list<string>
+     */
+    private static function enabledKeys(string $html): array
+    {
+        return array_values(array_intersect(
+            self::keysAsShown($html),
+            array_map(
+                static fn(DOMElement $button) => $button->getAttribute('value'),
+                array_filter(self::keys($html), static fn(DOMElement $button) => !$button->hasAttribute('disabled')),
+            ),
+        ));
+    }
+
+    /**
+     * The keys, in the order the grid shows them: by their CSS order
+     *
+     * @return list<string>
+     */
+    private static function keysAsShown(string $html): array
+    {
+        $shown = [];
+        foreach (self::keys($html) as $button) {
+            $order = self::declarations($button->getAttribute('style'))['order'] ?? self::fail('A key without order');
+            $shown[(int) $order] = $button->getAttribute('value');
+        }
+        ksort($shown);
+
+        return array_values($shown);
+    }
+
+    /**
+     * The page's stylesheet
+     */
+    private static function stylesheet(string $html): string
+    {
+        return implode('', self::values($html, query: '//head/style'));
+    }
+
+    /**
+     * The declarations of the stylesheet's rule for selector, by property
+     *
+     * @return array<string, string>
+     */
+    private static function cssRule(string $html, string $selector): array
+    {
+        $rule = [];
+        preg_match(
+            '/(?:^|\})\s*' . preg_quote($selector, delimiter: '/') . '\s*\{([^}]*)\}/',
+            self::stylesheet($html),
+            $rule,
         );
 
-        return html_entity_decode(strip_tags($html));
+        return self::declarations($rule[1] ?? self::fail("No rule for {$selector}"));
+    }
+
+    /**
+     * CSS declarations (a style attribute, a rule's body), by property
+     *
+     * @return array<string, string>
+     */
+    private static function declarations(string $css): array
+    {
+        $declarations = [];
+        foreach (explode(';', $css) as $declaration) {
+            if (!str_contains($declaration, ':')) {
+                continue;
+            }
+            [$property, $value] = explode(':', $declaration, limit: 2);
+            $declarations[trim($property)] = trim($value);
+        }
+
+        return $declarations;
+    }
+
+    /**
+     * @return list<DOMElement>
+     */
+    private static function elements(string $html, string $query): array
+    {
+        $elements = [];
+        foreach (self::nodes($html, $query) as $node) {
+            self::assertInstanceOf(DOMElement::class, $node);
+            $elements[] = $node;
+        }
+
+        return $elements;
     }
 
     /**
