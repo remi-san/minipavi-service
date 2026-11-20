@@ -112,15 +112,16 @@ final class HtmlClientTest extends TestCase
             self::fields($html),
         );
         // Underlined without a border, which would take a pixel of the cell from its text
-        self::assertSame('0', self::cssRule($html, selector: '.field')['border'] ?? null);
-        foreach (['.field', '.field:focus'] as $selector) {
-            self::assertSame(
-                [],
-                array_filter(
-                    array_keys(self::cssRule($html, $selector)),
-                    static fn(string $property) => str_starts_with($property, 'border-'),
-                ),
-            );
+        $rules = self::cssRules($html);
+        self::assertSame('0', $rules['.field']['border'] ?? null);
+        foreach ($rules as $selector => $declarations) {
+            if (!str_starts_with($selector, '.field')) {
+                continue;
+            }
+            self::assertSame([], array_filter(array_keys($declarations), static fn(string $property) => str_starts_with(
+                $property,
+                'border-',
+            )), $selector);
         }
         // Its keys: Envoi and Suite only
         self::assertSame(['SUITE', 'ENVOI'], self::enabledKeys($html));
@@ -216,7 +217,7 @@ final class HtmlClientTest extends TestCase
     {
         $html = self::page(new GatewayResponse(new Vdt(), ''));
 
-        self::assertCount(1, self::nodes($html, query: '//div[@class="minitel"]'));
+        self::assertCount(1, self::nodes($html, query: self::screen()));
         self::assertStringContainsString(
             '@font-face { font-family: Minitel; src: url(data:font/ttf;base64,'
             . base64_encode((string) file_get_contents(HtmlRenderer::MINITEL_FONT))
@@ -226,17 +227,16 @@ final class HtmlClientTest extends TestCase
         self::assertCount(0, self::nodes($html, query: '//script | //link'));
     }
 
-    public function testTitleOfThePageIsEscaped(): void
+    public function testTitleOfThePageIsShownAsItIsGiven(): void
     {
         $messages = (new MessagesXmlParser())->defaults();
         $form = new HtmlForm(new HtmlRenderer(HtmlRenderer::MINITEL_FONT), $messages);
 
-        self::assertStringContainsString('<title>Svc &lt;a &amp; &quot;b&quot;&gt;</title>', $form->render(
-            new Vdt(),
-            context: '',
-            command: null,
-            title: 'Svc <a & "b">',
-        ));
+        $html = $form->render(new Vdt(), context: '', command: null, title: 'Svc <a & "b">');
+
+        self::assertSame('Svc <a & "b">', self::title($html));
+        // No markup injected
+        self::assertCount(0, self::nodes($html, query: '//title/* | //a'));
     }
 
     public function testResponseIsDrawnOverTheScreenSoFar(): void
@@ -290,10 +290,10 @@ final class HtmlClientTest extends TestCase
             [['value' => 'ab', 'style' => self::place(new Position(row: 24, col: 16), length: 2)]],
             self::fields($html),
         );
-        // What the user types in it: posted as the content, as long as the field, typed in at once
-        self::assertSame(['content[]'], self::values($html, query: '//input[@class="field"]/@name'));
-        self::assertSame(['2'], self::values($html, query: '//input[@class="field"]/@maxlength'));
-        self::assertCount(1, self::nodes($html, query: '//input[@class="field"][@autofocus]'));
+        // What the user types in it (posted as the content, as fields() finds it): as long as
+        // the field, typed in at once
+        self::assertSame(['2'], self::values($html, query: self::fieldInputs() . '/@maxlength'));
+        self::assertCount(1, self::nodes($html, query: self::fieldInputs() . '[@autofocus]'));
     }
 
     public function testMessageFieldHasAnInputPerLine(): void
@@ -317,7 +317,7 @@ final class HtmlClientTest extends TestCase
             self::fields($html),
         );
         // The first line typed in at once
-        self::assertSame(['l1'], self::values($html, query: '//input[@class="field"][@autofocus]/@value'));
+        self::assertSame(['l1'], self::values($html, query: self::fieldInputs() . '[@autofocus]/@value'));
     }
 
     public function testKeysTheInputDoesntAcceptAreDisabled(): void
@@ -362,7 +362,7 @@ final class HtmlClientTest extends TestCase
                 'key.send' => 'Valider',
             ]));
 
-        self::assertSame(['Valider'], self::values($html, query: '//div[@class="keys"]/button[@value="ENVOI"]'));
+        self::assertSame(['Valider'], self::values($html, query: '//form//button[@name="key"][@value="ENVOI"]'));
     }
 
     public function testLeavingTheServiceIsBlocked(): void
@@ -482,9 +482,6 @@ final class HtmlClientTest extends TestCase
     }
 
     /**
-     * The page as the browser reads it
-     */
-    /**
      * The nodes of the page, as the browser reads it, that the XPath query finds
      *
      * @return list<\DOMNode>
@@ -540,7 +537,23 @@ final class HtmlClientTest extends TestCase
      */
     private static function shownText(string $html): string
     {
-        return implode('', self::values($html, query: '//div[@class="minitel"]'));
+        return implode('', self::values($html, query: self::screen()));
+    }
+
+    /**
+     * XPath of the screen: the element of class minitel, whatever its other classes
+     */
+    private static function screen(): string
+    {
+        return '//div[contains(concat(" ", normalize-space(@class), " "), " minitel ")]';
+    }
+
+    /**
+     * XPath of the input fields: what the form posts as the content, in its order
+     */
+    private static function fieldInputs(): string
+    {
+        return '//form//input[@name="content[]"]';
     }
 
     /**
@@ -556,7 +569,7 @@ final class HtmlClientTest extends TestCase
                 'value' => $input->getAttribute('value'),
                 'style' => $input->getAttribute('style'),
             ],
-            self::elements($html, query: '//div[@class="minitel"]/input[@class="field"]'),
+            self::elements($html, query: self::fieldInputs()),
         );
     }
 
@@ -575,7 +588,7 @@ final class HtmlClientTest extends TestCase
      */
     private static function keys(string $html): array
     {
-        return self::elements($html, query: '//div[@class="keys"]/button[@type="submit"][@name="key"]');
+        return self::elements($html, query: '//form//button[@type="submit"][@name="key"]');
     }
 
     /**
@@ -620,20 +633,22 @@ final class HtmlClientTest extends TestCase
     }
 
     /**
-     * The declarations of the stylesheet's rule for selector, by property
+     * The declarations of the stylesheet's rules, by selector (each of a list), then property
      *
-     * @return array<string, string>
+     * @return array<string, array<string, string>>
      */
-    private static function cssRule(string $html, string $selector): array
+    private static function cssRules(string $html): array
     {
-        $rule = [];
-        preg_match(
-            '/(?:^|\})\s*' . preg_quote($selector, delimiter: '/') . '\s*\{([^}]*)\}/',
-            self::stylesheet($html),
-            $rule,
-        );
+        $rules = [];
+        preg_match_all('/([^{}]+)\{([^}]*)\}/', self::stylesheet($html), $rules, PREG_SET_ORDER);
+        $declarations = [];
+        foreach ($rules as [, $selectors, $body]) {
+            foreach (explode(',', $selectors) as $selector) {
+                $declarations[trim($selector)] = self::declarations($body) + ($declarations[trim($selector)] ?? []);
+            }
+        }
 
-        return self::declarations($rule[1] ?? self::fail("No rule for {$selector}"));
+        return $declarations;
     }
 
     /**
