@@ -26,7 +26,7 @@ final class PaginatorTest extends TestCase
     #[DataProvider('pageCounts')]
     public function testCountsThePages(int $itemCount, int $perPage, int $pageCount): void
     {
-        self::assertSame($pageCount, (new Paginator($itemCount, $perPage))->pageCount());
+        self::assertSame($pageCount, (new Paginator($itemCount, $perPage, 0))->pageCount());
     }
 
     public function testGivesWhatToRetrieveForThePage(): void
@@ -54,7 +54,7 @@ final class PaginatorTest extends TestCase
 
     public function testEmptyPageHasNoItems(): void
     {
-        $paginator = new Paginator(0, 4);
+        $paginator = new Paginator(0, 4, 0);
 
         self::assertSame(0, $paginator->itemCountOnPage());
         self::assertSame([0, 0], [$paginator->firstItem(), $paginator->lastItem()]);
@@ -68,12 +68,12 @@ final class PaginatorTest extends TestCase
         // E.g. kept when there were more items
         self::assertSame(2, (new Paginator(10, 4, 9))->index());
         self::assertSame(0, (new Paginator(10, 4, -1))->index());
-        self::assertSame(0, (new Paginator(10, 4))->at(-3)->index());
+        self::assertSame(0, (new Paginator(10, 4, 0))->at(-3)->index());
     }
 
     public function testMovesBetweenPages(): void
     {
-        $first = new Paginator(10, 4);
+        $first = new Paginator(10, 4, 0);
 
         self::assertTrue($first->isFirst());
         self::assertFalse($first->isLast());
@@ -104,7 +104,7 @@ final class PaginatorTest extends TestCase
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('At least one item per page, 0 given');
 
-        new Paginator(10, 0);
+        new Paginator(10, 0, 0);
     }
 
     public function testNeedsItemsToCount(): void
@@ -112,6 +112,6 @@ final class PaginatorTest extends TestCase
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Item count must not be negative, -1 given');
 
-        new Paginator(-1, 4);
+        new Paginator(-1, 4, 0);
     }
 }
