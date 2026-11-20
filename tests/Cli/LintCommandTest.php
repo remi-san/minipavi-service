@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace MiniPaviService\Tests\Cli;
 
 use MiniPaviService\Cli\LintCommand;
+use MiniPaviService\Message\MessagesXmlParser;
+use MiniPaviService\Page\Parser\PageXmlException;
+use MiniPaviService\Page\Parser\PageXmlParser;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Console\Command\Command;
@@ -117,6 +120,22 @@ final class LintCommandTest extends TestCase
             $this->dir . '/pages/home.xml',
         ]));
         self::assertSame("1 page checked, 0 errors\n", $this->tester->getDisplay());
+    }
+
+    public function testChecksAnXmlFileWithoutElementAsAPage(): void
+    {
+        $this->write('pages/empty.xml', content: '');
+
+        self::assertSame(Command::FAILURE, $this->lint([$this->dir . '/pages']));
+        self::assertSame("1 page checked, 1 error\n", $this->tester->getDisplay());
+        // The parser's error, whose words depend on libxml's version
+        try {
+            (new PageXmlParser((new MessagesXmlParser())->defaults()))->parseFile($this->dir . '/pages/empty.xml');
+            self::fail('An empty file was parsed');
+        } catch (PageXmlException $e) {
+            self::assertStringStartsWith('empty.xml', $e->getMessage());
+            self::assertSame($e->getMessage() . "\n", $this->tester->getErrorOutput());
+        }
     }
 
     public function testFailsWithoutPage(): void
