@@ -18,7 +18,7 @@ jobs:
         # From the framework's minimum (8.2) to the latest PHP (8.5)
         php: ['8.2', '8.3', '8.4', '8.5']
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: shivammathur/setup-php@v2
         with:
@@ -45,7 +45,7 @@ jobs:
     name: Coverage
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: shivammathur/setup-php@v2
         with:
@@ -59,7 +59,11 @@ jobs:
       - name: Tests with coverage
         run: composer coverage
 
-      - uses: actions/upload-artifact@v4
+      - name: Summary
+        if: ${{ !cancelled() }}
+        run: php tools/coverage-summary.php coverage.xml >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v7
         if: ${{ !cancelled() }}
         with:
           name: coverage
@@ -72,7 +76,7 @@ jobs:
     name: Mutation testing
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: shivammathur/setup-php@v2
         with:
@@ -94,7 +98,7 @@ jobs:
             "| \(.msi)% | \(.coveredCodeMsi)% | \(.totalMutantsCount) | \(.killedCount) | \(.escapedCount) | \(.notCoveredCount) | \(.timeOutCount) |"' \
             build/infection/summary.json >> "$GITHUB_STEP_SUMMARY"
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: ${{ !cancelled() }}
         with:
           name: mutation
