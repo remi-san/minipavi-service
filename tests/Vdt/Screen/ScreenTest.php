@@ -88,6 +88,31 @@ final class ScreenTest extends TestCase
     }
 
     /**
+     * A positioning (US) outside the screen, which the Minitel ignores (MiniPavi's emulator,
+     * locate(): neither the cursor nor the attributes change)
+     *
+     * @return iterable<string, array{string}>
+     */
+    public static function positionsOutsideTheScreen(): iterable
+    {
+        yield 'column 0' => ["\x1F\x4A\x40"];
+        yield 'column 41' => ["\x1F\x4A\x69"];
+        yield 'row 25' => ["\x1F\x59\x41"];
+        yield 'row -1' => ["\x1F\x3F\x41"];
+    }
+
+    #[DataProvider('positionsOutsideTheScreen')]
+    public function testPositioningOutsideTheScreenIsIgnored(string $position): void
+    {
+        // Row 5: red A, B, the positioning, then C
+        $screen = Screen::of(new Vdt("\x1F\x45\x41\x1B\x41AB{$position}C"));
+
+        self::assertSame('ABC', rtrim($screen->line(5)));
+        self::assertSame(Color::Red, $screen->cell(row: 5, col: 3)?->attributes->foreground());
+        self::assertSame(25, \count($screen->cells));
+    }
+
+    /**
      * @return iterable<string, array{string, non-empty-string}> content (after positioning at
      *                                                           row 1, column 1), and the
      *                                                           start of row 1

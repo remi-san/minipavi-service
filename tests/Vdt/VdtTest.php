@@ -278,6 +278,18 @@ final class VdtTest extends TestCase
         self::assertStringStartsWith(' A ', $screen->line(2));
     }
 
+    #[DataProviderExternal(ScreenTest::class, 'positionsOutsideTheScreen')]
+    public function testOffsetDropsAPositioningTheMinitelIgnores(string $position): void
+    {
+        // Row 5: red A, B, the positioning, then C, drawn after B, still red
+        self::assertSame(
+            "\x1F\x46\x43\x1B\x41ABC",
+            (new Offset(x: 2, y: 1))
+                ->apply(new Vdt("\x1F\x45\x41\x1B\x41AB{$position}C"))
+                ->toString(),
+        );
+    }
+
     public function testOffsetDoesNotMoveTheStatusRow(): void
     {
         $moved = Screen::of((new Offset(x: 1, y: 1))->apply(new Vdt("\x1F\x40\x41status\x1F\x41\x41X")));
