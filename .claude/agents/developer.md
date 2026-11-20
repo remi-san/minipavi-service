@@ -26,11 +26,11 @@ the answer.
 3. A fix starts with a test that fails without it. Run the test against the code before your
    fix and say which cases failed.
 4. Run every check CLAUDE.md lists (syntax, `composer cs`, `composer analyse`, which includes
-   `mago guard`, `composer test`, and `composer coverage` when `src/` changes). Don't run
-   `composer mutation` locally unless the issue is about improving the mutation score, and
-   leave the minimum MSI at 92%: once the PR is pushed, read CI's Mutation testing job
-   (`gh pr checks <n>`, and its log for the escaped mutants). Nothing changed in a
-   behaviour's lines may escape mutation.
+   `mago guard`, `composer test`, `composer coverage` when `src/` changes, and Infection on
+   the `src/` files the PR concerns, as CLAUDE.md says; never `composer mutation` on the whole
+   project, which CI runs). Leave the minimum MSI at 92%. Once the PR is pushed, also read
+   CI's Mutation testing job (`gh pr checks <n>`, and its log for the escaped mutants).
+   Nothing changed in a behaviour's lines may escape mutation.
 5. Push and open the PR against `main` (`gh pr create`). Its body states what changed and
    why, the decisions you made, which checks ran and which didn't, and ends with
    `Closes #<n>`. Never merge it.
