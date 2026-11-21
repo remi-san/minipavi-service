@@ -11,8 +11,12 @@ use MiniPaviService\Minitel\ScreenSize;
  * The zones of a screen, by where its cells are, as the Minitel draws them (MiniPavi's
  * emulator, vdu.js, drawRow()): along each row from column 1, a delimiter starts its zone; a
  * mosaic or empty cell ends its background and underline, the cells after it on its
- * background, but not its masking, which runs up to the next delimiter. It knows which cells
- * are text, which are delimiters, and the background of the mosaic ones, not what they show.
+ * background, but not its masking, which runs up to the next delimiter. A tall character (a
+ * delimiter or text, in double height or double size) is drawn on the row above too, where
+ * its top half is, as the emulator draws it (printDelimiter(), printG0Char()): a tall
+ * delimiter starts its zone on both rows, and tall text is text on both. It knows which
+ * cells are text, which are delimiters, and the background of the mosaic ones, not what
+ * they show.
  *
  * It changes as cells are drawn (so it isn't readonly).
  *
@@ -34,24 +38,25 @@ final class Zones
     private array $mosaic = [];
 
     /**
-     * Draws a delimiter starting zone at row, col, width cells wide
+     * Draws a delimiter starting zone at row, col, width cells wide and height cells high
+     * (cells()): on the row above too, when it is tall
      */
-    public function delimiter(int $row, int $col, int $width, Zone $zone): void
+    public function delimiter(int $row, int $col, int $width, int $height, Zone $zone): void
     {
-        for ($i = 0; $i < $width; $i++) {
-            $this->text[$row][$col + $i] = $zone;
+        foreach (self::cells($row, $col, $width, $height) as [$cellRow, $cellCol]) {
+            $this->text[$cellRow][$cellCol] = $zone;
         }
     }
 
     /**
      * Draws a character at row, col, width cells wide, with these attributes: a text one, or
-     * a mosaic one, on its background. A cell past the last column (a double-width character
-     * in it) is kept, but never read
+     * a mosaic one, on its background; a tall one (Attributes::height()) on the row above too
+     * (cells())
      */
     public function draw(int $row, int $col, int $width, Attributes $attributes): void
     {
-        for ($i = 0; $i < $width; $i++) {
-            $this->drawCell($row, $col + $i, $attributes);
+        foreach (self::cells($row, $col, $width, $attributes->height()) as [$cellRow, $cellCol]) {
+            $this->drawCell($cellRow, $cellCol, $attributes);
         }
     }
 
@@ -65,7 +70,7 @@ final class Zones
             $this->drawCell($row, $cleared, $attributes);
         }
         if ($delimiter !== null) {
-            $this->delimiter($row, $col, width: 1, zone: $delimiter);
+            $this->delimiter($row, $col, width: 1, height: 1, zone: $delimiter);
         }
     }
 
@@ -107,6 +112,26 @@ final class Zones
         $delimiter = $this->text[$row][$col];
 
         return $delimiter === null ? $before : $before->on($delimiter->background());
+    }
+
+    /**
+     * The cells of a character drawn at row, col, width cells wide and height cells high:
+     * its bottom row is the cursor's, the row above its top half's (row 0, the status row,
+     * above row 1). A cell past the last column (a double-width character in it) is kept,
+     * but never read
+     *
+     * @return list<array{int, int}> each cell's row and column
+     */
+    private static function cells(int $row, int $col, int $width, int $height): array
+    {
+        $cells = [];
+        for ($above = 0; $above < $height; $above++) {
+            for ($i = 0; $i < $width; $i++) {
+                $cells[] = [$row - $above, $col + $i];
+            }
+        }
+
+        return $cells;
     }
 
     /**

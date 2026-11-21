@@ -21,7 +21,8 @@ interface ScreenListener
 
     /**
      * A delimiter drawn at row, col, width cells wide: a space starting zone, up to the next
-     * delimiter, mosaic or empty cell of its row
+     * delimiter, mosaic or empty cell of its row, and of the row above when it is tall
+     * (Attributes::height(): Screen\Zones)
      */
     public function delimiter(int $row, int $col, int $width, Attributes $attributes, Zone $zone): void;
 

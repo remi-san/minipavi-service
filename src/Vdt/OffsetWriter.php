@@ -59,7 +59,7 @@ final class OffsetWriter implements ScreenListener
 
     public function delimiter(int $row, int $col, int $width, Attributes $attributes, Zone $zone): void
     {
-        $this->zones->delimiter($row, $col, $width, $zone);
+        $this->zones->delimiter($row, $col, $width, $attributes->height(), $zone);
         $moved = $this->moved($row, $col, $attributes);
         if ($moved !== null) {
             [$row, $col, $attributes] = $moved;

@@ -56,7 +56,7 @@ final class ScreenCells implements ScreenListener
     public function delimiter(int $row, int $col, int $width, Attributes $attributes, Zone $zone): void
     {
         $this->glyph($row, $col, bytes: ' ', width: $width, attributes: $attributes);
-        $this->zones->delimiter($row, $col, $width, $zone);
+        $this->zones->delimiter($row, $col, $width, $attributes->height(), $zone);
     }
 
     public function clearLine(int $row, int $col, Attributes $attributes, ?Zone $delimiter): void
