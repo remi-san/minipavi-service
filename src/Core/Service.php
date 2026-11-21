@@ -44,7 +44,7 @@ final class Service
         ?LoggerInterface $logger = null,
     ) {
         $this->logger = $logger ?? new NullLogger();
-        $this->messages = $messages->check(FrameworkMessage::class);
+        $this->messages = $messages->check(...FrameworkMessage::cases());
     }
 
     /**
