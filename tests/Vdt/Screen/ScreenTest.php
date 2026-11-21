@@ -139,27 +139,43 @@ final class ScreenTest extends TestCase
     }
 
     /**
+     * What the Minitel shows (checked in MiniPavi's emulator, #90): an accent (SS2, then
+     * grave 0x41, acute 0x42, circumflex 0x43, diaeresis 0x48 or cedilla 0x4B) takes the
+     * byte after it, whatever it is, in one cell: the accented letter when the Minitel has
+     * it, _ otherwise; any other G2 code it doesn't have is _ too
+     *
      * @return iterable<string, array{string, non-empty-string}> content (after positioning at
      *                                                           row 1, column 1), and the
      *                                                           start of row 1
      */
     public static function g2Accents(): iterable
     {
-        // An accent (SS2, then 0x41 to 0x4F) goes with the character after it, in one cell
         yield 'acute' => ["\x19\x42e!", 'é!'];
-        yield 'grave, the first accent' => ["\x19\x41e!", 'è!'];
-        // No letter decoded with it: shown as the letter
-        yield 'the last accent' => ["\x19\x4Fe!", 'e!'];
-        // Before and after the accents: a G2 character of its own (unknown: ?), then the letter
-        yield 'a G2 character before the accents' => ["\x19\x40e!", '?e!'];
-        yield 'a G2 character after the accents' => ["\x19\x50e!", '?e!'];
-        // A space is a character: it goes with the accent, in one cell
-        yield 'followed by a space' => ["\x19\x42 !", ' !'];
-        // A control byte isn't: the accent alone, then what the control byte does (US: row 1,
-        // column 4)
-        yield 'followed by a control byte' => ["\x19\x42\x1F\x41\x44e!", '?  e!'];
+        yield 'grave' => ["\x19\x41e!", 'è!'];
+        // A letter the Minitel doesn't have with that accent
+        yield 'acute a' => ["\x19\x42a!", '_!'];
+        yield 'acute u' => ["\x19\x42u!", '_!'];
+        yield 'grave o' => ["\x19\x41o!", '_!'];
+        yield 'circumflex I' => ["\x19\x43I!", '_!'];
+        yield 'diaeresis u' => ["\x19\x48u!", '_!'];
+        yield 'diaeresis a' => ["\x19\x48a!", '_!'];
+        yield 'diaeresis o' => ["\x19\x48o!", '_!'];
+        // 0x4F, 0x40 and 0x50 aren't accents: a G2 character of their own, then the letter
+        yield 'the last code before the letters' => ["\x19\x4Fe!", '_e!'];
+        yield 'a G2 code before the accents' => ["\x19\x40e!", '_e!'];
+        yield 'a G2 code after the accents' => ["\x19\x50e!", '_e!'];
+        yield 'ß' => ["\x19\x7Be!", '_e!'];
+        yield '§' => ["\x19\x27e!", '_e!'];
+        // A space or a control byte is the accent's byte too: the control byte doesn't act
+        // (US, then 0x41 0x44 shown as text)
+        yield 'followed by a space' => ["\x19\x42 !", '_!'];
+        yield 'followed by a control byte' => ["\x19\x42\x1F\x41\x44e!", '_ADe!'];
+        yield 'SS2 followed by a control byte' => ["\x19\x1F\x41\x44e!", '_ADe!'];
         yield 'with its letter at the end of the content' => ["\x19\x42e", 'é '];
-        yield 'at the end of the content' => ["\x19\x42", '? '];
+        // Cut at the end of the content: nothing drawn yet. The Minitel waits for the rest,
+        // which it takes from what it is sent next (e.g. the next page's first byte)
+        yield 'an accent at the end of the content' => ["A\x19\x42", 'A '];
+        yield 'SS2 at the end of the content' => ["A\x19", 'A '];
     }
 
     /**
@@ -169,6 +185,61 @@ final class ScreenTest extends TestCase
     public function testAG2AccentGoesWithTheCharacterAfterIt(string $sent, string $shown): void
     {
         self::assertStringStartsWith($shown, Screen::of(new Vdt("\x1F\x41\x41{$sent}"))->line(1));
+    }
+
+    /**
+     * Every G2 character the Minitel has (MiniPavi's emulator, #90)
+     *
+     * @return iterable<string, array{string, string}> its bytes after SS2, and its text
+     */
+    public static function g2Characters(): iterable
+    {
+        // A list: "\x30" (0) as an array key would be an integer
+        $characters = [
+            ["\x23", '£'],
+            ["\x24", '$'],
+            ["\x26", '#'],
+            ["\x2C", '←'],
+            ["\x2D", '↑'],
+            ["\x2E", '→'],
+            ["\x2F", '↓'],
+            ["\x30", '°'],
+            ["\x31", '±'],
+            ["\x38", '÷'],
+            ["\x3C", '¼'],
+            ["\x3D", '½'],
+            ["\x3E", '¾'],
+            ["\x6A", 'Œ'],
+            ["\x7A", 'œ'],
+            ["\x41A", 'À'],
+            ["\x41a", 'à'],
+            ["\x41E", 'È'],
+            ["\x41e", 'è'],
+            ["\x41u", 'ù'],
+            ["\x42E", 'É'],
+            ["\x42e", 'é'],
+            ["\x43A", 'Â'],
+            ["\x43a", 'â'],
+            ["\x43E", 'Ê'],
+            ["\x43e", 'ê'],
+            ["\x43u", 'û'],
+            ["\x43i", 'î'],
+            ["\x43o", 'ô'],
+            ["\x48E", 'Ë'],
+            ["\x48e", 'ë'],
+            ["\x48i", 'ï'],
+            ["\x4BC", 'Ç'],
+            ["\x4Bc", 'ç'],
+        ];
+        foreach ($characters as [$bytes, $text]) {
+            yield $text => [$bytes, $text];
+        }
+    }
+
+    #[DataProvider('g2Characters')]
+    public function testShowsTheG2CharactersOfTheMinitel(string $bytes, string $text): void
+    {
+        self::assertSame("{$text}!", rtrim(Screen::of(new Vdt("\x1F\x41\x41\x19{$bytes}!"))->line(1)));
     }
 
     /**
