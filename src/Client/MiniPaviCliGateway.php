@@ -17,7 +17,7 @@ use MiniPaviService\Vdt\Vdt;
  * request itself (MiniPaviCli::start(), from the body of the HTTP request), and writes the
  * response itself (MiniPaviCli::send()): what it writes is captured as the body of the HTTP
  * response, which the Kernel sends. It sends input fields as MiniPavi's commands (InputTxt,
- * InputMsg). With Vdt (its Videotex helpers), the only class calling MiniPaviCli.
+ * InputMsg). It is the only class calling MiniPaviCli.
  */
 final readonly class MiniPaviCliGateway implements MiniPaviGateway
 {

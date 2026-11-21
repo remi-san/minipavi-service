@@ -190,8 +190,8 @@ KernelBuilder::for($router, $messages)
     to) and sends it the response: its exchange and the commands it sends go through it.
     `KernelBuilder` gives it **`MiniPaviCliGateway`**, which does both through `MiniPaviCli`
     used unchanged: `MiniPaviCli` reads the request itself, and writes the response itself,
-    captured as the body of the HTTP response. It is the only class calling `MiniPaviCli`,
-    besides `Vdt`'s Videotex helpers. A test can give the client a gateway of its own;
+    captured as the body of the HTTP response. It is the only class calling `MiniPaviCli`. A
+    test can give the client a gateway of its own;
   - **`HtmlClient`**, for a browser: it shows the service's screen as an HTML page
     (`Vdt\Screen\HtmlRenderer`), and lets the user navigate it as on a Minitel. The first request is a
     connection, at the default route, as the gateway's. The page is a form posting back to its URL,
