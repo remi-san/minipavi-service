@@ -7,18 +7,18 @@ namespace MiniPaviService\Page\Building;
 /**
  * Where a display element is in its page, given to its ElementBuilder, which places itself or
  * refuses to be there: on the page itself, or inside a <foreach>, whose items' rows are known
- * only when they are drawn
+ * only when they are drawn. Each of its methods answers in all three.
  */
 final readonly class Placement
 {
     /**
      * @param bool $inLoop whether it is inside a <foreach>
-     * @param ?int $firstRow first row of the page of the current item; null on the page, or in a
-     *                       <foreach> when the page is read
+     * @param ?Rows $itemRows the rows of the current item of the <foreach>; null on the page, or
+     *                        in a <foreach> when the page is read
      */
     private function __construct(
         private bool $inLoop,
-        private ?int $firstRow,
+        private ?Rows $itemRows,
     ) {}
 
     /**
@@ -26,7 +26,7 @@ final readonly class Placement
      */
     public static function page(): self
     {
-        return new self(inLoop: false, firstRow: null);
+        return new self(inLoop: false, itemRows: null);
     }
 
     /**
@@ -34,15 +34,15 @@ final readonly class Placement
      */
     public static function loop(): self
     {
-        return new self(inLoop: true, firstRow: null);
+        return new self(inLoop: true, itemRows: null);
     }
 
     /**
-     * Inside an item of a <foreach>, drawn from firstRow of the page
+     * Inside an item of a <foreach>, whose rows are itemRows
      */
-    public static function loopItem(int $firstRow): self
+    public static function loopItem(Rows $itemRows): self
     {
-        return new self(inLoop: true, firstRow: $firstRow);
+        return new self(inLoop: true, itemRows: $itemRows);
     }
 
     /**
@@ -56,11 +56,11 @@ final readonly class Placement
         if (!$this->inLoop) {
             return $attributes;
         }
-        if ($this->firstRow === null) {
+        if ($this->itemRows === null) {
             return $attributes->without('row');
         }
 
-        return $attributes->with('row', (string) ($this->firstRow + $attributes->int('row', default: 0)));
+        return $attributes->with('row', (string) $this->itemRows->rowOf($attributes->int('row', default: 0)));
     }
 
     /**

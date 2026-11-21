@@ -6,6 +6,7 @@ namespace MiniPaviService\Page\Template;
 
 use MiniPaviService\InvalidValueException;
 use MiniPaviService\Page\Building\Placement;
+use MiniPaviService\Page\Building\Rows;
 use MiniPaviService\Text\Placeholders;
 
 /**
@@ -24,12 +25,12 @@ final readonly class Scope
     ) {}
 
     /**
-     * Row of the page of a row in the scope: inside a <foreach>, relative to the current item
-     * (0 = its first row); outside, the row itself
+     * The rows given in the scope (e.g. a nested <foreach>'s): those of the page outside of
+     * any <foreach> (from row 0), those of the current item inside
      */
-    public function rowOf(int $row): int
+    public function rows(): Rows
     {
-        return ($this->rowOffset ?? 0) + $row;
+        return new Rows($this->rowOffset ?? 0);
     }
 
     /**
@@ -38,7 +39,7 @@ final readonly class Scope
      */
     public function placement(): Placement
     {
-        return $this->rowOffset === null ? Placement::page() : Placement::loopItem($this->rowOffset);
+        return $this->rowOffset === null ? Placement::page() : Placement::loopItem($this->rows());
     }
 
     /**

@@ -240,6 +240,21 @@ final class PageXmlParserTest extends TestCase
         );
     }
 
+    public function testServiceElementWithoutPlaceholdersInAForeachIsBuiltWhenThePageIsRead(): void
+    {
+        $parser = new PageXmlParser((new MessagesXmlParser())->defaults(), new StarsElements());
+        // Built when read, before its items' rows are known: what it places by row can't fail
+        $page = $parser->parse(
+            '<page type="template"><foreach items="notes" as="note" row="3"><stars row="1" count="2"/></foreach></page>',
+            self::FIXTURES,
+        );
+
+        self::assertSame(
+            [' 4|**                                      |', ' 5|**                                      |'],
+            $this->drawnRows($page->display(new Terminal(), ['notes' => [1, 2]])),
+        );
+    }
+
     public function testServiceElementCanBeOnThePageOnly(): void
     {
         $parser = new PageXmlParser((new MessagesXmlParser())->defaults(), new StarsElements());

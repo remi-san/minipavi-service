@@ -134,9 +134,9 @@ final class ScopeTest extends TestCase
 
         self::assertSame([1, 3], [$scope->value('a'), $scope->value('b')]);
         // Rows relative to row 5
-        self::assertSame(6, $scope->rowOf(1));
+        self::assertSame(6, $scope->rows()->rowOf(1));
         // Replaced, not added to: a nested <foreach> gives its item's row of the page
-        self::assertSame(8, $scope->with([], rowOffset: 8)->rowOf(0));
+        self::assertSame(8, $scope->with([], rowOffset: 8)->rows()->rowOf(0));
     }
 
     public function testElementsAreOnThePageOutsideOfALoopAndInTheItemInside(): void
@@ -149,7 +149,12 @@ final class ScopeTest extends TestCase
                 ->placement()
                 ->placeByRow($attributes),
         );
-        self::assertSame(1, (new Scope())->rowOf(1));
+        self::assertSame(
+            1,
+            (new Scope())
+                ->rows()
+                ->rowOf(1),
+        );
         $inLoop = (new Scope())->with([], rowOffset: 5);
         self::assertSame(6, $inLoop->placement()->placeByRow($attributes)->int('row', default: 0));
     }
