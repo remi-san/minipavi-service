@@ -819,6 +819,12 @@ final class ScreenTest extends TestCase
         ];
         // The delimiter's space, in column 4, is shown out of a zone too
         yield 'tall text over a delimiter' => ["{$row9(2)}ab{$blue} cd{$row10(4)}{$tall}x", 9, ' .....'];
+        // In a zone, the one before the delimiter carries on (checked by the tester on PR #144)
+        yield 'tall text over a delimiter in a zone' => [
+            "{$row9(1)}{$red} ab{$green} cdef{$row10(4)}{$tall}x",
+            9,
+            'RRRRRRRR',
+        ];
         // c, drawn over by its top half, is in the zone
         yield 'a zone already on the row above' => [
             "{$row9(2)}{$red} abcdefgh{$row10(5)}{$tall}{$blue} ",
