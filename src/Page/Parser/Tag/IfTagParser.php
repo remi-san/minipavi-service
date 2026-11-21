@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace MiniPaviService\Page\Parser\Tag;
 
 use MiniPaviService\Page\Parser\PageXmlException;
-use MiniPaviService\Page\Template\IfNode;
 use MiniPaviService\Page\Template\Nodes;
 
 /**
@@ -19,7 +18,7 @@ final readonly class IfTagParser implements TagParser
 
     public function parse(XmlTag $tag, TagPosition $position, NodesParser $nodes): ParsedNodes
     {
-        [$variable, $negate] = $tag->check(static function () use ($tag, $position): array {
+        $test = $tag->check(static function () use ($tag, $position): IfTest {
             if (!$position->template) {
                 throw new PageXmlException('only in a page of type="template"');
             }
@@ -34,10 +33,10 @@ final readonly class IfTagParser implements TagParser
                 throw new PageXmlException("test=\"{$test}\" must be a variable, or !variable");
             }
 
-            return [$variable, $negate];
+            return new IfTest($variable, $negate);
         });
         $children = $nodes->parse($tag->element, $position->nested());
 
-        return ParsedNodes::node(new IfNode($variable, $negate, new Nodes($children->nodes), $tag->at));
+        return ParsedNodes::node($test->node(new Nodes($children->nodes), $tag->at));
     }
 }

@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace MiniPaviService\Page\Parser\Tag;
 
 use MiniPaviService\Page\Parser\PageXmlException;
-use MiniPaviService\Page\Template\ForeachNode;
 use MiniPaviService\Page\Template\Nodes;
 
 /**
@@ -16,7 +15,7 @@ final readonly class ForeachTagParser implements TagParser
 {
     public function parse(XmlTag $tag, TagPosition $position, NodesParser $nodes): ParsedNodes
     {
-        [$items, $as, $row, $step] = $tag->check(static function () use ($tag, $position): array {
+        $loop = $tag->check(static function () use ($tag, $position): ForeachLoop {
             if (!$position->template) {
                 throw new PageXmlException('only in a page of type="template"');
             }
@@ -27,15 +26,15 @@ final readonly class ForeachTagParser implements TagParser
                 throw new PageXmlException("as=\"{$as}\" must be a variable name, other than loop");
             }
 
-            return [
+            return new ForeachLoop(
                 $items,
                 $as,
                 $values->int('row', default: $position->inLoop ? 0 : 1),
                 $values->int('step', default: 1),
-            ];
+            );
         });
         $children = $nodes->parse($tag->element, $position->inLoop());
 
-        return ParsedNodes::node(new ForeachNode($items, $as, $row, $step, new Nodes($children->nodes), $tag->at));
+        return ParsedNodes::node($loop->node(new Nodes($children->nodes), $tag->at));
     }
 }
