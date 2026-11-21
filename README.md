@@ -185,11 +185,13 @@ KernelBuilder::for($router, $messages)
   a warning. Changing the key makes the users of sessions in progress start again at the
   default route. A serializer without signer (`new ContextSerializer($router)`, e.g. for a
   `ServiceTester`) doesn't sign it (`UnsignedContext`). Two clients:
-  - **`MiniPaviClient`**, for the MiniPavi gateway, through `MiniPaviCli` used unchanged: it
-    reads the gateway's request itself (background calls included, which the service doesn't
-    respond to), and writes the response itself: `MiniPaviClient` captures it as the body of
-    the HTTP response. It is the only class calling `MiniPaviCli`, besides `Vdt`'s Videotex
-    helpers: its exchange and the commands it sends go through it;
+  - **`MiniPaviClient`**, for the MiniPavi gateway, through a **`MiniPaviGateway`**, which
+    reads the gateway's request (background calls included, which the service doesn't respond
+    to) and sends it the response: its exchange and the commands it sends go through it.
+    `KernelBuilder` gives it **`MiniPaviCliGateway`**, which does both through `MiniPaviCli`
+    used unchanged: `MiniPaviCli` reads the request itself, and writes the response itself,
+    captured as the body of the HTTP response. It is the only class calling `MiniPaviCli`. A
+    test can give the client a gateway of its own;
   - **`HtmlClient`**, for a browser: it shows the service's screen as an HTML page
     (`Vdt\Screen\HtmlRenderer`), and lets the user navigate it as on a Minitel. The first request is a
     connection, at the default route, as the gateway's. The page is a form posting back to its URL,
@@ -734,7 +736,7 @@ format changes, change `page.xsd` with the parser.
 
 Videotex goes through the framework as a **`Vdt` value**, never as a string: pages display
 one (`Page::display()`), responses and `Flow::respond()` take one, and `GatewayResponse` holds
-one. Only the gateway client (`MiniPaviClient::send()`) turns it into bytes. Text and
+one. Only the gateway (`MiniPaviCliGateway::send()`) turns it into bytes. Text and
 Videotex can't be mixed up:
 
 ```php

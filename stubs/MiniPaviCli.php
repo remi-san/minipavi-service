@@ -7,7 +7,7 @@ namespace MiniPavi;
  * (ludosevilla/minipavi-cli 1.1): Mago patches the library's class with them (patches in
  * mago.toml). Its methods build Videotex content
  * and MiniPavi commands from their arguments, so these types always hold. Its static
- * properties, which hold the gateway's request, are left untyped: MiniPaviClient checks them.
+ * properties, which hold the gateway's request, are left untyped: MiniPaviCliGateway checks them.
  */
 class MiniPaviCli
 {

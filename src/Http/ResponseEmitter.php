@@ -9,7 +9,7 @@ use Psr\Http\Message\ResponseInterface;
 /**
  * Sends a PSR-7 response to the client of the web server: its status, its headers, then its
  * body. With the Kernel reading the request, the only place writing headers and output (what
- * MiniPaviCli writes for the gateway is captured by MiniPaviClient).
+ * MiniPaviCli writes for the gateway is captured by MiniPaviCliGateway).
  */
 final class ResponseEmitter
 {

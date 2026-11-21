@@ -9,10 +9,10 @@ use MiniPaviService\Minitel\Position;
 
 /**
  * Videotex content: what is sent to the Minitel. The framework and services carry it as this
- * value, and only the gateway client turns it into bytes (toString()). Text is made with
- * text(), which encodes its accents (G2); positions, the status line, a clear screen and
- * repetitions with position(), line0(), clearScreen() and repeat(), which encode as
- * MiniPaviCli's helpers do; raw Videotex with new Vdt().
+ * value, and only the gateway (MiniPaviCliGateway) turns it into bytes (toString()). Text is
+ * made with text(), which encodes its accents (G2); positions, the status line, a clear
+ * screen and repetitions with position(), line0(), clearScreen() and repeat(), which encode
+ * as MiniPaviCli's helpers do; raw Videotex with new Vdt().
  *
  * It keeps the bytes, and doesn't draw them itself: what the content shows is Screen's
  * (Screen::of()), moving it Offset's (Offset::apply()), both played by Player. A file is read by its

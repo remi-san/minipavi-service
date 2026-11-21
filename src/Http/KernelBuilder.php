@@ -7,6 +7,7 @@ namespace MiniPaviService\Http;
 use MiniPaviService\Client\HtmlClient;
 use MiniPaviService\Client\HtmlForm;
 use MiniPaviService\Client\MiniPaviClient;
+use MiniPaviService\Client\MiniPaviCliGateway;
 use MiniPaviService\Core\ContextSerializer;
 use MiniPaviService\Core\Router;
 use MiniPaviService\Core\Service;
@@ -213,7 +214,7 @@ final readonly class KernelBuilder
                     new ConditionalRequestHandler(
                         'gateway',
                         new FromMiniPaviGateway(),
-                        new ServiceRunner($service, new MiniPaviClient(), $this->logger),
+                        new ServiceRunner($service, new MiniPaviClient(new MiniPaviCliGateway()), $this->logger),
                     ),
                     new ConditionalRequestHandler(
                         'web',
