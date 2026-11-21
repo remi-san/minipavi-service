@@ -68,23 +68,20 @@ final readonly class Messages
     }
 
     /**
-     * Checks there is a text for every message of these enums, e.g. at startup
-     *
-     * @param class-string<Message> ...$enums
+     * Checks there is a text for every one of these messages, e.g. at startup for every case
+     * of the service's enums: check(...FrameworkMessage::cases(), ...AccMessage::cases())
      *
      * @throws MessagesException naming the messages without text
      */
-    public function check(string ...$enums): self
+    public function check(Message ...$messages): self
     {
         $missing = [];
-        foreach ($enums as $enum) {
-            foreach ($enum::cases() as $message) {
-                if ($this->has((string) $message->value)) {
-                    continue;
-                }
-
-                $missing[] = $message->value;
+        foreach ($messages as $message) {
+            if ($this->has((string) $message->value)) {
+                continue;
             }
+
+            $missing[] = $message->value;
         }
         if ($missing !== []) {
             throw new MessagesException('No text for the messages: ' . implode(', ', $missing));

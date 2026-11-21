@@ -29,8 +29,8 @@ final readonly class KeyBuilder implements ElementBuilder
         return new Key(
             $text,
             $attributes->position(),
-            color: $attributes->enum('color', Color::class) ?? Color::Green,
-            bg: $attributes->enum('bg', Color::class),
+            color: $attributes->enum('color', ...Color::cases()) ?? Color::Green,
+            bg: $attributes->enum('bg', ...Color::cases()),
         );
     }
 }

@@ -597,7 +597,7 @@ enum AccMessage: string implements Message
 $parser = new MessagesXmlParser();
 $messages = $parser
     ->parseFile("$config/messages.xml", $parser->defaults())
-    ->check(FrameworkMessage::class, AccMessage::class);
+    ->check(...FrameworkMessage::cases(), ...AccMessage::cases());
 $parser = new PageXmlParser($messages);              // pages redefine them with <message>
 $service = new Service(new Sessions(new ContextSerializer($router), $router), $messages, $logger);  // for its error message
 
@@ -696,13 +696,13 @@ A service adds its own display elements by giving `PageXmlParser` a `Page\Parser
 after its messages. For each page, `builders()` gets the files of the page's folder
 (`PageFiles`) and the page's messages, and returns a `Page\Building\ElementBuilder` per
 element: its tag, and how it is built from its attributes (an `AttributeValues`, reading them
-typed: `int()`, `enum()`, `position()` for `row` and `col`...) and text (placeholders already
-replaced). The builder is also told where the element is, a `Placement`, and decides what that
-means for it: `checkPlacement()`, when the page is read, may refuse it there
-(`$placement->refuseInLoop()` for an element drawn once per page, as `<endkey>`), and
-`build()` places it, e.g. with `$placement->placeByRow($attributes)`, whose `row` is then
-relative to the item inside a `<foreach>` (0 by default), or ignores it for an element that
-positions itself (as `<background>`).
+typed: `int()`, `enum('color', ...Color::cases())`, `position()` for `row` and `col`...) and
+text (placeholders already replaced). The builder is also told where the element is, a
+`Placement`, and decides what that means for it: `checkPlacement()`, when the page is read,
+may refuse it there (`$placement->refuseInLoop()` for an element drawn once per page, as
+`<endkey>`), and `build()` places it, e.g. with `$placement->placeByRow($attributes)`, whose
+`row` is then relative to the item inside a `<foreach>` (0 by default), or ignores it for an
+element that positions itself (as `<background>`).
 
 ```php
 final readonly class GameElements implements PageElements

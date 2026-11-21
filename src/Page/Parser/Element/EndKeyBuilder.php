@@ -45,7 +45,7 @@ final readonly class EndKeyBuilder implements ElementBuilder
             $this->messages->get(FrameworkMessage::EndKey),
             $this->messages->get(FrameworkMessage::EndKeyShift),
             self::position($attributes->optionalInt('row')),
-            color: $attributes->enum('color', Color::class) ?? Color::Green,
+            color: $attributes->enum('color', ...Color::cases()) ?? Color::Green,
         );
     }
 

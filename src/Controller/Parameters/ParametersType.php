@@ -20,7 +20,13 @@ final readonly class ParametersType
     ) {}
 
     /**
-     * Parameters of a class implementing Parameters
+     * Parameters of a class implementing Parameters, e.g. of(PageParameters::class)
+     *
+     * It takes the class's name, not an object: what it needs is the class itself, to call
+     * its static fromValues(), to check that parameters are instances of it (accepts()), and
+     * to name it in errors (name()). There is no object of it to give before the parameters
+     * are read. The static analysis (Mago) checks class-string<P> against Parameters where
+     * it is passed.
      *
      * @template P of Parameters
      *

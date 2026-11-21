@@ -22,7 +22,7 @@ final class MessagesTest extends TestCase
     {
         $defaults = (new MessagesXmlParser())
             ->defaults()
-            ->check(FrameworkMessage::class);
+            ->check(...FrameworkMessage::cases());
 
         self::assertSame('Dernière page', $defaults->get(FrameworkMessage::LastPage));
     }
@@ -167,7 +167,7 @@ final class MessagesTest extends TestCase
 
         (new MessagesXmlParser())
             ->defaults()
-            ->check(FrameworkMessage::class, TestMessage::class);
+            ->check(...FrameworkMessage::cases(), ...TestMessage::cases());
     }
 
     public function testCheckNamesTheMessagesWithoutTextAfterOneWithText(): void
@@ -178,7 +178,14 @@ final class MessagesTest extends TestCase
         (new MessagesXmlParser())
             ->defaults()
             ->with(['welcome' => 'Bienvenue'])
-            ->check(TestMessage::class);
+            ->check(...TestMessage::cases());
+    }
+
+    public function testCheckChecksOnlyTheMessagesGiven(): void
+    {
+        $messages = (new Messages(['welcome' => 'Bienvenue']))->check(TestMessage::Welcome);
+
+        self::assertSame('Bienvenue', $messages->get(TestMessage::Welcome));
     }
 
     public function testFileRedefinesTheBaseMessages(): void

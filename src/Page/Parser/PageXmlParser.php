@@ -83,16 +83,16 @@ final class PageXmlParser
         $type = self::setting(
             $root,
             attribute: 'type',
-            enum: PageType::class,
+            cases: PageType::cases(),
             name: $name,
         ) ?? throw new PageXmlException(
-            self::at($root, $name) . ': <page>: type is missing (' . self::choices('type', PageType::class) . ')',
+            self::at($root, $name) . ': <page>: type is missing (' . self::choices('type', PageType::cases()) . ')',
         );
 
         $setup = new Setup(
-            self::setting($root, attribute: 'keyboard', enum: Keyboard::class, name: $name),
-            self::setting($root, attribute: 'echo', enum: LocalEcho::class, name: $name),
-            self::setting($root, attribute: 'scroll', enum: Scroll::class, name: $name),
+            self::setting($root, attribute: 'keyboard', cases: Keyboard::cases(), name: $name),
+            self::setting($root, attribute: 'echo', cases: LocalEcho::cases(), name: $name),
+            self::setting($root, attribute: 'scroll', cases: Scroll::cases(), name: $name),
         );
 
         $messages = $this->messages->with($this->messageTexts($root, $name));
@@ -120,49 +120,49 @@ final class PageXmlParser
     }
 
     /**
-     * Setting of the Minitel given by an attribute of <page>, a case of its enum; null if the
-     * attribute is missing
+     * Setting of the Minitel given by an attribute of <page>, the one of the cases of its
+     * string-backed enum whose value is the attribute's; null if the attribute is missing
      *
      * @template T of \BackedEnum
      *
-     * @param class-string<T> $enum
+     * @param list<T> $cases
      *
      * @return ?T
      *
-     * @throws PageXmlException for a value the enum doesn't have
+     * @throws PageXmlException for a value none of the cases has
      */
     private static function setting(
         \SimpleXMLElement $root,
         string $attribute,
-        string $enum,
+        array $cases,
         string $name,
     ): ?\BackedEnum {
         $value = XmlElements::attributes($root)[$attribute] ?? null;
         if ($value === null) {
             return null;
         }
+        foreach ($cases as $case) {
+            if ($case->value === $value) {
+                return $case;
+            }
+        }
 
-        return (
-            $enum::tryFrom($value) ?? throw new PageXmlException(
-                self::at($root, $name)
-                . ": <page>: {$attribute}=\"{$value}\" is unknown ("
-                . self::choices($attribute, $enum)
-                . ')',
-            )
+        throw new PageXmlException(
+            self::at($root, $name)
+            . ": <page>: {$attribute}=\"{$value}\" is unknown ("
+            . self::choices($attribute, $cases)
+            . ')',
         );
     }
 
     /**
      * The values an attribute of <page> can have, for its errors: attribute="a" or attribute="b"
      *
-     * @param class-string<\BackedEnum> $enum
+     * @param list<\BackedEnum> $cases
      */
-    private static function choices(string $attribute, string $enum): string
+    private static function choices(string $attribute, array $cases): string
     {
-        return implode(' or ', array_map(
-            static fn(\BackedEnum $case) => "{$attribute}=\"{$case->value}\"",
-            $enum::cases(),
-        ));
+        return implode(' or ', array_map(static fn(\BackedEnum $case) => "{$attribute}=\"{$case->value}\"", $cases));
     }
 
     /**
