@@ -668,9 +668,12 @@ elements are drawn in order:
   row up to the next one. So a text with `bg` is written after a space of its size (two
   columns in double width), which takes the cell before it, or, at the start of the row, the
   text moves one character right (a centered `fill="yes"` text is painted from column 1).
-  Without `fill="yes"`, a space on black after it ends the colour, so that it doesn't run over
-  what the row already shows; with it, the rest of the row is painted. Ending in the last
-  column, nothing is written after it.
+  Leave a free cell (two in double width) before a `<text bg>` that follows something on its
+  row, or that cell is overwritten; and a text with `bg` as wide as the row has its last
+  character on the next row. Without `fill="yes"`, a space on black after it, in the cell
+  after it, ends the colour, so that it doesn't run over what the row already shows; with
+  it, the rest of the row is painted. Ending in or past the last column, or with no room
+  left for a whole double-width space, nothing is written after it.
 
 `<page>` can also set up the Minitel, sent by `Page::display()` before the content (a setting
 left out is left as it is):
