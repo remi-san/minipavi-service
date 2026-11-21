@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Vdt;
 
+use MiniPaviService\Vdt\Token\Token;
+
 /**
  * What the clear screens (FF) of Videotex content do to it: what still shows after the last
  * one, or the content without them, to draw it over other content
@@ -20,20 +22,11 @@ final readonly class ClearScreens
      */
     public function fromLast(Vdt $vdt): Vdt
     {
-        $tokens = $this->parser->parse($vdt->toString());
-        $start = 0;
-        foreach ($tokens as $i => $token) {
-            if ($token->type !== TokenType::Clear) {
-                continue;
-            }
-
-            $start = $i;
-        }
-
-        return new Vdt(implode('', array_map(
-            static fn(Token $sequence) => $sequence->source,
-            \array_slice($tokens, $start),
-        )));
+        return new Vdt(array_reduce(
+            $this->parser->parse($vdt->toString()),
+            static fn(string $content, Token $sequence) => $sequence->appendTo($content),
+            initial: '',
+        ));
     }
 
     /**
@@ -42,8 +35,9 @@ final readonly class ClearScreens
      */
     public function removed(Vdt $vdt): Vdt
     {
-        return new Vdt(implode('', array_map(static fn(Token $sequence) => $sequence->type === TokenType::Clear
-            ? Videotex::HOME
-            : $sequence->source, $this->parser->parse($vdt->toString()))));
+        return new Vdt(implode('', array_map(
+            static fn(Token $sequence) => $sequence->drawnOver(),
+            $this->parser->parse($vdt->toString()),
+        )));
     }
 }

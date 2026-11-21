@@ -67,17 +67,15 @@ final class OffsetWriter implements ScreenListener
         }
     }
 
-    public function sequence(Token $sequence): void
+    public function clear(): void
     {
-        switch ($sequence->type) {
-            case TokenType::Clear:
-                $this->zones->clear();
-                $this->out->clear();
-                break;
-            case TokenType::Raw:
-                $this->out->raw($sequence->bytes);
-                break;
-        }
+        $this->zones->clear();
+        $this->out->clear();
+    }
+
+    public function raw(string $bytes): void
+    {
+        $this->out->raw($bytes);
     }
 
     /**

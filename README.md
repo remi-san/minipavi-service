@@ -836,7 +836,9 @@ echo Screen::of($moved)->preview();              // the screen, as text
   built on): plays the content on the simulated screen, telling a `Vdt\ScreenListener` each
   character (`glyph()`, with its row, column, width and attributes), each delimiter
   (`delimiter()`, with the `Screen\Zone` it starts), each CAN (`clearLine()`, with the zone
-  its first space starts if it is a delimiter) and the other `Token`s (`sequence()`).
+  its first space starts if it is a delimiter), each FF (`clear()`) and the bytes sent as
+  they are (`raw()`). Each `Vdt\Token\Token` the content is cut into plays what it does on
+  the cursor, or with the `Vdt\Pen` that draws and tells the listener.
   `Screen\ScreenCells::of()` collects the cells of `Screen::of()`, `Vdt\OffsetWriter::write()`
   writes the content moved by `Offset`: each listens to one content, built by that static
   method only.
