@@ -419,9 +419,11 @@ final class PageXmlParserTest extends TestCase
             [' 2|    ab' . str_repeat(' ', times: 34) . '|'],
             $this->drawnRows($page->display(new Terminal())),
         );
-        self::assertSame(Color::Blue, self::cell($screen, row: 2, col: 7)->attributes->background());
+        // From the space before it, which starts its background colour
+        self::assertSame(Color::Blue, self::cell($screen, row: 2, col: 4)->attributes->background());
+        self::assertSame(Color::Blue, self::cell($screen, row: 2, col: 5)->attributes->background());
         self::assertSame(Color::Blue, self::cell($screen, row: 2, col: 40)->attributes->background());
-        self::assertNull($screen->cell(row: 2, col: 4));
+        self::assertNull($screen->cell(row: 2, col: 3));
     }
 
     /**
@@ -453,14 +455,15 @@ final class PageXmlParserTest extends TestCase
             '<text row="1" align="center" bg="blue" fill="yes">Jeux</text>',
             ' 1|' . str_repeat(' ', times: 18) . 'Jeux' . str_repeat(' ', times: 18) . '|',
         ];
+        // No room for a space before it: the space, which starts its background colour, is
+        // in the first column, and the text after it, the rest going on the next row
         yield 'filled, as wide as the screen' => [
             '<text row="1" align="center" size="double-width" bg="blue" fill="yes">ABCDEFGHIJKLMNOPQRST</text>',
-            ' 1|AABBCCDDEEFFGGHHIIJJKKLLMMNNOOPPQQRRSSTT|',
+            ' 1|  AABBCCDDEEFFGGHHIIJJKKLLMMNNOOPPQQRRSS|',
         ];
-        // No space before it: it starts in the first column, as when not filled
         yield 'filled, wider than the screen' => [
             '<text row="1" align="center" size="double-width" bg="blue" fill="yes">ABCDEFGHIJKLMNOPQRSTUV</text>',
-            ' 1|AABBCCDDEEFFGGHHIIJJKKLLMMNNOOPPQQRRSSTT|',
+            ' 1|  AABBCCDDEEFFGGHHIIJJKKLLMMNNOOPPQQRRSS|',
         ];
         yield 'filled, double width' => [
             '<text row="1" align="center" size="double-width" bg="blue" fill="yes">Jeux</text>',
