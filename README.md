@@ -838,7 +838,11 @@ echo Screen::of($moved)->preview();              // the screen, as text
   (`delimiter()`, with the `Screen\Zone` it starts), each CAN (`clearLine()`, with the zone
   its first space starts if it is a delimiter), each FF (`clear()`) and the bytes sent as
   they are (`raw()`). Each `Vdt\Token\Token` the content is cut into plays what it does on
-  the cursor, or with the `Vdt\Pen` that draws and tells the listener.
+  the cursor, or with the `Vdt\Pen` that draws and tells the listener. An attribute (ESC and
+  a byte) is a `Screen\Attribute\Attribute` (`TextColor`, `BackgroundColor`,
+  `CharacterSize`, `Blinking`, `Masking`, `Underlining` or `Inversion`), which knows what it
+  does: where the Minitel discards it, whether it waits for a delimiter, and what it sets in
+  the cell's `Screen\Attributes`.
   `Screen\ScreenCells::of()` collects the cells of `Screen::of()`, `Vdt\OffsetWriter::write()`
   writes the content moved by `Offset`: each listens to one content, built by that static
   method only.
