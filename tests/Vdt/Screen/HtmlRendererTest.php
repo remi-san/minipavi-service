@@ -85,6 +85,14 @@ final class HtmlRendererTest extends TestCase
         self::assertStringContainsString('>&lt;</span>', $html);
     }
 
+    public function testDrawsAG2CharacterTheMinitelDoesntHaveAsItDoes(): void
+    {
+        // ü is sent as a diaeresis and u (#137), which the Minitel shows as _ (#90)
+        $html = $this->render(Vdt::join(Vdt::position(new Position(row: 1)), Vdt::text('ü')));
+
+        self::assertStringContainsString('style="color:#ffffff;background:#000000">_</span>', $html);
+    }
+
     public function testInverseVideoSwapsTheColours(): void
     {
         // Blue text, in a zone on white (from its delimiter, a space): the text white on blue

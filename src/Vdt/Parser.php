@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MiniPaviService\Vdt;
 
 use MiniPaviService\Vdt\Screen\Attribute\AttributeReader;
+use MiniPaviService\Vdt\Screen\G2Characters;
 use MiniPaviService\Vdt\Token\Attribute;
 use MiniPaviService\Vdt\Token\CarriageReturn;
 use MiniPaviService\Vdt\Token\Charset;
@@ -42,13 +43,12 @@ final class Parser
                 continue;
             }
             switch ($byte) {
-                case Videotex::G2: // G2 character, possibly an accent followed by its letter
-                    $glyph = substr($vdt, $i, length: 2);
-                    $accent = ord($vdt[$i + 1] ?? "\0");
-                    if ($accent >= 0x41 && $accent <= 0x4F && ($i + 2) < \strlen($vdt) && ord($vdt[$i + 2]) >= 0x20) {
-                        $glyph .= $vdt[$i + 2];
-                    }
-                    $tokens[] = new Glyph($glyph);
+                case Videotex::G2: // G2 character: its code, and after an accent the byte after it
+                    $size = G2Characters::isAccent($vdt[$i + 1] ?? '') ? 3 : 2;
+                    $glyph = substr($vdt, $i, $size);
+                    // Cut at the end of the content, it draws nothing: the Minitel waits for the
+                    // rest, which it would take from what it is sent next
+                    $tokens[] = strlen($glyph) === $size ? new Glyph($glyph) : new Raw($glyph);
                     $i += strlen($glyph) - 1;
                     break;
                 case Videotex::SUB: // shown as an error character
