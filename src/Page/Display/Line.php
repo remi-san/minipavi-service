@@ -22,9 +22,9 @@ final readonly class Line implements Element
     public const BOTTOM = "\x7E";
 
     public function __construct(
-        public Span $span,
-        public string $char,
-        public Color $color,
+        private Span $span,
+        private string $char,
+        private Color $color,
     ) {
         if (strlen($char) !== 1) {
             throw new InvalidValueException("A line is made of a single character, got '{$char}'");

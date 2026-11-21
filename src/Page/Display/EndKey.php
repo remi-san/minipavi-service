@@ -24,10 +24,10 @@ final readonly class EndKey implements Element
      * @param string $shiftLabel shown before it, for adapters
      */
     public function __construct(
-        public string $label,
-        public string $shiftLabel,
-        public ?Position $position,
-        public Color $color,
+        private string $label,
+        private string $shiftLabel,
+        private ?Position $position,
+        private Color $color,
     ) {}
 
     public function toVdt(Terminal $terminal): Vdt

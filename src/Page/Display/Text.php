@@ -19,13 +19,13 @@ final readonly class Text implements Element
      * @param bool $fill paints the rest of the row (and, when centered, the start of the row) with bg
      */
     public function __construct(
-        public string $text,
-        public Position $position,
-        public bool $centered,
-        public Color $color,
-        public ?Color $bg,
-        public ?Size $size,
-        public bool $fill,
+        private string $text,
+        private Position $position,
+        private bool $centered,
+        private Color $color,
+        private ?Color $bg,
+        private ?Size $size,
+        private bool $fill,
     ) {}
 
     public function toVdt(Terminal $terminal): Vdt
