@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Cli;
 
+use MiniPaviService\Io\FileReader;
 use MiniPaviService\Io\Files;
+use MiniPaviService\Io\FileWriter;
 use MiniPaviService\Vdt\Offset;
 use MiniPaviService\Vdt\Screen\Screen;
 use MiniPaviService\Vdt\Vdt;
@@ -29,6 +31,17 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 )]
 final class VdtOffsetCommand extends Command
 {
+    /**
+     * @param FileReader $reader reads the input file (php://stdin for "-")
+     * @param FileWriter $writer writes the output file
+     */
+    public function __construct(
+        private readonly FileReader $reader = new Files(),
+        private readonly FileWriter $writer = new Files(),
+    ) {
+        parent::__construct();
+    }
+
     protected function configure(): void
     {
         $this
@@ -61,7 +74,7 @@ final class VdtOffsetCommand extends Command
         [$x, $y] = [self::int($input, name: 'x'), self::int($input, name: 'y')];
         $errors = (new SymfonyStyle($input, $output))->getErrorStyle();
 
-        $bytes = (new Files())->read($file === '-' ? 'php://stdin' : $file);
+        $bytes = $this->reader->read($file === '-' ? 'php://stdin' : $file);
         if ($bytes === null) {
             $errors->writeln(Input::escape("cannot read {$file}"));
 
@@ -85,7 +98,7 @@ final class VdtOffsetCommand extends Command
 
             return self::SUCCESS;
         }
-        if (!(new Files())->write($target, $moved->toString())) {
+        if (!$this->writer->write($target, $moved->toString())) {
             $errors->writeln(Input::escape("cannot write {$target}"));
 
             return self::FAILURE;

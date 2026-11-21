@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Cli;
 
+use MiniPaviService\Io\FileReader;
+use MiniPaviService\Io\Files;
 use MiniPaviService\Message\Messages;
 use MiniPaviService\Message\MessagesException;
 use MiniPaviService\Message\MessagesXmlParser;
@@ -31,13 +33,16 @@ final readonly class MessagesOption
     }
 
     /**
+     * @param FileReader $files reads the service's messages file; the framework's are read from
+     *                          the framework's folder, as MessagesXmlParser reads them by default
+     *
      * @throws MessagesException if the file can't be read
      */
-    public static function messages(InputInterface $input): Messages
+    public static function messages(InputInterface $input, FileReader $files = new Files()): Messages
     {
         $file = $input->getOption(self::NAME);
-        $parser = new MessagesXmlParser();
+        $defaults = (new MessagesXmlParser())->defaults();
 
-        return \is_string($file) ? $parser->parseFile($file, $parser->defaults()) : $parser->defaults();
+        return \is_string($file) ? (new MessagesXmlParser($files))->parseFile($file, $defaults) : $defaults;
     }
 }

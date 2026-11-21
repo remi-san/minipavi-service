@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Cli;
 
+use MiniPaviService\Io\FileReader;
 use MiniPaviService\Io\Files;
 use MiniPaviService\Message\MessagesException;
 use MiniPaviService\Minitel\Terminal;
@@ -26,6 +27,16 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 #[AsCommand(name: 'preview', description: 'Prints the screen a page draws, a template with the data of a JSON file')]
 final class PreviewCommand extends Command
 {
+    /**
+     * @param FileReader $files reads the files of the command line: the page and its Videotex
+     *                          files, the data, the service's messages
+     */
+    public function __construct(
+        private readonly FileReader $files = new Files(),
+    ) {
+        parent::__construct();
+    }
+
     protected function configure(): void
     {
         $this->addArgument('page', InputArgument::REQUIRED, description: 'The page file')->addArgument(
@@ -40,11 +51,11 @@ final class PreviewCommand extends Command
     {
         try {
             $data = $input->getArgument('data');
-            $variables = \is_string($data) ? self::data($data) : [];
-            $page = (new PageXmlParser(MessagesOption::messages($input)))->parseFile(Input::string(
-                $input,
-                argument: 'page',
-            ));
+            $variables = \is_string($data) ? $this->data($data) : [];
+            $page = (new PageXmlParser(
+                MessagesOption::messages($input, $this->files),
+                files: $this->files,
+            ))->parseFile(Input::string($input, argument: 'page'));
             $output->write(
                 Screen::of($page->display(new Terminal(), $variables))->preview(),
                 newline: false,
@@ -68,9 +79,9 @@ final class PreviewCommand extends Command
      *
      * @throws \UnexpectedValueException if it can't be read, or isn't a JSON object
      */
-    private static function data(string $file): array
+    private function data(string $file): array
     {
-        $json = (new Files())->read($file);
+        $json = $this->files->read($file);
         if ($json === null) {
             throw new \UnexpectedValueException("{$file}: file not found");
         }
