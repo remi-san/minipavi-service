@@ -210,8 +210,9 @@ KernelBuilder::for($router, $messages)
     `ServiceCallCommand`, as `RunCommand::connectTo()` gives) is blocked: the page stays as it was, with
     `FrameworkMessage::WebLeave` on line 0. The key labels and that error are messages
     (`key.send`, `key.next`…, `web.leave`). The screen is drawn in the Minitel's colours, with
-    double sizes, inverse video, underlining, blinking and mosaic pixels, as MiniPavi's
-    emulator does, in self-contained HTML (inline CSS, no JavaScript). The text is drawn with the
+    double sizes, inverse video, underlining, blinking (of the character only, on its
+    background, every 1.5 s, the other way round in inverse video) and mosaic pixels, as
+    MiniPavi's emulator does, in self-contained HTML (inline CSS, no JavaScript). The text is drawn with the
     Minitel font of [Minitel-Canvas](https://github.com/Zigazou/Minitel-Canvas) (CC0, in
     `resources/fonts`), embedded in the page (`HtmlRenderer::MINITEL_FONT`, read for each
     page only: the gateway's requests don't need it).

@@ -18,7 +18,8 @@ use MiniPaviService\Vdt\Videotex;
  * background of its zone, Zone), with their sizes, inverse video (the text colour swapped with
  * that background), underlining (of the zones a delimiter starts, but not in inverse video, as
  * the emulator draws the key badges), masking (of a zone too: only the background shown) and
- * blinking. Text is drawn with a Minitel font
+ * blinking (of the character only, on its background: shown for 0.75 s then hidden for 0.75 s,
+ * the other way round in inverse video). Text is drawn with a Minitel font
  * (MINITEL_FONT: Minitel-Canvas's, whose glyphs fill the cells), embedded in style(). Mosaic
  * cells are drawn as their 2 × 3 pixels (separated when underlined), without depending on a
  * font, and so is 0x7F, a full block in text too, as SUB is shown. No JavaScript.
@@ -50,8 +51,9 @@ final readonly class HtmlRenderer
         .h2 { transform: scaleY(2); transform-origin: bottom; z-index: 1; }
         .w2.h2 { transform: scale(2); transform-origin: bottom left; }
         .u { text-decoration: underline; }
-        .blink { animation: blink 1s steps(1, end) infinite; }
-        @keyframes blink { 50% { visibility: hidden; } }
+        .blink, .blink-inverse { animation: blink 1.5s steps(1, end) infinite; }
+        .blink-inverse { animation-delay: -0.75s; }
+        @keyframes blink { 50% { color: transparent; } }
         .m { display: grid; grid-template: repeat(3, 1fr) / repeat(2, 1fr); height: 100%; }
         .m i { background: transparent; }
         .m i.on { background: currentColor; }
@@ -149,7 +151,10 @@ final readonly class HtmlRenderer
             $classes[] = 'h2';
         }
         if ($attributes->isBlinking()) {
-            $classes[] = 'blink';
+            // Only the character blinks (its colour, which its underline and mosaic pixels
+            // take, made transparent), on its background, as in MiniPavi's emulator; there,
+            // in inverse video, it is hidden while the others are shown
+            $classes[] = $inverse ? 'blink-inverse' : 'blink';
         }
         $underline = $attributes->isUnderlined();
         // Inverse video (the key badges, Page\Display\Key) isn't underlined, as in MiniPavi's

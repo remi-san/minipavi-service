@@ -133,6 +133,47 @@ final class HtmlRendererTest extends TestCase
         self::assertSame(3, substr_count($this->renderCell("\x1B\x5A x y"), needle: 'class="c u"'));
     }
 
+    public function testBlinkingHidesTheCharacterOnly(): void
+    {
+        // As MiniPavi's emulator does, every 1.5 s: the character (its pixels in mosaic, its
+        // underline) shown for 0.75 s, then hidden for 0.75 s, its background kept
+        $style = (new HtmlRenderer(HtmlRenderer::MINITEL_FONT))->style();
+
+        self::assertStringContainsString(
+            '.blink, .blink-inverse { animation: blink 1.5s steps(1, end) infinite; }',
+            $style,
+        );
+        self::assertStringContainsString('@keyframes blink { 50% { color: transparent; } }', $style);
+        self::assertStringNotContainsString('visibility', $style);
+        // In a zone on blue (from its delimiter, a space): the cell keeps the zone's background
+        self::assertStringContainsString(
+            '<span class="c blink" style="color:#ffffff;background:#0000ff">x</span>',
+            $this->renderCell("\x1B\x54 \x1B\x48x"),
+        );
+        // In double size too
+        self::assertStringContainsString(
+            '<span class="c w2 h2 blink" style="color:#ffffff;background:#000000">x</span>',
+            $this->render(new Vdt("\x1F\x42\x41\x1B\x4F\x1B\x48x")),
+        );
+        // And in mosaic, where inverse video doesn't apply
+        self::assertStringContainsString(
+            '<span class="c blink" style="color:#ffffff;background:#0000ff"><span class="m">',
+            $this->renderCell("\x1B\x48\x1B\x5D\x0E\x1B\x54\x7F"),
+        );
+    }
+
+    public function testBlinkingInInverseVideoShowsTheCharacterWhenTheOthersAreHidden(): void
+    {
+        // As MiniPavi's emulator does: hidden for the first 0.75 s, on the text's colour
+        $style = (new HtmlRenderer(HtmlRenderer::MINITEL_FONT))->style();
+
+        self::assertStringContainsString('.blink-inverse { animation-delay: -0.75s; }', $style);
+        self::assertStringContainsString(
+            '<span class="c blink-inverse" style="color:#000000;background:#ffffff">x</span>',
+            $this->renderCell("\x1B\x48\x1B\x5Dx"),
+        );
+    }
+
     public function testMosaicIsNeverDoubleHeight(): void
     {
         // ESC M then SO on row 2: the Minitel draws mosaic at normal size
