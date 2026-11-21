@@ -11,6 +11,8 @@ use MiniPaviService\Minitel\Terminal;
  * Where the requests of the gateway run, for Service: a new session, at the router's default
  * route, or the one the context sent back by the gateway was kept for. Each request runs the
  * controllers of its session (RequestFlow) until a response responds to the gateway.
+ *
+ * A service only builds it, to give Service: start() and resume() are the framework's.
  */
 final readonly class Sessions
 {
@@ -43,6 +45,8 @@ final readonly class Sessions
 
     /**
      * Flow of a request in a new session: a new context, at the default route, keeping nothing
+     *
+     * @internal for Service and RequestServer
      */
     public function start(Terminal $terminal): RequestFlow
     {
@@ -51,6 +55,8 @@ final readonly class Sessions
 
     /**
      * Flow of a request in the session of its context, as the gateway sends it (signed)
+     *
+     * @internal for RequestServer
      *
      * @throws UnknownRouteException for a context at a route the router doesn't have
      * @throws Signing\ForgedContextException if the signer didn't sign it
