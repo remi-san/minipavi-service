@@ -53,8 +53,11 @@ final readonly class Text implements Element
         }
         if ($this->fill) {
             // Starts at column 1 and pads with spaces up to the text (the spaces having the
-            // text's width): the background color only applies from a space onwards
-            $pad = max(0, intdiv($this->centered($charWidth)->col - 1, $charWidth));
+            // text's width): the background color only applies from a space onwards. The pad
+            // is never negative, a column being at least 1 and a character 1 or 2 columns
+            // wide, but Mago types intdiv() as int
+            /** @var non-negative-int $pad */
+            $pad = intdiv($this->centered($charWidth)->col - 1, $charWidth);
 
             return Vdt::join(
                 Vdt::position(new Position($this->position->row)),
