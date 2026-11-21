@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace MiniPaviService\Tests\Cli;
 
 use MiniPaviService\Cli\VdtOffsetCommand;
+use MiniPaviService\Io\FileWriter;
+use MiniPaviService\Tests\Support\MemoryFiles;
 use MiniPaviService\Vdt\Offset;
 use MiniPaviService\Vdt\Screen\Screen;
 use MiniPaviService\Vdt\Vdt;
@@ -19,17 +21,22 @@ final class VdtOffsetCommandTest extends TestCase
 {
     private const FIXTURES = __DIR__ . '/../fixtures/vdt';
 
+    private MemoryFiles $files;
+
     private CommandTester $tester;
 
     protected function setUp(): void
     {
-        $this->tester = new CommandTester(new VdtOffsetCommand());
+        $this->files = new MemoryFiles([
+            'background.vdt' => (string) file_get_contents(self::FIXTURES . '/background.vdt'),
+        ]);
+        $this->tester = new CommandTester(new VdtOffsetCommand($this->files, $this->files));
     }
 
     public function testWritesTheMovedPage(): void
     {
         self::assertSame(Command::SUCCESS, $this->tester->execute([
-            'input' => self::FIXTURES . '/background.vdt',
+            'input' => 'background.vdt',
             'x' => '8',
             'y' => '-2',
         ]));
@@ -37,24 +44,37 @@ final class VdtOffsetCommandTest extends TestCase
             (string) file_get_contents(self::FIXTURES . '/background.offset_8_-2.vdt'),
             $this->tester->getDisplay(),
         );
+        self::assertSame([], $this->files->written);
     }
 
     public function testWritesTheMovedPageToTheOutputFile(): void
     {
-        $output = tempnam(sys_get_temp_dir(), prefix: 'vdt');
-        self::assertIsString($output);
-        try {
-            self::assertSame(Command::SUCCESS, $this->tester->execute([
-                'input' => self::FIXTURES . '/background.vdt',
-                'x' => '8',
-                'y' => '-2',
-                'output' => $output,
-            ]));
-            self::assertFileEquals(self::FIXTURES . '/background.offset_8_-2.vdt', $output);
-            self::assertSame('', $this->tester->getDisplay());
-        } finally {
-            unlink($output);
-        }
+        self::assertSame(Command::SUCCESS, $this->tester->execute([
+            'input' => 'background.vdt',
+            'x' => '8',
+            'y' => '-2',
+            'output' => 'moved.vdt',
+        ]));
+        self::assertSame(
+            ['moved.vdt' => (string) file_get_contents(self::FIXTURES . '/background.offset_8_-2.vdt')],
+            $this->files->written,
+        );
+        self::assertSame('', $this->tester->getDisplay());
+    }
+
+    public function testReadsTheStandardInputForADash(): void
+    {
+        $files = new MemoryFiles(['php://stdin' => "\x1F\x41\x41AB"]);
+        $tester = new CommandTester(new VdtOffsetCommand($files, $files));
+
+        self::assertSame(Command::SUCCESS, $tester->execute(['input' => '-', 'x' => '2', 'y' => '1']));
+        self::assertSame(['php://stdin'], $files->read);
+        self::assertSame(
+            (new Offset(2, 1))
+                ->apply(new Vdt("\x1F\x41\x41AB"))
+                ->toString(),
+            $tester->getDisplay(),
+        );
     }
 
     public function testPreviewsTheScreenBeforeAndAfter(): void
@@ -62,7 +82,7 @@ final class VdtOffsetCommandTest extends TestCase
         $vdt = new Vdt((string) file_get_contents(self::FIXTURES . '/background.vdt'));
 
         self::assertSame(Command::SUCCESS, $this->tester->execute([
-            'input' => self::FIXTURES . '/background.vdt',
+            'input' => 'background.vdt',
             'x' => '8',
             'y' => '-2',
             '--preview' => true,
@@ -72,30 +92,37 @@ final class VdtOffsetCommandTest extends TestCase
                 . Screen::of((new Offset(8, -2))->apply($vdt))->preview(),
             $this->tester->getDisplay(),
         );
+        self::assertSame([], $this->files->written);
     }
 
     public function testFailsOnAFileItCannotRead(): void
     {
         self::assertSame(Command::FAILURE, $this->tester->execute([
-            'input' => self::FIXTURES . '/missing.vdt',
+            'input' => 'missing.vdt',
             'x' => '1',
             'y' => '1',
         ], ['capture_stderr_separately' => true]));
-        self::assertSame('cannot read ' . self::FIXTURES . "/missing.vdt\n", $this->tester->getErrorOutput());
+        self::assertSame("cannot read missing.vdt\n", $this->tester->getErrorOutput());
+        self::assertSame('', $this->tester->getDisplay());
     }
 
     public function testFailsOnAnOutputFileItCannotWrite(): void
     {
-        $output = sys_get_temp_dir() . '/minipavi-missing-' . bin2hex(random_bytes(4)) . '/moved.vdt';
+        $tester = new CommandTester(new VdtOffsetCommand($this->files, new class implements FileWriter {
+            public function write(string $file, string $content): bool
+            {
+                return false;
+            }
+        }));
 
-        self::assertSame(Command::FAILURE, $this->tester->execute([
-            'input' => self::FIXTURES . '/background.vdt',
+        self::assertSame(Command::FAILURE, $tester->execute([
+            'input' => 'background.vdt',
             'x' => '1',
             'y' => '1',
-            'output' => $output,
+            'output' => 'moved.vdt',
         ], ['capture_stderr_separately' => true]));
-        self::assertSame("cannot write {$output}\n", $this->tester->getErrorOutput());
-        self::assertSame('', $this->tester->getDisplay());
+        self::assertSame("cannot write moved.vdt\n", $tester->getErrorOutput());
+        self::assertSame('', $tester->getDisplay());
     }
 
     public function testNeedsXAndY(): void

@@ -5,14 +5,19 @@ declare(strict_types=1);
 namespace MiniPaviService\Tests\Support;
 
 use MiniPaviService\Io\FileReader;
+use MiniPaviService\Io\FileWriter;
 
 /**
- * Files in memory, by path, instead of on disk; records the paths read, in $read
+ * Files in memory, by path, instead of on disk; records the paths read, in $read, and the
+ * files written, in $written
  */
-final class MemoryFiles implements FileReader
+final class MemoryFiles implements FileReader, FileWriter
 {
     /** @var list<string> paths read, in order */
     public array $read = [];
+
+    /** @var array<string, string> content written, by path */
+    public array $written = [];
 
     /**
      * @param array<string, string> $files content by path
@@ -26,5 +31,12 @@ final class MemoryFiles implements FileReader
         $this->read[] = $file;
 
         return $this->files[$file] ?? null;
+    }
+
+    public function write(string $file, string $content): bool
+    {
+        $this->written[$file] = $content;
+
+        return true;
     }
 }
