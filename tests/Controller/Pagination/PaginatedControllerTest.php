@@ -14,6 +14,7 @@ use MiniPaviService\Controller\Response\DisplayPage;
 use MiniPaviService\Core\ContextSerializer;
 use MiniPaviService\Core\RouterBuilder;
 use MiniPaviService\Core\Service;
+use MiniPaviService\Core\Sessions;
 use MiniPaviService\Gateway\GatewayRequest;
 use MiniPaviService\Message\MessagesXmlParser;
 use MiniPaviService\Minitel\FunctionKey;
@@ -107,7 +108,10 @@ final class PaginatedControllerTest extends TestCase
 
         $router = $this->routes->build();
         $serializer = new ContextSerializer($router);
-        (new ServiceTester(new Service($router, (new MessagesXmlParser())->defaults(), $serializer), $serializer))
+        (new ServiceTester(
+            new Service(new Sessions($serializer, $router), (new MessagesXmlParser())->defaults()),
+            $serializer,
+        ))
             ->connect()
             ->press(FunctionKey::Send)
             ->press(FunctionKey::Next)
@@ -241,9 +245,8 @@ final class PaginatedControllerTest extends TestCase
 
         $router = $this->routes->build();
         $response = (new Service(
-            $router,
+            new Sessions(new ContextSerializer($router), $router),
             (new MessagesXmlParser())->defaults(),
-            new ContextSerializer($router),
         ))->handle(new GatewayRequest(FunctionKey::Refresh, [], $context));
 
         $screen = Screen::of($response->vdt ?? self::fail('No response'));
@@ -271,7 +274,7 @@ final class PaginatedControllerTest extends TestCase
         $serializer = new ContextSerializer($router);
 
         return (new ServiceTester(
-            new Service($router, (new MessagesXmlParser())->defaults(), $serializer),
+            new Service(new Sessions($serializer, $router), (new MessagesXmlParser())->defaults()),
             $serializer,
         ))
             ->connect()

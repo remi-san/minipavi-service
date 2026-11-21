@@ -2,14 +2,11 @@
 
 declare(strict_types=1);
 
-namespace MiniPaviService\Gateway;
-
-use MiniPaviService\Minitel\FunctionKey;
-use MiniPaviService\Minitel\Key;
+namespace MiniPaviService\Minitel;
 
 /**
  * What the gateway sends as the key (fctn) of a request that isn't a function key
- * (Minitel\FunctionKey): a connection, a disconnection, or a background call
+ * (FunctionKey): a connection, a disconnection, or a background call
  */
 enum ConnectionCode: string implements Key
 {
@@ -38,26 +35,15 @@ enum ConnectionCode: string implements Key
     }
 
     /**
-     * Null: a connection code isn't a function key
+     * The user connected (Connect, DirectConnect) or disconnected, or the gateway called in
+     * the background
      */
-    public function functionKey(): ?FunctionKey
+    public function handleWith(KeyHandler $handler): mixed
     {
-        return null;
-    }
-
-    /**
-     * The code itself: it is a connection code
-     */
-    public function connectionCode(): self
-    {
-        return $this;
-    }
-
-    /**
-     * Whether the user connects: a new connection, or one from another service
-     */
-    public function isConnection(): bool
-    {
-        return $this === self::Connect || $this === self::DirectConnect;
+        return match ($this) {
+            self::Connect, self::DirectConnect => $handler->connected($this),
+            self::Disconnect => $handler->disconnected(),
+            self::BackgroundCall => $handler->calledInBackground(),
+        };
     }
 }

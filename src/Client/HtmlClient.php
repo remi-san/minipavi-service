@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace MiniPaviService\Client;
 
 use MiniPaviService\Gateway\Client;
-use MiniPaviService\Gateway\ConnectionCode;
 use MiniPaviService\Gateway\GatewayRequest;
 use MiniPaviService\Message\Messages;
+use MiniPaviService\Minitel\ConnectionCode;
 use Psr\Http\Message\ServerRequestInterface;
 
 /**

@@ -16,20 +16,20 @@ use MiniPaviService\Controller\Response\RunCommand;
 use MiniPaviService\Core\ContextSerializer;
 use MiniPaviService\Core\RouterBuilder;
 use MiniPaviService\Core\Service;
+use MiniPaviService\Core\Sessions;
 use MiniPaviService\Core\Signing\ForgedContextException;
 use MiniPaviService\Core\Signing\HmacContextSigner;
 use MiniPaviService\Gateway\CallMode;
-use MiniPaviService\Gateway\ConnectionCode;
 use MiniPaviService\Gateway\GatewayRequest;
 use MiniPaviService\Gateway\GatewayResponse;
 use MiniPaviService\Gateway\InputCommand;
 use MiniPaviService\Gateway\ServiceCallCommand;
 use MiniPaviService\Gateway\WaitForKeyCommand;
-use MiniPaviService\InvalidValueException;
 use MiniPaviService\Message\FrameworkMessage;
 use MiniPaviService\Message\Messages;
 use MiniPaviService\Message\MessagesException;
 use MiniPaviService\Message\MessagesXmlParser;
+use MiniPaviService\Minitel\ConnectionCode;
 use MiniPaviService\Minitel\FunctionKey;
 use MiniPaviService\Minitel\InputField;
 use MiniPaviService\Minitel\Position;
@@ -89,7 +89,7 @@ final class ServiceTest extends TestCase
         self::assertNull($this->handle(new GatewayRequest(ConnectionCode::Disconnect, [], $context)));
         self::assertSame([], $this->requests);
         // Nothing went wrong
-        self::assertSame([LogLevel::INFO], $this->levels());
+        self::assertSame([[LogLevel::INFO, 'Disconnection', []]], $this->logger->records);
     }
 
     #[DataProvider('contextsOfADisconnection')]
@@ -115,9 +115,8 @@ final class ServiceTest extends TestCase
         // No context can be signed: not even the error response's
         $router = $this->routes->build();
         $service = new Service(
-            $router,
+            new Sessions(new ContextSerializer($router, new FailingSigner()), $router),
             (new MessagesXmlParser())->defaults(),
-            new ContextSerializer($router, new FailingSigner()),
             logger: $this->logger,
         );
 
@@ -135,9 +134,8 @@ final class ServiceTest extends TestCase
         // Their context isn't read: a service signing its contexts doesn't refuse it
         $router = $this->routes->build();
         $service = new Service(
-            $router,
+            new Sessions(new ContextSerializer($router, new HmacContextSigner('secret')), $router),
             (new MessagesXmlParser())->defaults(),
-            new ContextSerializer($router, new HmacContextSigner('secret')),
             logger: $this->logger,
         );
 
@@ -153,9 +151,8 @@ final class ServiceTest extends TestCase
     {
         $router = $this->routes->build();
         $service = new Service(
-            $router,
+            new Sessions(new ContextSerializer($router, new HmacContextSigner('secret')), $router),
             (new MessagesXmlParser())->defaults(),
-            new ContextSerializer($router, new HmacContextSigner('secret')),
             logger: $this->logger,
         );
 
@@ -167,19 +164,41 @@ final class ServiceTest extends TestCase
         self::assertInstanceOf(ForgedContextException::class, $this->error());
     }
 
-    public function testConnectionStartsAtTheDefaultRoute(): void
+    /**
+     * @return iterable<string, array{ConnectionCode}>
+     */
+    public static function connections(): iterable
+    {
+        yield 'new connection' => [ConnectionCode::Connect];
+        yield 'connection from another service' => [ConnectionCode::DirectConnect];
+    }
+
+    #[DataProvider('connections')]
+    public function testConnectionStartsAtTheDefaultRoute(ConnectionCode $code): void
     {
         self::assertSame(
             'menu',
-            $this->contentOf($this->handle(
-                new GatewayRequest(ConnectionCode::Connect, ['typed before'], 'not a context'),
-            )),
+            $this->contentOf($this->handle(new GatewayRequest($code, ['typed before'], 'not a context'))),
         );
         // A new session: at init, and without what was typed before
         self::assertSame(ControllerState::Init, $this->lastRequest('menu')->state());
-        self::assertSame([], $this->lastRequest('menu')->content());
-        self::assertSame([LogLevel::INFO], $this->levels());
-        self::assertSame(['fctn' => 'CNX'], $this->logger->records[0][2]);
+        self::assertSame([$code, []], [$this->lastRequest('menu')->key(), $this->lastRequest('menu')->content()]);
+        self::assertSame([[LogLevel::INFO, 'Connection', ['fctn' => $code->value]]], $this->logger->records);
+    }
+
+    public function testAKeyTheFrameworkDoesntKnowContinuesTheSession(): void
+    {
+        $directory = $this->press($this->connect(), key: FunctionKey::Send);
+
+        // E.g. DIRECT, after a CallMode::Direct call (GatewayRequest::keyOf())
+        self::assertSame(
+            'code 36',
+            $this->contentOf($this->handle(new GatewayRequest(null, ['36'], $directory->context, $this->terminal))),
+        );
+        self::assertSame([null, ['36']], [
+            $this->lastRequest('directory')->key(),
+            $this->lastRequest('directory')->content(),
+        ]);
     }
 
     public function testKeyRunsTheControllerTheUserIsAt(): void
@@ -235,11 +254,10 @@ final class ServiceTest extends TestCase
     {
         $router = $this->routes->build();
         $service = new Service(
-            $router,
+            new Sessions(new ContextSerializer($router), $router),
             (new MessagesXmlParser())
                 ->defaults()
                 ->with(['error' => 'Oops']),
-            new ContextSerializer($router),
             logger: $this->logger,
         );
 
@@ -255,7 +273,7 @@ final class ServiceTest extends TestCase
         $this->expectExceptionMessage('No text for the messages: error, page.first, page.last, endkey, endkey.shift');
 
         $router = $this->routes->build();
-        new Service($router, new Messages(['other' => 'x']), new ContextSerializer($router));
+        new Service(new Sessions(new ContextSerializer($router), $router), new Messages(['other' => 'x']));
     }
 
     public function testEndlessPageChangesAreStoppedAndRespondedToWithAnError(): void
@@ -306,15 +324,6 @@ final class ServiceTest extends TestCase
         );
     }
 
-    public function testThePageChangesAllowedCantBeNegative(): void
-    {
-        $this->expectException(InvalidValueException::class);
-        $this->expectExceptionMessage('The page changes allowed in one request can\'t be negative: -1');
-
-        $router = $this->routes->build();
-        new Service($router, (new MessagesXmlParser())->defaults(), new ContextSerializer($router), -1);
-    }
-
     public function testChangePageStartsTheTargetAtInitWithItsParametersWithoutTheInput(): void
     {
         $this->press($this->connect(), key: FunctionKey::Send, content: ['1']);
@@ -348,9 +357,10 @@ final class ServiceTest extends TestCase
         ));
         $previous = $routes->build();
         $context =
-            (new Service($previous, (new MessagesXmlParser())->defaults(), new ContextSerializer($previous)))->handle(
-                new GatewayRequest(ConnectionCode::Connect, terminal: $this->terminal),
-            )->context ?? '';
+            (new Service(
+                new Sessions(new ContextSerializer($previous), $previous),
+                (new MessagesXmlParser())->defaults(),
+            ))->handle(new GatewayRequest(ConnectionCode::Connect, terminal: $this->terminal))->context ?? '';
 
         $response = $this->handle(new GatewayRequest(FunctionKey::Send, ['1'], $context, $this->terminal));
 
@@ -359,8 +369,14 @@ final class ServiceTest extends TestCase
         $menu = $this->lastRequest('menu');
         self::assertSame(ControllerState::Init, $menu->state());
         self::assertSame([null, []], [$menu->key(), $menu->content()]);
-        self::assertSame([LogLevel::WARNING], $this->levels());
-        self::assertSame(['route' => 'removed'], $this->logger->records[0][2]);
+        self::assertSame(
+            [[
+                LogLevel::WARNING,
+                'Unknown route in the context, starting again at the default route',
+                ['route' => 'removed'],
+            ]],
+            $this->logger->records,
+        );
     }
 
     public function testDisplayRespondsWithTheContentAndKeepsItsStateAndParameters(): void
@@ -647,10 +663,8 @@ final class ServiceTest extends TestCase
         $router = $this->routes->build();
 
         return (new Service(
-            $router,
+            new Sessions(new ContextSerializer($router), $router, $this->maxPageChanges),
             (new MessagesXmlParser())->defaults(),
-            new ContextSerializer($router),
-            $this->maxPageChanges,
             $this->logger,
         ))->handle($request);
     }

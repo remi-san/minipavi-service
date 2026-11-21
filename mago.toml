@@ -102,13 +102,7 @@ permit = ["@native", "MiniPaviService\\InvalidValueException", "MiniPaviService\
 
 [[guard.perimeter.rules]]
 namespace = "MiniPaviService\\Minitel\\"
-permit = [
-    "@native",
-    "@layer:helpers",
-    "@layer:minitel",
-    # Key::connectionCode() (and FunctionKey's), until #49 removes it
-    "MiniPaviService\\Gateway\\ConnectionCode",
-]
+permit = ["@native", "@layer:helpers", "@layer:minitel"]
 
 [[guard.perimeter.rules]]
 namespace = "MiniPaviService\\Vdt\\"

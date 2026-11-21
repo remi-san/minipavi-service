@@ -11,14 +11,15 @@ use MiniPaviService\Controller\Response\DisplayPage;
 use MiniPaviService\Core\ContextSerializer;
 use MiniPaviService\Core\RouterBuilder;
 use MiniPaviService\Core\Service;
+use MiniPaviService\Core\Sessions;
 use MiniPaviService\Core\Signing\ContextSigner;
 use MiniPaviService\Core\Signing\ForgedContextException;
 use MiniPaviService\Core\Signing\HmacContextSigner;
-use MiniPaviService\Gateway\ConnectionCode;
 use MiniPaviService\Gateway\GatewayRequest;
 use MiniPaviService\Http\ServiceRunner;
 use MiniPaviService\Message\FrameworkMessage;
 use MiniPaviService\Message\MessagesXmlParser;
+use MiniPaviService\Minitel\ConnectionCode;
 use MiniPaviService\Minitel\FunctionKey;
 use MiniPaviService\Tests\Support\CallbackController;
 use MiniPaviService\Tests\Support\HttpRequests;
@@ -48,9 +49,8 @@ final class ServiceRunnerTest extends TestCase
         $router = $routes->build();
         $this->logger = new MemoryLogger();
         $this->service = new Service(
-            $router,
+            new Sessions(new ContextSerializer($router), $router),
             (new MessagesXmlParser())->defaults(),
-            new ContextSerializer($router),
             logger: $this->logger,
         );
     }
@@ -255,9 +255,8 @@ final class ServiceRunnerTest extends TestCase
             ->build();
 
         return new Service(
-            $router,
+            new Sessions(new ContextSerializer($router, $signer), $router),
             (new MessagesXmlParser())->defaults(),
-            new ContextSerializer($router, $signer),
             logger: $this->logger,
         );
     }

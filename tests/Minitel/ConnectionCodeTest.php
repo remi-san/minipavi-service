@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace MiniPaviService\Tests\Gateway;
+namespace MiniPaviService\Tests\Minitel;
 
-use MiniPaviService\Gateway\ConnectionCode;
+use MiniPaviService\Minitel\ConnectionCode;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
@@ -29,15 +29,5 @@ final class ConnectionCodeTest extends TestCase
     public function testCodeOfAKeyTheGatewaySent(string $key, ?ConnectionCode $code): void
     {
         self::assertSame($code, ConnectionCode::of($key));
-    }
-
-    public function testConnectionsAreTheUsersConnections(): void
-    {
-        self::assertSame(
-            [ConnectionCode::Connect, ConnectionCode::DirectConnect],
-            array_values(array_filter(ConnectionCode::cases(), static fn(
-                ConnectionCode $code,
-            ) => $code->isConnection())),
-        );
     }
 }

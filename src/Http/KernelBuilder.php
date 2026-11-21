@@ -11,6 +11,7 @@ use MiniPaviService\Client\MiniPaviCliGateway;
 use MiniPaviService\Core\ContextSerializer;
 use MiniPaviService\Core\Router;
 use MiniPaviService\Core\Service;
+use MiniPaviService\Core\Sessions;
 use MiniPaviService\Core\Signing\ContextSigner;
 use MiniPaviService\Core\Signing\HmacContextSigner;
 use MiniPaviService\Core\Signing\UnsignedContext;
@@ -74,7 +75,7 @@ final readonly class KernelBuilder
             requestUrl: new RequestUrl(),
             emulator: new EmulatorConfig(),
             handlers: [],
-            maxPageChanges: Service::MAX_PAGE_CHANGES,
+            maxPageChanges: Sessions::MAX_PAGE_CHANGES,
             fontFile: HtmlRenderer::MINITEL_FONT,
         );
     }
@@ -123,7 +124,7 @@ final readonly class KernelBuilder
 
     /**
      * Page changes (ChangePage) allowed in one request, more being taken as controllers
-     * changing to each other endlessly (Service); 0 forbids them, and a negative number
+     * changing to each other endlessly (Sessions); 0 forbids them, and a negative number
      * makes build() throw
      */
     public function withMaxPageChanges(int $maxPageChanges): self
@@ -178,7 +179,7 @@ final readonly class KernelBuilder
 
     /**
      * @throws MessagesException if the messages miss some of the framework's
-     * @throws InvalidValueException if the max page changes are below 1 (Service)
+     * @throws InvalidValueException if the max page changes are negative (Sessions)
      */
     public function build(): Kernel
     {
@@ -195,15 +196,13 @@ final readonly class KernelBuilder
      * What the Kernel has handle the request: WithUrls, then the Dispatcher
      *
      * @throws MessagesException if the messages miss some of the framework's
-     * @throws InvalidValueException if the max page changes are below 1 (Service)
+     * @throws InvalidValueException if the max page changes are negative (Sessions)
      */
     private function handler(): RequestHandlerInterface
     {
         $service = new Service(
-            $this->router,
+            new Sessions(new ContextSerializer($this->router, $this->signer()), $this->router, $this->maxPageChanges),
             $this->messages,
-            new ContextSerializer($this->router, $this->signer()),
-            $this->maxPageChanges,
             $this->logger,
         );
 

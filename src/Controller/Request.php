@@ -6,7 +6,7 @@ namespace MiniPaviService\Controller;
 
 use MiniPaviService\Controller\Parameters\NoParameters;
 use MiniPaviService\Controller\Parameters\Parameters;
-use MiniPaviService\Gateway\ConnectionCode;
+use MiniPaviService\Minitel\ConnectionCode;
 use MiniPaviService\Minitel\FunctionKey;
 use MiniPaviService\Minitel\Key;
 use MiniPaviService\Minitel\Terminal;
@@ -77,7 +77,7 @@ final readonly class Request
      */
     public function functionKey(): ?FunctionKey
     {
-        return $this->key?->functionKey();
+        return $this->key?->handleWith(new FunctionKeyReader());
     }
 
     /**
@@ -86,7 +86,7 @@ final readonly class Request
      */
     public function connectionCode(): ?ConnectionCode
     {
-        return $this->key?->connectionCode();
+        return $this->key?->handleWith(new ConnectionCodeReader());
     }
 
     /**
