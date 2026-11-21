@@ -18,7 +18,7 @@ use MiniPaviService\Minitel\Scroll;
 use MiniPaviService\Minitel\Span;
 use MiniPaviService\Minitel\Terminal;
 use MiniPaviService\Page;
-use MiniPaviService\Page\Parser\PageXmlException;
+use MiniPaviService\Page\Building\PageXmlException;
 use MiniPaviService\Page\Parser\PageXmlParser;
 use MiniPaviService\Page\Template\TemplateException;
 use MiniPaviService\Tests\Support\ExhaustedBacktrackLimit;

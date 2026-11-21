@@ -5,10 +5,11 @@ declare(strict_types=1);
 namespace MiniPaviService\Page\Parser\Element;
 
 use MiniPaviService\Minitel\Color;
+use MiniPaviService\Page\Building\AttributeValues;
+use MiniPaviService\Page\Building\ElementBuilder;
 use MiniPaviService\Page\Display\Element;
 use MiniPaviService\Page\Display\Size;
 use MiniPaviService\Page\Display\Text;
-use MiniPaviService\Page\Parser\AttributeValues;
 
 /**
  * <text row col align color bg size fill>: text at a position, or centered on its row

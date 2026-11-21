@@ -8,9 +8,10 @@ use MiniPaviService\Message\FrameworkMessage;
 use MiniPaviService\Message\Messages;
 use MiniPaviService\Minitel\Color;
 use MiniPaviService\Minitel\Position;
+use MiniPaviService\Page\Building\AttributeValues;
+use MiniPaviService\Page\Building\ElementBuilder;
 use MiniPaviService\Page\Display\Element;
 use MiniPaviService\Page\Display\EndKey;
-use MiniPaviService\Page\Parser\AttributeValues;
 
 /**
  * <endkey row color/>: how to come back to the screen, its labels the page's messages

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace MiniPaviService\Cli;
 
 use MiniPaviService\Message\MessagesException;
-use MiniPaviService\Page\Parser\PageXmlException;
+use MiniPaviService\Page\Building\PageXmlException;
 use MiniPaviService\Page\Parser\PageXmlParser;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;

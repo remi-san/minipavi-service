@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace MiniPaviService\Page\Template;
 
 use MiniPaviService\InvalidValueException;
-use MiniPaviService\Page\Parser\AttributeValues;
-use MiniPaviService\Page\Parser\Element\ElementBuilder;
-use MiniPaviService\Page\Parser\PageXmlException;
+use MiniPaviService\Page\Building\AttributeValues;
+use MiniPaviService\Page\Building\ElementBuilder;
+use MiniPaviService\Page\Building\PageXmlException;
 
 /**
  * Display element of a template (<text>, <line>, <key>, <endkey>, <background>, <image>...),

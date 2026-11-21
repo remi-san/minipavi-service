@@ -7,8 +7,8 @@ namespace MiniPaviService\Page\Parser\Tag;
 use MiniPaviService\Minitel\FunctionKey;
 use MiniPaviService\Minitel\InputField;
 use MiniPaviService\Minitel\Span;
-use MiniPaviService\Page\Parser\AttributeValues;
-use MiniPaviService\Page\Parser\PageXmlException;
+use MiniPaviService\Page\Building\AttributeValues;
+use MiniPaviService\Page\Building\PageXmlException;
 
 /**
  * <input row col length lines validwith/>: the field of the page, once, at its top level, and

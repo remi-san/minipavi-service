@@ -2,12 +2,10 @@
 
 declare(strict_types=1);
 
-namespace MiniPaviService\Page\Parser\Element;
+namespace MiniPaviService\Page\Building;
 
 use MiniPaviService\InvalidValueException;
 use MiniPaviService\Page\Display\Element;
-use MiniPaviService\Page\Parser\AttributeValues;
-use MiniPaviService\Page\Parser\PageXmlException;
 
 /**
  * Builds the display element of a tag of the page XML format (documented in the framework's

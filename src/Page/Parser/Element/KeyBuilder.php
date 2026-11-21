@@ -5,9 +5,10 @@ declare(strict_types=1);
 namespace MiniPaviService\Page\Parser\Element;
 
 use MiniPaviService\Minitel\Color;
+use MiniPaviService\Page\Building\AttributeValues;
+use MiniPaviService\Page\Building\ElementBuilder;
 use MiniPaviService\Page\Display\Element;
 use MiniPaviService\Page\Display\Key;
-use MiniPaviService\Page\Parser\AttributeValues;
 
 /**
  * <key row col color bg>Label</key>: a function key badge

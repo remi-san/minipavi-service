@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace MiniPaviService\Tests\Page\Template;
 
 use MiniPaviService\InvalidValueException;
-use MiniPaviService\Page\Parser\AttributeValues;
+use MiniPaviService\Page\Building\AttributeValues;
 use MiniPaviService\Page\Template\Scope;
 use MiniPaviService\Tests\Support\PrivateProperties;
 use PHPUnit\Framework\Attributes\DataProvider;

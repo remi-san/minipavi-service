@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Page\Parser\Tag;
 
-use MiniPaviService\Page\Parser\Element\ElementBuilder;
+use MiniPaviService\Page\Building\ElementBuilder;
+use MiniPaviService\Page\Building\PageXmlException;
 use MiniPaviService\Page\Parser\ElementFactory;
-use MiniPaviService\Page\Parser\PageXmlException;
 use MiniPaviService\Page\Template\ElementNode;
 
 /**

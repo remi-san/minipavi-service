@@ -6,7 +6,7 @@ namespace MiniPaviService\Tests\Cli;
 
 use MiniPaviService\Cli\LintCommand;
 use MiniPaviService\Message\MessagesXmlParser;
-use MiniPaviService\Page\Parser\PageXmlException;
+use MiniPaviService\Page\Building\PageXmlException;
 use MiniPaviService\Page\Parser\PageXmlParser;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;

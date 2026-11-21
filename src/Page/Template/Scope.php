@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace MiniPaviService\Page\Template;
 
 use MiniPaviService\InvalidValueException;
-use MiniPaviService\Page\Parser\AttributeValues;
+use MiniPaviService\Page\Building\AttributeValues;
 use MiniPaviService\Text\Placeholders;
 
 /**

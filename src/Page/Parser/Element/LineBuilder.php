@@ -6,9 +6,10 @@ namespace MiniPaviService\Page\Parser\Element;
 
 use MiniPaviService\Minitel\Color;
 use MiniPaviService\Minitel\Span;
+use MiniPaviService\Page\Building\AttributeValues;
+use MiniPaviService\Page\Building\ElementBuilder;
 use MiniPaviService\Page\Display\Element;
 use MiniPaviService\Page\Display\Line;
-use MiniPaviService\Page\Parser\AttributeValues;
 
 /**
  * <line row col length char color/>: a horizontal line of a repeated character (char: top,

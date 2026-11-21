@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace MiniPaviService\Tests\Page\Parser;
+namespace MiniPaviService\Tests\Page\Building;
 
 use MiniPaviService\InvalidValueException;
-use MiniPaviService\Page\Parser\AttributeValues;
-use MiniPaviService\Page\Parser\PageXmlException;
+use MiniPaviService\Page\Building\AttributeValues;
+use MiniPaviService\Page\Building\PageXmlException;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
