@@ -53,11 +53,14 @@ final readonly class HtmlForm
     /**
      * @param Messages $messages the service's: the labels of the keys
      * @param InputCommandJson $commands how the command is posted back with the page
+     * @param ClearScreens $clearScreens what still shows of the screen, from its last clear
+     *                                   screen
      */
     public function __construct(
         private HtmlRenderer $renderer,
         private Messages $messages,
         private InputCommandJson $commands = new InputCommandJson(),
+        private ClearScreens $clearScreens = new ClearScreens(),
     ) {}
 
     /**
@@ -68,7 +71,7 @@ final readonly class HtmlForm
      */
     public function render(Vdt $screen, string $context, ?InputCommand $command, string $title): string
     {
-        $screen = (new ClearScreens())->fromLast($screen);
+        $screen = $this->clearScreens->fromLast($screen);
         $hidden =
             self::hidden(self::CONTEXT, $context)
             . self::hidden(self::COMMAND, $command === null ? '' : $this->commands->encode($command))
