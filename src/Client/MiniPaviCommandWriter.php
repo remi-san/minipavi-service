@@ -11,8 +11,8 @@ use MiniPaviService\Gateway\ServiceCallCommand;
 use MiniPaviService\Gateway\WaitForKeyCommand;
 
 /**
- * Writes a response through MiniPaviClient (MiniPaviExchange), sending its command as what
- * MiniPaviCli::send() takes: the next URL, the input field and the direct call. By default
+ * Writes a response through the MiniPaviGateway (MiniPaviExchange), sending its command as what
+ * the gateway takes: the next URL, the input field and the direct call. By default
  * (WaitForKeyCommand), the gateway waits for a key, then calls this service again.
  *
  * @implements CommandSender<string>
@@ -22,18 +22,18 @@ use MiniPaviService\Gateway\WaitForKeyCommand;
 final readonly class MiniPaviCommandWriter implements CommandSender
 {
     /**
-     * @param MiniPaviClient $client writes the response, as MiniPaviCli::send()
+     * @param MiniPaviGateway $gateway sends the response
      * @param string $serviceUrl URL the request was sent to: the next URL, unless the command
      *                           calls another service
      */
     public function __construct(
-        private MiniPaviClient $client,
+        private MiniPaviGateway $gateway,
         private GatewayResponse $response,
         private string $serviceUrl,
     ) {}
 
     /**
-     * What MiniPaviCli::send() writes for the response
+     * What is sent to the gateway for the response
      */
     public function body(): string
     {
@@ -45,7 +45,7 @@ final readonly class MiniPaviCommandWriter implements CommandSender
      */
     public function waitForKey(WaitForKeyCommand $command): string
     {
-        return $this->client->send($this->response->vdt, $this->serviceUrl, $this->response->context);
+        return $this->gateway->send($this->response->vdt, $this->serviceUrl, $this->response->context);
     }
 
     /**
@@ -53,7 +53,7 @@ final readonly class MiniPaviCommandWriter implements CommandSender
      */
     public function readInput(InputCommand $command): string
     {
-        return $this->client->send($this->response->vdt, $this->serviceUrl, $this->response->context, input: $command);
+        return $this->gateway->send($this->response->vdt, $this->serviceUrl, $this->response->context, input: $command);
     }
 
     /**
@@ -61,7 +61,7 @@ final readonly class MiniPaviCommandWriter implements CommandSender
      */
     public function callService(ServiceCallCommand $command): string
     {
-        return $this->client->send(
+        return $this->gateway->send(
             $this->response->vdt,
             $command->url,
             $this->response->context,

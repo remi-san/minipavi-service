@@ -13,7 +13,7 @@ use MiniPaviService\Vdt\Vdt;
 final readonly class GatewayResponse
 {
     /**
-     * @param Vdt $vdt Videotex content, stringified by MiniPaviClient only
+     * @param Vdt $vdt Videotex content, stringified by MiniPaviCliGateway only
      * @param string $context serialized and signed context (ContextSerializer::serialize()),
      *                        given back with the next request
      * @param Command $command what the gateway does next (e.g. reading an input field,
