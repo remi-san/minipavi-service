@@ -893,6 +893,28 @@ final class ScreenTest extends TestCase
         self::assertFalse($cell->attributes->isInverse());
     }
 
+    /**
+     * In mosaic, the text colour, blinking, the background colour and separation apply at
+     * once, to the next mosaic character
+     */
+    public function testColorsBlinkingAndSeparationApplyAtOnceInMosaic(): void
+    {
+        $screen = Screen::of(new Vdt(
+            Videotex::MOSAIC_SET
+            . Videotex::textColor(Color::Red)
+            . Videotex::BLINK_ON
+            . Videotex::backgroundColor(Color::Blue)
+            . Videotex::UNDERLINE_ON
+            . "\x7F",
+        ));
+
+        $cell = $screen->cell(1, col: 1) ?? self::fail('Nothing at column 1');
+        self::assertSame(Color::Red, $cell->attributes->foreground());
+        self::assertTrue($cell->attributes->isBlinking());
+        self::assertSame(Color::Blue, $cell->attributes->background());
+        self::assertTrue($cell->attributes->isSeparated());
+    }
+
     public function testRepeatWithoutACharacterDrawsNothing(): void
     {
         // REP 3 with nothing sent before, then A: drawn where the cursor was

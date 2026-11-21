@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Page\Display;
 
+use MiniPaviService\Vdt\Screen\Attribute\CharacterSize;
 use MiniPaviService\Vdt\Screen\Attributes;
 use MiniPaviService\Vdt\Vdt;
-use MiniPaviService\Vdt\Videotex;
 
 /**
  * Character sizes, named as in the page XML format (size="double-height")
@@ -23,7 +23,7 @@ enum Size: string
      */
     public function toVdt(): Vdt
     {
-        return new Vdt(Videotex::ESC . $this->attribute());
+        return new Vdt($this->attribute()->code());
     }
 
     /**
@@ -35,15 +35,15 @@ enum Size: string
     }
 
     /**
-     * The byte after ESC setting this size (Screen\Attributes)
+     * The attribute setting this size
      */
-    private function attribute(): string
+    private function attribute(): CharacterSize
     {
         return match ($this) {
-            self::Normal => Attributes::SIZE_NORMAL,
-            self::DoubleHeight => Attributes::DOUBLE_HEIGHT,
-            self::DoubleWidth => Attributes::DOUBLE_WIDTH,
-            self::Double => Attributes::DOUBLE,
+            self::Normal => CharacterSize::Normal,
+            self::DoubleHeight => CharacterSize::DoubleHeight,
+            self::DoubleWidth => CharacterSize::DoubleWidth,
+            self::Double => CharacterSize::Double,
         };
     }
 }

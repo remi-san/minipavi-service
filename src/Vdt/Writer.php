@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MiniPaviService\Vdt;
 
 use MiniPaviService\Minitel\ScreenSize;
+use MiniPaviService\Vdt\Screen\Attribute\Attribute;
 use MiniPaviService\Vdt\Screen\Attributes;
 use MiniPaviService\Vdt\Screen\Cursor;
 use MiniPaviService\Vdt\Screen\Zone;
@@ -61,7 +62,7 @@ final class Writer
 
     /**
      * A delimiter: a space starting zone, made one by the zone attributes sent just before it
-     * (Zone::delimiterCodesFrom())
+     * (Zone::delimiterAttributesFrom())
      */
     public function delimiter(int $row, int $col, int $width, Attributes $attributes, Zone $zone): void
     {
@@ -73,8 +74,8 @@ final class Writer
     /**
      * CAN at row, col: clears to the end of the row, the cells in zone, the zone before them,
      * or the first a delimiter starting zone delimiter, if not null, made one by the zone
-     * attributes sent just before it (Zone::delimiterCodesFrom()). As with a space, the first
-     * is a delimiter of zone when the cells would lose it otherwise (glyph())
+     * attributes sent just before it (Zone::delimiterAttributesFrom()). As with a space, the
+     * first is a delimiter of zone when the cells would lose it otherwise (glyph())
      */
     public function clearLine(int $row, int $col, Attributes $attributes, Zone $zone, ?Zone $delimiter): void
     {
@@ -145,25 +146,18 @@ final class Writer
     // Sends the zone attributes making the next space a delimiter starting zone
     private function sendZone(Zone $zone): void
     {
-        $this->sendCodes($zone->delimiterCodesFrom($this->cursor->zone(), $this->cursor->attributes()));
+        $this->sendAttributes($zone->delimiterAttributesFrom($this->cursor->zone(), $this->cursor->attributes()));
     }
 
-    // Sends codes (the charset, SI or SO, first, then ESC <byte>s: Attributes::codesFrom(),
-    // Zone::delimiterCodesFrom()), the cursor following them as the Minitel does
-    private function sendCodes(string $codes): void
+    // Sends attributes (Attributes::changesFrom(), Zone::delimiterAttributesFrom()), the
+    // cursor following them as the Minitel does
+    /** @param list<Attribute> $attributes */
+    private function sendAttributes(array $attributes): void
     {
-        if ($codes === '') {
-            return;
+        foreach ($attributes as $attribute) {
+            $this->cursor->setAttribute($attribute);
+            $this->send($attribute->code());
         }
-        $bytes = explode(Videotex::ESC, $codes);
-        $charset = array_shift($bytes);
-        if ($charset !== '') {
-            $this->cursor->setCharset($charset);
-        }
-        foreach ($bytes as $byte) {
-            $this->cursor->setAttribute($byte);
-        }
-        $this->send($codes);
     }
 
     // Where the next character goes, after one at col, width cells wide (at col since moveTo())
@@ -195,9 +189,13 @@ final class Writer
     {
         $current = $this->cursor->attributes();
         if (!$attributes->isMosaic()) {
-            $attributes = $attributes->with(Attributes::backgroundColor($current->background()));
+            $attributes = $attributes->withBackground($current->background());
         }
-        $this->sendCodes($attributes->codesFrom($current));
+        if ($attributes->charset() !== $current->charset()) {
+            $this->cursor->setCharset($attributes->charset());
+            $this->send($attributes->charset());
+        }
+        $this->sendAttributes($attributes->changesFrom($current));
     }
 
     private function send(string $bytes): void

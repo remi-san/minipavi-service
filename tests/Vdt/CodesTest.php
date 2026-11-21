@@ -11,6 +11,9 @@ use MiniPaviService\Minitel\Keyboard;
 use MiniPaviService\Minitel\LocalEcho;
 use MiniPaviService\Minitel\Position;
 use MiniPaviService\Minitel\Scroll;
+use MiniPaviService\Vdt\Screen\Attribute\AttributeReader;
+use MiniPaviService\Vdt\Screen\Attribute\CharacterSize;
+use MiniPaviService\Vdt\Screen\Attribute\Inversion;
 use MiniPaviService\Vdt\Screen\Attributes;
 use MiniPaviService\Vdt\Vdt;
 use MiniPaviService\Vdt\Videotex;
@@ -92,7 +95,7 @@ final class CodesTest extends TestCase
 
     /**
      * The Minitel starts with every attribute off, and the codes turning them off are
-     * attributes (Videotex's codes are made of Attributes' bytes)
+     * attributes (Videotex's codes are made of Attribute's bytes)
      */
     public function testAttributesStartOffAndTheirOffCodesAreAttributes(): void
     {
@@ -111,11 +114,11 @@ final class CodesTest extends TestCase
             Videotex::INVERSE_OFF,
         ] as $off) {
             self::assertSame(Videotex::ESC, $off[0]);
-            self::assertTrue(Attributes::isAttribute($off[1]), bin2hex($off));
+            self::assertNotNull(AttributeReader::read($off[1]), bin2hex($off));
         }
         // Each turns its "on" code off again
-        self::assertEquals($defaults, $defaults->with(Attributes::INVERSE)->with(Attributes::NO_INVERSE));
-        self::assertEquals($defaults, $defaults->with(Attributes::DOUBLE)->with(Attributes::SIZE_NORMAL));
+        self::assertEquals($defaults, $defaults->with(Inversion::Inverse)->with(Inversion::NoInverse));
+        self::assertEquals($defaults, $defaults->with(CharacterSize::Double)->with(CharacterSize::Normal));
     }
 
     public function testProtocolSequences(): void
