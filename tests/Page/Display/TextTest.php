@@ -210,6 +210,34 @@ final class TextTest extends TestCase
         self::assertSame(Color::Black, $screen->cell(self::ROW + 1, col: 1)?->attributes->background());
     }
 
+    /**
+     * @return iterable<string, array{Size}>
+     */
+    public static function wideSizes(): iterable
+    {
+        yield 'double width' => [Size::DoubleWidth];
+        yield 'double size' => [Size::Double];
+    }
+
+    /**
+     * Ending in the column before the last, a double-width text has no room for a space of its
+     * size after it: nothing is written after it, so that the row stays 40 columns wide
+     */
+    #[DataProvider('wideSizes')]
+    public function testWideTextUpToTheColumnBeforeTheLastHasNothingAfterIt(Size $size): void
+    {
+        $screen = Screen::of(self::text('Fin', col: 34, size: $size)->toVdt(new Terminal()));
+
+        self::assertSame(str_repeat(' ', times: 33) . 'FFiinn', rtrim($screen->line(self::ROW)));
+        self::assertNull($screen->cell(self::ROW, ScreenSize::COLS));
+        $columns = 0;
+        for ($col = 1; $col <= ScreenSize::COLS; $col += $width) {
+            $width = $screen->cell(self::ROW, $col)?->attributes->width() ?? 1;
+            $columns += $width;
+        }
+        self::assertSame(ScreenSize::COLS, $columns);
+    }
+
     private static function text(
         string $text,
         int $col = 1,

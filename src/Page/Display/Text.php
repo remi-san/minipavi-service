@@ -18,7 +18,8 @@ use MiniPaviService\Vdt\Videotex;
  * space) and runs along the row up to the next one. So a text with a background color is
  * written after a space of its size, one character before it, or, with no room for it, at
  * the start of the row, the text one character right; when it doesn't fill its row, a space
- * on black after it ends the color, so that it doesn't run over what the row already shows
+ * on black after it, when the row has room for it, ends the color, so that it doesn't run over
+ * what the row already shows
  */
 final readonly class Text implements Element
 {
@@ -48,7 +49,7 @@ final readonly class Text implements Element
             new Vdt(Videotex::textColor($this->color)),
             new Vdt(str_repeat(' ', $spaces)),
             Vdt::text($this->text),
-            $this->after($start + (($spaces + mb_strlen($this->text)) * $charWidth)),
+            $this->after($start + (($spaces + mb_strlen($this->text)) * $charWidth), $charWidth),
         );
     }
 
@@ -78,17 +79,17 @@ final readonly class Text implements Element
     }
 
     /**
-     * What is written after the text, from column next: filled, the row cleared on the
-     * background color; otherwise, with a background color, a space on black ending it.
-     * Nothing when the text ends in or past the last column, the cursor being then on the
-     * next row
+     * What is written after the text, from column next, characters charWidth columns wide:
+     * filled, the row cleared on the background color; otherwise, with a background color, a
+     * space on black ending it, when the space fits whole on the row. Nothing when the text
+     * ends in or past the last column, the cursor being then on the next row
      */
-    private function after(int $next): Vdt
+    private function after(int $next, int $charWidth): Vdt
     {
         if ($this->fill) {
             return $next > ScreenSize::COLS ? new Vdt() : new Vdt(Videotex::CLEAR_LINE);
         }
-        if ($this->bg === null || $next > ScreenSize::COLS) {
+        if ($this->bg === null || ($next + $charWidth - 1) > ScreenSize::COLS) {
             return new Vdt();
         }
 
