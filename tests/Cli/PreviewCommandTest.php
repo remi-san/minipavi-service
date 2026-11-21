@@ -8,6 +8,7 @@ use MiniPaviService\Cli\PreviewCommand;
 use MiniPaviService\Message\MessagesXmlParser;
 use MiniPaviService\Minitel\Terminal;
 use MiniPaviService\Page\Parser\PageXmlParser;
+use MiniPaviService\Tests\Support\MemoryFiles;
 use MiniPaviService\Vdt\Screen\Screen;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
@@ -19,47 +20,27 @@ final class PreviewCommandTest extends TestCase
 {
     private const FIXTURES = __DIR__ . '/../fixtures/pages';
 
-    private string $dir;
-
     private CommandTester $tester;
-
-    protected function setUp(): void
-    {
-        $this->dir = sys_get_temp_dir() . '/minipavi-preview-' . bin2hex(random_bytes(4));
-        mkdir($this->dir);
-        $this->tester = new CommandTester(new PreviewCommand());
-    }
-
-    protected function tearDown(): void
-    {
-        $files = glob($this->dir . '/*');
-        foreach ($files === false ? [] : $files as $file) {
-            unlink($file);
-        }
-        rmdir($this->dir);
-    }
 
     public function testPrintsTheScreenOfAPage(): void
     {
         $page = (new PageXmlParser((new MessagesXmlParser())->defaults()))->parseFile(self::FIXTURES . '/logo.xml');
 
-        self::assertSame(Command::SUCCESS, $this->preview([self::FIXTURES . '/logo.xml']));
+        self::assertSame(Command::SUCCESS, $this->preview([
+            'pages/logo.xml' => (string) file_get_contents(self::FIXTURES . '/logo.xml'),
+            'pages/images/logo.vdt' => (string) file_get_contents(self::FIXTURES . '/images/logo.vdt'),
+        ], ['pages/logo.xml']));
         self::assertSame(Screen::of($page->display(new Terminal()))->preview(), $this->tester->getDisplay());
     }
 
     public function testPrintsATemplateWithItsData(): void
     {
-        $this->write(
-            'list.xml',
-            content: '<page type="template"><text row="1">{{title}}</text>'
-            . '<foreach items="games" as="game" row="3"><text>{{game.name}}</text></foreach></page>',
-        );
-        $this->write(
-            'data.json',
-            content: '{"title": "Games", "games": [{"name": "Rocket Rescue"}, {"name": "Harbour Pirates"}]}',
-        );
-
-        self::assertSame(Command::SUCCESS, $this->preview([$this->dir . '/list.xml', $this->dir . '/data.json']));
+        self::assertSame(Command::SUCCESS, $this->preview([
+            'list.xml' =>
+                '<page type="template"><text row="1">{{title}}</text>'
+                    . '<foreach items="games" as="game" row="3"><text>{{game.name}}</text></foreach></page>',
+            'data.json' => '{"title": "Games", "games": [{"name": "Rocket Rescue"}, {"name": "Harbour Pirates"}]}',
+        ], ['list.xml', 'data.json']));
         $rows = explode("\n", $this->tester->getDisplay());
         self::assertSame([
             ' 1|Games                                   |',
@@ -70,17 +51,21 @@ final class PreviewCommandTest extends TestCase
 
     public function testReadsThePageWithTheMessagesOfTheService(): void
     {
-        $this->write('messages.xml', content: '<messages><message name="greeting">Hello</message></messages>');
-        $this->write(
-            'page.xml',
-            content: '<page type="static"><message name="greeting">Hi</message><text>x</text></page>',
-        );
-
         self::assertSame(Command::SUCCESS, $this->preview([
-            '--messages',
-            $this->dir . '/messages.xml',
-            $this->dir . '/page.xml',
-        ]));
+            'messages.xml' => '<messages><message name="greeting">Hello</message></messages>',
+            'page.xml' => '<page type="static"><message name="greeting">Hi</message><text>x</text></page>',
+        ], ['--messages', 'messages.xml', 'page.xml']));
+    }
+
+    public function testRefusesAMessageThatIsNotOneOfTheService(): void
+    {
+        self::assertSame(Command::FAILURE, $this->preview([
+            'page.xml' => '<page type="static"><message name="greeting">Hi</message><text>x</text></page>',
+        ], ['page.xml']));
+        self::assertStringContainsString(
+            'name="greeting" is not a message of the service',
+            $this->tester->getErrorOutput(),
+        );
     }
 
     /**
@@ -105,39 +90,38 @@ final class PreviewCommandTest extends TestCase
     #[DataProvider('failures')]
     public function testFailsWithTheError(string $page, string $data, string $error): void
     {
-        $this->write('page.xml', $page);
-        $this->write('data.json', $data);
-
-        self::assertSame(Command::FAILURE, $this->preview([$this->dir . '/page.xml', $this->dir . '/data.json']));
+        self::assertSame(Command::FAILURE, $this->preview(['page.xml' => $page, 'data.json' => $data], [
+            'page.xml',
+            'data.json',
+        ]));
         self::assertStringContainsString($error, $this->tester->getErrorOutput());
         self::assertSame('', $this->tester->getDisplay());
     }
 
     public function testFailsOnAPageNotFound(): void
     {
-        self::assertSame(Command::FAILURE, $this->preview([$this->dir . '/nope.xml']));
-        self::assertSame("{$this->dir}/nope.xml: file not found\n", $this->tester->getErrorOutput());
+        self::assertSame(Command::FAILURE, $this->preview([], ['nope.xml']));
+        self::assertSame("nope.xml: file not found\n", $this->tester->getErrorOutput());
     }
 
     public function testFailsOnADataFileNotFound(): void
     {
-        $this->write('page.xml', content: '<page type="static"/>');
-
-        self::assertSame(Command::FAILURE, $this->preview([$this->dir . '/page.xml', $this->dir . '/nope.json']));
-        self::assertSame("{$this->dir}/nope.json: file not found\n", $this->tester->getErrorOutput());
+        self::assertSame(Command::FAILURE, $this->preview(['page.xml' => '<page type="static"/>'], [
+            'page.xml',
+            'nope.json',
+        ]));
+        self::assertSame("nope.json: file not found\n", $this->tester->getErrorOutput());
         self::assertSame('', $this->tester->getDisplay());
     }
 
     public function testFailsOnAMessagesFileItCannotRead(): void
     {
-        $this->write('page.xml', content: '<page type="static"/>');
-
-        self::assertSame(Command::FAILURE, $this->preview([
+        self::assertSame(Command::FAILURE, $this->preview(['page.xml' => '<page type="static"/>'], [
             '--messages',
-            $this->dir . '/nope.xml',
-            $this->dir . '/page.xml',
+            'nope.xml',
+            'page.xml',
         ]));
-        self::assertSame("{$this->dir}/nope.xml: file not found\n", $this->tester->getErrorOutput());
+        self::assertSame("nope.xml: file not found\n", $this->tester->getErrorOutput());
         self::assertSame('', $this->tester->getDisplay());
     }
 
@@ -145,14 +129,16 @@ final class PreviewCommandTest extends TestCase
     {
         $this->expectException(RuntimeException::class);
 
-        $this->preview([]);
+        $this->preview([], []);
     }
 
     /**
+     * @param array<string, string> $files the files the command reads, by path
      * @param list<string> $arguments the command line: [--messages file] page [data]
      */
-    private function preview(array $arguments): int
+    private function preview(array $files, array $arguments): int
     {
+        $this->tester = new CommandTester(new PreviewCommand(new MemoryFiles($files)));
         $input = [];
         if (($arguments[0] ?? '') === '--messages') {
             $input['--messages'] = $arguments[1] ?? '';
@@ -167,10 +153,5 @@ final class PreviewCommandTest extends TestCase
         }
 
         return $this->tester->execute($input, ['capture_stderr_separately' => true]);
-    }
-
-    private function write(string $file, string $content): void
-    {
-        file_put_contents("{$this->dir}/{$file}", $content);
     }
 }

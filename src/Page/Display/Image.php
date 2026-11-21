@@ -22,14 +22,22 @@ final readonly class Image implements Element
     // The picture, moved to its place
     private Vdt $vdt;
 
+    /**
+     * @param ClearScreens $clearScreens removes the clear screens of the picture, so that it is
+     *                                   drawn over the screen; the Offset moving it to its
+     *                                   place is made of position, as a value
+     *
+     * @throws InvalidValueException for a position on row 0
+     */
     public function __construct(
         public Vdt $image,
         public Position $position,
+        ClearScreens $clearScreens = new ClearScreens(),
     ) {
         if ($position->row < 1) {
             throw new InvalidValueException('An image starts at row 1 at least');
         }
-        $this->vdt = (new Offset($position->col - 1, $position->row - 1))->apply((new ClearScreens())->removed($image));
+        $this->vdt = (new Offset($position->col - 1, $position->row - 1))->apply($clearScreens->removed($image));
     }
 
     public function toVdt(Terminal $terminal): Vdt
