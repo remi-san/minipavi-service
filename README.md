@@ -18,8 +18,7 @@ below it (`mago guard` checks it, with the rules in `mago.toml`). At the bottom,
 then `Vdt\` (Videotex), then `Gateway\` (the requests, responses and commands); `Message\`
 beside them. Above them, `Page\` → `Controller\` → `Core\` (the runtime) → `Http\` (the
 entry point), which also uses `Client\` (the clients, on `Gateway\`). `Cli\` (on `Page\`)
-and `Testing\` (on `Core\`) sit on top. The one exception: `Minitel\Key` names
-`Gateway\ConnectionCode` (#49 removes it).
+and `Testing\` (on `Core\`) sit on top.
 
 | Namespace | Holds |
 |---|---|
@@ -30,7 +29,7 @@ and `Testing\` (on `Core\`) sit on top. The one exception: `Minitel\Key` names
 | `Controller\Pagination\` | `PaginatedController`, the `PaginatedList` it shows and its `ShownPage`, `Paginator`, `PageParameters`, `OpeningPage` |
 | `Page\` | static and template pages, their display elements, and the page XML parser |
 | `Message\` | the messages shown on screen: `Message`, `FrameworkMessage`, `Messages` and their XML parser |
-| `Minitel\` | the user's terminal: `Terminal`, its `FunctionKey`s, its settings (`Keyboard`, `LocalEcho`, `Scroll`), its `ScreenSize` and `Color`s, and the `InputField` where the user types |
+| `Minitel\` | the user's terminal: `Terminal`, the `Key` a request comes with (its `FunctionKey`s, or a `ConnectionCode`) and the `KeyHandler` it tells what happened, its settings (`Keyboard`, `LocalEcho`, `Scroll`), its `ScreenSize` and `Color`s, and the `InputField` where the user types |
 | `Vdt\` | Videotex: codes, reading, writing and moving Videotex content (`Vdt`, `Videotex`); in `Screen\`, the Minitel screen it draws (`Screen`, `Cell`) and its HTML rendering (`HtmlRenderer`) |
 | `Gateway\` | the requests and responses the service handles (`GatewayRequest`, `GatewayResponse`), the commands a response sends (`Command`: the `WaitForKeyCommand` waiting for a key, the `InputCommand` reading a field, the `ServiceCallCommand` calling a service, with its `CallMode`), and the `Client` interface reading and sending them |
 | `Client\` | the clients: `MiniPaviClient` for the MiniPavi gateway, `HtmlClient` for a browser (`?web=true`) |
@@ -224,7 +223,10 @@ KernelBuilder::for($router, $messages)
   from the environment in the service's container.
 - **`Service`** responds to a request of the gateway, without I/O:
   `$service->handle(GatewayRequest): ?GatewayResponse` (null for a disconnection or a
-  background call of the gateway, `BGCALL-WM-...`, which have nothing to respond to). It restores the `Context`, and runs the controller of the current route
+  background call of the gateway, `BGCALL-WM-...`, which have nothing to respond to). The
+  request's key says how it is served (`Key::handleWith()`): a connection starts a new
+  session, at the default route, and a function key (or a key the framework doesn't know)
+  continues the user's. It restores the `Context`, and runs the controller of the current route
   until a response responds to the gateway. `Service` owns the context: a response says, through
   a `Flow` (see below), the state and parameters its controller keeps and what comes next. A context without route
   starts at the default route. One whose route the service doesn't have (e.g. removed in a new
@@ -239,8 +241,7 @@ KernelBuilder::for($router, $messages)
   (`FrameworkMessage::Error`, from the `$messages` of the constructor; see
   [Messages](#messages)): their next function key starts again at the default route.
 - **`GatewayRequest`** is what the gateway sends: `key` (a `Minitel\Key`: a `FunctionKey` or a
-  `ConnectionCode`, which its `functionKey()` and `connectionCode()` tell apart, or null for
-  another key; `GatewayRequest::keyOf()` reads it from what the
+  `ConnectionCode`, or null for another key; `GatewayRequest::keyOf()` reads it from what the
   gateway sends, `fctn()` gives its name back), `content` (the text typed), `context` (given back from the previous response) and
   `terminal`. **`GatewayResponse`** is what is sent back: `vdt`, `context` and `command`, what
   the gateway does next (a `Gateway\Command`: a `WaitForKeyCommand`, the default, waiting for
@@ -272,7 +273,7 @@ KernelBuilder::for($router, $messages)
     object of its `Parameters` class;
   - `functionKey()`: the function key the user pressed, a `FunctionKey` (`Send`, `Next`,
     `Previous`, `Refresh`, `Summary`, `Guide`, `Cancel`, `Correction`), or null for a
-    connection code; `connectionCode()` the `Gateway\ConnectionCode` (`Connect`,
+    connection code; `connectionCode()` the `Minitel\ConnectionCode` (`Connect`,
     `DirectConnect`, `Disconnect`, `BackgroundCall`), or null for a function key; `key()` gives
     either, as a `Minitel\Key` (`key()?->value` is the name the gateway sent: `ENVOI`…, or
     `CNX`, `FIN`…), null when there is none: after a `ChangePage`, at the default route
@@ -514,9 +515,15 @@ KernelBuilder::for($router, $messages)
   routes that don't run: they must not use the controller's properties, so that lazy
   controllers stay unbuilt.
 
-- `Gateway\ConnectionCode` names the connection codes of `Request::key()` (`CNX`,
+- `Minitel\ConnectionCode` names the connection codes of `Request::key()` (`CNX`,
   `DIRECTCNX`, `FIN`, and the start of background calls, `BGCALL-WM-`): `ConnectionCode::of($key)`,
   `Request::connectionCode()`, or `GatewayRequest::$key`.
+- A `Minitel\Key` tells a `Minitel\KeyHandler` what happened, through the handler's method for
+  it (`$key->handleWith($handler)`): `pressed(FunctionKey)`, `connected(ConnectionCode)`
+  (`Connect` or `DirectConnect`), `disconnected()` or `calledInBackground()`. `Service` serves a
+  request this way, and `Request::functionKey()` and `connectionCode()` read the key this way:
+  code that does something different for each kind of key implements a `KeyHandler`, rather
+  than asking the key which kind it is.
 
 ## Testing a service
 
