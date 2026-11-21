@@ -217,6 +217,49 @@ final class PageXmlParserTest extends TestCase
         );
     }
 
+    public function testServiceElementDecidesWhereItIsDrawnInAForeach(): void
+    {
+        $parser = new PageXmlParser((new MessagesXmlParser())->defaults(), new StarsElements());
+        $page = $parser->parse(<<<'XML'
+            <page type="template">
+              <foreach items="notes" as="note" row="5">
+                <picture>images/logo.vdt</picture>
+                <stars row="0" count="{{note}}"/>
+              </foreach>
+            </page>
+            XML, self::FIXTURES);
+
+        // <stars> at the item's row, <picture> at its own place
+        self::assertSame(
+            [
+                ' 1|##                                      |',
+                ' 2|ok                                      |',
+                ' 5|***                                     |',
+            ],
+            $this->drawnRows($page->display(new Terminal(), ['notes' => [3]])),
+        );
+    }
+
+    public function testServiceElementCanBeOnThePageOnly(): void
+    {
+        $parser = new PageXmlParser((new MessagesXmlParser())->defaults(), new StarsElements());
+        $page = $parser->parse('<page type="template"><if test="signed"><signature/></if></page>', self::FIXTURES);
+
+        self::assertSame(
+            ['24|Signed                                  |'],
+            $this->drawnRows($page->display(new Terminal(), ['signed' => true])),
+        );
+        $this->expectException(PageXmlException::class);
+        $this->expectExceptionMessage('f.xml line 3: <signature>: not inside <foreach>');
+
+        // Refused when the page is read, even deep in the <foreach>
+        $parser->parse(
+            "<page type=\"template\">\n<foreach items=\"a\" as=\"b\"><if test=\"b\">\n<signature/></if></foreach></page>",
+            self::FIXTURES,
+            name: 'f.xml',
+        );
+    }
+
     /**
      * @return iterable<string, array{string}>
      */

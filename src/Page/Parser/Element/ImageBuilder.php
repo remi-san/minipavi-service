@@ -6,6 +6,7 @@ namespace MiniPaviService\Page\Parser\Element;
 
 use MiniPaviService\Page\Building\AttributeValues;
 use MiniPaviService\Page\Building\ElementBuilder;
+use MiniPaviService\Page\Building\Placement;
 use MiniPaviService\Page\Display\Element;
 use MiniPaviService\Page\Display\Image;
 use MiniPaviService\Page\Parser\PageFiles;
@@ -29,20 +30,13 @@ final class ImageBuilder implements ElementBuilder
         return 'image';
     }
 
-    public function build(AttributeValues $attributes, string $text): Element
+    public function checkPlacement(Placement $placement): void {}
+
+    public function build(AttributeValues $attributes, string $text, Placement $placement): Element
     {
+        $attributes = $placement->placeByRow($attributes);
         $path = $this->files->path($text);
 
         return new Image($this->pictures[$path] ??= new Vdt($this->files->read($text)), $attributes->position());
-    }
-
-    public function isPlacedByRow(): bool
-    {
-        return true;
-    }
-
-    public function isAllowedInLoop(): bool
-    {
-        return true;
     }
 }

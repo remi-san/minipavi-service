@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace MiniPaviService\Page\Template;
 
 use MiniPaviService\InvalidValueException;
-use MiniPaviService\Page\Building\AttributeValues;
+use MiniPaviService\Page\Building\Placement;
 use MiniPaviService\Text\Placeholders;
 
 /**
@@ -33,17 +33,12 @@ final readonly class Scope
     }
 
     /**
-     * Attributes of an element placed by its row attribute (ElementBuilder::isPlacedByRow():
-     * only for such an element, as it sets row), at its row of the page: inside a <foreach>,
-     * its row (0 by default) is relative to the current item
+     * Where the elements of the scope are, for their ElementBuilder: on the page, or in the
+     * current item of a <foreach>
      */
-    public function placedByRow(AttributeValues $attributes): AttributeValues
+    public function placement(): Placement
     {
-        if ($this->rowOffset === null) {
-            return $attributes;
-        }
-
-        return $attributes->with('row', (string) $this->rowOf($attributes->int('row', default: 0)));
+        return $this->rowOffset === null ? Placement::page() : Placement::loopItem($this->rowOffset);
     }
 
     /**

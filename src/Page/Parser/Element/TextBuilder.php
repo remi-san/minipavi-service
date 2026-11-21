@@ -7,6 +7,7 @@ namespace MiniPaviService\Page\Parser\Element;
 use MiniPaviService\Minitel\Color;
 use MiniPaviService\Page\Building\AttributeValues;
 use MiniPaviService\Page\Building\ElementBuilder;
+use MiniPaviService\Page\Building\Placement;
 use MiniPaviService\Page\Display\Element;
 use MiniPaviService\Page\Display\Size;
 use MiniPaviService\Page\Display\Text;
@@ -21,8 +22,11 @@ final readonly class TextBuilder implements ElementBuilder
         return 'text';
     }
 
-    public function build(AttributeValues $attributes, string $text): Element
+    public function checkPlacement(Placement $placement): void {}
+
+    public function build(AttributeValues $attributes, string $text, Placement $placement): Element
     {
+        $attributes = $placement->placeByRow($attributes);
         return new Text(
             $text,
             $attributes->position(),
@@ -32,15 +36,5 @@ final readonly class TextBuilder implements ElementBuilder
             size: $attributes->enum('size', Size::class),
             fill: $attributes->choice('fill', values: ['yes' => true, 'no' => false], default: false),
         );
-    }
-
-    public function isPlacedByRow(): bool
-    {
-        return true;
-    }
-
-    public function isAllowedInLoop(): bool
-    {
-        return true;
     }
 }

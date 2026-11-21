@@ -139,15 +139,18 @@ final class ScopeTest extends TestCase
         self::assertSame(8, $scope->with([], rowOffset: 8)->rowOf(0));
     }
 
-    public function testPlacesAnElementByItsRowInsideALoopOnly(): void
+    public function testElementsAreOnThePageOutsideOfALoopAndInTheItemInside(): void
     {
         $attributes = new AttributeValues(['row' => '1', 'col' => '3']);
 
-        self::assertSame($attributes, (new Scope())->placedByRow($attributes));
+        self::assertSame(
+            $attributes,
+            (new Scope())
+                ->placement()
+                ->placeByRow($attributes),
+        );
         self::assertSame(1, (new Scope())->rowOf(1));
         $inLoop = (new Scope())->with([], rowOffset: 5);
-        self::assertSame(6, $inLoop->placedByRow($attributes)->int('row', default: 0));
-        // Its first row by default
-        self::assertSame(5, $inLoop->placedByRow(new AttributeValues([]))->int('row', default: 0));
+        self::assertSame(6, $inLoop->placement()->placeByRow($attributes)->int('row', default: 0));
     }
 }

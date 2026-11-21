@@ -9,6 +9,7 @@ use MiniPaviService\Minitel\Color;
 use MiniPaviService\Minitel\Position;
 use MiniPaviService\Page\Building\AttributeValues;
 use MiniPaviService\Page\Building\ElementBuilder;
+use MiniPaviService\Page\Building\Placement;
 use MiniPaviService\Page\Display\Background;
 use MiniPaviService\Page\Display\Element;
 use MiniPaviService\Page\Display\Text;
@@ -17,9 +18,10 @@ use MiniPaviService\Page\Parser\PageFiles;
 use MiniPaviService\Vdt\Vdt;
 
 /**
- * Display elements of a service: <stars count="n" row="r"/>, a row of n stars,
- * <picture>file</picture>, a Videotex file of the page's folder, and <broken/>, whose builder
- * fails; or, given a tag, one element of that tag
+ * Display elements of a service: <stars count="n" row="r"/>, a row of n stars (its row
+ * relative to the item in a <foreach>), <picture>file</picture>, a Videotex file of the page's
+ * folder (at its own place), <signature/>, a text at the bottom of the page, once per page (not
+ * in a <foreach>), and <broken/>, whose builder fails; or, given a tag, one element of that tag
  */
 final readonly class StarsElements implements PageElements
 {
@@ -37,9 +39,9 @@ final readonly class StarsElements implements PageElements
         return [
             'stars' => self::builder(
                 'stars',
-                static fn(AttributeValues $attributes) => new Text(
+                static fn(AttributeValues $attributes, string $text, Placement $placement) => new Text(
                     str_repeat('*', max(0, $attributes->int('count', default: 1))),
-                    new Position($attributes->int('row', default: 1)),
+                    new Position($placement->placeByRow($attributes)->int('row', default: 1)),
                     centered: false,
                     color: Color::White,
                     bg: null,
@@ -51,6 +53,19 @@ final readonly class StarsElements implements PageElements
                 'picture',
                 static fn(AttributeValues $attributes, string $text) => new Background(new Vdt($files->read($text))),
             ),
+            'signature' => self::builder(
+                'signature',
+                static fn() => new Text(
+                    'Signed',
+                    new Position(24),
+                    centered: false,
+                    color: Color::White,
+                    bg: null,
+                    size: null,
+                    fill: false,
+                ),
+                static fn(Placement $placement) => $placement->refuseInLoop(),
+            ),
             // A bug in the service's code, not in the page
             'broken' => self::builder(
                 'broken',
@@ -60,17 +75,20 @@ final readonly class StarsElements implements PageElements
     }
 
     /**
-     * @param \Closure(AttributeValues, string): Element $build
+     * @param \Closure(AttributeValues, string, Placement): Element $build
+     * @param ?\Closure(Placement): void $check checks where it is, when the page is read
      */
-    private static function builder(string $tag, \Closure $build): ElementBuilder
+    private static function builder(string $tag, \Closure $build, ?\Closure $check = null): ElementBuilder
     {
-        return new class($tag, $build) implements ElementBuilder {
+        return new class($tag, $build, $check) implements ElementBuilder {
             /**
-             * @param \Closure(AttributeValues, string): Element $build
+             * @param \Closure(AttributeValues, string, Placement): Element $build
+             * @param ?\Closure(Placement): void $check
              */
             public function __construct(
                 private readonly string $tag,
                 private readonly \Closure $build,
+                private readonly ?\Closure $check,
             ) {}
 
             public function tag(): string
@@ -78,19 +96,16 @@ final readonly class StarsElements implements PageElements
                 return $this->tag;
             }
 
-            public function build(AttributeValues $attributes, string $text): Element
+            public function checkPlacement(Placement $placement): void
             {
-                return ($this->build)($attributes, $text);
+                if ($this->check !== null) {
+                    ($this->check)($placement);
+                }
             }
 
-            public function isPlacedByRow(): bool
+            public function build(AttributeValues $attributes, string $text, Placement $placement): Element
             {
-                return true;
-            }
-
-            public function isAllowedInLoop(): bool
-            {
-                return true;
+                return ($this->build)($attributes, $text, $placement);
             }
         };
     }

@@ -10,6 +10,7 @@ use MiniPaviService\Minitel\Color;
 use MiniPaviService\Minitel\Position;
 use MiniPaviService\Page\Building\AttributeValues;
 use MiniPaviService\Page\Building\ElementBuilder;
+use MiniPaviService\Page\Building\Placement;
 use MiniPaviService\Page\Display\Element;
 use MiniPaviService\Page\Display\EndKey;
 
@@ -31,24 +32,21 @@ final readonly class EndKeyBuilder implements ElementBuilder
         return 'endkey';
     }
 
-    public function build(AttributeValues $attributes, string $text): Element
+    // Once per page
+    public function checkPlacement(Placement $placement): void
     {
+        $placement->refuseInLoop();
+    }
+
+    public function build(AttributeValues $attributes, string $text, Placement $placement): Element
+    {
+        // Never in a <foreach> (checkPlacement()): its row is the page's
         return new EndKey(
             $this->messages->get(FrameworkMessage::EndKey),
             $this->messages->get(FrameworkMessage::EndKeyShift),
             self::position($attributes->optionalInt('row')),
             color: $attributes->enum('color', Color::class) ?? Color::Green,
         );
-    }
-
-    public function isPlacedByRow(): bool
-    {
-        return true;
-    }
-
-    public function isAllowedInLoop(): bool
-    {
-        return false;
     }
 
     /**

@@ -7,6 +7,7 @@ namespace MiniPaviService\Page\Parser\Element;
 use MiniPaviService\Minitel\Color;
 use MiniPaviService\Page\Building\AttributeValues;
 use MiniPaviService\Page\Building\ElementBuilder;
+use MiniPaviService\Page\Building\Placement;
 use MiniPaviService\Page\Display\Element;
 use MiniPaviService\Page\Display\Key;
 
@@ -20,23 +21,16 @@ final readonly class KeyBuilder implements ElementBuilder
         return 'key';
     }
 
-    public function build(AttributeValues $attributes, string $text): Element
+    public function checkPlacement(Placement $placement): void {}
+
+    public function build(AttributeValues $attributes, string $text, Placement $placement): Element
     {
+        $attributes = $placement->placeByRow($attributes);
         return new Key(
             $text,
             $attributes->position(),
             color: $attributes->enum('color', Color::class) ?? Color::Green,
             bg: $attributes->enum('bg', Color::class),
         );
-    }
-
-    public function isPlacedByRow(): bool
-    {
-        return true;
-    }
-
-    public function isAllowedInLoop(): bool
-    {
-        return true;
     }
 }
