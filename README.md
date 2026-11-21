@@ -877,7 +877,12 @@ echo Screen::of($moved)->preview();              // the screen, as text
   underline up to the next delimiter, mosaic or empty cell (black from column 1 and after an
   empty cell; the text after a mosaic cell on its background), its masking up to the next
   delimiter, mosaic and empty cells included. The delimiter itself is on the zone's
-  background, not underlined. To colour or underline text, write the attribute, a space, then
+  background, not underlined. A tall character (double height or double size) is drawn on
+  the row above too, where its top half is (row 0 above row 1). A tall delimiter starts its
+  zone along that row as well: `ESC M`, `ESC T` and a space on row 6 colour the text after
+  it on row 5, up to the next delimiter, mosaic or empty cell. Tall text is text there: it
+  carries that row's zone on over the empty or mosaic cell it covers, and ends the zone of a
+  delimiter it covers. To colour or underline text, write the attribute, a space, then
   the text (as `Page\Display\Key` does): `ESC T` then `AB` draws `AB` on black. A positioning
   drops what waits, and SO ends the underline and applies the background colour waiting. In
   mosaic, the background colour applies at once, and masking waits too; a delimiter with no
