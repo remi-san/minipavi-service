@@ -51,6 +51,19 @@ enum ConnectionCode: string implements Key
     }
 
     /**
+     * The user connected (Connect, DirectConnect) or disconnected, or the gateway called in
+     * the background
+     */
+    public function handleWith(KeyHandler $handler): mixed
+    {
+        return match ($this) {
+            self::Connect, self::DirectConnect => $handler->connected($this),
+            self::Disconnect => $handler->disconnected(),
+            self::BackgroundCall => $handler->calledInBackground(),
+        };
+    }
+
+    /**
      * Whether the user connects: a new connection, or one from another service
      */
     public function isConnection(): bool

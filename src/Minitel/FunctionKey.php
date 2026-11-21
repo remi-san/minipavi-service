@@ -37,6 +37,14 @@ enum FunctionKey: string implements Key
     }
 
     /**
+     * The user pressed this key
+     */
+    public function handleWith(KeyHandler $handler): mixed
+    {
+        return $handler->pressed($this);
+    }
+
+    /**
      * Key of a name of the page XML format (envoi, suite...), null if there is none
      */
     public static function fromXmlName(string $name): ?self

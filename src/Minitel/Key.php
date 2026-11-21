@@ -20,4 +20,15 @@ interface Key extends \BackedEnum
      * The connection code it is, null for a function key
      */
     public function connectionCode(): ?ConnectionCode;
+
+    /**
+     * Tells the handler what happened, with its method for this key
+     *
+     * @template T
+     *
+     * @param KeyHandler<T> $handler
+     *
+     * @return T
+     */
+    public function handleWith(KeyHandler $handler): mixed;
 }
