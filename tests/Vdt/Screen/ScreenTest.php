@@ -732,6 +732,98 @@ final class ScreenTest extends TestCase
         ));
     }
 
+    /**
+     * A delimiter after a mosaic cell: SI keeps the background colour the mosaic cell was
+     * drawn on, which the delimiter takes, if no other waits, and it starts the zone of what
+     * waits, underline included, as after a text cell (MiniPavi's emulator, setCharType(),
+     * printDelimiter(), drawRow(), #95: each case checked on its screen, zoomed, the text
+     * underlined in its own colour)
+     *
+     * @return iterable<string, array{string, string, string}> what is sent, and each cell from
+     *                                                         column 1: its background (B
+     *                                                         blue, R red, . black), and
+     *                                                         whether it is masked (M),
+     *                                                         underlined (U) or neither (.)
+     */
+    public static function zonesAfterAMosaicCell(): iterable
+    {
+        $so = Videotex::MOSAIC_SET;
+        $si = Videotex::TEXT_SET;
+        $underline = Videotex::UNDERLINE_ON;
+        $red = Videotex::backgroundColor(Color::Red);
+        $blue = Videotex::backgroundColor(Color::Blue);
+        $mask = Videotex::MASK_ON;
+
+        yield 'underline after a mosaic cell' => ["{$so}{$red}\x7F{$si}{$underline} A", 'RRR', '..U'];
+        yield 'underline after a mosaic cell, along the zone' => [
+            "{$so}{$red}\x7F{$si}{$underline} AAAA",
+            'RRRRRR',
+            '..UUUU',
+        ];
+        yield 'underline with no mosaic cell' => ["{$underline} AAAA", '.....', '.UUUU'];
+        yield 'underline after a red background set in mosaic, no mosaic cell' => [
+            "{$so}{$red}{$si}{$underline} AAAA",
+            'RRRRR',
+            '.UUUU',
+        ];
+        yield 'underline after a red mosaic cell on black' => [
+            "{$so}" . Videotex::textColor(Color::Red) . "\x7F{$si}{$underline} AAAA",
+            '......',
+            '..UUUU',
+        ];
+        yield 'background waiting after a mosaic cell' => ["{$so}{$red}\x7F{$si}{$blue} AAAA", 'RBBBBB', '......'];
+        yield 'masking waiting after a mosaic cell' => ["{$so}{$red}\x7F{$si}{$mask} AAAA", 'RRRRRR', '..MMMM'];
+        yield 'background and underline waiting after a mosaic cell' => [
+            "{$so}{$red}\x7F{$si}{$blue}{$underline} AAAA",
+            'RBBBBB',
+            '..UUUU',
+        ];
+        yield 'underline after a text cell after a mosaic cell' => [
+            "{$so}{$red}\x7F{$si}B{$underline} AAAA",
+            'RRRRRRR',
+            '...UUUU',
+        ];
+    }
+
+    /**
+     * @param string $sent after positioning the cursor at row 10, column 1
+     */
+    #[DataProvider('zonesAfterAMosaicCell')]
+    public function testDelimiterAfterAMosaicCellStartsItsZone(string $sent, string $backgrounds, string $shown): void
+    {
+        $screen = Screen::of(Vdt::join(Vdt::position(new Position(row: 10)), new Vdt($sent)));
+
+        self::assertSame($backgrounds, self::cellsOfRow(
+            $screen,
+            row: 10,
+            length: \strlen($backgrounds),
+            shown: static fn(Attributes $a): string => match ($a->background()) {
+                Color::Blue => 'B',
+                Color::Red => 'R',
+                Color::Black => '.',
+                default => '?',
+            },
+        ));
+        self::assertSame($shown, self::cellsOfRow(
+            $screen,
+            row: 10,
+            length: \strlen($shown),
+            shown: self::maskedOrUnderlined(...),
+        ));
+    }
+
+    /**
+     * M if a cell with these attributes is masked, U if it is underlined, . if neither
+     */
+    private static function maskedOrUnderlined(Attributes $attributes): string
+    {
+        if ($attributes->isMasked()) {
+            return 'M';
+        }
+
+        return $attributes->isUnderlined() ? 'U' : '.';
+    }
+
     public function testZonesOfBackgroundAndMaskingEndWithTheirRow(): void
     {
         // Row 10, column 39: blue, masking, a space, A, then B wrapped to row 11
