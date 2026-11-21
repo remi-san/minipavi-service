@@ -750,10 +750,12 @@ final class ScreenTest extends TestCase
 
     /**
      * A tall delimiter (ESC M, ESC O) is a delimiter on the row above too, where its top half
-     * is: it starts its zone there, for the cells after it on that row, and a tall character
-     * is text there (MiniPavi's emulator, printDelimiter(), printG0Char(), drawRow(), #94:
-     * each case checked on its screen). Screen keeps a tall character in its bottom cell
-     * only: the cells of the row above it are what was drawn there before
+     * is: it starts its zone there, for the cells after it on that row. Tall text is text
+     * there, with or without a tall delimiter, carrying the zone of that row on or ending the
+     * one of a delimiter it is drawn over (MiniPavi's emulator, printDelimiter(),
+     * printG0Char(), drawRow(), #94: each case checked on its screen). Screen keeps a tall
+     * character in its bottom cell only: the cells of the row above it are what was drawn
+     * there before
      *
      * @return iterable<string, array{string, int, string}> what is sent, the row looked at,
      *                                                      and each of its cells from column 1:
@@ -791,6 +793,32 @@ final class ScreenTest extends TestCase
         ];
         // Q, R and S are text on row 9 too: the zone carries on over them to c, d and e
         yield 'tall text after the delimiter' => ["{$row9(7)}cde{$row10(3)}{$tall}{$blue} QRS", 9, '      BBB'];
+        // A space written on the row above afterwards is in the zone, as V after it
+        yield 'a space written after it' => [
+            "{$row9(5)}U{$row10(4)}{$tall}" . Videotex::UNDERLINE_ON . " {$row9(6)} V",
+            9,
+            '    UUU',
+        ];
+        // Tall text, with no tall delimiter, is text on the row above too: x's top half
+        // (column 5) carries the zone of row 9 on, over an empty cell, a mosaic cell (on green)
+        // and an underlined zone's gap, and ends the zone of the delimiter it draws over
+        yield 'tall text over an empty cell' => ["{$row9(2)}{$blue} AB{$row9(6)}CD{$row10(5)}{$tall}x", 9, ' BBB BB'];
+        yield 'tall text over a mosaic cell' => [
+            "{$row9(2)}{$red} AB"
+                . Videotex::MOSAIC_SET
+                . "{$green}\x7F"
+                . Videotex::TEXT_SET
+                . "CD{$row10(5)}{$tall}x",
+            9,
+            ' RRRRRR',
+        ];
+        yield 'tall text over an underlined gap' => [
+            "{$row9(2)}" . Videotex::UNDERLINE_ON . " AB{$row9(6)}CD{$row10(5)}{$tall}x",
+            9,
+            ' .UU UU',
+        ];
+        // The delimiter's space, in column 4, is shown out of a zone too
+        yield 'tall text over a delimiter' => ["{$row9(2)}ab{$blue} cd{$row10(4)}{$tall}x", 9, ' .....'];
         // c, drawn over by its top half, is in the zone
         yield 'a zone already on the row above' => [
             "{$row9(2)}{$red} abcdefgh{$row10(5)}{$tall}{$blue} ",
@@ -827,7 +855,7 @@ final class ScreenTest extends TestCase
     }
 
     #[DataProvider('zonesOnTheRowAbove')]
-    public function testTallDelimiterStartsItsZoneOnTheRowAbove(string $sent, int $row, string $expected): void
+    public function testTallCharacterIsOnTheRowAboveToo(string $sent, int $row, string $expected): void
     {
         self::assertSame($expected, self::zonesOfRow(Screen::of(new Vdt($sent)), $row, \strlen($expected)));
     }
