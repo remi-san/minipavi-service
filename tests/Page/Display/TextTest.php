@@ -75,6 +75,12 @@ final class TextTest extends TestCase
             str_repeat(' ', times: 36) . 'Été',
             str_repeat(' ', times: 35) . 'RRRR.',
         ];
+        // Filled, the last column painted too
+        yield 'filled, up to the column before the last' => [
+            self::text('Fin', col: 37, fill: true),
+            str_repeat(' ', times: 36) . 'Fin',
+            str_repeat(' ', times: 35) . 'RRRRR',
+        ];
         // A double-width space in columns 8 and 9, and one after the text
         yield 'double width' => [
             self::text('Sans', col: 10, size: Size::DoubleWidth),
