@@ -16,6 +16,7 @@ use MiniPaviService\Controller\Response\DisplayPage;
 use MiniPaviService\Core\ContextSerializer;
 use MiniPaviService\Core\RouterBuilder;
 use MiniPaviService\Core\Service;
+use MiniPaviService\Core\Sessions;
 use MiniPaviService\Core\Signing\HmacContextSigner;
 use MiniPaviService\Gateway\CallMode;
 use MiniPaviService\Gateway\GatewayRequest;
@@ -449,9 +450,8 @@ final class HtmlClientTest extends TestCase
         $router = $routes->build();
         $runner = new ServiceRunner(
             new Service(
-                $router,
+                new Sessions(new ContextSerializer($router, new HmacContextSigner('secret')), $router),
                 (new MessagesXmlParser())->defaults(),
-                new ContextSerializer($router, new HmacContextSigner('secret')),
                 logger: new MemoryLogger(),
             ),
             self::client(),

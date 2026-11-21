@@ -4,25 +4,42 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Core;
 
+use MiniPaviService\InvalidValueException;
 use MiniPaviService\Minitel\Terminal;
 
 /**
- * Where a request of the gateway runs, for Service: a new session, or the one its context
- * (sent back by the gateway) was kept for
- *
- * @internal
+ * Where the requests of the gateway run, for Service: a new session, at the router's default
+ * route, or the one the context sent back by the gateway was kept for. Each request runs the
+ * controllers of its session (RequestFlow) until a response responds to the gateway.
  */
 final readonly class Sessions
 {
+    // Page changes allowed in one request, by default
+    public const MAX_PAGE_CHANGES = 10;
+
     /**
-     * @param ContextSerializer $serializer of the context, for the router
-     * @param int $maxPageChanges page changes allowed in one request (Service)
+     * @param ContextSerializer $serializer reads the context the gateway sends back, and writes
+     *                                      the one each response sends, signing it (e.g. with
+     *                                      HmacContextSigner); for the same router
+     * @param Router $router the routes the sessions run, a new one starting at its default
+     *                       route
+     * @param int $maxPageChanges page changes (ChangePage) allowed in one request: more is
+     *                            taken as controllers changing to each other endlessly; 0
+     *                            forbids them
+     *
+     * @throws InvalidValueException if maxPageChanges is negative
      */
     public function __construct(
         private ContextSerializer $serializer,
         private Router $router,
-        private int $maxPageChanges,
-    ) {}
+        private int $maxPageChanges = self::MAX_PAGE_CHANGES,
+    ) {
+        if ($maxPageChanges < 0) {
+            throw new InvalidValueException(
+                "The page changes allowed in one request can't be negative: {$maxPageChanges}",
+            );
+        }
+    }
 
     /**
      * Flow of a request in a new session: a new context, at the default route, keeping nothing

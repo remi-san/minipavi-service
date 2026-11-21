@@ -16,6 +16,7 @@ use MiniPaviService\Controller\Response\RunCommand;
 use MiniPaviService\Core\ContextSerializer;
 use MiniPaviService\Core\RouterBuilder;
 use MiniPaviService\Core\Service;
+use MiniPaviService\Core\Sessions;
 use MiniPaviService\Core\Signing\ForgedContextException;
 use MiniPaviService\Core\Signing\HmacContextSigner;
 use MiniPaviService\Gateway\CallMode;
@@ -115,9 +116,8 @@ final class ServiceTest extends TestCase
         // No context can be signed: not even the error response's
         $router = $this->routes->build();
         $service = new Service(
-            $router,
+            new Sessions(new ContextSerializer($router, new FailingSigner()), $router),
             (new MessagesXmlParser())->defaults(),
-            new ContextSerializer($router, new FailingSigner()),
             logger: $this->logger,
         );
 
@@ -135,9 +135,8 @@ final class ServiceTest extends TestCase
         // Their context isn't read: a service signing its contexts doesn't refuse it
         $router = $this->routes->build();
         $service = new Service(
-            $router,
+            new Sessions(new ContextSerializer($router, new HmacContextSigner('secret')), $router),
             (new MessagesXmlParser())->defaults(),
-            new ContextSerializer($router, new HmacContextSigner('secret')),
             logger: $this->logger,
         );
 
@@ -153,9 +152,8 @@ final class ServiceTest extends TestCase
     {
         $router = $this->routes->build();
         $service = new Service(
-            $router,
+            new Sessions(new ContextSerializer($router, new HmacContextSigner('secret')), $router),
             (new MessagesXmlParser())->defaults(),
-            new ContextSerializer($router, new HmacContextSigner('secret')),
             logger: $this->logger,
         );
 
@@ -257,11 +255,10 @@ final class ServiceTest extends TestCase
     {
         $router = $this->routes->build();
         $service = new Service(
-            $router,
+            new Sessions(new ContextSerializer($router), $router),
             (new MessagesXmlParser())
                 ->defaults()
                 ->with(['error' => 'Oops']),
-            new ContextSerializer($router),
             logger: $this->logger,
         );
 
@@ -277,7 +274,7 @@ final class ServiceTest extends TestCase
         $this->expectExceptionMessage('No text for the messages: error, page.first, page.last, endkey, endkey.shift');
 
         $router = $this->routes->build();
-        new Service($router, new Messages(['other' => 'x']), new ContextSerializer($router));
+        new Service(new Sessions(new ContextSerializer($router), $router), new Messages(['other' => 'x']));
     }
 
     public function testEndlessPageChangesAreStoppedAndRespondedToWithAnError(): void
@@ -334,7 +331,7 @@ final class ServiceTest extends TestCase
         $this->expectExceptionMessage('The page changes allowed in one request can\'t be negative: -1');
 
         $router = $this->routes->build();
-        new Service($router, (new MessagesXmlParser())->defaults(), new ContextSerializer($router), -1);
+        new Sessions(new ContextSerializer($router), $router, -1);
     }
 
     public function testChangePageStartsTheTargetAtInitWithItsParametersWithoutTheInput(): void
@@ -370,9 +367,10 @@ final class ServiceTest extends TestCase
         ));
         $previous = $routes->build();
         $context =
-            (new Service($previous, (new MessagesXmlParser())->defaults(), new ContextSerializer($previous)))->handle(
-                new GatewayRequest(ConnectionCode::Connect, terminal: $this->terminal),
-            )->context ?? '';
+            (new Service(
+                new Sessions(new ContextSerializer($previous), $previous),
+                (new MessagesXmlParser())->defaults(),
+            ))->handle(new GatewayRequest(ConnectionCode::Connect, terminal: $this->terminal))->context ?? '';
 
         $response = $this->handle(new GatewayRequest(FunctionKey::Send, ['1'], $context, $this->terminal));
 
@@ -675,10 +673,8 @@ final class ServiceTest extends TestCase
         $router = $this->routes->build();
 
         return (new Service(
-            $router,
+            new Sessions(new ContextSerializer($router), $router, $this->maxPageChanges),
             (new MessagesXmlParser())->defaults(),
-            new ContextSerializer($router),
-            $this->maxPageChanges,
             $this->logger,
         ))->handle($request);
     }

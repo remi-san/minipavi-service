@@ -14,6 +14,7 @@ use MiniPaviService\Controller\Response\RunCommand;
 use MiniPaviService\Core\ContextSerializer;
 use MiniPaviService\Core\RouterBuilder;
 use MiniPaviService\Core\Service;
+use MiniPaviService\Core\Sessions;
 use MiniPaviService\Message\MessagesXmlParser;
 use MiniPaviService\Minitel\FunctionKey;
 use MiniPaviService\Minitel\Position;
@@ -58,7 +59,7 @@ final class ServiceTesterTest extends TestCase
 
         $serializer = new ContextSerializer($router);
         $this->tester = new ServiceTester(
-            new Service($router, (new MessagesXmlParser())->defaults(), $serializer),
+            new Service(new Sessions($serializer, $router), (new MessagesXmlParser())->defaults()),
             $serializer,
             new Terminal('192.0.2.1', 'websocket', 'Cv5'),
         );
@@ -199,7 +200,7 @@ final class ServiceTesterTest extends TestCase
             ->build();
         $serializer = new ContextSerializer($router, new FailingSigner());
         $tester = new ServiceTester(
-            new Service($router, (new MessagesXmlParser())->defaults(), $serializer),
+            new Service(new Sessions($serializer, $router), (new MessagesXmlParser())->defaults()),
             $serializer,
         );
 

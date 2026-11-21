@@ -6,7 +6,6 @@ namespace MiniPaviService\Core;
 
 use MiniPaviService\Gateway\GatewayRequest;
 use MiniPaviService\Gateway\GatewayResponse;
-use MiniPaviService\InvalidValueException;
 use MiniPaviService\Message\FrameworkMessage;
 use MiniPaviService\Message\Messages;
 use MiniPaviService\Message\MessagesException;
@@ -25,45 +24,27 @@ use Psr\Log\NullLogger;
  */
 final class Service
 {
-    // Page changes allowed in one request, by default
-    public const MAX_PAGE_CHANGES = 10;
-
     private LoggerInterface $logger;
 
     private Messages $messages;
 
-    private Sessions $sessions;
-
     /**
+     * @param Sessions $sessions where the requests run: a new session, or the one of their
+     *                           context
      * @param Messages $messages the service's, for the message of a failed request
      *                           (FrameworkMessage::Error), e.g. MessagesXmlParser::defaults()
-     * @param ContextSerializer $serializer of the context of the responses and requests, for
-     *                                      the same router, signing it (e.g. with
-     *                                      HmacContextSigner)
-     * @param int $maxPageChanges page changes (ChangePage) allowed in one request:
-     *                            more is taken as controllers changing to each other
-     *                            endlessly; 0 forbids them
      * @param ?LoggerInterface $logger where connections, disconnections and errors are logged;
      *                                 none by default
      *
      * @throws MessagesException if the messages miss some of the framework's
-     * @throws InvalidValueException if maxPageChanges is negative
      */
     public function __construct(
-        Router $router,
+        private Sessions $sessions,
         Messages $messages,
-        ContextSerializer $serializer,
-        int $maxPageChanges = self::MAX_PAGE_CHANGES,
         ?LoggerInterface $logger = null,
     ) {
-        if ($maxPageChanges < 0) {
-            throw new InvalidValueException(
-                "The page changes allowed in one request can't be negative: {$maxPageChanges}",
-            );
-        }
         $this->logger = $logger ?? new NullLogger();
         $this->messages = $messages->check(FrameworkMessage::class);
-        $this->sessions = new Sessions($serializer, $router, $maxPageChanges);
     }
 
     /**
