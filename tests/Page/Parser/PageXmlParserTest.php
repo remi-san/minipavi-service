@@ -457,6 +457,11 @@ final class PageXmlParserTest extends TestCase
             '<text row="1" align="center" size="double-width" bg="blue" fill="yes">ABCDEFGHIJKLMNOPQRST</text>',
             ' 1|AABBCCDDEEFFGGHHIIJJKKLLMMNNOOPPQQRRSSTT|',
         ];
+        // No space before it: it starts in the first column, as when not filled
+        yield 'filled, wider than the screen' => [
+            '<text row="1" align="center" size="double-width" bg="blue" fill="yes">ABCDEFGHIJKLMNOPQRSTUV</text>',
+            ' 1|AABBCCDDEEFFGGHHIIJJKKLLMMNNOOPPQQRRSSTT|',
+        ];
         yield 'filled, double width' => [
             '<text row="1" align="center" size="double-width" bg="blue" fill="yes">Jeux</text>',
             ' 1|' . str_repeat(' ', times: 16) . 'JJeeuuxx' . str_repeat(' ', times: 16) . '|',
