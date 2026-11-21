@@ -27,7 +27,7 @@ and `Testing\` (on `Core\`) sit on top.
 | `Controller\` | `AbstractController`, `Request`, `Response` and the response types, `Flow`, the states (`State`, `ControllerState`) |
 | `Controller\Parameters\` | what a controller keeps: `Parameters`, `NoParameters`, their `ParametersType` (what `Controller::parametersType()` returns), and the raw `Values` they are read from |
 | `Controller\Pagination\` | `PaginatedController`, the `PaginatedList` it shows and its `ShownPage`, `Paginator`, `PageParameters`, `OpeningPage` |
-| `Page\` | static and template pages, their display elements, and the page XML parser |
+| `Page\` | static and template pages, their display elements, and the page XML parser; inside it, layered too: `Display\` (what is drawn) → `Building\` (what building one needs: the `ElementBuilder` of a display element, the `AttributeValues` it reads, the `Placement` it is told, the `PageXmlException` it throws) → `Template\` (a template's nodes) → `Parser\` (reading the XML files into them) |
 | `Message\` | the messages shown on screen: `Message`, `FrameworkMessage`, `Messages` and their XML parser |
 | `Minitel\` | the user's terminal: `Terminal`, the `Key` a request comes with (its `FunctionKey`s, or a `ConnectionCode`) and the `KeyHandler` it tells what happened, its settings (`Keyboard`, `LocalEcho`, `Scroll`), its `ScreenSize` and `Color`s, and the `InputField` where the user types |
 | `Vdt\` | Videotex: codes, reading, writing and moving Videotex content (`Vdt`, `Videotex`); in `Screen\`, the Minitel screen it draws (`Screen`, `Cell`) and its HTML rendering (`HtmlRenderer`) |
@@ -694,10 +694,15 @@ instructions, filled in with the data given to `Page::display($terminal, $data)`
 
 A service adds its own display elements by giving `PageXmlParser` a `Page\Parser\PageElements`
 after its messages. For each page, `builders()` gets the files of the page's folder
-(`PageFiles`) and the page's messages, and returns an `ElementBuilder` per element: its tag,
-how it is built from its attributes (an `AttributeValues`, reading them typed: `int()`,
-`enum()`, `position()` for `row` and `col`...) and text (placeholders already replaced),
-whether its `row` is relative inside a `<foreach>`, and whether it can be in one.
+(`PageFiles`) and the page's messages, and returns a `Page\Building\ElementBuilder` per
+element: its tag, and how it is built from its attributes (an `AttributeValues`, reading them
+typed: `int()`, `enum()`, `position()` for `row` and `col`...) and text (placeholders already
+replaced). The builder is also told where the element is, a `Placement`, and decides what that
+means for it: `checkPlacement()`, when the page is read, may refuse it there
+(`$placement->refuseInLoop()` for an element drawn once per page, as `<endkey>`), and
+`build()` places it, e.g. with `$placement->placeByRow($attributes)`, whose `row` is then
+relative to the item inside a `<foreach>` (0 by default), or ignores it for an element that
+positions itself (as `<background>`).
 
 ```php
 final readonly class GameElements implements PageElements
@@ -705,6 +710,23 @@ final readonly class GameElements implements PageElements
     public function builders(PageFiles $files, Messages $messages): array
     {
         return [new ScoreBuilder()];   // <score row="3" value="{{game.score}}"/>
+    }
+}
+
+final readonly class ScoreBuilder implements ElementBuilder
+{
+    public function tag(): string
+    {
+        return 'score';
+    }
+
+    public function checkPlacement(Placement $placement): void {}   // anywhere, once per item in a <foreach>
+
+    public function build(AttributeValues $attributes, string $text, Placement $placement): Element
+    {
+        $attributes = $placement->placeByRow($attributes);
+
+        return new Text('Score: ' . $attributes->required('value'), $attributes->position(), ...);
     }
 }
 
@@ -943,7 +965,7 @@ property that the moved screen is the original one moved, and byte for byte agai
 files (`tests/fixtures/vdt/*.offset_*.vdt`). Run `UPDATE_GOLDEN=1 composer test` to rewrite
 the golden files after an intended change.
 
-A new display element of the framework is a `Page\Parser\Element\ElementBuilder` (see
+A new display element of the framework is a `Page\Building\ElementBuilder` (see
 [Elements of a service](#elements-of-a-service)), added to `StandardElements`; then the XML
 Schema (`schema/page.xsd`) and the [Page XML format](#page-xml-format) above.
 The other tags (`<input>`, `<foreach>`, `<if>`, `<message>`) each have their
