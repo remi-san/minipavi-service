@@ -621,6 +621,12 @@ framework's folder) through its reader too. With a reader that doesn't have them
 from memory), read them with a `MessagesXmlParser` built without a reader, as above, or have
 the reader fall back to `Io\Files`.
 
+The commands of the [command line](#command-line) take theirs too: `Cli\PreviewCommand` reads
+the files it is given (the page and its `.vdt` files, the data, `--messages`) through a
+`FileReader`, and `Cli\VdtOffsetCommand` reads its input through a `FileReader` and writes its
+output through an `Io\FileWriter` (`write($file, $content)`, `false` if it can't), both
+`Io\Files` by default.
+
 ## Page XML format
 
 A page file has a `<page>` root, read by `PageXmlParser`. Errors throw a `PageXmlException`
