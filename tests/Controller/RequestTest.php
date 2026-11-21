@@ -10,7 +10,9 @@ use MiniPaviService\Controller\Parameters\NoParameters;
 use MiniPaviService\Controller\Request;
 use MiniPaviService\Minitel\ConnectionCode;
 use MiniPaviService\Minitel\FunctionKey;
+use MiniPaviService\Minitel\Key;
 use MiniPaviService\Minitel\Terminal;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class RequestTest extends TestCase
@@ -34,24 +36,29 @@ final class RequestTest extends TestCase
         self::assertSame($terminal, $request->terminal());
     }
 
-    public function testFunctionKeyIsNullForConnectionCodes(): void
+    /**
+     * @return iterable<string, array{?Key, ?FunctionKey, ?ConnectionCode}>
+     */
+    public static function keys(): iterable
     {
-        self::assertSame(
-            FunctionKey::Guide,
-            (new Request(ControllerState::Init, key: FunctionKey::Guide))->functionKey(),
-        );
-        self::assertNull((new Request(ControllerState::Init, key: ConnectionCode::Connect))->functionKey());
-        self::assertNull((new Request(ControllerState::Init))->functionKey());
+        foreach (FunctionKey::cases() as $key) {
+            yield $key->name => [$key, $key, null];
+        }
+        foreach (ConnectionCode::cases() as $code) {
+            yield $code->name => [$code, null, $code];
+        }
+        yield 'none' => [null, null, null];
     }
 
-    public function testConnectionCodeIsNullForFunctionKeys(): void
-    {
-        self::assertSame(
-            ConnectionCode::Connect,
-            (new Request(ControllerState::Init, key: ConnectionCode::Connect))->connectionCode(),
-        );
-        self::assertNull((new Request(ControllerState::Init, key: FunctionKey::Guide))->connectionCode());
-        self::assertNull((new Request(ControllerState::Init))->connectionCode());
+    #[DataProvider('keys')]
+    public function testFunctionKeyOrConnectionCodeIsTheKey(
+        ?Key $key,
+        ?FunctionKey $functionKey,
+        ?ConnectionCode $connectionCode,
+    ): void {
+        $request = new Request(ControllerState::Init, key: $key);
+
+        self::assertSame([$functionKey, $connectionCode], [$request->functionKey(), $request->connectionCode()]);
     }
 
     public function testWithoutInputNothingWasTyped(): void

@@ -17,7 +17,7 @@ interface MiniPaviGateway
 {
     /**
      * Reads the gateway's request (the body of the HTTP request). A background call
-     * (GatewayRequest::isBackgroundCall()) is read too: the service gives it no response
+     * (ConnectionCode::BackgroundCall) is read too: the service gives it no response
      *
      * @throws \Exception if it is not valid JSON
      */

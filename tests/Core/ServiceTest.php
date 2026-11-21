@@ -167,19 +167,41 @@ final class ServiceTest extends TestCase
         self::assertInstanceOf(ForgedContextException::class, $this->error());
     }
 
-    public function testConnectionStartsAtTheDefaultRoute(): void
+    /**
+     * @return iterable<string, array{ConnectionCode}>
+     */
+    public static function connections(): iterable
+    {
+        yield 'new connection' => [ConnectionCode::Connect];
+        yield 'connection from another service' => [ConnectionCode::DirectConnect];
+    }
+
+    #[DataProvider('connections')]
+    public function testConnectionStartsAtTheDefaultRoute(ConnectionCode $code): void
     {
         self::assertSame(
             'menu',
-            $this->contentOf($this->handle(
-                new GatewayRequest(ConnectionCode::Connect, ['typed before'], 'not a context'),
-            )),
+            $this->contentOf($this->handle(new GatewayRequest($code, ['typed before'], 'not a context'))),
         );
         // A new session: at init, and without what was typed before
         self::assertSame(ControllerState::Init, $this->lastRequest('menu')->state());
-        self::assertSame([], $this->lastRequest('menu')->content());
-        self::assertSame([LogLevel::INFO], $this->levels());
-        self::assertSame(['fctn' => 'CNX'], $this->logger->records[0][2]);
+        self::assertSame([$code, []], [$this->lastRequest('menu')->key(), $this->lastRequest('menu')->content()]);
+        self::assertSame([[LogLevel::INFO, 'Connection', ['fctn' => $code->value]]], $this->logger->records);
+    }
+
+    public function testAKeyTheFrameworkDoesntKnowContinuesTheSession(): void
+    {
+        $directory = $this->press($this->connect(), key: FunctionKey::Send);
+
+        // E.g. DIRECT, after a CallMode::Direct call (GatewayRequest::keyOf())
+        self::assertSame(
+            'code 36',
+            $this->contentOf($this->handle(new GatewayRequest(null, ['36'], $directory->context, $this->terminal))),
+        );
+        self::assertSame([null, ['36']], [
+            $this->lastRequest('directory')->key(),
+            $this->lastRequest('directory')->content(),
+        ]);
     }
 
     public function testKeyRunsTheControllerTheUserIsAt(): void

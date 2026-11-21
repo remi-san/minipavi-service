@@ -45,29 +45,4 @@ final readonly class GatewayRequest
     {
         return (string) ($this->key->value ?? '');
     }
-
-    /**
-     * A connection (ConnectionCode::isConnection()): a new one, or from another service
-     */
-    public function isConnecting(): bool
-    {
-        return $this->key?->connectionCode()?->isConnection() ?? false;
-    }
-
-    /**
-     * A disconnection (ConnectionCode::Disconnect)
-     */
-    public function isDisconnecting(): bool
-    {
-        return $this->key === ConnectionCode::Disconnect;
-    }
-
-    /**
-     * A background call of the gateway (ConnectionCode::BackgroundCall), which the user didn't
-     * make
-     */
-    public function isBackgroundCall(): bool
-    {
-        return $this->key === ConnectionCode::BackgroundCall;
-    }
 }

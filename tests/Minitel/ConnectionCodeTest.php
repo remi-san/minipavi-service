@@ -30,14 +30,4 @@ final class ConnectionCodeTest extends TestCase
     {
         self::assertSame($code, ConnectionCode::of($key));
     }
-
-    public function testConnectionsAreTheUsersConnections(): void
-    {
-        self::assertSame(
-            [ConnectionCode::Connect, ConnectionCode::DirectConnect],
-            array_values(array_filter(ConnectionCode::cases(), static fn(
-                ConnectionCode $code,
-            ) => $code->isConnection())),
-        );
-    }
 }

@@ -21,22 +21,6 @@ enum FunctionKey: string implements Key
     case Send = 'ENVOI';
 
     /**
-     * The key itself: it is a function key
-     */
-    public function functionKey(): self
-    {
-        return $this;
-    }
-
-    /**
-     * Null: a function key isn't a connection code
-     */
-    public function connectionCode(): ?ConnectionCode
-    {
-        return null;
-    }
-
-    /**
      * The user pressed this key
      */
     public function handleWith(KeyHandler $handler): mixed

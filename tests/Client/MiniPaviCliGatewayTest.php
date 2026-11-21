@@ -8,6 +8,7 @@ use MiniPaviService\Client\MiniPaviCliGateway;
 use MiniPaviService\Gateway\CallMode;
 use MiniPaviService\Gateway\GatewayRequest;
 use MiniPaviService\Gateway\InputCommand;
+use MiniPaviService\Minitel\ConnectionCode;
 use MiniPaviService\Minitel\FunctionKey;
 use MiniPaviService\Minitel\InputField;
 use MiniPaviService\Minitel\Position;
@@ -98,7 +99,7 @@ final class MiniPaviCliGatewayTest extends TestCase
     #[RunInSeparateProcess]
     public function testReadsABackgroundCallTheServiceDoesntRespondTo(): void
     {
-        self::assertTrue($this->read(['fctn' => 'BGCALL-WM-1'])->isBackgroundCall());
+        self::assertSame(ConnectionCode::BackgroundCall, $this->read(['fctn' => 'BGCALL-WM-1'])->key);
     }
 
     public function testFailsOnARequestThatIsNotJson(): void

@@ -12,16 +12,6 @@ namespace MiniPaviService\Minitel;
 interface Key extends \BackedEnum
 {
     /**
-     * The function key it is, null for a connection code
-     */
-    public function functionKey(): ?FunctionKey;
-
-    /**
-     * The connection code it is, null for a function key
-     */
-    public function connectionCode(): ?ConnectionCode;
-
-    /**
      * Tells the handler what happened, with its method for this key
      *
      * @template T
