@@ -16,9 +16,9 @@ use MiniPaviService\Vdt\Vdt;
 final readonly class Setup
 {
     public function __construct(
-        public ?Keyboard $keyboard = null,
-        public ?LocalEcho $localEcho = null,
-        public ?Scroll $scroll = null,
+        private ?Keyboard $keyboard = null,
+        private ?LocalEcho $localEcho = null,
+        private ?Scroll $scroll = null,
     ) {}
 
     /**
