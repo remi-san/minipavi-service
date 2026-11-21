@@ -120,8 +120,8 @@ final class PageXmlParser
     }
 
     /**
-     * Setting of the Minitel given by an attribute of <page>, the one of the cases of its enum
-     * whose value is the attribute's; null if the attribute is missing
+     * Setting of the Minitel given by an attribute of <page>, the one of the cases of its
+     * string-backed enum whose value is the attribute's; null if the attribute is missing
      *
      * @template T of \BackedEnum
      *
@@ -142,7 +142,7 @@ final class PageXmlParser
             return null;
         }
         foreach ($cases as $case) {
-            if ((string) $case->value === $value) {
+            if ($case->value === $value) {
                 return $case;
             }
         }
