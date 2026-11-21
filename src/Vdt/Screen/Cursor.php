@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MiniPaviService\Vdt\Screen;
 
 use MiniPaviService\Minitel\ScreenSize;
+use MiniPaviService\Vdt\Screen\Attribute\Attribute;
 
 /**
  * Cursor and attributes of a Minitel screen in page mode, as Videotex content moves them: the
@@ -56,27 +57,26 @@ final class Cursor
     }
 
     /**
-     * Sets the attribute of ESC byte (Attributes::with()), as the Minitel does: ESC M and ESC
-     * O received on rows 0 and 1, which can't have double height, are discarded, the size
-     * staying as it was, and so are a size and inverse video received in mosaic (MiniPavi's
-     * emulator, setSize() and setInvert()). A zone attribute (masking, and underline and
-     * background colour in text) waits for a delimiter instead (Zone::waits())
-     *
-     * @param string $byte the byte after ESC
+     * Sets attribute (Attributes::with()), as the Minitel does: one it discards on the
+     * cursor's row (Attribute::appliesOn(): ESC M and ESC O on rows 0 and 1) or in mosaic
+     * (Attribute::appliesInMosaic(): a size and inverse video) is discarded, what it would set
+     * staying as it was (MiniPavi's emulator, setSize() and setInvert()). A zone attribute
+     * (masking, and underline and background colour in text) waits for a delimiter instead
+     * (Attribute::waitsIn())
      */
-    public function setAttribute(string $byte): void
+    public function setAttribute(Attribute $attribute): void
     {
-        if (!Attributes::allowsDoubleHeight($this->row) && Attributes::isTallSize($byte)) {
+        if (!$attribute->appliesOn($this->row)) {
             return;
         }
-        if ($this->attributes->isMosaic() && !Attributes::appliesInMosaic($byte)) {
+        if ($this->attributes->isMosaic() && !$attribute->appliesInMosaic()) {
             return;
         }
-        if (Zone::waits($byte, $this->attributes)) {
-            $this->zone = $this->zone->with($byte);
+        if ($attribute->waitsIn($this->attributes)) {
+            $this->zone = $attribute->waitIn($this->zone);
             return;
         }
-        $this->attributes = $this->attributes->with($byte);
+        $this->attributes = $this->attributes->with($attribute);
     }
 
     /**
@@ -107,7 +107,7 @@ final class Cursor
     public function delimit(): void
     {
         $this->zone = $this->zone->delimited($this->attributes);
-        $this->attributes = $this->attributes->with(Attributes::backgroundColor($this->zone->background()));
+        $this->attributes = $this->attributes->withBackground($this->zone->background());
     }
 
     /**

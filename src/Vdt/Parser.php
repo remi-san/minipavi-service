@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Vdt;
 
-use MiniPaviService\Vdt\Screen\Attributes;
+use MiniPaviService\Vdt\Screen\Attribute\AttributeReader;
 use MiniPaviService\Vdt\Token\Attribute;
 use MiniPaviService\Vdt\Token\CarriageReturn;
 use MiniPaviService\Vdt\Token\Charset;
@@ -98,9 +98,8 @@ final class Parser
                     break;
                 case Videotex::ESC:
                     $sequence = $this->escapeSequence($vdt, $i);
-                    $tokens[] = strlen($sequence) === 2 && Attributes::isAttribute($sequence[1])
-                        ? new Attribute($sequence[1])
-                        : new Raw($sequence);
+                    $attribute = strlen($sequence) === 2 ? AttributeReader::read($sequence[1]) : null;
+                    $tokens[] = $attribute === null ? new Raw($sequence) : new Attribute($attribute);
                     $i += strlen($sequence) - 1;
                     break;
                 default:

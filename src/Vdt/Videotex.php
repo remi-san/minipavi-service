@@ -5,11 +5,17 @@ declare(strict_types=1);
 namespace MiniPaviService\Vdt;
 
 use MiniPaviService\Minitel\Color;
-use MiniPaviService\Vdt\Screen\Attributes;
+use MiniPaviService\Vdt\Screen\Attribute\BackgroundColor;
+use MiniPaviService\Vdt\Screen\Attribute\Blinking;
+use MiniPaviService\Vdt\Screen\Attribute\CharacterSize;
+use MiniPaviService\Vdt\Screen\Attribute\Inversion;
+use MiniPaviService\Vdt\Screen\Attribute\Masking;
+use MiniPaviService\Vdt\Screen\Attribute\TextColor;
+use MiniPaviService\Vdt\Screen\Attribute\Underlining;
 
 /**
- * Videotex codes, by name: control codes, attributes (ESC and the byte after it, which
- * Screen\Attributes names) and sequences. Most are MiniPaviCli's VDT_* constants (CodesTest
+ * Videotex codes, by name: control codes, attributes (ESC and the byte of a
+ * Screen\Attribute\Attribute) and sequences. Most are MiniPaviCli's VDT_* constants (CodesTest
  * checks them); HOME, ESC, SEP, SS3 and the mask codes have none. Some are sent as they are;
  * ESC, POSITION, REPEAT, G2, SEP and SS3 start a sequence, with more bytes after them.
  * MAX_REPEAT is not a code: the most repetitions one REP gives.
@@ -48,35 +54,35 @@ final class Videotex
     public const CLEAR_LINE = "\x18";
     public const CURSOR_OFF = "\x14";
     // Background and foreground colors swapped
-    public const INVERSE_ON = self::ESC . Attributes::INVERSE;
-    public const INVERSE_OFF = self::ESC . Attributes::NO_INVERSE;
-    public const UNDERLINE_ON = self::ESC . Attributes::UNDERLINE;
-    public const UNDERLINE_OFF = self::ESC . Attributes::NO_UNDERLINE;
-    public const BLINK_ON = self::ESC . Attributes::BLINK;
-    public const BLINK_OFF = self::ESC . Attributes::FIXED;
+    public const INVERSE_ON = self::ESC . Inversion::Inverse->value;
+    public const INVERSE_OFF = self::ESC . Inversion::NoInverse->value;
+    public const UNDERLINE_ON = self::ESC . Underlining::Underline->value;
+    public const UNDERLINE_OFF = self::ESC . Underlining::NoUnderline->value;
+    public const BLINK_ON = self::ESC . Blinking::Blink->value;
+    public const BLINK_OFF = self::ESC . Blinking::Fixed->value;
     // Masked: hidden until revealed
-    public const MASK_ON = self::ESC . Attributes::MASK;
-    public const MASK_OFF = self::ESC . Attributes::UNMASK;
-    public const SIZE_NORMAL = self::ESC . Attributes::SIZE_NORMAL;
-    public const SIZE_DOUBLE_HEIGHT = self::ESC . Attributes::DOUBLE_HEIGHT;
-    public const SIZE_DOUBLE_WIDTH = self::ESC . Attributes::DOUBLE_WIDTH;
-    public const SIZE_DOUBLE = self::ESC . Attributes::DOUBLE;
+    public const MASK_ON = self::ESC . Masking::Mask->value;
+    public const MASK_OFF = self::ESC . Masking::Unmask->value;
+    public const SIZE_NORMAL = self::ESC . CharacterSize::Normal->value;
+    public const SIZE_DOUBLE_HEIGHT = self::ESC . CharacterSize::DoubleHeight->value;
+    public const SIZE_DOUBLE_WIDTH = self::ESC . CharacterSize::DoubleWidth->value;
+    public const SIZE_DOUBLE = self::ESC . CharacterSize::Double->value;
     // Back to the standard character sets G0 and G1, after redefined characters (DRCS)
     public const RESET_CHARSETS = "\x1B\x28\x40\x1B\x29\x63";
 
     /**
-     * Sets the text (foreground) color: ESC and the byte Screen\Attributes names for it
+     * Sets the text (foreground) color: ESC and the byte of its Screen\Attribute\TextColor
      */
     public static function textColor(Color $color): string
     {
-        return self::ESC . Attributes::textColor($color);
+        return (new TextColor($color))->code();
     }
 
     /**
-     * Sets the background color: ESC and the byte Screen\Attributes names for it
+     * Sets the background color: ESC and the byte of its Screen\Attribute\BackgroundColor
      */
     public static function backgroundColor(Color $color): string
     {
-        return self::ESC . Attributes::backgroundColor($color);
+        return (new BackgroundColor($color))->code();
     }
 }

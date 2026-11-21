@@ -5,12 +5,21 @@ declare(strict_types=1);
 namespace MiniPaviService\Vdt\Screen;
 
 use MiniPaviService\Minitel\Color;
+use MiniPaviService\Vdt\Screen\Attribute\Attribute;
+use MiniPaviService\Vdt\Screen\Attribute\BackgroundColor;
+use MiniPaviService\Vdt\Screen\Attribute\Blinking;
+use MiniPaviService\Vdt\Screen\Attribute\CharacterSize;
+use MiniPaviService\Vdt\Screen\Attribute\Inversion;
+use MiniPaviService\Vdt\Screen\Attribute\Masking;
+use MiniPaviService\Vdt\Screen\Attribute\TextColor;
+use MiniPaviService\Vdt\Screen\Attribute\Underlining;
 use MiniPaviService\Vdt\Videotex;
 
 /**
  * Character attributes of a cell, as Videotex content sets them: the charset (text or mosaic),
  * the colours, the size, blinking, masking, underlining and inverse video. A positioning (US),
- * a home (RS) or a clear screen (FF) sets them back to defaults(). Immutable.
+ * a home (RS) or a clear screen (FF) sets them back to defaults(). Each Attribute sets one
+ * (with()). Immutable.
  *
  * Underlining is the separation of mosaic characters. In text, it is a zone's (Zone), as the
  * background colour and masking are: the cursor doesn't set them there, and the Screen's cells
@@ -19,69 +28,88 @@ use MiniPaviService\Vdt\Videotex;
  */
 final readonly class Attributes
 {
-    // The byte after ESC of each attribute, which Videotex's codes are made of
-    public const SIZE_NORMAL = "\x4C";
-    public const DOUBLE_HEIGHT = "\x4D";
-    public const DOUBLE_WIDTH = "\x4E";
-    public const DOUBLE = "\x4F";
-    public const BLINK = "\x48";
-    public const FIXED = "\x49";
-    public const MASK = "\x58";
-    public const UNMASK = "\x5F";
-    public const UNDERLINE = "\x5A";
-    public const NO_UNDERLINE = "\x59";
-    public const INVERSE = "\x5D";
-    public const NO_INVERSE = "\x5C";
-
-    // The colors: the byte after ESC is TEXT_COLOR + the color's index for the text, and
-    // BACKGROUND_COLOR + its index for the background (Color::index(), 0 to 7)
-    private const TEXT_COLOR = 0x40;
-    private const BACKGROUND_COLOR = 0x50;
-
-    // The byte after ESC of each group, as the Minitel starts (the charset: SI): white text
-    // (TEXT_COLOR + 7) on black (BACKGROUND_COLOR + 0)
-    private const DEFAULTS = [
-        'charset' => Videotex::TEXT_SET,
-        'fg' => "\x47",
-        'bg' => "\x50",
-        'size' => self::SIZE_NORMAL,
-        'blink' => self::FIXED,
-        'mask' => self::UNMASK,
-        'underline' => self::NO_UNDERLINE,
-        'inverse' => self::NO_INVERSE,
-    ];
-
     /**
-     * @param array<string, string> $values group => the byte after ESC (SI or SO for the charset)
+     * @param string $charset SI (text) or SO (mosaic)
      */
     private function __construct(
-        private array $values,
+        private string $charset,
+        private Color $foreground,
+        private Color $background,
+        private CharacterSize $size,
+        private Blinking $blinking,
+        private Masking $masking,
+        private Underlining $underlining,
+        private Inversion $inversion,
     ) {}
 
     /**
-     * Attributes of the Minitel as it starts: white text on black, normal size
+     * Attributes of the Minitel as it starts: white text on black, normal size, in text (SI),
+     * and every other attribute off
      */
     public static function defaults(): self
     {
-        return new self(self::DEFAULTS);
+        return new self(
+            Videotex::TEXT_SET,
+            Color::White,
+            Color::Black,
+            CharacterSize::Normal,
+            Blinking::Fixed,
+            Masking::Unmask,
+            Underlining::NoUnderline,
+            Inversion::NoInverse,
+        );
     }
 
     /**
-     * Whether ESC <byte> sets an attribute (with()), rather than being another sequence
+     * These attributes, with the one attribute sets (Attribute::appliedTo())
      */
-    public static function isAttribute(string $byte): bool
+    public function with(Attribute $attribute): self
     {
-        return self::group($byte) !== null;
+        return $attribute->appliedTo($this);
     }
 
     /**
-     * These attributes, with the one set by ESC <byte>; unchanged if it doesn't set one
+     * These attributes, with this text (foreground) colour
      */
-    public function with(string $byte): self
+    public function withForeground(Color $foreground): self
     {
-        $group = self::group($byte);
+        return $this->copy(foreground: $foreground);
+    }
 
-        return $group === null ? $this : new self([$group => $byte] + $this->values);
+    /**
+     * These attributes, with this background colour
+     */
+    public function withBackground(Color $background): self
+    {
+        return $this->copy(background: $background);
+    }
+
+    public function withSize(CharacterSize $size): self
+    {
+        return $this->copy(size: $size);
+    }
+
+    public function withBlinking(Blinking $blinking): self
+    {
+        return $this->copy(blinking: $blinking);
+    }
+
+    public function withMasking(Masking $masking): self
+    {
+        return $this->copy(masking: $masking);
+    }
+
+    /**
+     * These attributes, underlined (separated, in mosaic) or not
+     */
+    public function withUnderlining(Underlining $underlining): self
+    {
+        return $this->copy(underlining: $underlining);
+    }
+
+    public function withInversion(Inversion $inversion): self
+    {
+        return $this->copy(inversion: $inversion);
     }
 
     /**
@@ -92,76 +120,52 @@ final readonly class Attributes
      */
     public function withCharset(string $byte): self
     {
-        return new self([
-            'charset' => $byte === Videotex::MOSAIC_SET ? Videotex::MOSAIC_SET : Videotex::TEXT_SET,
-            'size' => self::SIZE_NORMAL,
-            'inverse' => self::NO_INVERSE,
-            'underline' => self::NO_UNDERLINE,
-        ] + $this->values);
+        return $this->copy(
+            charset: $byte === Videotex::MOSAIC_SET ? Videotex::MOSAIC_SET : Videotex::TEXT_SET,
+            size: CharacterSize::Normal,
+            underlining: Underlining::NoUnderline,
+            inversion: Inversion::NoInverse,
+        );
     }
 
     public function isMosaic(): bool
     {
-        return $this->values['charset'] === Videotex::MOSAIC_SET;
+        return $this->charset === Videotex::MOSAIC_SET;
     }
 
     public function foreground(): Color
     {
-        return Color::fromIndex(\ord($this->values['fg']) - self::TEXT_COLOR);
+        return $this->foreground;
     }
 
     public function background(): Color
     {
-        return self::backgroundOf($this->values['bg']);
-    }
-
-    /**
-     * The byte after ESC setting this text (foreground) color
-     */
-    public static function textColor(Color $color): string
-    {
-        return \chr(self::TEXT_COLOR + $color->index());
-    }
-
-    /**
-     * The background color set by ESC byte (isBackground())
-     */
-    public static function backgroundOf(string $byte): Color
-    {
-        return Color::fromIndex(\ord($byte) - self::BACKGROUND_COLOR);
-    }
-
-    /**
-     * The byte after ESC setting this background color
-     */
-    public static function backgroundColor(Color $color): string
-    {
-        return \chr(self::BACKGROUND_COLOR + $color->index());
+        return $this->background;
     }
 
     public function isDoubleHeight(): bool
     {
-        return \in_array($this->values['size'], [self::DOUBLE_HEIGHT, self::DOUBLE], strict: true);
+        return $this->size->isTall();
     }
 
     public function isDoubleWidth(): bool
     {
-        return \in_array($this->values['size'], [self::DOUBLE_WIDTH, self::DOUBLE], strict: true);
+        return $this->size->isWide();
     }
 
     public function isBlinking(): bool
     {
-        return $this->values['blink'] === self::BLINK;
+        return $this->blinking === Blinking::Blink;
     }
 
     public function isMasked(): bool
     {
-        return $this->values['mask'] === self::MASK;
+        return $this->masking === Masking::Mask;
     }
 
     public function isUnderlined(): bool
     {
-        return $this->values['underline'] === self::UNDERLINE;
+        return $this->underlining === Underlining::Underline;
     }
 
     /**
@@ -174,7 +178,7 @@ final readonly class Attributes
 
     public function isInverse(): bool
     {
-        return $this->values['inverse'] === self::INVERSE;
+        return $this->inversion === Inversion::Inverse;
     }
 
     /**
@@ -187,60 +191,18 @@ final readonly class Attributes
     }
 
     /**
-     * Whether the Minitel applies ESC byte in mosaic: not the size (ESC L, M, N or O) nor
-     * inverse video (ESC ] or ESC \), which it discards there
-     */
-    public static function appliesInMosaic(string $byte): bool
-    {
-        return !\in_array(self::group($byte), ['size', 'inverse'], strict: true);
-    }
-
-    /**
-     * Whether ESC byte sets underlining, or separation in mosaic: ESC Z or ESC Y
-     */
-    public static function isUnderline(string $byte): bool
-    {
-        return self::group($byte) === 'underline';
-    }
-
-    /**
-     * Whether ESC byte sets the background colour: ESC P to ESC W
-     */
-    public static function isBackground(string $byte): bool
-    {
-        return self::group($byte) === 'bg';
-    }
-
-    /**
-     * Whether ESC byte sets masking: ESC X or ESC _
-     */
-    public static function isMask(string $byte): bool
-    {
-        return self::group($byte) === 'mask';
-    }
-
-    /**
-     * Whether ESC byte sets double height: ESC M (double height) or ESC O (double size)
-     */
-    public static function isTallSize(string $byte): bool
-    {
-        return \in_array($byte, [self::DOUBLE_HEIGHT, self::DOUBLE], strict: true);
-    }
-
-    /**
      * These attributes, with a size that can be set on row: where ESC M and ESC O would be
      * discarded, double height becomes normal size and double size double width (ESC N is
-     * accepted there), so that a character written there takes the columns it is given
+     * accepted there, CharacterSize::flattened()), so that a character written there takes
+     * the columns it is given
      */
     public function writableOn(int $row): self
     {
-        if (self::allowsDoubleHeight($row) || !$this->isDoubleHeight()) {
+        if (self::allowsDoubleHeight($row)) {
             return $this;
         }
 
-        return new self([
-            'size' => $this->isDoubleWidth() ? self::DOUBLE_WIDTH : self::SIZE_NORMAL,
-        ] + $this->values);
+        return $this->copy(size: $this->size->flattened());
     }
 
     /**
@@ -261,48 +223,74 @@ final readonly class Attributes
     }
 
     /**
-     * Videotex codes setting these attributes where current ones are: the charset (SI or SO),
-     * then ESC <byte> for each other attribute that differs from what follows it (SI and SO
-     * set the size back to normal, withCharset()); '' if none does
+     * The charset: SI (text) or SO (mosaic)
      */
-    public function codesFrom(self $current): string
+    public function charset(): string
     {
-        $codes = '';
-        if ($this->values['charset'] !== $current->values['charset']) {
-            $codes = $this->values['charset'];
-            $current = $current->withCharset($codes);
-        }
-        foreach (self::DEFAULTS as $group => $_) {
-            if ($group === 'charset' || $this->values[$group] === $current->values[$group]) {
-                continue;
-            }
-            $codes .= Videotex::ESC . $this->values[$group];
-        }
-
-        return $codes;
+        return $this->charset;
     }
 
     /**
-     * Group of the attribute set by ESC <byte>, or null if it is not one
+     * The attributes setting these where current ones are, after the charset (charset(),
+     * which SI and SO set: withCharset()): each that differs, in this order: the text colour,
+     * the background colour, the size, blinking, masking, underlining and inverse video
+     *
+     * @return list<Attribute>
      */
-    private static function group(string $byte): ?string
+    public function changesFrom(self $current): array
     {
-        $code = \ord($byte);
-        // The colours (Color::index(), 0 to 7)
-        if ($code >= self::TEXT_COLOR && $code <= (self::TEXT_COLOR + 7)) {
-            return 'fg';
+        if ($this->charset !== $current->charset) {
+            $current = $current->withCharset($this->charset);
         }
-        if ($code >= self::BACKGROUND_COLOR && $code <= (self::BACKGROUND_COLOR + 7)) {
-            return 'bg';
+        $was = $current->attributeList();
+        $changes = [];
+        foreach ($this->attributeList() as $i => $attribute) {
+            if ($attribute->code() === $was[$i]->code()) {
+                continue;
+            }
+            $changes[] = $attribute;
         }
 
-        return match ($byte) {
-            self::SIZE_NORMAL, self::DOUBLE_HEIGHT, self::DOUBLE_WIDTH, self::DOUBLE => 'size',
-            self::BLINK, self::FIXED => 'blink',
-            self::MASK, self::UNMASK => 'mask',
-            self::UNDERLINE, self::NO_UNDERLINE => 'underline',
-            self::INVERSE, self::NO_INVERSE => 'inverse',
-            default => null,
-        };
+        return $changes;
+    }
+
+    /**
+     * Each of these attributes, but the charset, in the order changesFrom() gives them
+     *
+     * @return list<Attribute>
+     */
+    private function attributeList(): array
+    {
+        return [
+            new TextColor($this->foreground),
+            new BackgroundColor($this->background),
+            $this->size,
+            $this->blinking,
+            $this->masking,
+            $this->underlining,
+            $this->inversion,
+        ];
+    }
+
+    private function copy(
+        ?string $charset = null,
+        ?Color $foreground = null,
+        ?Color $background = null,
+        ?CharacterSize $size = null,
+        ?Blinking $blinking = null,
+        ?Masking $masking = null,
+        ?Underlining $underlining = null,
+        ?Inversion $inversion = null,
+    ): self {
+        return new self(
+            $charset ?? $this->charset,
+            $foreground ?? $this->foreground,
+            $background ?? $this->background,
+            $size ?? $this->size,
+            $blinking ?? $this->blinking,
+            $masking ?? $this->masking,
+            $underlining ?? $this->underlining,
+            $inversion ?? $this->inversion,
+        );
     }
 }
