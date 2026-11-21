@@ -23,7 +23,7 @@ and `Testing\` (on `Core\`) sit on top.
 | Namespace | Holds |
 |---|---|
 | `MiniPaviService` | the `Controller` and `Page` interfaces, and the `InvalidValueException` of a value the framework can't take (e.g. a `Position` off the screen) |
-| `Core\` | the runtime: `Service`, `Router` and its `Route`s, `Context` and its `RouteContext`s, `RequestFlow` |
+| `Core\` | the runtime: `Service` and its `Sessions`, `Router` and its `Route`s, `Context` and its `RouteContext`s, `RequestFlow` |
 | `Controller\` | `AbstractController`, `Request`, `Response` and the response types, `Flow`, the states (`State`, `ControllerState`) |
 | `Controller\Parameters\` | what a controller keeps: `Parameters`, `NoParameters`, their `ParametersType` (what `Controller::parametersType()` returns), and the raw `Values` they are read from |
 | `Controller\Pagination\` | `PaginatedController`, the `PaginatedList` it shows and its `ShownPage`, `Paginator`, `PageParameters`, `OpeningPage` |
@@ -226,7 +226,9 @@ KernelBuilder::for($router, $messages)
   background call of the gateway, `BGCALL-WM-...`, which have nothing to respond to). The
   request's key says how it is served (`Key::handleWith()`): a connection starts a new
   session, at the default route, and a function key (or a key the framework doesn't know)
-  continues the user's. It restores the `Context`, and runs the controller of the current route
+  continues the user's. It runs the requests in its `Core\Sessions`
+  (`new Service(new Sessions($serializer, $router), $messages)`), which start a new session
+  or restore the `Context` the gateway sends back, and runs the controller of the current route
   until a response responds to the gateway. `Service` owns the context: a response says, through
   a `Flow` (see below), the state and parameters its controller keeps and what comes next. A context without route
   starts at the default route. One whose route the service doesn't have (e.g. removed in a new
@@ -234,7 +236,7 @@ KernelBuilder::for($router, $messages)
   doesn't exist any more (the serializer refuses it with an `UnknownRouteException`).
   More than 10 page changes (`ChangePage`) in one request are taken as controllers
   changing to each other endlessly, and responded to with an error; give another limit with
-  `KernelBuilder::withMaxPageChanges(20)` (or `new Service(..., maxPageChanges: 20)`), 0 to
+  `KernelBuilder::withMaxPageChanges(20)` (or `new Sessions($serializer, $router, 20)`), 0 to
   forbid page changes.
   If serving a request fails (an exception or a PHP error, in a controller, a template, the
   context...), the error is logged, and the user gets a message on line 0
@@ -262,7 +264,7 @@ KernelBuilder::for($router, $messages)
   of each request at debug level, and errors at error level. Each message is always the same,
   what varies being in its context (the exception, the function key, the route...), so that
   a log analyzer can group them:
-  `new Service($router, $messages, $serializer, logger: $logger)`, `new ServiceRunner($service, $client, $logger)`,
+  `new Service($sessions, $messages, $logger)`, `new ServiceRunner($service, $client, $logger)`,
   `new Dispatcher($handlers, $fallback, $logger)`, `new EmulatorRedirect($emulator, $logger)`.
   Without one, nothing is logged.
 - **A `Controller`** runs on a `Request` and returns a `Response`. The request gives:
@@ -536,7 +538,7 @@ keeps what isn't cleared:
 
 ```php
 $serializer = new ContextSerializer($router);
-$tester = new ServiceTester(new Service($router, $messages, $serializer), $serializer);   // optionally, a Terminal
+$tester = new ServiceTester(new Service(new Sessions($serializer, $router), $messages), $serializer);   // optionally, a Terminal
 
 $tester->connect()->assertRoute('home')->assertScreenContains('BIENVENUE')
     ->type('2')->press(FunctionKey::Send)->assertRoute('games')
@@ -597,7 +599,7 @@ $messages = $parser
     ->parseFile("$config/messages.xml", $parser->defaults())
     ->check(FrameworkMessage::class, AccMessage::class);
 $parser = new PageXmlParser($messages);              // pages redefine them with <message>
-$service = new Service($router, $messages, new ContextSerializer($router), logger: $logger);  // for its error message
+$service = new Service(new Sessions(new ContextSerializer($router), $router), $messages, $logger);  // for its error message
 
 // In a controller: the page's text, its placeholders replaced
 Vdt::line0($this->page->message(AccMessage::ConnectedFrom, ['remoteAddr' => $addr]));
