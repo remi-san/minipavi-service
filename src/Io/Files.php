@@ -7,9 +7,9 @@ namespace MiniPaviService\Io;
 /**
  * Reads and writes files on disk without PHP's warning when it can't (a missing or
  * unreadable file, a folder that doesn't exist): the caller handles the failure, with its own
- * error. The FileReader the framework uses by default.
+ * error. The FileReader and FileWriter the framework uses by default.
  */
-final readonly class Files implements FileReader
+final readonly class Files implements FileReader, FileWriter
 {
     /**
      * Content of the file (or of a stream, e.g. php://stdin); null if it can't be read
