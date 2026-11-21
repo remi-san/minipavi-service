@@ -29,11 +29,8 @@ final readonly class Image implements Element
      *
      * @throws InvalidValueException for a position on row 0
      */
-    public function __construct(
-        public Vdt $image,
-        public Position $position,
-        ClearScreens $clearScreens = new ClearScreens(),
-    ) {
+    public function __construct(Vdt $image, Position $position, ClearScreens $clearScreens = new ClearScreens())
+    {
         if ($position->row < 1) {
             throw new InvalidValueException('An image starts at row 1 at least');
         }

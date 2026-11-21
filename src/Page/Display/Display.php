@@ -14,7 +14,7 @@ use MiniPaviService\Vdt\Vdt;
 final readonly class Display
 {
     /** @var Element[] */
-    public array $elements;
+    private array $elements;
 
     public function __construct(Element ...$elements)
     {

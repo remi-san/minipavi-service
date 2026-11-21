@@ -20,10 +20,10 @@ final readonly class Key implements Element
      * from the badge's first character, a space
      */
     public function __construct(
-        public string $label,
-        public Position $position,
-        public Color $color,
-        public ?Color $bg,
+        private string $label,
+        private Position $position,
+        private Color $color,
+        private ?Color $bg,
     ) {}
 
     public function toVdt(Terminal $terminal): Vdt
