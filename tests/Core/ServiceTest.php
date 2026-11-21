@@ -89,7 +89,7 @@ final class ServiceTest extends TestCase
         self::assertNull($this->handle(new GatewayRequest(ConnectionCode::Disconnect, [], $context)));
         self::assertSame([], $this->requests);
         // Nothing went wrong
-        self::assertSame([LogLevel::INFO], $this->levels());
+        self::assertSame([[LogLevel::INFO, 'Disconnection', []]], $this->logger->records);
     }
 
     #[DataProvider('contextsOfADisconnection')]
@@ -381,8 +381,14 @@ final class ServiceTest extends TestCase
         $menu = $this->lastRequest('menu');
         self::assertSame(ControllerState::Init, $menu->state());
         self::assertSame([null, []], [$menu->key(), $menu->content()]);
-        self::assertSame([LogLevel::WARNING], $this->levels());
-        self::assertSame(['route' => 'removed'], $this->logger->records[0][2]);
+        self::assertSame(
+            [[
+                LogLevel::WARNING,
+                'Unknown route in the context, starting again at the default route',
+                ['route' => 'removed'],
+            ]],
+            $this->logger->records,
+        );
     }
 
     public function testDisplayRespondsWithTheContentAndKeepsItsStateAndParameters(): void
