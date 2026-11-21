@@ -39,8 +39,7 @@ final readonly class Text implements Element
     {
         // Characters of double width take two columns each
         $charWidth = $this->size?->width() ?? 1;
-        $spaces = $this->spacesBefore($charWidth);
-        $start = $this->centered && $this->fill ? 1 : max(1, $this->column($charWidth) - ($spaces * $charWidth));
+        [$start, $spaces] = $this->lead($charWidth);
 
         return Vdt::join(
             Vdt::position(new Position($this->position->row, $start)),
@@ -54,42 +53,46 @@ final readonly class Text implements Element
     }
 
     /**
-     * Spaces written before the text, in its size: when centered and filled, those from the
-     * start of the row up to it (at least one, with a background color), otherwise one with a
-     * background color, as its delimiter, and none without
+     * Where writing starts, and the spaces written there before the text, in its size:
+     * centered and filled, from column 1 up to the text (at least one, with a background
+     * color); otherwise, with a background color, one, as its delimiter, a character before
+     * the text, or in column 1 when there is no room for it, the text one character right;
+     * none without
      *
-     * @return non-negative-int
+     * @return list{int, non-negative-int} the column, then the number of spaces
      */
-    private function spacesBefore(int $charWidth): int
+    private function lead(int $charWidth): array
     {
+        $column = $this->column($charWidth);
         $delimiters = $this->bg === null ? 0 : 1;
         if (!$this->centered || !$this->fill) {
-            return $delimiters;
+            return [max(1, $column - ($delimiters * $charWidth)), $delimiters];
         }
 
         // A column being at least 1 and a character 1 or 2 columns wide, it is never
         // negative, but Mago types intdiv() as int
         /** @var non-negative-int $pad */
-        $pad = intdiv($this->column($charWidth) - 1, $charWidth);
+        $pad = intdiv($column - 1, $charWidth);
 
-        return max($delimiters, $pad);
+        return [1, max($delimiters, $pad)];
     }
 
     /**
-     * What is written after the text, from column next: when there is room left on its row,
-     * the row cleared on the background color when filled, or a space on black ending the
-     * background color; nothing otherwise, the cursor being on the next row
+     * What is written after the text, from column next: filled, the row cleared on the
+     * background color; otherwise, with a background color, a space on black ending it.
+     * Nothing when the text ends in or past the last column, the cursor being then on the
+     * next row
      */
     private function after(int $next): Vdt
     {
-        if ($next > ScreenSize::COLS) {
+        if ($this->fill) {
+            return $next > ScreenSize::COLS ? new Vdt() : new Vdt(Videotex::CLEAR_LINE);
+        }
+        if ($this->bg === null || $next > ScreenSize::COLS) {
             return new Vdt();
         }
-        if ($this->fill) {
-            return new Vdt(Videotex::CLEAR_LINE);
-        }
 
-        return $this->bg === null ? new Vdt() : new Vdt(Videotex::backgroundColor(Color::Black) . ' ');
+        return new Vdt(Videotex::backgroundColor(Color::Black) . ' ');
     }
 
     /**
