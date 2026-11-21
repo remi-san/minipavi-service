@@ -37,7 +37,7 @@ enum Inversion: string implements Attribute
         return false;
     }
 
-    public function waitIn(Zone $zone): Zone
+    public function waitingIn(Zone $zone): Zone
     {
         return $zone;
     }

@@ -37,7 +37,7 @@ enum Underlining: string implements Attribute
         return !$attributes->isMosaic();
     }
 
-    public function waitIn(Zone $zone): Zone
+    public function waitingIn(Zone $zone): Zone
     {
         return $zone->withUnderlineWaiting($this);
     }

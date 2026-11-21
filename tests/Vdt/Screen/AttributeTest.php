@@ -111,11 +111,11 @@ final class AttributeTest extends TestCase
             Inversion::Inverse,
         ] as $attribute) {
             self::assertFalse($attribute->waitsIn(Attributes::defaults()), $attribute->code());
-            self::assertSame($zone, $attribute->waitIn($zone), $attribute->code());
+            self::assertSame($zone, $attribute->waitingIn($zone), $attribute->code());
         }
         foreach ([new BackgroundColor(Color::Red), Masking::Mask, Underlining::Underline] as $attribute) {
             self::assertTrue($attribute->waitsIn(Attributes::defaults()), $attribute->code());
-            self::assertTrue($attribute->waitIn($zone)->isWaiting(), $attribute->code());
+            self::assertTrue($attribute->waitingIn($zone)->isWaiting(), $attribute->code());
         }
     }
 

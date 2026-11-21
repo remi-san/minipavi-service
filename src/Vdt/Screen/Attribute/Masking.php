@@ -37,7 +37,7 @@ enum Masking: string implements Attribute
         return true;
     }
 
-    public function waitIn(Zone $zone): Zone
+    public function waitingIn(Zone $zone): Zone
     {
         return $zone->withMaskWaiting($this);
     }

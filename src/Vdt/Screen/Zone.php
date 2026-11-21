@@ -54,7 +54,7 @@ final readonly class Zone
     }
 
     /**
-     * This zone, with masking waiting for the next delimiter (Masking::waitIn())
+     * This zone, with masking waiting for the next delimiter (Masking::waitingIn())
      */
     public function withMaskWaiting(Masking $mask): self
     {
@@ -62,7 +62,7 @@ final readonly class Zone
     }
 
     /**
-     * This zone, with underlining waiting for the next delimiter (Underlining::waitIn())
+     * This zone, with underlining waiting for the next delimiter (Underlining::waitingIn())
      */
     public function withUnderlineWaiting(Underlining $underline): self
     {
@@ -71,7 +71,7 @@ final readonly class Zone
 
     /**
      * This zone, with a background colour waiting for the next delimiter, or SO
-     * (BackgroundColor::waitIn())
+     * (BackgroundColor::waitingIn())
      */
     public function withBackgroundWaiting(Color $background): self
     {

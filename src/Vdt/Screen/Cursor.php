@@ -73,7 +73,7 @@ final class Cursor
             return;
         }
         if ($attribute->waitsIn($this->attributes)) {
-            $this->zone = $attribute->waitIn($this->zone);
+            $this->zone = $attribute->waitingIn($this->zone);
             return;
         }
         $this->attributes = $this->attributes->with($attribute);

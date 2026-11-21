@@ -12,7 +12,7 @@ use MiniPaviService\Vdt\Screen\Zone;
  * made of: a colour of the text or of the background, a size, blinking, masking, underlining
  * or inverse video (AttributeReader reads it from its byte). It knows what it does on the
  * screen: where the Minitel discards it (appliesOn(), appliesInMosaic()), whether it waits
- * for a delimiter (waitsIn(), waitIn()), and how it changes the character attributes
+ * for a delimiter (waitsIn(), waitingIn()), and how it changes the character attributes
  * (appliedTo()). Cursor::setAttribute() asks it each.
  */
 interface Attribute
@@ -36,16 +36,16 @@ interface Attribute
 
     /**
      * Whether this attribute, received with these character attributes, is a zone attribute
-     * that waits for a delimiter (waitIn()), rather than a character attribute (appliedTo()):
-     * masking always, underline and the background colour in text only (Zone)
+     * that waits for a delimiter (waitingIn()), rather than a character attribute
+     * (appliedTo()): masking always, underline and the background colour in text only (Zone)
      */
     public function waitsIn(Attributes $attributes): bool;
 
     /**
-     * The zone attributes after this one, when it waits for a delimiter (waitsIn()): it waits
-     * for the next one; one that never waits leaves them as they are
+     * The zone with this attribute waiting in it for the next delimiter, when it waits for one
+     * (waitsIn()); one that never waits leaves the zone as it is
      */
-    public function waitIn(Zone $zone): Zone;
+    public function waitingIn(Zone $zone): Zone;
 
     /**
      * These character attributes, with this one set
