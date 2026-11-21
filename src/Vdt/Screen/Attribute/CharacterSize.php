@@ -12,8 +12,8 @@ use MiniPaviService\Vdt\Videotex;
  * The size of the characters: ESC L (normal), M (double height), N (double width) or O
  * (double size). The Minitel discards it in mosaic, and double height on rows 0 and 1.
  *
- * isTall(), isWide() and appliesOn() each match over the cases: what each size is, said by
- * the size itself.
+ * isTall() and isWide() each match over the cases: what each size is, said by the size
+ * itself.
  */
 enum CharacterSize: string implements Attribute
 {
