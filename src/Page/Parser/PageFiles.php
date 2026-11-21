@@ -6,6 +6,7 @@ namespace MiniPaviService\Page\Parser;
 
 use MiniPaviService\Io\FileReader;
 use MiniPaviService\Io\Files;
+use MiniPaviService\Page\Building\PageXmlException;
 
 /**
  * Videotex files of a page (<background>, <image>): in its folder or its subfolders only,

@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace MiniPaviService\Page\Parser\Tag;
 
 use MiniPaviService\InvalidValueException;
-use MiniPaviService\Page\Parser\AttributeValues;
-use MiniPaviService\Page\Parser\PageXmlException;
+use MiniPaviService\Page\Building\AttributeValues;
+use MiniPaviService\Page\Building\PageXmlException;
 use MiniPaviService\Text\Placeholders;
 use MiniPaviService\Xml\XmlElements;
 

@@ -14,6 +14,7 @@ use MiniPaviService\Minitel\Keyboard;
 use MiniPaviService\Minitel\LocalEcho;
 use MiniPaviService\Minitel\Scroll;
 use MiniPaviService\Page;
+use MiniPaviService\Page\Building\PageXmlException;
 use MiniPaviService\Page\MinitelPage;
 use MiniPaviService\Page\Parser\Tag\NodesParser;
 use MiniPaviService\Page\Parser\Tag\TagPosition;

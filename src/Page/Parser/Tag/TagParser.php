@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Page\Parser\Tag;
 
-use MiniPaviService\Page\Parser\PageXmlException;
+use MiniPaviService\Page\Building\PageXmlException;
 
 /**
  * Reads an element of a page XML file (format documented in the framework's README.md) where

@@ -6,9 +6,11 @@ namespace MiniPaviService\Page\Parser\Element;
 
 use MiniPaviService\Minitel\Color;
 use MiniPaviService\Minitel\Span;
+use MiniPaviService\Page\Building\AttributeValues;
+use MiniPaviService\Page\Building\ElementBuilder;
+use MiniPaviService\Page\Building\Placement;
 use MiniPaviService\Page\Display\Element;
 use MiniPaviService\Page\Display\Line;
-use MiniPaviService\Page\Parser\AttributeValues;
 
 /**
  * <line row col length char color/>: a horizontal line of a repeated character (char: top,
@@ -23,8 +25,11 @@ final readonly class LineBuilder implements ElementBuilder
         return 'line';
     }
 
-    public function build(AttributeValues $attributes, string $text): Element
+    public function checkPlacement(Placement $placement): void {}
+
+    public function build(AttributeValues $attributes, string $text, Placement $placement): Element
     {
+        $attributes = $placement->placeByRow($attributes);
         $char = $attributes->string('char', default: 'middle');
 
         return new Line(
@@ -32,15 +37,5 @@ final readonly class LineBuilder implements ElementBuilder
             char: self::CHARS[$char] ?? $char,
             color: $attributes->enum('color', Color::class) ?? Color::White,
         );
-    }
-
-    public function isPlacedByRow(): bool
-    {
-        return true;
-    }
-
-    public function isAllowedInLoop(): bool
-    {
-        return true;
     }
 }

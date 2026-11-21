@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Page\Parser\Tag;
 
-use MiniPaviService\Page\Parser\Element\ElementBuilder;
+use MiniPaviService\Page\Building\ElementBuilder;
+use MiniPaviService\Page\Building\PageXmlException;
 use MiniPaviService\Page\Parser\ElementFactory;
-use MiniPaviService\Page\Parser\PageXmlException;
 use MiniPaviService\Page\Template\ElementNode;
 
 /**
@@ -25,18 +25,16 @@ final readonly class ElementTagParser implements TagParser
     {
         $builder = $tag->check(function () use ($tag, $position): ElementBuilder {
             $builder = $this->factory->builder($tag->name) ?? throw new PageXmlException('unknown element');
-            if ($position->inLoop && !$builder->isAllowedInLoop()) {
-                throw new PageXmlException('not inside <foreach>');
-            }
+            $placement = $position->placement();
+            $builder->checkPlacement($placement);
             $hasPlaceholder = $tag->hasPlaceholder();
             if ($hasPlaceholder && !$position->template) {
                 throw new PageXmlException('{{placeholders}} only in a page of type="template"');
             }
             if ($position->template && !$hasPlaceholder) {
                 // Built now only to find its errors while parsing (the template builds it again
-                // when displayed). In a <foreach>, its row is relative to the item: checked then
-                $values = $tag->values();
-                $builder->build($position->inLoop ? $values->without('row') : $values, $tag->text);
+                // when displayed), where it is: in a <foreach>, the rows of the items aren't known
+                $builder->build($tag->values(), $tag->text, $placement);
             }
 
             return $builder;

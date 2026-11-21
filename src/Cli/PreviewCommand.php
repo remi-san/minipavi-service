@@ -8,7 +8,7 @@ use MiniPaviService\Io\FileReader;
 use MiniPaviService\Io\Files;
 use MiniPaviService\Message\MessagesException;
 use MiniPaviService\Minitel\Terminal;
-use MiniPaviService\Page\Parser\PageXmlException;
+use MiniPaviService\Page\Building\PageXmlException;
 use MiniPaviService\Page\Parser\PageXmlParser;
 use MiniPaviService\Page\Template\TemplateException;
 use MiniPaviService\Vdt\Screen\Screen;

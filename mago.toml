@@ -70,6 +70,12 @@ gateway = ["MiniPaviService\\Gateway\\**"]
 message = ["MiniPaviService\\Message\\**"]
 # A layer's root type (MiniPaviService\Page) belongs to it
 page = ["MiniPaviService\\Page", "MiniPaviService\\Page\\**"]
+# Inside Page: Display (what is drawn) <- Building (what building a display element needs:
+# its builder, and what it reads and throws) <- Template (the nodes of a page's content) <-
+# the rest of Page (Parser, which reads the page XML files into templates, and the pages)
+page-display = ["MiniPaviService\\Page\\Display\\**"]
+page-building = ["MiniPaviService\\Page\\Building\\**"]
+page-template = ["MiniPaviService\\Page\\Template\\**"]
 controller = ["MiniPaviService\\Controller", "MiniPaviService\\Controller\\**"]
 core = ["MiniPaviService\\Core\\**"]
 client = ["MiniPaviService\\Client\\**"]
@@ -115,6 +121,26 @@ permit = ["@native", "@layer:helpers", "@layer:minitel", "@layer:vdt", "@layer:g
 [[guard.perimeter.rules]]
 namespace = "MiniPaviService\\Message\\"
 permit = ["@native", "@layer:helpers", "@layer:minitel", "@layer:message"]
+
+[[guard.perimeter.rules]]
+namespace = "MiniPaviService\\Page\\Display\\"
+permit = ["@native", "@layer:helpers", "@layer:minitel", "@layer:vdt", "@layer:page-display"]
+
+[[guard.perimeter.rules]]
+namespace = "MiniPaviService\\Page\\Building\\"
+permit = ["@native", "@layer:helpers", "@layer:minitel", "@layer:vdt", "@layer:page-display", "@layer:page-building"]
+
+[[guard.perimeter.rules]]
+namespace = "MiniPaviService\\Page\\Template\\"
+permit = [
+    "@native",
+    "@layer:helpers",
+    "@layer:minitel",
+    "@layer:vdt",
+    "@layer:page-display",
+    "@layer:page-building",
+    "@layer:page-template",
+]
 
 [[guard.perimeter.rules]]
 namespace = "MiniPaviService\\Page\\"

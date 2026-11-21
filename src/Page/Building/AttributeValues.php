@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace MiniPaviService\Page\Parser;
+namespace MiniPaviService\Page\Building;
 
 use MiniPaviService\InvalidValueException;
 use MiniPaviService\Minitel\Position;

@@ -5,14 +5,14 @@ declare(strict_types=1);
 namespace MiniPaviService\Page\Template;
 
 use MiniPaviService\InvalidValueException;
-use MiniPaviService\Page\Parser\AttributeValues;
-use MiniPaviService\Page\Parser\Element\ElementBuilder;
-use MiniPaviService\Page\Parser\PageXmlException;
+use MiniPaviService\Page\Building\AttributeValues;
+use MiniPaviService\Page\Building\ElementBuilder;
+use MiniPaviService\Page\Building\PageXmlException;
 
 /**
  * Display element of a template (<text>, <line>, <key>, <endkey>, <background>, <image>...),
  * whose text and attributes may contain {{placeholders}}, built by its ElementBuilder once
- * they are replaced
+ * they are replaced, where the scope places it
  */
 final readonly class ElementNode implements Node
 {
@@ -30,13 +30,11 @@ final readonly class ElementNode implements Node
     public function elements(Scope $scope): array
     {
         try {
-            $attributes = new AttributeValues(array_map($scope->substitute(...), $this->attributes));
-            // Inside a <foreach>, row is relative to the current item
-            if ($this->builder->isPlacedByRow()) {
-                $attributes = $scope->placedByRow($attributes);
-            }
-
-            return [$this->builder->build($attributes, $scope->substitute($this->text))];
+            return [$this->builder->build(
+                new AttributeValues(array_map($scope->substitute(...), $this->attributes)),
+                $scope->substitute($this->text),
+                $scope->placement(),
+            )];
         } catch (PageXmlException|InvalidValueException $e) {
             throw new TemplateException(
                 "{$this->location}: <{$this->builder->tag()}>: " . $e->getMessage(),

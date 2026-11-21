@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Page\Parser\Element;
 
+use MiniPaviService\Page\Building\AttributeValues;
+use MiniPaviService\Page\Building\ElementBuilder;
+use MiniPaviService\Page\Building\Placement;
 use MiniPaviService\Page\Display\Background;
 use MiniPaviService\Page\Display\Element;
-use MiniPaviService\Page\Parser\AttributeValues;
 use MiniPaviService\Page\Parser\PageFiles;
 use MiniPaviService\Vdt\Vdt;
 
@@ -24,19 +26,11 @@ final readonly class BackgroundBuilder implements ElementBuilder
         return 'background';
     }
 
-    public function build(AttributeValues $attributes, string $text): Element
+    public function checkPlacement(Placement $placement): void {}
+
+    public function build(AttributeValues $attributes, string $text, Placement $placement): Element
     {
+        // Its content positions itself, wherever it is
         return new Background(new Vdt($this->files->read($text)));
-    }
-
-    // Its content positions itself
-    public function isPlacedByRow(): bool
-    {
-        return false;
-    }
-
-    public function isAllowedInLoop(): bool
-    {
-        return true;
     }
 }

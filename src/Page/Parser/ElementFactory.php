@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace MiniPaviService\Page\Parser;
 
 use MiniPaviService\Message\Messages;
-use MiniPaviService\Page\Parser\Element\ElementBuilder;
+use MiniPaviService\Page\Building\ElementBuilder;
 
 /**
  * The display elements of the page XML format, by tag: the ElementBuilder of each. Used by

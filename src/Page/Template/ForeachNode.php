@@ -41,7 +41,7 @@ final readonly class ForeachNode implements Node
         }
         $items = is_array($items) ? array_values($items) : iterator_to_array($items, preserve_keys: false);
 
-        $start = $scope->rowOf($this->row);
+        $start = $scope->rows()->rowOf($this->row);
         $count = count($items);
         $elements = [];
         foreach ($items as $i => $item) {
