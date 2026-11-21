@@ -38,8 +38,8 @@ final readonly class RunCommand extends KeepingResponse
      * @param ?Parameters $parameters parameters this controller keeps; null: their defaults
      */
     public function __construct(
-        public Vdt $vdt,
-        public Command $command,
+        private Vdt $vdt,
+        private Command $command,
         ?State $state,
         ?Parameters $parameters = null,
     ) {

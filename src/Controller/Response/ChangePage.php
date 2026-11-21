@@ -26,8 +26,8 @@ final readonly class ChangePage extends Response
      *                                declares; null: their defaults
      */
     public function __construct(
-        public string $route,
-        public ?Parameters $parameters = null,
+        private string $route,
+        private ?Parameters $parameters = null,
     ) {}
 
     public function continueWith(Flow $flow): GatewayResponse

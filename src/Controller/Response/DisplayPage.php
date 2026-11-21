@@ -30,7 +30,7 @@ final readonly class DisplayPage extends KeepingResponse
      * @param ?Parameters $parameters parameters this controller keeps; null: their defaults
      */
     public function __construct(
-        public Vdt $vdt,
+        private Vdt $vdt,
         ?State $state = ControllerState::ReadInput,
         ?Parameters $parameters = null,
     ) {
