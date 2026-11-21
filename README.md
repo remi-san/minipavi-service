@@ -650,7 +650,7 @@ elements are drawn in order:
 |---|---|
 | `<background>file.vdt</background>` | Videotex page from the page's folder or one of its subfolders (e.g. `images/logo.vdt`; `/` or `\` between folders, but not first, nor `..` or a Windows drive such as `C:`), sent as is (e.g. made with a Videotex editor). Put it first to draw over it. |
 | `<image row col>file.vdt</image>` | Videotex picture from the page's folder or one of its subfolders, drawn with its top-left cell (row 1, column 1 of the file) at `row`, `col` (default 1, 1): what goes past the screen is cut, and it doesn't clear the screen. In a template, the file name can be a placeholder (`{{game.image}}`), and in a `<foreach>`, `row` is relative to the item, to show a picture per item |
-| `<text row col align="center" color bg size fill="yes">…</text>` | text; `size`: normal, double-height, double-width, double; `fill="yes"` paints the rest of the row with `bg` |
+| `<text row col align="center" color bg size fill="yes">…</text>` | text; `size`: normal, double-height, double-width, double; `fill="yes"` paints the rest of the row with `bg` (see below) |
 | `<line row col length char color/>` | horizontal line; `char`: top (`_`), middle (`` ` ``), bottom (`~`) or any character |
 | `<key row col color bg>Envoi</key>` | function key badge, in reverse video (`bg`: around it) |
 | `<endkey row color/>` | "Connexion/fin" hint, centered, with "[Maj] +" for ESP32/Minimit adapters (messages `endkey`, `endkey.shift`) |
@@ -664,6 +664,13 @@ elements are drawn in order:
   `color` is white for `<text>` and `<line>`, green for `<key>` and `<endkey>`; a `<text>` is
   left aligned and doesn't fill its row; `<line>` is `middle`, to the end of the row; and
   `<endkey>` is on the last row (row 23 for ESP32/Minimit adapters).
+- A `<text>`'s `bg` is a zone attribute on a Minitel: it starts at a space and runs along the
+  row up to the next one. So a text with `bg` is written after a space of its size (two
+  columns in double width), which takes the cell before it, or, at the start of the row, the
+  text moves one character right (a centered `fill="yes"` text is painted from column 1).
+  Without `fill="yes"`, a space on black after it ends the colour, so that it doesn't run over
+  what the row already shows; with it, the rest of the row is painted. Ending in the last
+  column, nothing is written after it.
 
 `<page>` can also set up the Minitel, sent by `Page::display()` before the content (a setting
 left out is left as it is):
