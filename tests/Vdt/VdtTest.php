@@ -179,6 +179,7 @@ final class VdtTest extends TestCase
     #[DataProviderExternal(ScreenTest::class, 'backgroundZones')]
     #[DataProviderExternal(ScreenTest::class, 'maskZones')]
     #[DataProviderExternal(ScreenTest::class, 'underlineZones')]
+    #[DataProviderExternal(ScreenTest::class, 'zonesOnTheRowAbove')]
     public function testOffsetKeepsTheZones(string $sent): void
     {
         $original = Vdt::join(Vdt::position(new Position(row: 10)), new Vdt($sent));

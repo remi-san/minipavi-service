@@ -674,10 +674,11 @@ final class ScreenTest extends TestCase
     {
         $screen = Screen::of(Vdt::join(Vdt::position(new Position(row: 10)), new Vdt($sent)));
 
-        self::assertSame($expected, self::cellsOfRow10(
+        self::assertSame($expected, self::cellsOfRow(
             $screen,
-            \strlen($expected),
-            static fn(Attributes $a): string => match ($a->background()) {
+            row: 10,
+            length: \strlen($expected),
+            shown: static fn(Attributes $a): string => match ($a->background()) {
                 Color::Blue => 'B',
                 Color::Red => 'R',
                 Color::Green => 'G',
@@ -723,10 +724,11 @@ final class ScreenTest extends TestCase
     {
         $screen = Screen::of(Vdt::join(Vdt::position(new Position(row: 10)), new Vdt($sent)));
 
-        self::assertSame($expected, self::cellsOfRow10(
+        self::assertSame($expected, self::cellsOfRow(
             $screen,
-            \strlen($expected),
-            static fn(Attributes $a): string => $a->isMasked() ? 'M' : '.',
+            row: 10,
+            length: \strlen($expected),
+            shown: static fn(Attributes $a): string => $a->isMasked() ? 'M' : '.',
         ));
     }
 
@@ -747,15 +749,147 @@ final class ScreenTest extends TestCase
     }
 
     /**
-     * Each cell of row 10, from column 1 to length, as shown: ' ' if empty
+     * A tall delimiter (ESC M, ESC O) is a delimiter on the row above too, where its top half
+     * is: it starts its zone there, for the cells after it on that row, and a tall character
+     * is text there (MiniPavi's emulator, printDelimiter(), printG0Char(), drawRow(), #94:
+     * each case checked on its screen). Screen keeps a tall character in its bottom cell
+     * only: the cells of the row above it are what was drawn there before
+     *
+     * @return iterable<string, array{string, int, string}> what is sent, the row looked at,
+     *                                                      and each of its cells from column 1:
+     *                                                      M masked, U underlined, or its
+     *                                                      background: B blue, R red, G green,
+     *                                                      . black; ' ' empty
+     */
+    public static function zonesOnTheRowAbove(): iterable
+    {
+        $tall = Videotex::SIZE_DOUBLE_HEIGHT;
+        $blue = Videotex::backgroundColor(Color::Blue);
+        $red = Videotex::backgroundColor(Color::Red);
+        $green = Videotex::backgroundColor(Color::Green);
+        $mask = Videotex::MASK_ON;
+        // Row 9, then row 10, at column n
+        $row9 = static fn(int $col): string => "\x1F\x49" . \chr(0x40 + $col);
+        $row10 = static fn(int $col): string => "\x1F\x4A" . \chr(0x40 + $col);
+
+        // The issue's two cases (seen by the tester on PR #91)
+        yield 'a background' => ["{$row9(5)}XYZ{$row10(4)}{$tall}{$blue} ", 9, '    BBB'];
+        yield 'masking' => ["{$row9(5)}MNO{$row10(4)}{$mask}{$tall} ", 9, '    MMM'];
+        yield 'underline' => ["{$row9(5)}UND{$row10(4)}{$tall}" . Videotex::UNDERLINE_ON . ' ', 9, '    UUU'];
+        // Empty cells end the background, not the masking
+        yield 'a background up to empty cells' => [
+            "{$row9(5)}AB{$row9(10)}CD{$row10(4)}{$tall}{$blue} ",
+            9,
+            '    BB   ..',
+        ];
+        yield 'masking across empty cells' => ["{$row9(5)}EF{$row9(10)}GH{$row10(4)}{$tall}{$mask} ", 9, '    MM   MM'];
+        // Columns 4 and 5 of rows 9 and 10: P, drawn over by its top half, is in the zone
+        yield 'a double-size delimiter' => [
+            "{$row9(5)}PQRSTU{$row10(4)}" . Videotex::SIZE_DOUBLE . "{$blue} ",
+            9,
+            '    BBBBBB',
+        ];
+        // Q, R and S are text on row 9 too: the zone carries on over them to c, d and e
+        yield 'tall text after the delimiter' => ["{$row9(7)}cde{$row10(3)}{$tall}{$blue} QRS", 9, '      BBB'];
+        // c, drawn over by its top half, is in the zone
+        yield 'a zone already on the row above' => [
+            "{$row9(2)}{$red} abcdefgh{$row10(5)}{$tall}{$blue} ",
+            9,
+            ' RRRBBBBBB',
+        ];
+        // Its masking is what the cursor's zone leaves: none, after a positioning. The
+        // delimiter is masked as what is before it
+        yield 'unmasking a masked zone above' => [
+            "{$row9(2)}{$mask} abcdefgh{$row10(5)}{$tall}{$blue} ",
+            9,
+            ' .MMMBBBBB',
+        ];
+        yield 'up to a delimiter on the row above' => [
+            "{$row9(5)}ijkl{$green} nop{$row10(4)}{$tall}{$blue} ",
+            9,
+            '    BBBBGGGG',
+        ];
+        yield 'up to the end of the row above' => [
+            "{$row9(30)}ABCDEFGHIJK{$row10(29)}{$tall}{$blue} ",
+            9,
+            str_repeat(' ', times: 29) . str_repeat('B', times: 11),
+        ];
+        // Its top half is on row 8: row 10 is below it
+        yield 'not below' => ["{$row10(5)}XYZ{$row9(4)}{$tall}{$blue} ", 10, '    ...'];
+        // At normal size, CAN's delimiter is a cell high (a tall CAN is #141's)
+        yield 'not above a CAN delimiter' => ["{$row9(5)}XYZ{$row10(4)}{$blue}" . Videotex::CLEAR_LINE, 9, '    ...'];
+        // Its own row, as before
+        yield 'the delimiter row' => [
+            "{$row10(4)}{$tall}{$blue} tall" . Videotex::SIZE_NORMAL . 'zz',
+            10,
+            '   BBBBBBB',
+        ];
+    }
+
+    #[DataProvider('zonesOnTheRowAbove')]
+    public function testTallDelimiterStartsItsZoneOnTheRowAbove(string $sent, int $row, string $expected): void
+    {
+        self::assertSame($expected, self::zonesOfRow(Screen::of(new Vdt($sent)), $row, \strlen($expected)));
+    }
+
+    /**
+     * The row above row 1 is the status row (checked in MiniPavi's emulator, #94): a tall
+     * delimiter on row 1 starts its zone there too; ESC M sent on row 1 is discarded, so a
+     * delimiter drawn after it is a cell high
+     *
+     * @return iterable<string, array{string, string}> what is sent after the status row and
+     *                                                 row 1 are written, and each cell of the
+     *                                                 status row (as zonesOnTheRowAbove())
+     */
+    public static function zonesOnTheStatusRow(): iterable
+    {
+        $tall = Videotex::SIZE_DOUBLE_HEIGHT;
+        $blue = Videotex::backgroundColor(Color::Blue);
+
+        yield 'not above row 1' => ["\x1F\x41\x44{$tall}{$blue} ", str_repeat('.', times: 20)];
+        // Row 24, column 10: ESC M, L, a line feed to row 1, which keeps double height
+        yield 'brought onto row 1' => [
+            "\x1F\x58\x4A{$tall}L\x0A{$blue} ",
+            str_repeat('.', times: 10) . str_repeat('B', times: 10),
+        ];
+    }
+
+    #[DataProvider('zonesOnTheStatusRow')]
+    public function testTallDelimiterOnRow1StartsItsZoneOnTheStatusRow(string $sent, string $expected): void
+    {
+        $screen = Screen::of(new Vdt("\x1F\x40\x41STATUS ROW TEXT 0123\x1F\x41\x41ROW ONE TEXT 0123456{$sent}"));
+
+        self::assertSame($expected, self::zonesOfRow($screen, row: 0, length: \strlen($expected)));
+    }
+
+    /**
+     * Each cell of row, from column 1 to length, as zonesOnTheRowAbove() gives them
+     */
+    private static function zonesOfRow(Screen $screen, int $row, int $length): string
+    {
+        return self::cellsOfRow($screen, $row, $length, static fn(Attributes $a): string => match (true) {
+            $a->isMasked() => 'M',
+            $a->isUnderlined() => 'U',
+            default => match ($a->background()) {
+                Color::Blue => 'B',
+                Color::Red => 'R',
+                Color::Green => 'G',
+                Color::Black => '.',
+                default => '?',
+            },
+        });
+    }
+
+    /**
+     * Each cell of row, from column 1 to length, as shown: ' ' if empty
      *
      * @param \Closure(Attributes): string $shown
      */
-    private static function cellsOfRow10(Screen $screen, int $length, \Closure $shown): string
+    private static function cellsOfRow(Screen $screen, int $row, int $length, \Closure $shown): string
     {
         $cells = '';
         for ($col = 1; $col <= $length; $col++) {
-            $cell = $screen->cell(10, $col);
+            $cell = $screen->cell($row, $col);
             $cells .= $cell === null ? ' ' : $shown($cell->attributes);
         }
 

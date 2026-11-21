@@ -139,7 +139,7 @@ final class Writer
         $this->sendZone($zone);
         $this->put(' ');
         $this->cursor->delimit();
-        $this->zones->delimiter($row, $col, $width, $this->cursor->zone());
+        $this->zones->delimiter($row, $col, $width, $this->cursor->attributes()->height(), $this->cursor->zone());
         $this->movePast($col, $width);
     }
 
