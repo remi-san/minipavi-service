@@ -6,7 +6,7 @@ namespace MiniPaviService\Controller;
 
 use MiniPaviService\Controller\Parameters\NoParameters;
 use MiniPaviService\Controller\Parameters\Parameters;
-use MiniPaviService\Gateway\ConnectionCode;
+use MiniPaviService\Minitel\ConnectionCode;
 use MiniPaviService\Minitel\FunctionKey;
 use MiniPaviService\Minitel\Key;
 use MiniPaviService\Minitel\Terminal;

@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace MiniPaviService\Tests\Gateway;
+namespace MiniPaviService\Tests\Minitel;
 
-use MiniPaviService\Gateway\ConnectionCode;
+use MiniPaviService\Minitel\ConnectionCode;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 

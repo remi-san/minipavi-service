@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Tests\Gateway;
 
-use MiniPaviService\Gateway\ConnectionCode;
 use MiniPaviService\Gateway\GatewayRequest;
+use MiniPaviService\Minitel\ConnectionCode;
 use MiniPaviService\Minitel\FunctionKey;
 use PHPUnit\Framework\TestCase;
 

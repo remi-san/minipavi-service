@@ -2,14 +2,11 @@
 
 declare(strict_types=1);
 
-namespace MiniPaviService\Gateway;
-
-use MiniPaviService\Minitel\FunctionKey;
-use MiniPaviService\Minitel\Key;
+namespace MiniPaviService\Minitel;
 
 /**
  * What the gateway sends as the key (fctn) of a request that isn't a function key
- * (Minitel\FunctionKey): a connection, a disconnection, or a background call
+ * (FunctionKey): a connection, a disconnection, or a background call
  */
 enum ConnectionCode: string implements Key
 {
