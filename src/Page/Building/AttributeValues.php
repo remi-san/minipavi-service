@@ -112,30 +112,36 @@ final readonly class AttributeValues
     }
 
     /**
-     * The case of a string-backed enum whose value is the attribute's, or null if absent
+     * The one of these cases whose value is the attribute's, or null if absent, e.g.
+     * enum('color', ...Color::cases()). At least one case: the attribute's value can't be
+     * among none.
      *
      * @template T of \BackedEnum
      *
-     * @param class-string<T> $enum
+     * @param T $case
+     * @param T ...$cases
      *
      * @return ?T
      *
-     * @throws PageXmlException for a value the enum doesn't have
+     * @throws PageXmlException for another value, naming the cases' values
      */
-    public function enum(string $name, string $enum): ?\BackedEnum
+    public function enum(string $name, \BackedEnum $case, \BackedEnum ...$cases): ?\BackedEnum
     {
         if (!$this->has($name)) {
             return null;
         }
+        $value = $this->values[$name];
+        $cases = [$case, ...$cases];
+        foreach ($cases as $case) {
+            if ((string) $case->value === $value) {
+                return $case;
+            }
+        }
 
-        return (
-            $enum::tryFrom($this->values[$name]) ?? throw new PageXmlException(
-                "unknown {$name} \""
-                . $this->values[$name]
-                . '" ('
-                . implode(', ', array_map(static fn(\BackedEnum $case) => $case->value, $enum::cases()))
-                . ')',
-            )
+        throw new PageXmlException(
+            "unknown {$name} \"{$value}\" ("
+            . implode(', ', array_map(static fn(\BackedEnum $case) => $case->value, $cases))
+            . ')',
         );
     }
 

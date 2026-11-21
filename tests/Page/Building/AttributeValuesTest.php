@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace MiniPaviService\Tests\Page\Building;
 
 use MiniPaviService\InvalidValueException;
+use MiniPaviService\Minitel\Color;
 use MiniPaviService\Page\Building\AttributeValues;
 use MiniPaviService\Page\Building\PageXmlException;
+use MiniPaviService\Tests\Support\Rating;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
@@ -73,5 +75,26 @@ final class AttributeValuesTest extends TestCase
         $this->expectExceptionMessage('Column 41 is off the screen (1 to 40)');
 
         (new AttributeValues(['col' => '41']))->position();
+    }
+
+    public function testAnEnumIsTheCaseOfTheAttributesValue(): void
+    {
+        $values = new AttributeValues(['color' => 'blue']);
+
+        self::assertSame(Color::Blue, $values->enum('color', ...Color::cases()));
+        self::assertNull($values->enum('bg', ...Color::cases()));
+    }
+
+    public function testAnIntBackedEnumIsTheCaseOfTheAttributesNumber(): void
+    {
+        self::assertSame(Rating::Two, (new AttributeValues(['stars' => '2']))->enum('stars', ...Rating::cases()));
+    }
+
+    public function testAnEnumOtherThanTheCasesGivenIsAnErrorNamingThem(): void
+    {
+        $this->expectException(PageXmlException::class);
+        $this->expectExceptionMessage('unknown color "green" (red, blue)');
+
+        (new AttributeValues(['color' => 'green']))->enum('color', Color::Red, Color::Blue);
     }
 }

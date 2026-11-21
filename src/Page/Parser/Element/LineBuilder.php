@@ -35,7 +35,7 @@ final readonly class LineBuilder implements ElementBuilder
         return new Line(
             new Span($attributes->position(), $attributes->optionalInt('length')),
             char: self::CHARS[$char] ?? $char,
-            color: $attributes->enum('color', Color::class) ?? Color::White,
+            color: $attributes->enum('color', ...Color::cases()) ?? Color::White,
         );
     }
 }

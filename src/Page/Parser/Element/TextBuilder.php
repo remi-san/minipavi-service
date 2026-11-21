@@ -31,9 +31,9 @@ final readonly class TextBuilder implements ElementBuilder
             $text,
             $attributes->position(),
             centered: $attributes->choice('align', values: ['left' => false, 'center' => true], default: false),
-            color: $attributes->enum('color', Color::class) ?? Color::White,
-            bg: $attributes->enum('bg', Color::class),
-            size: $attributes->enum('size', Size::class),
+            color: $attributes->enum('color', ...Color::cases()) ?? Color::White,
+            bg: $attributes->enum('bg', ...Color::cases()),
+            size: $attributes->enum('size', ...Size::cases()),
             fill: $attributes->choice('fill', values: ['yes' => true, 'no' => false], default: false),
         );
     }
