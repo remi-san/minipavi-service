@@ -32,21 +32,23 @@ final readonly class EndKey implements Element
 
     public function toVdt(Terminal $terminal): Vdt
     {
-        $badge = Key::badge($this->label, $this->color);
         // The badge is the label with two cells on each side
         $width = mb_strlen($this->label) + 4;
 
         if ($terminal->isAdapter()) {
-            $width += mb_strlen($this->shiftLabel);
+            $shiftWidth = mb_strlen($this->shiftLabel);
+            $start = Position::centered($this->position->row ?? (ScreenSize::ROWS - 1), $width + $shiftWidth);
 
             return Vdt::join(
-                Vdt::position(Position::centered($this->position->row ?? (ScreenSize::ROWS - 1), $width)),
+                Vdt::position($start),
                 new Vdt(Videotex::textColor(Color::White)),
                 Vdt::text($this->shiftLabel),
-                $badge,
+                Key::badge($this->label, $this->color, $start->col + $shiftWidth),
             );
         }
 
-        return Vdt::position(Position::centered($this->position->row ?? ScreenSize::ROWS, $width))->append($badge);
+        $start = Position::centered($this->position->row ?? ScreenSize::ROWS, $width);
+
+        return Vdt::position($start)->append(Key::badge($this->label, $this->color, $start->col));
     }
 }
