@@ -202,6 +202,16 @@ final readonly class Attributes
             return $this;
         }
 
+        return $this->flattened();
+    }
+
+    /**
+     * These attributes, at normal height: double height becomes normal size and double size
+     * double width (CharacterSize::flattened()), a character written with them taking the
+     * columns, but not the row above, it would
+     */
+    public function flattened(): self
+    {
         return $this->copy(size: $this->size->flattened());
     }
 

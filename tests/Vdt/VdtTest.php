@@ -401,20 +401,25 @@ final class VdtTest extends TestCase
         yield 'in a tall cell' => ["\x1F\x4A\x41\x1B\x4D\x1B\x52    ", -1, "\x1F\x4A\x41\x1B\x4D\x1B\x52   "];
         // ESC R, then a double-height blue delimiter in column 2 and tall spaces, a tall X from
         // row 11 drawn over column 2 on row 10: the blue delimiter is written (row 9 shows its
-        // top half), and the green zone starts again nowhere, as a tall delimiter would turn
-        // the blue top halves on row 9 green
-        yield 'not in a tall cell whose top half shows another zone' => [
+        // top half), then the first tall space, and a green delimiter at normal height over its
+        // bottom half, which leaves its blue top half on row 9 (a tall one would turn it green)
+        yield 'over the bottom half of a tall cell whose top half shows another zone' => [
             "\x1F\x4A\x41\x1B\x52 \x1B\x4D\x1B\x54    \x1F\x4B\x42\x1B\x4DX",
             -1,
-            "\x1F\x4A\x41\x1B\x4D\x1B\x54 \x12\x43\x1F\x4B\x41\x1B\x4DX",
+            "\x1F\x4A\x41\x1B\x4D\x1B\x54  \x1F\x4A\x42\x1B\x52 \x1B\x4D  \x1F\x4B\x41\x1B\x4DX",
         ];
         // ESC Q, a red delimiter, then a tall B and a tall space, whose top halves, on row 9,
-        // are in no zone: the red zone starts again nowhere, as a tall delimiter would turn
-        // row 9 red
-        yield 'not in a tall cell whose top half shows no zone' => [
+        // are in no zone: the red delimiter at normal height over the tall space's bottom half
+        yield 'over the bottom half of a tall cell whose top half shows no zone' => [
             "\x1F\x4A\x41\x1B\x51 \x1B\x4DB \x1B\x52AA",
             -1,
-            "\x1F\x4A\x41\x1B\x4DB AA",
+            "\x1F\x4A\x41\x1B\x4DB \x1F\x4A\x42\x1B\x51 \x1B\x4DAA",
+        ];
+        // The same in double size: the delimiter double width, in the two columns of the space
+        yield 'over the bottom half of a double-size cell' => [
+            "\x1F\x4A\x41\x1B\x51 \x1B\x4FB \x1B\x52AA",
+            -1,
+            "\x1F\x4A\x41\x1B\x4FB \x1F\x4A\x43\x1B\x4E\x1B\x51 \x1B\x4FAA",
         ];
         // The same with normal-height spaces after the blue delimiter: the green zone starts
         // again in column 3, the blue delimiter written too

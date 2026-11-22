@@ -63,10 +63,22 @@ final class OffsetWriter implements ScreenListener
     public function glyph(int $row, int $col, string $bytes, int $width, Attributes $attributes): void
     {
         $restart = $this->restartAt($row, $col, $bytes, $attributes);
-        if ($restart !== null) {
-            $this->delimiter($row, $col, $width, $attributes, $restart);
+        if ($restart === null) {
+            $this->writeMoved($row, $col, $bytes, $width, $attributes);
             return;
         }
+        if ($attributes->height() > 1 && !$this->shown->showsOnTop($row, $col, $restart)) {
+            // A tall space whose top half shows another zone, which a tall delimiter would
+            // change: the space as drawn, then a delimiter at normal height over its bottom half
+            $this->writeMoved($row, $col, $bytes, $width, $attributes);
+            $attributes = $attributes->flattened();
+        }
+        $this->delimiter($row, $col, $width, $attributes, $restart);
+    }
+
+    // Writes a character drawn at row, col, moved, in the zone the cells written before it leave
+    private function writeMoved(int $row, int $col, string $bytes, int $width, Attributes $attributes): void
+    {
         $zone = $this->zoneBefore($row, $col);
         $this->zones->draw($row, $col, $width, $attributes);
         $moved = $this->moved($row, $col, $attributes);

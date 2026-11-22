@@ -21,10 +21,9 @@ final class ShownScreen
     private Zones $zones;
 
     /**
-     * @var array<int, array<int, ?array{int, int, int}>> by row, then column (from 1), the
-     *                                                    row, column and height a text space
-     *                                                    a cell shows is drawn at; null if it
-     *                                                    shows another character
+     * @var array<int, array<int, ?array{int, int}>> by row, then column (from 1), the row and
+     *                                               column a text space a cell shows is drawn
+     *                                               at; null if it shows another character
      */
     private array $spaces = [];
 
@@ -54,9 +53,8 @@ final class ShownScreen
     /**
      * Where the zone the columns before first leave starts again on row, once moved left so
      * that first is its column 1, and that zone: at its first text space (that isn't a
-     * delimiter) drawn on row whose zone isn't the one the columns from first leave alone. A
-     * tall one, a delimiter there drawn on the row above too, only if its top half shows that
-     * zone there (restartsOnTop()). Null if none is, nor is any needed
+     * delimiter) drawn on row whose zone isn't the one the columns from first leave alone.
+     * Null if none is, nor is any needed
      *
      * @return ?array{int, Zone} the column (not moved) and the zone
      */
@@ -68,12 +66,7 @@ final class ShownScreen
             $zone = $this->zones->after($zone, $row, $col);
             $alone = $this->zones->after($alone, $row, $col);
             $space = $this->spaces[$row][$col] ?? null;
-            if (
-                $space !== null
-                && $space[0] === $row
-                && !$zone->showsAs($alone)
-                && ($space[2] === 1 || $this->restartsOnTop($row, $col, $zone))
-            ) {
+            if ($space !== null && $space[0] === $row && !$zone->showsAs($alone)) {
                 return [$col, $zone];
             }
         }
@@ -88,7 +81,7 @@ final class ShownScreen
     public function glyph(int $row, int $col, string $bytes, int $width, Attributes $attributes): void
     {
         $this->zones->draw($row, $col, $width, $attributes);
-        $space = $bytes === ' ' && !$attributes->isMosaic() ? [$row, $col, $attributes->height()] : null;
+        $space = $bytes === ' ' && !$attributes->isMosaic() ? [$row, $col] : null;
         foreach (Zones::cells($row, $col, $width, $attributes->height()) as [$cellRow, $cellCol]) {
             $this->spaces[$cellRow][$cellCol] = $space;
         }
@@ -110,15 +103,15 @@ final class ShownScreen
     {
         $this->zones->clearLine($row, $col, $attributes, $delimiter);
         for ($cleared = $col; $cleared <= ScreenSize::COLS; $cleared++) {
-            $this->spaces[$row][$cleared] = $attributes->isMosaic() ? null : [$row, $cleared, 1];
+            $this->spaces[$row][$cleared] = $attributes->isMosaic() ? null : [$row, $cleared];
         }
     }
 
     /**
-     * Whether the top half of the tall text space at row, col, on the row above, is still
-     * there, in zone: a delimiter starting it there shows what it does
+     * Whether the top half of the tall text space drawn at row, col, on the row above, still
+     * shows, in zone: a tall delimiter starting zone there shows what it does
      */
-    private function restartsOnTop(int $row, int $col, Zone $zone): bool
+    public function showsOnTop(int $row, int $col, Zone $zone): bool
     {
         $above = $row - 1;
 
