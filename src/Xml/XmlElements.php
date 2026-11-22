@@ -20,11 +20,6 @@ final readonly class XmlElements
     public static function children(\SimpleXMLElement $parent): \Generator
     {
         foreach ($parent->children() ?? [] as $tag => $child) {
-            // Never null for an element's child, which the types of SimpleXMLElement allow
-            if ($child === null) {
-                continue;
-            }
-
             yield $tag => $child;
         }
     }
