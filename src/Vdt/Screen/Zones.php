@@ -165,7 +165,7 @@ final class Zones
      * The zone after the cell at row, col, from zone before it: the one a delimiter starts,
      * the same after another text cell, its background after a mosaic or empty one
      */
-    private function after(Zone $zone, int $row, int $col): Zone
+    public function after(Zone $zone, int $row, int $col): Zone
     {
         if (!\array_key_exists($col, $this->text[$row] ?? [])) {
             return $zone->on($this->mosaic[$row][$col] ?? Color::Black);

@@ -286,6 +286,12 @@ final class VdtTest extends TestCase
         yield 'a clear line, its delimiter kept' => ["\x1B\x52\x18", -2];
         // A green delimiter, then a clear screen: the spaces drawn after it are black
         yield 'a delimiter a clear screen erases' => ["\x1B\x52 \x0C\x1F\x4A\x42   ", -1];
+        // CAN's delimiter goes off the screen, X then drawn in the column moved to column 1:
+        // the first cleared cell X doesn't draw over starts the zone again
+        yield 'a clear line, drawn over in the column moved to column 1' => ["\x1B\x52\x18\x1F\x4A\x42X", -1];
+        yield 'a clear line after a delimiter, drawn over' => ["\x1B\x52 \x18X", -1];
+        // Spaces, the first one a green delimiter, then X over the second one
+        yield 'spaces, drawn over in the column moved to column 1' => ["\x1B\x52    \x1F\x4A\x42X", -1];
     }
 
     /**
@@ -305,10 +311,89 @@ final class VdtTest extends TestCase
         ];
         // Row 0, the status row, isn't moved: its first column is left on the screen
         yield 'on the status row' => [
+            "\x1F\x40\x42   \x1F\x40\x41\x1B\x52 ",
+            -1,
+            "\x1F\x40\x42   \x1F\x40\x41\x1B\x52 ",
+        ];
+        // Row 0 with a delimiter in its first column: nothing of it goes off the screen
+        yield 'on the status row, from its first column' => [
+            "\x1F\x40\x41\x1B\x52    ",
+            -1,
+            "\x1F\x40\x41\x1B\x52 \x12\x43",
+        ];
+        // A delimiter drawn over: written as a space, as nothing of its zone lasts
+        yield 'a delimiter drawn over' => [
             "\x1F\x40\x41\x1B\x52   \x1F\x40\x41X",
             -1,
-            "\x1F\x40\x41\x1B\x52   \x1F\x40\x41X",
+            "\x1F\x40\x41   \x1F\x40\x41X",
         ];
+        // A clear line's delimiter drawn over: a clear line starting no zone
+        yield 'a clear line, its delimiter drawn over' => [
+            "\x1F\x4A\x41\x1B\x52\x18X",
+            0,
+            "\x1F\x4A\x41\x18X",
+        ];
+    }
+
+    /**
+     * Rows 10 moved left, whose zone went off the screen: it starts again at the first space
+     * nothing is drawn over later, up to the clear screen that erases it, if any (#126)
+     *
+     * @return iterable<string, array{string, int, string}> what is drawn, x, and how it is
+     *                                                      written
+     */
+    public static function cellsDrawnOver(): iterable
+    {
+        // ESC R, CAN, then X in column 2, moved to column 1: the delimiter in column 2
+        yield 'a clear line' => [
+            "\x1F\x4A\x41\x1B\x52\x18\x1F\x4A\x42X",
+            -1,
+            "\x1F\x4A\x41 \x1B\x52 \x12\x65\x1F\x4A\x41X",
+        ];
+        // ESC R, spaces, then a double-width X over columns 2 and 3: the delimiter in column 4
+        yield 'by a double-width character' => [
+            "\x1F\x4A\x41\x1B\x52      \x1F\x4A\x42\x1B\x4EX",
+            -1,
+            "\x1F\x4A\x41  \x1B\x52   \x1F\x4A\x41\x1B\x4EX",
+        ];
+        // ESC R, a space in column 2, X over it, then a double-width space in columns 3 and 4:
+        // the delimiter there
+        yield 'next to a double-width space' => [
+            "\x1F\x4A\x41\x1B\x52  \x1F\x4A\x42X\x1B\x4E ",
+            -1,
+            "\x1F\x4A\x41 \x1F\x4A\x41X\x1B\x4E\x1B\x52 ",
+        ];
+        // ESC R, CAN, then A in columns 2 to 39: the delimiter in column 40, moved to 39
+        yield 'up to the last column' => [
+            "\x1F\x4A\x41\x1B\x52\x18\x1F\x4A\x42A\x12\x65",
+            -1,
+            "\x1F\x4A\x41 \x12\x65\x1B\x52 \x1F\x4A\x41A\x12\x65",
+        ];
+        // ESC R, a space, A in column 2, then a space over it: A written as it is, then the
+        // delimiter over it
+        yield 'over a character' => ["\x1F\x4A\x41\x1B\x52 A\x1F\x4A\x42 ", -1, "\x1F\x4A\x41A\x1F\x4A\x41\x1B\x52 "];
+        // A masked zone, then column 2 empty: the masking runs past it, up to A
+        yield 'after an empty cell' => ["\x1F\x4A\x41\x1B\x58 \x1F\x4A\x43 A", -1, "\x1F\x4A\x42\x1B\x58 A"];
+        // CAN's zone is erased by a clear screen, not drawn over: it starts again
+        yield 'erased' => ["\x1F\x4A\x41\x1B\x52\x18\x0C", -2, "\x1F\x4A\x41\x1B\x52 \x12\x65\x0C"];
+        yield 'after a clear screen' => ["\x0C\x1F\x4A\x41\x1B\x52\x18", -2, "\x0C\x1F\x4A\x41\x1B\x52 \x12\x65"];
+        // Before the clear screen, CAN's zone isn't drawn over; after it, it is
+        yield 'on either side of a clear screen' => [
+            "\x1F\x4A\x41\x1B\x52\x18\x0C\x1F\x4A\x41\x1B\x52\x18XY",
+            -2,
+            "\x1F\x4A\x41\x1B\x52 \x12\x65\x0C\x1F\x4A\x41 \x12\x65",
+        ];
+    }
+
+    #[DataProvider('cellsDrawnOver')]
+    public function testOffsetStartsAZoneAgainAtASpaceNothingIsDrawnOver(string $drawn, int $x, string $written): void
+    {
+        self::assertSame(
+            $written,
+            (new Offset($x, y: 0))
+                ->apply(new Vdt($drawn))
+                ->toString(),
+        );
     }
 
     #[DataProvider('zonesChangedOnTheScreen')]
