@@ -653,7 +653,7 @@ elements are drawn in order:
 | `<image row col>file.vdt</image>` | Videotex picture from the page's folder or one of its subfolders, drawn with its top-left cell (row 1, column 1 of the file) at `row`, `col` (default 1, 1): what goes past the screen is cut, and it doesn't clear the screen. In a template, the file name can be a placeholder (`{{game.image}}`), and in a `<foreach>`, `row` is relative to the item, to show a picture per item |
 | `<text row col align="center" color bg size fill="yes">…</text>` | text; `size`: normal, double-height, double-width, double; `fill="yes"` paints the rest of the row with `bg` (see below) |
 | `<line row col length char color/>` | horizontal line; `char`: top (`_`), middle (`` ` ``), bottom (`~`) or any character |
-| `<key row col color bg>Envoi</key>` | function key badge, in reverse video (`bg`: around it) |
+| `<key row col color bg>Envoi</key>` | function key badge, in reverse video (`bg`: around it): a space at `col`, the label in reverse video with a space on each side, and a space ending it, so the label's length + 4 cells (`col="32"` for `Envoi` to end the row). What would go past the last column, the space after the label or the one ending the badge, is left out rather than written on the next row |
 | `<endkey row color/>` | "Connexion/fin" hint, centered, with "[Maj] +" for ESP32/Minimit adapters (messages `endkey`, `endkey.shift`) |
 | `<input row col length lines validwith/>` | input field read by `Page::inputCommand()` (default: row 13, 2 lines, to the end of the row) |
 
