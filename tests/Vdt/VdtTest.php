@@ -298,8 +298,6 @@ final class VdtTest extends TestCase
             -1,
         ];
         yield 'spaces, drawn over by a tall character' => ["\x1B\x52     \x1F\x4B\x42\x1B\x4DX", -1];
-        // A double-height blue delimiter in column 2, drawn over by a tall X from the row below
-        yield 'a tall delimiter drawn over' => ["\x1B\x52 \x1B\x4D\x1B\x54    \x1F\x4B\x42\x1B\x4DX", -1];
     }
 
     /**
@@ -335,11 +333,20 @@ final class VdtTest extends TestCase
             -1,
             "\x1F\x40\x41   \x1F\x40\x41X",
         ];
-        // A double-height delimiter on row 10, drawn over there by a tall X from row 11
-        yield 'a tall delimiter drawn over on its row' => [
+        // A double-height blue delimiter on row 10, drawn over there by a tall X from row 11:
+        // its top half, on row 9, still shows it, so it is written (Screen::of() doesn't show
+        // that top half, #151)
+        yield 'a tall delimiter drawn over on its row only' => [
             "\x1F\x4A\x42\x1B\x4D\x1B\x54 \x1B\x4C   \x1F\x4B\x42\x1B\x4DX",
             0,
-            "\x1F\x4A\x42\x1B\x4D \x1B\x4C   \x1F\x4B\x42\x1B\x4DX",
+            "\x1F\x4A\x42\x1B\x4D\x1B\x54 \x1B\x4C   \x1F\x4B\x42\x1B\x4DX",
+        ];
+        // A clear line's delimiter drawn over by a double-height space, whose bottom half a tall
+        // X from row 11 draws over: a clear line starting no zone
+        yield 'a clear line, its delimiter drawn over by a tall space' => [
+            "\x1F\x4A\x41\x1B\x52\x18\x1F\x4A\x41\x1B\x4D \x1F\x4B\x41\x1B\x4DX",
+            0,
+            "\x1F\x4A\x41\x18\x1B\x4D \x1F\x4B\x41\x1B\x4DX",
         ];
         // A clear line's delimiter drawn over: a clear line starting no zone
         yield 'a clear line, its delimiter drawn over' => [
@@ -388,6 +395,34 @@ final class VdtTest extends TestCase
         yield 'over a character' => ["\x1F\x4A\x41\x1B\x52 A\x1F\x4A\x42 ", -1, "\x1F\x4A\x41A\x1F\x4A\x41\x1B\x52 "];
         // A masked zone, then column 2 empty: the masking runs past it, up to A
         yield 'after an empty cell' => ["\x1F\x4A\x41\x1B\x58 \x1F\x4A\x43 A", -1, "\x1F\x4A\x42\x1B\x58 A"];
+        // Tall cells (pinned as written: Screen::of() doesn't show their top halves, #151)
+        // ESC M ESC R, a green double-height delimiter, then tall spaces: the delimiter in
+        // column 2 tall too, its top half in the same zone
+        yield 'in a tall cell' => ["\x1F\x4A\x41\x1B\x4D\x1B\x52    ", -1, "\x1F\x4A\x41\x1B\x4D\x1B\x52   "];
+        // ESC R, then a double-height blue delimiter in column 2 and tall spaces, a tall X from
+        // row 11 drawn over column 2 on row 10: the blue delimiter is written (row 9 shows its
+        // top half), and the green zone starts again nowhere, as a tall delimiter would turn
+        // the blue top halves on row 9 green
+        yield 'not in a tall cell whose top half shows another zone' => [
+            "\x1F\x4A\x41\x1B\x52 \x1B\x4D\x1B\x54    \x1F\x4B\x42\x1B\x4DX",
+            -1,
+            "\x1F\x4A\x41\x1B\x4D\x1B\x54 \x12\x43\x1F\x4B\x41\x1B\x4DX",
+        ];
+        // ESC Q, a red delimiter, then a tall B and a tall space, whose top halves, on row 9,
+        // are in no zone: the red zone starts again nowhere, as a tall delimiter would turn
+        // row 9 red
+        yield 'not in a tall cell whose top half shows no zone' => [
+            "\x1F\x4A\x41\x1B\x51 \x1B\x4DB \x1B\x52AA",
+            -1,
+            "\x1F\x4A\x41\x1B\x4DB AA",
+        ];
+        // The same with normal-height spaces after the blue delimiter: the green zone starts
+        // again in column 3, the blue delimiter written too
+        yield 'after a tall delimiter drawn over on its row only' => [
+            "\x1F\x4A\x41\x1B\x52 \x1B\x4D\x1B\x54 \x1B\x4C   \x1F\x4B\x42\x1B\x4DX",
+            -1,
+            "\x1F\x4A\x41\x1B\x4D\x1B\x54 \x1B\x4C\x1B\x52   \x1F\x4B\x41\x1B\x4DX",
+        ];
         // CAN's zone is erased by a clear screen, not drawn over: it starts again
         yield 'erased' => ["\x1F\x4A\x41\x1B\x52\x18\x0C", -2, "\x1F\x4A\x41\x1B\x52 \x12\x65\x0C"];
         yield 'after a clear screen' => ["\x0C\x1F\x4A\x41\x1B\x52\x18", -2, "\x0C\x1F\x4A\x41\x1B\x52 \x12\x65"];

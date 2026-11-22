@@ -8,8 +8,9 @@ use MiniPaviService\Minitel\ScreenSize;
 
 /**
  * What a screen content draws shows once drawn, up to the clear screen that erases it or the
- * end of the content (ShownScreens): its zones (Zones), and which of its cells are text
- * spaces (a delimiter is one).
+ * end of the content (ShownScreens): its zones (Zones), and which of its cells show a text
+ * space (a delimiter is one), and drawn where: a tall one is on the row above too
+ * (Zones::cells()), which a tall character drawn from the row below may cover, or not.
  *
  * It is drawn as ShownScreens listens (so it isn't readonly), then only read.
  *
@@ -20,8 +21,10 @@ final class ShownScreen
     private Zones $zones;
 
     /**
-     * @var array<int, array<int, bool>> whether each cell drawn is a text space, by row, then
-     *                                   column (from 1)
+     * @var array<int, array<int, ?array{int, int, int}>> by row, then column (from 1), the
+     *                                                    row, column and height a text space
+     *                                                    a cell shows is drawn at; null if it
+     *                                                    shows another character
      */
     private array $spaces = [];
 
@@ -34,19 +37,26 @@ final class ShownScreen
     }
 
     /**
-     * Whether the cell at row, col, drawn on this screen, is a text space: otherwise, what is
-     * drawn there before is drawn over
+     * Whether a text space drawn at row, col on this screen, width cells wide and height cells
+     * high, shows in one of its cells (Zones::cells()) once drawn: otherwise, it is drawn over
      */
-    public function endsAsASpace(int $row, int $col): bool
+    public function shows(int $row, int $col, int $width, int $height): bool
     {
-        return $this->spaces[$row][$col];
+        foreach (Zones::cells($row, $col, $width, $height) as [$cellRow, $cellCol]) {
+            if (($this->spaces[$cellRow][$cellCol][0] ?? null) === $row) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
      * Where the zone the columns before first leave starts again on row, once moved left so
      * that first is its column 1, and that zone: at its first text space (that isn't a
-     * delimiter) whose zone isn't the one the columns from first leave alone. Null if none
-     * is, nor is any needed
+     * delimiter) drawn on row whose zone isn't the one the columns from first leave alone. A
+     * tall one, a delimiter there drawn on the row above too, only if its top half shows that
+     * zone there (restartsOnTop()). Null if none is, nor is any needed
      *
      * @return ?array{int, Zone} the column (not moved) and the zone
      */
@@ -57,7 +67,13 @@ final class ShownScreen
         for ($col = $first; $col <= ScreenSize::COLS; $col++) {
             $zone = $this->zones->after($zone, $row, $col);
             $alone = $this->zones->after($alone, $row, $col);
-            if (($this->spaces[$row][$col] ?? false) && !$zone->showsAs($alone)) {
+            $space = $this->spaces[$row][$col] ?? null;
+            if (
+                $space !== null
+                && $space[0] === $row
+                && !$zone->showsAs($alone)
+                && ($space[2] === 1 || $this->restartsOnTop($row, $col, $zone))
+            ) {
                 return [$col, $zone];
             }
         }
@@ -72,7 +88,7 @@ final class ShownScreen
     public function glyph(int $row, int $col, string $bytes, int $width, Attributes $attributes): void
     {
         $this->zones->draw($row, $col, $width, $attributes);
-        $space = $bytes === ' ' && !$attributes->isMosaic();
+        $space = $bytes === ' ' && !$attributes->isMosaic() ? [$row, $col, $attributes->height()] : null;
         foreach (Zones::cells($row, $col, $width, $attributes->height()) as [$cellRow, $cellCol]) {
             $this->spaces[$cellRow][$cellCol] = $space;
         }
@@ -94,8 +110,22 @@ final class ShownScreen
     {
         $this->zones->clearLine($row, $col, $attributes, $delimiter);
         for ($cleared = $col; $cleared <= ScreenSize::COLS; $cleared++) {
-            $this->spaces[$row][$cleared] = !$attributes->isMosaic();
+            $this->spaces[$row][$cleared] = $attributes->isMosaic() ? null : [$row, $cleared, 1];
         }
+    }
+
+    /**
+     * Whether the top half of the tall text space at row, col, on the row above, is still
+     * there, in zone: a delimiter starting it there shows what it does
+     */
+    private function restartsOnTop(int $row, int $col, Zone $zone): bool
+    {
+        $above = $row - 1;
+
+        return (
+            ($this->spaces[$above][$col] ?? null) === $this->spaces[$row][$col]
+            && $this->zones->before($above, $col)->showsAs($zone)
+        );
     }
 
     /**
