@@ -377,6 +377,15 @@ final class VdtTest extends TestCase
         self::assertSame(' X', rtrim($moved->line(2)));
     }
 
+    public function testOffsetMovesWhatALineFeedFromTheStatusRowDraws(): void
+    {
+        // X at row 10, column 7, L on row 0, then LF: M back where the cursor was before row 0,
+        // in red, as set before it
+        $moved = (new Offset(x: 2, y: 3))->apply(new Vdt("\x1F\x4A\x47\x1B\x41X\x1F\x40\x45L\x0AM"));
+
+        self::assertSame("\x1F\x4D\x49\x1B\x41X\x1F\x40\x45L\x1F\x4D\x4A\x1B\x41M", $moved->toString());
+    }
+
     /**
      * A double-height or double-size character moved onto row 1, where the Minitel can't draw
      * double height (#172): written at normal height, its double width kept
