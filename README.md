@@ -870,30 +870,32 @@ echo Screen::of($moved)->preview();              // the screen, as text
   40 goes 1 row down, as BS, LF and VT move 1 row. On the status row (row 0), as on a
   Minitel (checked in MiniPavi's emulator, #98), `VT` is ignored and `BS` stays on it (from
   column 1 to column 40), while `LF`, and `HT` from column 40, go back to where the cursor
-  was, with its attributes, when a positioning (`US`) brought it onto row 0. SO and SI set the size back to normal
-  and turn off inverse video and separated mosaic, SO also underline; a size (`ESC L` to
-  `ESC O`) or inverse video (`ESC ]`) received in mosaic is discarded: mosaic characters are
-  never tall, wide or inverse. Underline, background colour and masking are zone attributes
-  in text (checked in MiniPavi's emulator, #28, #30): `ESC Z` and `ESC Y`, `ESC P` to `ESC W`,
-  `ESC X` and `ESC _` wait for a delimiter, a space drawn while a zone attribute waits. The
-  delimiter starts a zone along its row, over what is already there too: its background and
-  underline up to the next delimiter, mosaic or empty cell (black from column 1 and after an
-  empty cell; the text after a mosaic cell on its background), its masking up to the next
-  delimiter, mosaic and empty cells included. The delimiter itself is on the zone's
-  background, not underlined. A tall character (double height or double size) is drawn on
-  the row above too, where its top half is (row 0 above row 1). A tall delimiter starts its
-  zone along that row as well: `ESC M`, `ESC T` and a space on row 6 colour the text after
-  it on row 5, up to the next delimiter, mosaic or empty cell. Tall text is text there: it
-  carries that row's zone on over the empty or mosaic cell it covers, and ends the zone of a
-  delimiter it covers. To colour or underline text, write the attribute, a space, then
-  the text (as `Page\Display\Key` does): `ESC T` then `AB` draws `AB` on black. A positioning
-  drops what waits, and SO ends the underline and applies the background colour waiting. In
-  mosaic, the background colour applies at once, and masking waits too; a delimiter with no
-  background colour waiting takes the last one applied. CAN clears with spaces, so while a
-  zone attribute waits, the first one is a delimiter: `ESC T`, CAN colours the rest of the row,
-  but text written then over its first column draws over the delimiter, and the row is black.
-  A mosaic character uses up nothing that waits. Each `Cell` has the background, masking and
-  (in text) underline its zone shows, which `HtmlRenderer` draws.
+  was, with its attributes, when a positioning (`US`) brought it onto row 0; a positioning
+  made on row 0 keeps that row's position instead, so `LF` then goes back onto row 0. SO
+  and SI set the size back to normal and turn off inverse video and separated mosaic, SO
+  also underline; a size (`ESC L` to `ESC O`) or inverse video (`ESC ]`) received in mosaic
+  is discarded: mosaic characters are never tall, wide or inverse. Underline, background
+  colour and masking are zone attributes in text (checked in MiniPavi's emulator, #28, #30):
+  `ESC Z` and `ESC Y`, `ESC P` to `ESC W`, `ESC X` and `ESC _` wait for a delimiter, a space
+  drawn while a zone attribute waits. The delimiter starts a zone along its row, over what
+  is already there too: its background and underline up to the next delimiter, mosaic or
+  empty cell (black from column 1 and after an empty cell; the text after a mosaic cell on
+  its background), its masking up to the next delimiter, mosaic and empty cells included.
+  The delimiter itself is on the zone's background, not underlined. A tall character (double
+  height or double size) is drawn on the row above too, where its top half is (row 0 above
+  row 1). A tall delimiter starts its zone along that row as well: `ESC M`, `ESC T` and a
+  space on row 6 colour the text after it on row 5, up to the next delimiter, mosaic or
+  empty cell. Tall text is text there: it carries that row's zone on over the empty or
+  mosaic cell it covers, and ends the zone of a delimiter it covers. To colour or underline
+  text, write the attribute, a space, then the text (as `Page\Display\Key` does): `ESC T`
+  then `AB` draws `AB` on black. A positioning drops what waits, and SO ends the underline
+  and applies the background colour waiting. In mosaic, the background colour applies at
+  once, and masking waits too; a delimiter with no background colour waiting takes the last
+  one applied. CAN clears with spaces, so while a zone attribute waits, the first one is a
+  delimiter: `ESC T`, CAN colours the rest of the row, but text written then over its first
+  column draws over the delimiter, and the row is black. A mosaic character uses up nothing
+  that waits. Each `Cell` has the background, masking and (in text) underline its zone
+  shows, which `HtmlRenderer` draws.
 - **`Vdt\Player::play($vdt, $listener)`** (internal, what `Screen::of()` and `Offset` are
   built on): plays the content on the simulated screen, telling a `Vdt\ScreenListener` each
   character (`glyph()`, with its row, column, width and attributes), each delimiter
