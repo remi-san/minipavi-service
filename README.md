@@ -844,7 +844,11 @@ echo Screen::of($moved)->preview();              // the screen, as text
   erases it, or the end), and that space the first text space showing it then, so that what is
   drawn there later doesn't erase it: a delimiter drawn over later (e.g. CAN's, with a
   background colour waiting, then text over it) starts no zone, and is written as a space,
-  while one drawn after the cells it colours does (#126).
+  while one drawn after the cells it colours does (#126). A double-height or double-size cell
+  is on the row above too: a tall delimiter whose top half still shows there is written, even
+  when its bottom half is drawn over, and the zone doesn't start again in a tall space whose
+  top half shows another zone, which its delimiter would change (that row keeps what it shows,
+  the zone below is lost).
 - **`ClearScreens`**: `removed($vdt)` is the same content without its clear screens (FF), to
   draw it over other content, and `fromLast($vdt)` the content from its last one, what still
   shows.
