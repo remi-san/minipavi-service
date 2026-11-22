@@ -867,7 +867,10 @@ echo Screen::of($moved)->preview();              // the screen, as text
   (LF, VT) brings the cursor onto row 1 is kept, the character drawn over row 0. A tall text character (double height or
   double size) wrapping at the end of a row goes 2 rows down, cycling through rows 1 to 24
   (24 to 2, 23 to 1), and the text carries on along that row; a move right (HT) from column
-  40 goes 1 row down, as BS, LF and VT move 1 row. SO and SI set the size back to normal
+  40 goes 1 row down, as BS, LF and VT move 1 row. On the status row (row 0), as on a
+  Minitel (checked in MiniPavi's emulator, #98), `VT` is ignored and `BS` stays on it (from
+  column 1 to column 40), while `LF`, and `HT` from column 40, go back to where the cursor
+  was, with its attributes, when a positioning (`US`) brought it onto row 0. SO and SI set the size back to normal
   and turn off inverse video and separated mosaic, SO also underline; a size (`ESC L` to
   `ESC O`) or inverse video (`ESC ]`) received in mosaic is discarded: mosaic characters are
   never tall, wide or inverse. Underline, background colour and masking are zone attributes
