@@ -135,7 +135,7 @@ final class Zones
      *
      * @return list<array{int, int}> each cell's row and column
      */
-    private static function cells(int $row, int $col, int $width, int $height): array
+    public static function cells(int $row, int $col, int $width, int $height): array
     {
         $cells = [];
         for ($above = 0; $above < $height; $above++) {

@@ -292,6 +292,14 @@ final class VdtTest extends TestCase
         yield 'a clear line after a delimiter, drawn over' => ["\x1B\x52 \x18X", -1];
         // Spaces, the first one a green delimiter, then X over the second one
         yield 'spaces, drawn over in the column moved to column 1' => ["\x1B\x52    \x1F\x4A\x42X", -1];
+        // The same, drawn over by the top half of a double-height X, from the row below
+        yield 'a clear line, drawn over by a tall character' => [
+            "\x1F\x49\x41\x1B\x52\x18\x1F\x4A\x42\x1B\x4DX",
+            -1,
+        ];
+        yield 'spaces, drawn over by a tall character' => ["\x1B\x52     \x1F\x4B\x42\x1B\x4DX", -1];
+        // A double-height blue delimiter in column 2, drawn over by a tall X from the row below
+        yield 'a tall delimiter drawn over' => ["\x1B\x52 \x1B\x4D\x1B\x54    \x1F\x4B\x42\x1B\x4DX", -1];
     }
 
     /**
@@ -326,6 +334,12 @@ final class VdtTest extends TestCase
             "\x1F\x40\x41\x1B\x52   \x1F\x40\x41X",
             -1,
             "\x1F\x40\x41   \x1F\x40\x41X",
+        ];
+        // A double-height delimiter on row 10, drawn over there by a tall X from row 11
+        yield 'a tall delimiter drawn over on its row' => [
+            "\x1F\x4A\x42\x1B\x4D\x1B\x54 \x1B\x4C   \x1F\x4B\x42\x1B\x4DX",
+            0,
+            "\x1F\x4A\x42\x1B\x4D \x1B\x4C   \x1F\x4B\x42\x1B\x4DX",
         ];
         // A clear line's delimiter drawn over: a clear line starting no zone
         yield 'a clear line, its delimiter drawn over' => [

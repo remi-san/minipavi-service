@@ -66,14 +66,15 @@ final class ShownScreen
     }
 
     /**
-     * Draws a character at row, col, width cells wide, with these attributes (Zones::draw())
+     * Draws a character at row, col, width cells wide, with these attributes (Zones::draw()):
+     * a tall one on the row above too (Zones::cells())
      */
     public function glyph(int $row, int $col, string $bytes, int $width, Attributes $attributes): void
     {
         $this->zones->draw($row, $col, $width, $attributes);
         $space = $bytes === ' ' && !$attributes->isMosaic();
-        for ($i = 0; $i < $width; $i++) {
-            $this->spaces[$row][$col + $i] = $space;
+        foreach (Zones::cells($row, $col, $width, $attributes->height()) as [$cellRow, $cellCol]) {
+            $this->spaces[$cellRow][$cellCol] = $space;
         }
     }
 
