@@ -99,6 +99,19 @@ final class Zones
     }
 
     /**
+     * The zone a text cell at row, col is in, if it isn't a delimiter, when the cells before
+     * column from leave zone: what the cells from that column to it leave (before())
+     */
+    public function beforeFrom(Zone $zone, int $row, int $from, int $col): Zone
+    {
+        for ($before = $from; $before < $col; $before++) {
+            $zone = $this->after($zone, $row, $before);
+        }
+
+        return $zone;
+    }
+
+    /**
      * What the cell at row, col shows (Zone::shownWith()): a text cell the zone it is in
      * (before()), a delimiter, mosaic or empty cell its own background, with the masking
      * before it
@@ -122,7 +135,7 @@ final class Zones
      *
      * @return list<array{int, int}> each cell's row and column
      */
-    private static function cells(int $row, int $col, int $width, int $height): array
+    public static function cells(int $row, int $col, int $width, int $height): array
     {
         $cells = [];
         for ($above = 0; $above < $height; $above++) {
@@ -152,7 +165,7 @@ final class Zones
      * The zone after the cell at row, col, from zone before it: the one a delimiter starts,
      * the same after another text cell, its background after a mosaic or empty one
      */
-    private function after(Zone $zone, int $row, int $col): Zone
+    public function after(Zone $zone, int $row, int $col): Zone
     {
         if (!\array_key_exists($col, $this->text[$row] ?? [])) {
             return $zone->on($this->mosaic[$row][$col] ?? Color::Black);

@@ -839,7 +839,17 @@ echo Screen::of($moved)->preview();              // the screen, as text
   `ESC Z` or `ESC Y` when none of them changes), never with a text character, and a space that
   would otherwise lose its zone (its delimiter went off the screen) is written as a delimiter
   of its zone. That space isn't underlined, as a delimiter isn't. Text moved to column 1 before
-  such a space has no column left for its delimiter, and loses its zone.
+  such a space has no column left for its delimiter, and loses its zone. That zone is the one
+  the columns going off the screen leave once the screen is drawn (up to the clear screen that
+  erases it, or the end), and that space the first text space showing it then, so that what is
+  drawn there later doesn't erase it: a delimiter drawn over later (e.g. CAN's, with a
+  background colour waiting, then text over it) starts no zone, and is written as a space,
+  while one drawn after the cells it colours does (#126). A double-height or double-size cell
+  is on the row above too: a tall delimiter whose top half still shows there is written, even
+  when its bottom half is drawn over; and where the zone starts again in a tall space whose
+  top half shows another zone, the space is written as drawn, then a delimiter at normal
+  height over its bottom half (`ESC L`, or `ESC N` for double size, and back to `ESC M` or
+  `ESC O` after it), which leaves that top half as it shows.
 - **`ClearScreens`**: `removed($vdt)` is the same content without its clear screens (FF), to
   draw it over other content, and `fromLast($vdt)` the content from its last one, what still
   shows.
@@ -907,9 +917,10 @@ echo Screen::of($moved)->preview();              // the screen, as text
   `CharacterSize`, `Blinking`, `Masking`, `Underlining` or `Inversion`), which knows what it
   does: where the Minitel discards it, whether it waits for a delimiter, and what it sets in
   the cell's `Screen\Attributes`.
-  `Screen\ScreenCells::of()` collects the cells of `Screen::of()`, `Vdt\OffsetWriter::write()`
-  writes the content moved by `Offset`: each listens to one content, built by that static
-  method only.
+  `Screen\ScreenCells::of()` collects the cells of `Screen::of()`, `Screen\ShownScreens::of()`
+  what each screen the content draws shows once drawn (up to each clear screen, then the
+  end), which `Vdt\OffsetWriter::write()` reads before writing the content moved by `Offset`:
+  each listens to one content, built by that static method only.
 
 `bin/minipavi vdt-offset` does the same from the command line (see [Command line](#command-line)).
 
