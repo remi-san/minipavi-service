@@ -846,9 +846,10 @@ echo Screen::of($moved)->preview();              // the screen, as text
   background colour waiting, then text over it) starts no zone, and is written as a space,
   while one drawn after the cells it colours does (#126). A double-height or double-size cell
   is on the row above too: a tall delimiter whose top half still shows there is written, even
-  when its bottom half is drawn over, and the zone doesn't start again in a tall space whose
-  top half shows another zone, which its delimiter would change (that row keeps what it shows,
-  the zone below is lost).
+  when its bottom half is drawn over; and where the zone starts again in a tall space whose
+  top half shows another zone, the space is written as drawn, then a delimiter at normal
+  height over its bottom half (`ESC L`, or `ESC N` for double size, and back to `ESC M` or
+  `ESC O` after it), which leaves that top half as it shows.
 - **`ClearScreens`**: `removed($vdt)` is the same content without its clear screens (FF), to
   draw it over other content, and `fromLast($vdt)` the content from its last one, what still
   shows.
