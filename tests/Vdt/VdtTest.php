@@ -264,6 +264,73 @@ final class VdtTest extends TestCase
         self::assertScreenMoved(new Vdt($sent), $x, $y);
     }
 
+    /**
+     * Rows 10 moved left, whose zones the columns going off the screen change after the cells
+     * on the screen are drawn: those cells show the zone they are in once all is drawn, as in
+     * MiniPavi's emulator (#126), not the one they were drawn in
+     *
+     * @return iterable<string, array{string, int}> what is drawn from row 10, column 1, and x
+     */
+    public static function zonesChangedOffTheScreen(): iterable
+    {
+        // ESC R, CAN, its first space a green delimiter, then XY over it: the row is black
+        yield 'a clear line, its delimiter drawn over' => ["\x1B\x52\x18XY", -2];
+        yield 'a clear line after characters, its delimiter drawn over' => ["AB\x1B\x52\x18XY", -4];
+        yield 'a clear line, its delimiter drawn over once positioned' => ["\x1B\x52\x18\x1F\x4A\x41X", -1];
+        yield 'spaces, their delimiter drawn over' => ["\x1B\x52    \x1F\x4A\x41X", -1];
+        // A, then the delimiter in column 2, the last one going off the screen, drawn over
+        yield 'the last column going off the screen' => ["A\x1B\x52    \x1F\x4A\x42X", -2];
+        // Spaces and ABC from column 2, then a green delimiter in column 1: they are green
+        yield 'a delimiter drawn after the cells it colours' => ["\x1F\x4A\x42   ABC\x1F\x4A\x41\x1B\x52 ", -1];
+        // Nothing drawn over: CAN's cells stay green, its delimiter gone off the screen
+        yield 'a clear line, its delimiter kept' => ["\x1B\x52\x18", -2];
+        // A green delimiter, then a clear screen: the spaces drawn after it are black
+        yield 'a delimiter a clear screen erases' => ["\x1B\x52 \x0C\x1F\x4A\x42   ", -1];
+    }
+
+    /**
+     * The zones a column left on the screen changes after the cells after it are drawn: the
+     * cells are written as drawn, and the screen changes when that column is (#126)
+     *
+     * @return iterable<string, array{string, int, string}> what is drawn, x, and how it is
+     *                                                      written
+     */
+    public static function zonesChangedOnTheScreen(): iterable
+    {
+        // Row 10: spaces from column 3, then a green delimiter in column 2, moved to column 1
+        yield 'in the first column left' => [
+            "\x1F\x4A\x43   \x1F\x4A\x42\x1B\x52 ",
+            -1,
+            "\x1F\x4A\x42   \x1F\x4A\x41\x1B\x52 ",
+        ];
+        // Row 0, the status row, isn't moved: its first column is left on the screen
+        yield 'on the status row' => [
+            "\x1F\x40\x41\x1B\x52   \x1F\x40\x41X",
+            -1,
+            "\x1F\x40\x41\x1B\x52   \x1F\x40\x41X",
+        ];
+    }
+
+    #[DataProvider('zonesChangedOnTheScreen')]
+    public function testOffsetWritesTheCellsAsDrawnWhenAColumnOnTheScreenChangesTheirZone(
+        string $drawn,
+        int $x,
+        string $written,
+    ): void {
+        self::assertSame(
+            $written,
+            (new Offset($x, y: 0))
+                ->apply(new Vdt($drawn))
+                ->toString(),
+        );
+    }
+
+    #[DataProvider('zonesChangedOffTheScreen')]
+    public function testOffsetShowsTheZonesTheColumnsOffTheScreenFinallyLeave(string $drawn, int $x): void
+    {
+        self::assertScreenMoved(new Vdt("\x1F\x4A\x41{$drawn}"), $x, y: 0);
+    }
+
     public function testOffsetWritesAClearLineMovedLeftAsSpaces(): void
     {
         // Row 10: A, ESC Z, CAN from column 2, moved to column 1: its delimiter, then spaces

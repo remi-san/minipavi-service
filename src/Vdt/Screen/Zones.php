@@ -99,6 +99,19 @@ final class Zones
     }
 
     /**
+     * The zone a text cell at row, col is in, if it isn't a delimiter, when the cells before
+     * column from leave zone: what the cells from that column to it leave (before())
+     */
+    public function beforeFrom(Zone $zone, int $row, int $from, int $col): Zone
+    {
+        for ($before = $from; $before < $col; $before++) {
+            $zone = $this->after($zone, $row, $before);
+        }
+
+        return $zone;
+    }
+
+    /**
      * What the cell at row, col shows (Zone::shownWith()): a text cell the zone it is in
      * (before()), a delimiter, mosaic or empty cell its own background, with the masking
      * before it
