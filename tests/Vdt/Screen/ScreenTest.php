@@ -1157,6 +1157,68 @@ final class ScreenTest extends TestCase
         self::assertSame('', trim($screen->line(1)));
     }
 
+    /**
+     * As MiniPavi's emulator does (decoder.js, moveCursor() and locate()): on the status row,
+     * VT is ignored and BS stays on it, while LF, and HT from the last column, leave it for
+     * where the cursor was when a positioning (US) brought it there
+     *
+     * @return iterable<string, array{string, int, int, string}> what is sent, and the row,
+     *                                                           column and character drawn
+     *                                                           last
+     */
+    public static function movesOnTheStatusRow(): iterable
+    {
+        // The cases of #98, after a clear screen (the cursor at row 1, column 1)
+        yield 'VT, ignored' => ["\x0C\x1F\x40\x4AS\x0BV", 0, 11, 'V'];
+        yield 'BS from column 1, to column 40' => ["\x0C\x1F\x40\x41\x08B", 0, 40, 'B'];
+        yield 'LF, to the position before row 0' => ["\x0C\x1F\x40\x45L\x0AM", 1, 1, 'M'];
+        yield 'HT from column 40, to the position before row 0' => ["\x0C\x1F\x40\x68\x09H", 1, 1, 'H'];
+        // Row 10, column 8 after X
+        yield 'BS within the row' => ["\x1F\x4A\x47X\x1F\x40\x45\x08B", 0, 4, 'B'];
+        yield 'HT within the row, to column 40' => ["\x1F\x4A\x47X\x1F\x40\x67\x09H", 0, 40, 'H'];
+        yield 'LF, to row 10' => ["\x1F\x4A\x47X\x1F\x40\x45L\x0AM", 10, 8, 'M'];
+        yield 'HT from column 40, to row 10' => ["\x1F\x4A\x47X\x1F\x40\x68\x09H", 10, 8, 'H'];
+        yield 'LF after a positioning from the status row, as usual' => [
+            "\x1F\x4A\x47X\x1F\x40\x45L\x1F\x43\x43\x0AM",
+            4,
+            3,
+            'M',
+        ];
+        // Each positioning onto row 0 keeps where the cursor was, even on row 0
+        yield 'LF after a positioning on row 0, to the first one' => [
+            "\x1F\x4A\x47X\x1F\x40\x45\x1F\x40\x50L\x0AM",
+            0,
+            5,
+            'M',
+        ];
+        yield 'LF after leaving row 0, as usual' => ["\x1F\x4A\x47X\x1F\x40\x45L\x0A\x0AM", 11, 8, 'M'];
+    }
+
+    #[DataProvider('movesOnTheStatusRow')]
+    public function testMovesOnTheStatusRowFollowTheMinitel(string $sent, int $row, int $col, string $drawn): void
+    {
+        $screen = Screen::of(new Vdt($sent));
+
+        self::assertSame($drawn, $screen->cell($row, $col)?->bytes);
+        self::assertSame(1, substr_count($screen->text(), $drawn));
+    }
+
+    public function testLeavingTheStatusRowGivesBackTheAttributesSetBeforeIt(): void
+    {
+        // Red and underline waiting at row 10, defaults on row 0, then LF: a space, the
+        // delimiter starting the underline, and M in red, underlined
+        $screen = Screen::of(
+            new Vdt("\x1F\x4A\x41" . Videotex::ESC . "\x41" . Videotex::UNDERLINE_ON . "\x1F\x40\x45L\x0A M"),
+        );
+
+        $status = $screen->cell(0, col: 5) ?? self::fail('Nothing at row 0, column 5');
+        self::assertEquals(Attributes::defaults(), $status->attributes);
+        $m = $screen->cell(10, col: 2) ?? self::fail('Nothing at row 10, column 2');
+        self::assertSame('M', $m->bytes);
+        self::assertSame(Color::Red, $m->attributes->foreground());
+        self::assertTrue($m->attributes->isUnderlined());
+    }
+
     public function testTextWrapsToTheNextRow(): void
     {
         $screen = Screen::of(Vdt::join(Vdt::position(new Position(row: 3, col: 40)), Vdt::text('AB')));

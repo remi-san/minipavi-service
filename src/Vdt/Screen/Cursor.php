@@ -9,7 +9,10 @@ use MiniPaviService\Vdt\Screen\Attribute\Attribute;
 
 /**
  * Cursor and attributes of a Minitel screen in page mode, as Videotex content moves them: the
- * attributes of the characters, and the zone attributes (Zone)
+ * attributes of the characters, and the zone attributes (Zone). As the Minitel does
+ * (MiniPavi's emulator, decoder.js, locate() and moveCursor()), a positioning onto the status
+ * row (row 0) keeps where the cursor was, with its attributes, for leaving the row (LF, or HT
+ * from its last column)
  */
 final class Cursor
 {
@@ -17,11 +20,18 @@ final class Cursor
     private int $col = 1;
     private Attributes $attributes;
     private Zone $zone;
+    // Where the cursor was, and its attributes, when a positioning brought it onto row 0
+    private int $rowBeforeStatusRow = 1;
+    private int $colBeforeStatusRow = 1;
+    private Attributes $attributesBeforeStatusRow;
+    private Zone $zoneBeforeStatusRow;
 
     public function __construct()
     {
         $this->attributes = Attributes::defaults();
         $this->zone = Zone::none();
+        $this->attributesBeforeStatusRow = $this->attributes;
+        $this->zoneBeforeStatusRow = $this->zone;
     }
 
     /**
@@ -114,12 +124,19 @@ final class Cursor
      * Positions the cursor (US) at row, col, as reset() does; a position outside the screen
      * (a row outside 0 to ScreenSize::ROWS, a column outside 1 to ScreenSize::COLS) is
      * ignored, as the Minitel does (MiniPavi's emulator, locate()): the cursor and its
-     * attributes stay as they were
+     * attributes stay as they were. Onto row 0, it keeps where the cursor was, and its
+     * attributes, for leaving the row (down()), even from row 0
      */
     public function position(int $row, int $col): void
     {
         if ($row < 0 || $row > ScreenSize::ROWS || $col < 1 || $col > ScreenSize::COLS) {
             return;
+        }
+        if ($row === 0) {
+            $this->rowBeforeStatusRow = $this->row;
+            $this->colBeforeStatusRow = $this->col;
+            $this->attributesBeforeStatusRow = $this->attributes;
+            $this->zoneBeforeStatusRow = $this->zone;
         }
         $this->reset($row, $col);
     }
@@ -138,65 +155,12 @@ final class Cursor
 
     /**
      * Moves right after a character: wraps to the next row of text, as many rows down as the
-     * character is tall (Attributes::height()), as the Minitel does
+     * character is tall (Attributes::height()), as the Minitel does; row 0 stays on its last
+     * column
      *
      * @param int $columns the width of the character
      */
     public function advance(int $columns): void
-    {
-        $this->forward($columns, rows: $this->attributes->height());
-    }
-
-    /**
-     * Moves 1 column left (BS), to the last column of the row above from the first one, of
-     * the last row from row 1
-     */
-    public function left(): void
-    {
-        $this->col--;
-        if ($this->col < 1) {
-            $this->col = ScreenSize::COLS;
-            $this->row = $this->row <= 1 ? ScreenSize::ROWS : $this->row - 1;
-        }
-    }
-
-    /**
-     * Moves 1 column right (HT), 1 row down from the last column, even in double height
-     */
-    public function right(): void
-    {
-        $this->forward(1, rows: 1);
-    }
-
-    /**
-     * Moves 1 row down (LF), to row 1 from the last row
-     */
-    public function down(): void
-    {
-        $this->row = $this->row >= ScreenSize::ROWS ? 1 : $this->row + 1;
-    }
-
-    /**
-     * Moves 1 row up (VT), to the last row from row 1
-     */
-    public function up(): void
-    {
-        $this->row = $this->row <= 1 ? ScreenSize::ROWS : $this->row - 1;
-    }
-
-    /**
-     * Moves to the first column of the row (CR)
-     */
-    public function carriageReturn(): void
-    {
-        $this->col = 1;
-    }
-
-    /**
-     * Moves right by columns, wrapping past the last column rows down, cycling through rows 1
-     * to ScreenSize::ROWS (row 0 stays on its last column)
-     */
-    private function forward(int $columns, int $rows): void
     {
         $this->col += $columns;
         if ($this->col <= ScreenSize::COLS) {
@@ -207,6 +171,67 @@ final class Cursor
             return;
         }
         $this->col = 1;
-        $this->row = (($this->row - 1 + $rows) % ScreenSize::ROWS) + 1;
+        $this->row = (($this->row - 1 + $this->attributes->height()) % ScreenSize::ROWS) + 1;
+    }
+
+    /**
+     * Moves 1 column left (BS), from the first column to the last one of the row above
+     * (up())
+     */
+    public function left(): void
+    {
+        $this->col--;
+        if ($this->col < 1) {
+            $this->col = ScreenSize::COLS;
+            $this->up();
+        }
+    }
+
+    /**
+     * Moves 1 column right (HT), from the last column to the first one of the row below
+     * (down()), even in double height
+     */
+    public function right(): void
+    {
+        $this->col++;
+        if ($this->col > ScreenSize::COLS) {
+            $this->col = 1;
+            $this->down();
+        }
+    }
+
+    /**
+     * Moves 1 row down (LF), to row 1 from the last row; from row 0, back to where the cursor
+     * was, with its attributes, when a positioning brought it there (position())
+     */
+    public function down(): void
+    {
+        if ($this->row === 0) {
+            $this->row = $this->rowBeforeStatusRow;
+            $this->col = $this->colBeforeStatusRow;
+            $this->attributes = $this->attributesBeforeStatusRow;
+            $this->zone = $this->zoneBeforeStatusRow;
+            return;
+        }
+        $this->row = $this->row >= ScreenSize::ROWS ? 1 : $this->row + 1;
+    }
+
+    /**
+     * Moves 1 row up (VT), to the last row from row 1; ignored on row 0
+     */
+    public function up(): void
+    {
+        if ($this->row === 0) {
+            return;
+        }
+        $this->row = $this->row === 1 ? ScreenSize::ROWS : $this->row - 1;
+    }
+
+    /**
+     * Moves to the first column of the row (CR)
+     */
+    public function carriageReturn(): void
+    {
+        $this->col = 1;
     }
 }
