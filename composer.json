@@ -17,7 +17,7 @@
         "symfony/console": "^7.1"
     },
     "require-dev": {
-        "carthage-software/mago": "^1.60",
+        "carthage-software/mago": "^1.61",
         "infection/infection": "^0.32.6",
         "phpunit/phpunit": "^11.5"
     },
