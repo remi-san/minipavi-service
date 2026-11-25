@@ -22,9 +22,10 @@ use MiniPaviService\Vdt\Screen\Zones;
  * delimiter written in the first text space it shows in (ShownScreen::restart()), as what is
  * drawn there isn't written: what is before that space has no column left for one, and loses
  * it. That space may be the top half of a tall space drawn from the row below: the delimiter
- * is written at normal height over it, once that space is written. A delimiter something is drawn over later is written as a space, as its zone doesn't
- * last. Each text cell is written with the zone the cells written before it leave (zoneBefore()),
- * so that the Writer starts no other.
+ * is written at normal height over it, once that space is written. A delimiter something is
+ * drawn over later is written as a space, as its zone doesn't last. Each text cell is written
+ * with the zone the cells written before it leave (zoneBefore()), so that the Writer starts
+ * no other.
  *
  * Its Writer keeps where it is and what it wrote (so it isn't readonly), so it listens to one
  * content only: it is only built, and played to, by write().
