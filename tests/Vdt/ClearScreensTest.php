@@ -68,6 +68,8 @@ final class ClearScreensTest extends TestCase
         yield 'an attribute' => ["\x1BA"];
         yield 'another escape sequence' => ["\x1B\x3A\x69\x43"];
         yield 'a G2 character' => ["\x19\x42e"];
+        // SYN starts a G2 character too: its code, here FF, is not a clear screen
+        yield 'a G2 character after SYN' => ["\x16\x0C"];
         yield 'an error character (SUB)' => ["\x1A"];
         yield 'cursor off' => ["\x14"];
     }

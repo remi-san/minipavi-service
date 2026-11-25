@@ -17,7 +17,7 @@ use MiniPaviService\Vdt\Screen\Attribute\Underlining;
  * Videotex codes, by name: control codes, attributes (ESC and the byte of a
  * Screen\Attribute\Attribute) and sequences. Most are MiniPaviCli's VDT_* constants (CodesTest
  * checks them); HOME, ESC, SEP, SS3 and the mask codes have none. Some are sent as they are;
- * ESC, POSITION, REPEAT, G2, SEP and SS3 start a sequence, with more bytes after them.
+ * ESC, POSITION, REPEAT, G2, G2_SYN, SEP and SS3 start a sequence, with more bytes after them.
  * MAX_REPEAT is not a code: the most repetitions one REP gives.
  */
 final class Videotex
@@ -45,6 +45,8 @@ final class Videotex
     public const ESC = "\x1B";
     // SS2: starts a G2 character (e.g. £, or an accent and its letter)
     public const G2 = "\x19";
+    // SYN: starts a G2 character too, as SS2 does (MiniPavi's emulator, #139); never written
+    public const G2_SYN = "\x16";
     // SUB: shown as an error character
     public const SUB = "\x1A";
     // SEP and SS3: each followed by one byte

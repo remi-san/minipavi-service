@@ -27,8 +27,8 @@ final readonly class Cell
     }
 
     /**
-     * The character as text (UTF-8): text characters as they are, G2 ones as the Minitel
-     * shows them (G2Characters: _ for one it doesn't have), mosaic cells as # when they have
+     * The character as text (UTF-8): text characters as they are, G2 ones (after SS2 or SYN)
+     * as the Minitel shows them (G2Characters: _ for one it doesn't have), mosaic cells as # when they have
      * pixels or a background color, a space otherwise
      */
     public function text(): string
@@ -40,6 +40,8 @@ final readonly class Cell
             return '?';
         }
 
-        return $this->bytes[0] === Videotex::G2 ? G2Characters::text($this->bytes) : $this->bytes;
+        return \in_array($this->bytes[0], [Videotex::G2, Videotex::G2_SYN], strict: true)
+            ? G2Characters::text($this->bytes)
+            : $this->bytes;
     }
 }

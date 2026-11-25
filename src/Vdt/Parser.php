@@ -43,7 +43,8 @@ final class Parser
                 continue;
             }
             switch ($byte) {
-                case Videotex::G2: // G2 character: its code, and after an accent the byte after it
+                case Videotex::G2:
+                case Videotex::G2_SYN: // G2 character: its code, and after an accent the byte after it
                     $size = G2Characters::isAccent($vdt[$i + 1] ?? '') ? 3 : 2;
                     $glyph = substr($vdt, $i, $size);
                     // Cut at the end of the content, it draws nothing: the Minitel waits for the
