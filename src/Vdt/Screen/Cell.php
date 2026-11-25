@@ -40,8 +40,6 @@ final readonly class Cell
             return '?';
         }
 
-        return \in_array($this->bytes[0], [Videotex::G2, Videotex::G2_SYN], strict: true)
-            ? G2Characters::text($this->bytes)
-            : $this->bytes;
+        return G2Characters::starts($this->bytes[0]) ? G2Characters::text($this->bytes) : $this->bytes;
     }
 }
