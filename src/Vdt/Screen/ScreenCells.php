@@ -69,12 +69,24 @@ final class ScreenCells implements ScreenListener
         $this->zones->delimiter($row, $col, $width, $attributes->height(), $zone);
     }
 
+    /**
+     * CAN at row, col, as MiniPavi's emulator prints it (decoder.js, clear("eol")): a space
+     * with these attributes for each column from col to the last, the first one a delimiter
+     * starting zone delimiter, if not null, each where the cursor goes after the one before
+     * (Cursor::advance()). So in double height they clear the row above too, and in double
+     * width they run on over the next row (two rows down in double size), as text wraps
+     */
     public function clearLine(int $row, int $col, Attributes $attributes, ?Zone $delimiter): void
     {
-        for ($cleared = $col; $cleared <= ScreenSize::COLS; $cleared++) {
-            $this->cells[$row][$cleared] = new Cell(' ', $attributes, new Part(right: false, bottom: false));
+        $cursor = Cursor::at($row, $col, $attributes);
+        $width = $attributes->width();
+        for ($space = $col; $space <= ScreenSize::COLS; $space++) {
+            $this->glyph($cursor->row(), $cursor->col(), bytes: ' ', width: $width, attributes: $attributes);
+            if ($delimiter !== null && $space === $col) {
+                $this->zones->delimiter($row, $col, $width, $attributes->height(), $delimiter);
+            }
+            $cursor->advance($width);
         }
-        $this->zones->clearLine($row, $col, $attributes, $delimiter);
     }
 
     public function clear(): void

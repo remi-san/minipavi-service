@@ -35,6 +35,20 @@ final class Cursor
     }
 
     /**
+     * A cursor at row, col, drawing with these attributes: to follow where what is drawn from
+     * there goes (advance())
+     */
+    public static function at(int $row, int $col, Attributes $attributes): self
+    {
+        $cursor = new self();
+        $cursor->row = $row;
+        $cursor->col = $col;
+        $cursor->attributes = $attributes;
+
+        return $cursor;
+    }
+
+    /**
      * Row of the cursor: 0 (the status row) to ScreenSize::ROWS
      */
     public function row(): int
