@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Vdt\Screen;
 
+use MiniPaviService\Vdt\Videotex;
+
 /**
- * The G2 characters (after SS2) the Minitel has, as MiniPavi's emulator shows them (#90): a
+ * The G2 characters (after SS2, or SYN, #139) the Minitel has, as MiniPavi's emulator shows them (#90): a
  * character of its own, or an accent (grave, acute, circumflex, diaeresis, cedilla) with the
  * byte after it, whatever it is. Any other is shown as _ (the Minitel's character 0x5F)
  *
@@ -45,6 +47,14 @@ final class G2Characters
     ];
 
     /**
+     * Whether byte starts a G2 character: SS2, or SYN, which the Minitel reads as SS2 (#139)
+     */
+    public static function starts(string $byte): bool
+    {
+        return $byte === Videotex::G2 || $byte === Videotex::G2_SYN;
+    }
+
+    /**
      * Whether code (the byte after SS2) is an accent, which takes the byte after it
      */
     public static function isAccent(string $code): bool
@@ -53,7 +63,7 @@ final class G2Characters
     }
 
     /**
-     * The G2 character as text (UTF-8): bytes are SS2, its code, and, after an accent, the
+     * The G2 character as text (UTF-8): bytes are SS2 (or SYN), its code, and, after an accent, the
      * byte it goes with
      */
     public static function text(string $bytes): string

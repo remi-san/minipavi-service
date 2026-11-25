@@ -512,6 +512,7 @@ final class VdtTest extends TestCase
         yield 'over two rows' => [str_repeat('-', times: 42), "-\x12\x67\x1F\x42\x41--"];
         // A G2 character takes 3 bytes: REP from once more
         yield 'a G2 character' => ["\x19\x42e\x19\x42e", "\x19\x42e\x12\x41"];
+        yield 'a G2 character after SYN' => ["\x16\x42e\x16\x42e", "\x16\x42e\x12\x41"];
     }
 
     #[DataProvider('repetitions')]

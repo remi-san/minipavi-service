@@ -243,6 +243,33 @@ final class ScreenTest extends TestCase
     }
 
     /**
+     * SYN (0x16) starts a G2 character as SS2 (0x19) does (MiniPavi's emulator, #139)
+     *
+     * @return iterable<string, array{string, string}> content (after positioning at row 1,
+     *                                                 column 1), and row 1 shown
+     */
+    public static function g2AfterSyn(): iterable
+    {
+        yield 'an accent' => ["\x16\x42e!", 'é!'];
+        yield 'another accent' => ["\x16\x43u!", 'û!'];
+        yield 'a character of its own' => ["\x16\x23!", '£!'];
+        yield 'a code the Minitel does not have' => ["\x16Z!", '_!'];
+        // The second SYN is the G2 code, which the Minitel doesn't have: the accent's code
+        // and its letter are then text
+        yield 'followed by SYN' => ["\x16\x16\x42e!", '_Be!'];
+        yield 'followed by SS2' => ["\x16\x19\x42e!", '_Be!'];
+        yield 'SS2 followed by SYN' => ["\x19\x16\x42e!", '_Be!'];
+        // Cut at the end of the content: nothing drawn yet
+        yield 'at the end of the content' => ["A\x16", 'A'];
+    }
+
+    #[DataProvider('g2AfterSyn')]
+    public function testSynStartsAG2CharacterAsSs2Does(string $sent, string $shown): void
+    {
+        self::assertSame($shown, rtrim(Screen::of(new Vdt("\x1F\x41\x41{$sent}"))->line(1)));
+    }
+
+    /**
      * @return iterable<string, array{string}> a sequence none of whose bytes is a character
      */
     public static function sequencesDrawingNothing(): iterable

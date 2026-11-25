@@ -9,7 +9,7 @@ use MiniPaviService\Vdt\Screen\Cursor;
 
 /**
  * A character, taking one cell (two in double width): a byte from 0x20, a G2 character
- * (SS2, its code, and after an accent the byte after it), or SUB, shown as an error
+ * (SS2 or SYN, its code, and after an accent the byte after it), or SUB, shown as an error
  * character
  *
  * @internal
