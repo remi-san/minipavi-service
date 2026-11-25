@@ -567,6 +567,41 @@ final class VdtTest extends TestCase
         self::assertScreenMoved(new Vdt($drawn), $x, y: 0);
     }
 
+    /**
+     * CAN in double width or double size: its spaces are two columns wide, so they run on over
+     * the next row (two rows down in double size), as text wraps (MiniPavi's emulator,
+     * decoder.js, clear("eol")). Moved, each space is where the source's is, moved: none
+     * runs on from the moved column, and the run-on part stays when the CAN's row goes off
+     * the screen (#152)
+     *
+     * @return iterable<string, array{string, int, int}> what is drawn, x and y
+     */
+    public static function wideClearLinesMoved(): iterable
+    {
+        // Row 10, column 1: spaces over rows 10 and 11
+        yield 'double width, in place' => ["\x1F\x4A\x41\x1BN\x18", 0, 0];
+        yield 'double width, right' => ["\x1F\x4A\x41\x1BN\x18", 1, 0];
+        yield 'double width, left' => ["\x1F\x4A\x41\x1BN\x18", -1, 0];
+        yield 'double width, two left' => ["\x1F\x4A\x41\x1BN\x18", -2, 0];
+        // Row 1: only its run-on part, on row 2, stays, moved onto row 1
+        yield 'double width, its row off the screen' => ["\x1F\x41\x41\x1BN\x18", 0, -1];
+        // Row 10, column 3, after AB: the spaces from column 3 to 40, then 1 to 36 of row 11
+        yield 'double width, after text, right' => ["\x1F\x4A\x41\x1BNAB\x18", 3, 1];
+        // ESC R: the first space a green delimiter
+        yield 'double width, its delimiter left' => ["\x1F\x4A\x41\x1BN\x1BR\x18", -2, 0];
+        yield 'double width, its delimiter right' => ["\x1F\x4A\x43\x1BN\x1BR\x18", 1, 0];
+        // Row 10, column 1, in double size: rows 9 to 12
+        yield 'double size, left' => ["\x1F\x4A\x41\x1BO\x18", -2, 0];
+        yield 'double size, right' => ["\x1F\x4A\x41\x1BO\x18", 1, 0];
+        yield 'double size, its delimiter, down' => ["\x1F\x4A\x41\x1BO\x1BQ\x18", -1, 1];
+    }
+
+    #[DataProvider('wideClearLinesMoved')]
+    public function testOffsetMovesEachSpaceOfAWideClearLine(string $drawn, int $x, int $y): void
+    {
+        self::assertScreenMoved(new Vdt($drawn), $x, $y);
+    }
+
     public function testOffsetWritesAClearLineMovedLeftAsSpaces(): void
     {
         // Row 10: A, ESC Z, CAN from column 2, moved to column 1: its delimiter, then spaces
@@ -925,9 +960,9 @@ final class VdtTest extends TestCase
 
     /**
      * For each cell of the screen a character takes: the first column of that character, and
-     * its width. A double-width text character takes two cells, read from the left: its second
-     * one only if it still shows it (a character drawn over it since takes that cell). A
-     * second half left alone, its first one drawn over, reads as a character of its own.
+     * its width. A double-width text character takes two cells: the cell showing its right
+     * half (Part) is in the column after its first one, even when its left half was drawn
+     * over since.
      *
      * @return array<int, array<int, array{int, int}>>
      */
@@ -937,13 +972,10 @@ final class VdtTest extends TestCase
         for ($row = 0; $row <= ScreenSize::ROWS; $row++) {
             for ($col = 1; $col <= ScreenSize::COLS; $col++) {
                 $cell = $screen->cell($row, $col);
-                $width = $cell?->attributes->width() ?? 1;
-                $columns[$row][$col] = [$col, $width];
-                $next = $screen->cell($row, $col + 1);
-                if ($width === 2 && $next?->bytes === $cell?->bytes && $next?->attributes->width() === 2) {
-                    $columns[$row][$col + 1] = [$col, $width];
-                    $col++;
-                }
+                $columns[$row][$col] = [
+                    $cell?->part->isRight() === true ? $col - 1 : $col,
+                    $cell?->attributes->width() ?? 1,
+                ];
             }
         }
 

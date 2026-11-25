@@ -1296,6 +1296,14 @@ final class ScreenTest extends TestCase
                 23 => $row('w'),
             ],
         ];
+        // Green waiting: the first space a delimiter, then 37 more, up to column 38 of row 3
+        yield 'double width, its first space a delimiter' => [
+            "\x1F\x42\x43{$wide}\x1B\x52" . Videotex::CLEAR_LINE,
+            [
+                2 => 'bb' . $spaces(38),
+                3 => $spaces(38) . $row('c', count: 2),
+            ],
+        ];
         // From row 24 to row 1, as text wraps
         yield 'double width on the last row' => [
             "\x1F\x58\x45{$wide}" . Videotex::CLEAR_LINE,

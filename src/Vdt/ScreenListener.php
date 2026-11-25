@@ -27,11 +27,12 @@ interface ScreenListener
     public function delimiter(int $row, int $col, int $width, Attributes $attributes, Zone $zone): void;
 
     /**
-     * CAN at row, col: a space drawn with these attributes for each column from there to the
+     * CAN at row, col: a space drawn with these attributes in each column from there to the
      * last, the first one a delimiter starting zone delimiter, if not null (MiniPavi's
      * emulator prints CAN's spaces, clear()): the row cleared to its end, and in double
-     * height the row above too; in double width, the spaces run on over the next row, as
-     * text wraps (Screen\ScreenCells::clearLine()). The cursor stays where it is
+     * height the row above too. The cursor stays where it is. A CAN in double width (or
+     * double size) isn't told so: its spaces, two columns wide, run on over the next row, and
+     * each is told as drawn (glyph(), delimiter(): Pen::clearLine())
      */
     public function clearLine(int $row, int $col, Attributes $attributes, ?Zone $delimiter): void;
 
