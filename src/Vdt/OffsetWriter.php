@@ -124,13 +124,17 @@ final class OffsetWriter implements ScreenListener
      * left so that only its right half stays can't be shown (a character is drawn from its
      * left half, and the Minitel ignores a positioning in column 0), but a space's right half
      * shows as a space one column wide does: such a space is written in column 1, narrowed
-     * (Attributes::narrowed())
+     * (Attributes::narrowed()). So is a space drawn in the last column, of which the Minitel
+     * shows the left half only, moved left: what it shows of it is one column wide
      *
      * @return ?array{int, int, Attributes} the row, the column and the attributes
      */
     private function moved(int $row, int $col, string $bytes, Attributes $attributes): ?array
     {
         if ($row !== 0) {
+            if ($bytes === ' ' && $this->x < 0 && ($col + $attributes->width() - 1) > ScreenSize::COLS) {
+                $attributes = $attributes->narrowed();
+            }
             $row += $this->y;
             $col += $this->x;
             if ($row < 1 || $row > ScreenSize::ROWS) {
