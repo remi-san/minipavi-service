@@ -1477,11 +1477,22 @@ final class ScreenTest extends TestCase
         self::assertSame(str_repeat(' ', times: 39) . 'A', $screen->line($row));
     }
 
-    public function testErrorCharacterIsAQuestionMarkInTheText(): void
+    /**
+     * MiniPavi's emulator prints the error character (SUB) as 0x7F, as the preview draws it
+     * (HtmlRenderer): a full block in text, all six pixels in mosaic
+     */
+    public function testErrorCharacterIsAFullBlockInTheText(): void
     {
         $screen = Screen::of(new Vdt("\x1F\x41\x41A" . Videotex::SUB . 'B'));
 
-        self::assertSame('A?B', rtrim($screen->line(1)));
+        self::assertSame('A█B', rtrim($screen->line(1)));
+    }
+
+    public function testErrorCharacterIsAMosaicCellWithPixelsInMosaic(): void
+    {
+        $screen = Screen::of(new Vdt("\x1F\x41\x41\x0E" . Videotex::SUB));
+
+        self::assertSame('#', rtrim($screen->line(1)));
     }
 
     public function testTextOnTheStatusRowStaysInItsLastColumn(): void

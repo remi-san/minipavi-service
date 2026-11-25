@@ -32,19 +32,27 @@ final readonly class Cell
      * The character as text (UTF-8), as the Minitel shows it: G0 characters as in ASCII, but
      * those it draws otherwise (G0Characters: e.g. ▔ for 0x7E, a line across the top), G2
      * ones (after SS2 or SYN) as their character (G2Characters: _ for one it doesn't have),
-     * mosaic cells as # when they have pixels or a background color, a space otherwise
+     * the error character (SUB) as 0x7F, █, as MiniPavi's emulator prints it, and mosaic
+     * cells as # when they have pixels or a background color (SUB among them), a space
+     * otherwise
      */
     public function text(): string
     {
         if ($this->attributes->isMosaic()) {
             return $this->bytes === ' ' && $this->attributes->background() === Color::Black ? ' ' : '#';
         }
-        if ($this->bytes === Videotex::SUB) {
-            return '?';
-        }
+        $bytes = $this->shownBytes();
 
-        return G2Characters::starts($this->bytes[0])
-            ? G2Characters::text($this->bytes)
-            : G0Characters::text($this->bytes);
+        return G2Characters::starts($bytes[0]) ? G2Characters::text($bytes) : G0Characters::text($bytes);
+    }
+
+    /**
+     * The bytes of the character the Minitel shows: the cell's, but for the error character
+     * (SUB), shown as 0x7F, as MiniPavi's emulator prints it (a full block in text, all six
+     * pixels in mosaic). text() reads them, and HtmlRenderer draws them
+     */
+    public function shownBytes(): string
+    {
+        return $this->bytes === Videotex::SUB ? G0Characters::FULL_BLOCK : $this->bytes;
     }
 }
