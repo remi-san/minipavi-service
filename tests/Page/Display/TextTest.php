@@ -251,26 +251,39 @@ final class TextTest extends TestCase
      * double size): the row is cleared at normal width, keeping the height (MiniPavi's
      * emulator, #155)
      *
-     * @return iterable<string, array{?Size, list<int>, string}> the size, the rows it paints,
-     *                                                              then their backgrounds
+     * @return iterable<string, array{?Size, list<int>, string, string}> the size, the rows it
+     *                                                                      paints, then each
+     *                                                                      one as shown and
+     *                                                                      its backgrounds
      */
     public static function filledSizes(): iterable
     {
-        // The space before the text in column 9, or in columns 8 and 9 in double width
-        $narrow = str_repeat('.', times: 8) . str_repeat('R', times: 32);
-        $wide = str_repeat('.', times: 7) . str_repeat('R', times: 33);
-        yield 'normal size' => [null, [self::ROW], $narrow];
-        yield 'double height' => [Size::DoubleHeight, [self::ROW - 1, self::ROW], $narrow];
-        yield 'double width' => [Size::DoubleWidth, [self::ROW], $wide];
-        yield 'double size' => [Size::Double, [self::ROW - 1, self::ROW], $wide];
+        // The space before the text in column 9, or in columns 8 and 9 in double width, and
+        // nothing left of what the row showed after the text
+        $narrow = [
+            'XXXXXXXX Rouge' . str_repeat(' ', times: 26),
+            str_repeat('.', times: 8) . str_repeat('R', times: 32),
+        ];
+        $wide = [
+            'XXXXXXX  RRoouuggee' . str_repeat(' ', times: 21),
+            str_repeat('.', times: 7) . str_repeat('R', times: 33),
+        ];
+        yield 'normal size' => [null, [self::ROW], ...$narrow];
+        yield 'double height' => [Size::DoubleHeight, [self::ROW - 1, self::ROW], ...$narrow];
+        yield 'double width' => [Size::DoubleWidth, [self::ROW], ...$wide];
+        yield 'double size' => [Size::Double, [self::ROW - 1, self::ROW], ...$wide];
     }
 
     /**
      * @param list<int> $painted
      */
     #[DataProvider('filledSizes')]
-    public function testFilledTextLeavesTheRowsAfterIt(?Size $size, array $painted, string $backgrounds): void
-    {
+    public function testFilledTextLeavesTheRowsAfterIt(
+        ?Size $size,
+        array $painted,
+        string $shown,
+        string $backgrounds,
+    ): void {
         $drawn = new Vdt();
         for ($row = self::ROW - 2; $row <= (self::ROW + 2); $row++) {
             $drawn = Vdt::join($drawn, Vdt::position(new Position($row)), Vdt::text(str_repeat('X', times: 40)));
@@ -281,6 +294,7 @@ final class TextTest extends TestCase
         ));
 
         foreach ($painted as $row) {
+            self::assertSame($shown, $screen->line($row));
             self::assertSame($backgrounds, self::backgrounds($screen, $row));
         }
         foreach ([self::ROW + 1, self::ROW + 2] as $row) {
