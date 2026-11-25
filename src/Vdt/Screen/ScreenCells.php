@@ -74,9 +74,7 @@ final class ScreenCells implements ScreenListener
      * with these attributes for each column from col to the last, the first one a delimiter
      * starting zone delimiter, if not null, each where the cursor goes after the one before
      * (Cursor::advance()). So in double height they clear the row above too, and in double
-     * width they run on over the next row (two rows down in double size), as text wraps. On
-     * row 0, where the cursor stays in the last column, they are drawn over it, after the
-     * first one
+     * width they run on over the next row (two rows down in double size), as text wraps
      */
     public function clearLine(int $row, int $col, Attributes $attributes, ?Zone $delimiter): void
     {

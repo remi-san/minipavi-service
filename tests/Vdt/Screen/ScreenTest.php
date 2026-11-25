@@ -365,24 +365,29 @@ final class ScreenTest extends TestCase
     }
 
     /**
+     * Every size but the normal one, which the Minitel discards on row 0 (MiniPavi's
+     * emulator, decoder.js, setSize(); double width checked by the tester on PR #156)
+     *
      * @return iterable<string, array{string}>
      */
-    public static function tallSizes(): iterable
+    public static function doubleSizes(): iterable
     {
         yield 'double height' => [Videotex::SIZE_DOUBLE_HEIGHT];
+        yield 'double width' => [Videotex::SIZE_DOUBLE_WIDTH];
         yield 'double size' => [Videotex::SIZE_DOUBLE];
     }
 
-    #[DataProvider('tallSizes')]
-    public function testDoubleHeightIsDiscardedOnRow0(string $size): void
+    #[DataProvider('doubleSizes')]
+    public function testSizeIsDiscardedOnRow0(string $size): void
     {
         $screen = Screen::of(new Vdt("\x1F\x40\x41{$size}ZY"));
 
         $cell = $screen->cell(0, col: 1) ?? self::fail('Nothing on row 0');
         self::assertSame('Z', $cell->bytes);
         self::assertFalse($cell->attributes->isDoubleHeight());
+        self::assertFalse($cell->attributes->isDoubleWidth());
         // Normal size: one column
-        self::assertSame('Y', $screen->cell(0, col: 2)?->bytes);
+        self::assertSame('ZY', substr($screen->line(0), offset: 0, length: 2));
     }
 
     /**
@@ -1240,18 +1245,19 @@ final class ScreenTest extends TestCase
         }
     }
 
-    public function testWideClearLineOnTheStatusRowDrawsItsLastSpacesInItsLastColumn(): void
+    public function testClearLineOnTheStatusRowIsAtNormalSize(): void
     {
-        // Row 0, column 39: ESC N, underline waiting, CAN. Its first space, a delimiter, is
-        // in columns 39 and 40; the cursor staying in the last column of row 0, the next
-        // space is drawn over column 40, a space in the underlined zone, as in MiniPavi's
-        // emulator (printDelimiter(), then printG0Char() over its right half)
+        // Row 0, column 30: ESC N, discarded there, underline waiting, CAN: a delimiter in
+        // column 30, then spaces a column wide in the underlined zone, as in MiniPavi's
+        // emulator (checked by the tester on PR #156)
         $screen = Screen::of(
-            new Vdt("\x1F\x40\x67" . Videotex::SIZE_DOUBLE_WIDTH . Videotex::UNDERLINE_ON . Videotex::CLEAR_LINE),
+            new Vdt("\x1F\x40\x5E" . Videotex::SIZE_DOUBLE_WIDTH . Videotex::UNDERLINE_ON . Videotex::CLEAR_LINE),
         );
 
-        self::assertFalse($screen->cell(0, col: 39)?->attributes->isUnderlined());
+        self::assertFalse($screen->cell(0, col: 30)?->attributes->isUnderlined());
+        self::assertTrue($screen->cell(0, col: 31)?->attributes->isUnderlined());
         self::assertTrue($screen->cell(0, col: 40)?->attributes->isUnderlined());
+        self::assertSame(1, $screen->cell(0, col: 31)?->attributes->width());
     }
 
     public function testTallClearLineStartsItsZoneOnTheRowAboveToo(): void
