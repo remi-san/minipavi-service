@@ -887,7 +887,9 @@ echo Screen::of($moved)->preview();              // the screen, as text
   draws otherwise than in ASCII as the closest character (checked in MiniPavi's emulator,
   #143): `0x5E` as `↑`, `0x60` (a middle `<line>`) as `─`, `0x7B` as `▏`, `0x7D` as `▕`,
   `0x7E` (a bottom `<line>`) as `▔` and `0x7F` as `█` (`0x5F`, a top `<line>`, is `_`, and
-  `0x7C` `|`), and `preview()` the same rows framed and numbered, to read in a terminal.
+  `0x7C` `|`). The error character, `SUB` (0x1A), reads as `0x7F` does, `█`, as the
+  emulator prints it and the HTML preview draws it (`#` in mosaic, as any mosaic cell with
+  pixels). `preview()` gives the same rows framed and numbered, to read in a terminal.
   `SYN` (0x16) starts a G2 character as `SS2` (0x19) does, as on a Minitel. An accent
   (`SS2`, then grave, acute, circumflex, diaeresis or cedilla) takes the byte after it,
   whatever it is: a letter the Minitel has with that accent (`é`, not `á` or `ü`), or `_`
