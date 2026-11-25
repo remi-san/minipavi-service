@@ -858,7 +858,10 @@ echo Screen::of($moved)->preview();              // the screen, as text
   starts again in a tall space whose top half shows another zone, the space is written as
   drawn, then a delimiter at normal height over its bottom half (`ESC L`, or `ESC N` for
   double size, and back to `ESC M` or `ESC O` after it), which leaves that top half as it
-  shows.
+  shows. The zone of the row above may start again in such a top half too: once the tall
+  space is written, a delimiter at normal height is written over its top half (one column
+  wide for a double-size space whose right half only stays on the screen), which leaves its
+  bottom half as it shows (#153).
 - **`ClearScreens`**: `removed($vdt)` is the same content without its clear screens (FF), to
   draw it over other content, and `fromLast($vdt)` the content from its last one, what still
   shows.

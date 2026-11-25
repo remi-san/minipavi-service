@@ -53,11 +53,12 @@ final class ShownScreen
     /**
      * Where the zone the columns before first leave starts again on row, once moved left so
      * that first is its column 1, and that zone: at its first text space (that isn't a
-     * delimiter) drawn on row whose zone isn't the one the columns from first leave alone,
-     * the column it is drawn at (before first for a double-width one whose right half only
-     * is from first). Null if none is, nor is any needed
+     * delimiter) whose zone isn't the one the columns from first leave alone, drawn on row,
+     * or on the row below when it is the top half of a tall space; the row and column it is
+     * drawn at (the column before first for a double-width one whose right half only is from
+     * first). Null if none is, nor is any needed
      *
-     * @return ?array{int, Zone} the column (not moved) and the zone
+     * @return ?array{int, int, Zone} the row and column (not moved), and the zone
      */
     public function restart(int $row, int $first): ?array
     {
@@ -67,8 +68,8 @@ final class ShownScreen
             $zone = $this->zones->after($zone, $row, $col);
             $alone = $this->zones->after($alone, $row, $col);
             $space = $this->spaces[$row][$col] ?? null;
-            if ($space !== null && $space[0] === $row && !$zone->showsAs($alone)) {
-                return [$space[1], $zone];
+            if ($space !== null && !$zone->showsAs($alone)) {
+                return [$space[0], $space[1], $zone];
             }
         }
 

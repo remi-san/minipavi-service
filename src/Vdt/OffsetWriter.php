@@ -21,9 +21,11 @@ use MiniPaviService\Vdt\Screen\Zones;
  * On a row moved left, the zone the columns going off the screen leave starts again at a
  * delimiter written in the first text space it shows in (ShownScreen::restart()), as what is
  * drawn there isn't written: what is before that space has no column left for one, and loses
- * it. A delimiter something is drawn over later is written as a space, as its zone doesn't
- * last. Each text cell is written with the zone the cells written before it leave (zoneBefore()),
- * so that the Writer starts no other.
+ * it. That space may be the top half of a tall space drawn from the row below: the delimiter
+ * is written at normal height over it, once that space is written. A delimiter something is
+ * drawn over later is written as a space, as its zone doesn't last. Each text cell is written
+ * with the zone the cells written before it leave (zoneBefore()), so that the Writer starts
+ * no other.
  *
  * Its Writer keeps where it is and what it wrote (so it isn't readonly), so it listens to one
  * content only: it is only built, and played to, by write().
@@ -62,18 +64,39 @@ final class OffsetWriter implements ScreenListener
 
     public function glyph(int $row, int $col, string $bytes, int $width, Attributes $attributes): void
     {
-        $restart = $this->restartAt($row, $col, $bytes, $attributes);
-        if ($restart === null) {
-            $this->writeMoved($row, $col, $bytes, $width, $attributes);
+        $restart = $this->restartAt($row, $row, $col, $bytes, $attributes);
+        $tall = $attributes->height() > 1;
+        if ($restart !== null && (!$tall || $this->shown->showsOnTop($row, $col, $restart))) {
+            // A tall one starts the zone again on the row above too, where it shows the same
+            $this->delimiter($row, $col, $width, $attributes, $restart);
             return;
         }
-        if ($attributes->height() > 1 && !$this->shown->showsOnTop($row, $col, $restart)) {
+        $this->writeMoved($row, $col, $bytes, $width, $attributes);
+        if ($restart !== null) {
             // A tall space whose top half shows another zone, which a tall delimiter would
-            // change: the space as drawn, then a delimiter at normal height over its bottom half
-            $this->writeMoved($row, $col, $bytes, $width, $attributes);
-            $attributes = $attributes->flattened();
+            // change: a delimiter at normal height over its bottom half
+            $this->delimiter($row, $col, $width, $attributes->flattened(), $restart);
         }
-        $this->delimiter($row, $col, $width, $attributes, $restart);
+        $above = $tall ? $this->restartAt($row - 1, $row, $col, $bytes, $attributes) : null;
+        if ($above !== null) {
+            // The zone of the row above starts again in its top half: a delimiter at normal
+            // height over it
+            $this->delimiterOnTop($row - 1, $col, $width, $attributes->flattened(), $above);
+        }
+    }
+
+    /**
+     * Writes a delimiter starting zone at row, col, moved, at normal height, over the top half
+     * of the tall space drawn at col on the row below, once that space is written
+     */
+    private function delimiterOnTop(int $row, int $col, int $width, Attributes $attributes, Zone $zone): void
+    {
+        $this->zones->delimiter($row, $col, $width, height: 1, zone: $zone);
+        $moved = $this->moved($row, $col, ' ', $attributes);
+        if ($moved !== null) {
+            [$row, $col, , $attributes] = $moved;
+            $this->out->delimiter($row, $col, $attributes->width(), $attributes, $zone);
+        }
     }
 
     // Writes a character drawn at row, col, moved, in the zone the cells written before it leave
@@ -182,7 +205,7 @@ final class OffsetWriter implements ScreenListener
                     $this->out->delimiter($movedRow, $cleared, width: 1, attributes: $attributes, zone: $delimiter);
                     continue;
                 }
-                $restart = $this->restartAt($row, $from, bytes: ' ', attributes: $attributes);
+                $restart = $this->restartAt($row, $row, $from, bytes: ' ', attributes: $attributes);
                 if ($restart !== null) {
                     $this->delimiter($row, $from, width: 1, attributes: $attributes, zone: $restart);
                     continue;
@@ -204,21 +227,22 @@ final class OffsetWriter implements ScreenListener
     }
 
     /**
-     * The zone a delimiter written for bytes drawn at row, col (not moved) starts again, if
-     * the zone the columns going off the screen leave starts again there (ShownScreen::restart()):
-     * a text space, on a moved row
+     * The zone of row restarted (not moved) a delimiter written for bytes drawn at row, col
+     * (not moved) starts again, if the zone the columns going off the screen leave starts
+     * again there (ShownScreen::restart()): a text space, on a moved row (restarted is row,
+     * or the row above for the top half of a tall space)
      */
-    private function restartAt(int $row, int $col, string $bytes, Attributes $attributes): ?Zone
+    private function restartAt(int $restarted, int $row, int $col, string $bytes, Attributes $attributes): ?Zone
     {
-        if ($row === 0 || $bytes !== ' ' || $attributes->isMosaic()) {
+        if ($restarted === 0 || $bytes !== ' ' || $attributes->isMosaic()) {
             return null;
         }
-        $restart = $this->shown->restart($row, 1 - $this->x);
-        if ($restart === null || $restart[0] !== $col) {
+        $restart = $this->shown->restart($restarted, 1 - $this->x);
+        if ($restart === null || $restart[0] !== $row || $restart[1] !== $col) {
             return null;
         }
 
-        return $restart[1];
+        return $restart[2];
     }
 
     /**
