@@ -45,11 +45,20 @@ final class ScreenCells implements ScreenListener
         return array_map($cells->inZones(...), $cells->cells, array_keys($cells->cells));
     }
 
+    /**
+     * A character drawn at row, col: in each cell it covers (Zones::cells()), the part of it
+     * the cell shows (Part), as MiniPavi's emulator draws it (decoder.js, printG0Char()): a
+     * tall one's top half on the row above, over what is there; a wide one in the last
+     * column its left half only
+     */
     public function glyph(int $row, int $col, string $bytes, int $width, Attributes $attributes): void
     {
-        for ($i = 0; $i < $width && ($col + $i) <= ScreenSize::COLS; $i++) {
-            $part = new Part(right: $i > 0, bottom: $attributes->height() > 1);
-            $this->cells[$row][$col + $i] = new Cell($bytes, $attributes, $part);
+        foreach (Zones::cells($row, $col, $width, $attributes->height()) as [$cellRow, $cellCol]) {
+            if ($cellCol > ScreenSize::COLS) {
+                continue;
+            }
+            $part = new Part(right: $cellCol > $col, bottom: $cellRow === $row && $attributes->height() > 1);
+            $this->cells[$cellRow][$cellCol] = new Cell($bytes, $attributes, $part);
         }
         $this->zones->draw($row, $col, $width, $attributes);
     }
