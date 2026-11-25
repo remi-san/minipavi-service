@@ -4,10 +4,7 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Vdt;
 
-use MiniPaviService\Minitel\ScreenSize;
-use MiniPaviService\Vdt\Screen\Attributes;
 use MiniPaviService\Vdt\Screen\Cursor;
-use MiniPaviService\Vdt\Screen\Zone;
 
 /**
  * Draws at the cursor what the tokens of Videotex content draw, and tells it to a
@@ -67,7 +64,7 @@ final class Pen
      * wide, so they run on over the next row (two rows down in double size), as text wraps
      * (MiniPavi's emulator, decoder.js, clear("eol"): a space printed for each column from the
      * cursor's to the last): it clears no row to its end, and each space is told as drawn
-     * (spaces())
+     * (ClearedSpaces)
      */
     public function clearLine(Cursor $cursor): void
     {
@@ -78,31 +75,10 @@ final class Pen
         }
         $attributes = $cursor->attributes();
         if ($attributes->width() > 1) {
-            $this->spaces($cursor->row(), $cursor->col(), $attributes, $delimiter);
+            (new ClearedSpaces($cursor->row(), $cursor->col(), $attributes, $delimiter))->tellTo($this->listener);
             return;
         }
         $this->listener->clearLine($cursor->row(), $cursor->col(), $attributes, $delimiter);
-    }
-
-    /**
-     * The spaces of a CAN at row, col in double width (or double size): one for each column
-     * from col to the last, each where the one before leaves the cursor (Cursor::advance()),
-     * the first one a delimiter starting delimiter, if not null
-     */
-    private function spaces(int $row, int $col, Attributes $attributes, ?Zone $delimiter): void
-    {
-        $width = $attributes->width();
-        $spaces = Cursor::at($row, $col, $attributes);
-        $first = $col;
-        if ($delimiter !== null) {
-            $this->listener->delimiter($row, $col, $width, $attributes, $delimiter);
-            $spaces->advance($width);
-            $first++;
-        }
-        for ($space = $first; $space <= ScreenSize::COLS; $space++) {
-            $this->listener->glyph($spaces->row(), $spaces->col(), ' ', $width, $attributes);
-            $spaces->advance($width);
-        }
     }
 
     /**

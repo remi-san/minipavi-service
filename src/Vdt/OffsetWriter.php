@@ -181,12 +181,15 @@ final class OffsetWriter implements ScreenListener
     /**
      * CAN, moved: the cleared cells of the moved row stop at the screen's last column. Moved
      * left, they must stop before the columns that came from beyond the screen: its spaces
-     * are written one by one instead, each as the content would draw it (spaces())
+     * are written one by one instead, each told to this writer as drawn (ClearedSpaces): the
+     * first a delimiter (delimiter(): written while it shows), the others as any space
+     * (glyph(): one where the zone of the columns gone off the screen starts again a
+     * delimiter, a tall one's top half in the zone of the row above)
      */
     public function clearLine(int $row, int $col, Attributes $attributes, ?Zone $delimiter): void
     {
         if ($row !== 0 && $this->x < 0) {
-            $this->spaces($row, $col, $attributes, $delimiter);
+            (new ClearedSpaces($row, $col, $attributes, $delimiter))->tellTo($this);
             return;
         }
         // A delimiter drawn over, on its row and in double height the row above: its zone
@@ -206,25 +209,6 @@ final class OffsetWriter implements ScreenListener
         }
         if (($col + $this->x) <= ScreenSize::COLS) {
             $this->out->clearLine($movedRow, $col + $this->x, $attributes, $zone, $delimiter);
-        }
-    }
-
-    /**
-     * The spaces of a CAN at row, col, with these attributes, from col to the last column,
-     * each written as the content would draw it: the first a delimiter starting delimiter, if not
-     * null (delimiter(): written while it shows), the others as any space (glyph(): one where
-     * the zone of the columns gone off the screen starts again a delimiter, a tall one's top
-     * half in the zone of the row above)
-     */
-    private function spaces(int $row, int $col, Attributes $attributes, ?Zone $delimiter): void
-    {
-        $first = $col;
-        if ($delimiter !== null) {
-            $this->delimiter($row, $col, width: $attributes->width(), attributes: $attributes, zone: $delimiter);
-            $first++;
-        }
-        for ($space = $first; $space <= ScreenSize::COLS; $space++) {
-            $this->glyph($row, $space, bytes: ' ', width: $attributes->width(), attributes: $attributes);
         }
     }
 
