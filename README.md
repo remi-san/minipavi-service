@@ -673,8 +673,9 @@ elements are drawn in order:
   row, or that cell is overwritten; and a text with `bg` as wide as the row has its last
   character on the next row. Without `fill="yes"`, a space on black after it, in the cell
   after it, ends the colour, so that it doesn't run over what the row already shows; with
-  it, the rest of the row is painted. Ending in or past the last column, or with no room
-  left for a whole double-width space, nothing is written after it.
+  it, the rest of the row is painted (both rows in double height or double size), at
+  normal width, so that the rows after it are left as they are. Ending in or past the last
+  column, or with no room left for a whole double-width space, nothing is written after it.
 
 `<page>` can also set up the Minitel, sent by `Page::display()` before the content (a setting
 left out is left as it is):
