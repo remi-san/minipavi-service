@@ -652,7 +652,7 @@ elements are drawn in order:
 | `<background>file.vdt</background>` | Videotex page from the page's folder or one of its subfolders (e.g. `images/logo.vdt`; `/` or `\` between folders, but not first, nor `..` or a Windows drive such as `C:`), sent as is (e.g. made with a Videotex editor). Put it first to draw over it. |
 | `<image row col>file.vdt</image>` | Videotex picture from the page's folder or one of its subfolders, drawn with its top-left cell (row 1, column 1 of the file) at `row`, `col` (default 1, 1): what goes past the screen is cut, and it doesn't clear the screen. In a template, the file name can be a placeholder (`{{game.image}}`), and in a `<foreach>`, `row` is relative to the item, to show a picture per item |
 | `<text row col align="center" color bg size fill="yes">…</text>` | text; `size`: normal, double-height, double-width, double; `fill="yes"` paints the rest of the row with `bg` (see below) |
-| `<line row col length char color/>` | horizontal line; `char`: top (`_`), middle (`` ` ``), bottom (`~`) or any character |
+| `<line row col length char color/>` | horizontal line; `char`: top (`_`, a line across the bottom of each cell), middle (`` ` ``, across the middle of each cell), bottom (`~`, across the top of each cell: the Minitel draws these three as lines) or any character |
 | `<key row col color bg>Envoi</key>` | function key badge, in reverse video (`bg`: around it): a space at `col`, the label in reverse video with a space on each side, and a space ending it, so the label's length + 4 cells (`col="32"` for `Envoi` to end the row). What would go past the last column, the space after the label or the one ending the badge, is left out rather than written on the next row |
 | `<endkey row color/>` | "Connexion/fin" hint, centered, with "[Maj] +" for ESP32/Minimit adapters (messages `endkey`, `endkey.shift`) |
 | `<input row col length lines validwith/>` | input field read by `Page::inputCommand()` (default: row 13, 2 lines, to the end of the row) |
@@ -864,11 +864,17 @@ echo Screen::of($moved)->preview();              // the screen, as text
   character bigger than a cell (double width, height or size) is drawn at its size in each
   cell it covers, which shows its part of it on that cell's own background (a tall
   character's top half on the zone of the row above), and a double-width character in
-  column 40 shows its left half only.
+  column 40 shows its left half only. In text, the G0 characters `0x60`, `0x7B`, `0x7D` and
+  `0x7E`, which the Minitel font doesn't have, are drawn as the emulator draws them: a line
+  across the middle of the cell, down its left or right edge, or across its top (#143).
 - **`Screen::of($vdt)`**: the `Screen` drawn by the content: a `Cell` (character, attributes,
   and the `Part` of the character the cell shows) or `null` per row and column. `line($row)`
   and `text()` give the text of a row and of the screen, G2 characters decoded as a Minitel
-  shows them (`é`, `£`, `½`, `Œ`...; `Cell::text()`), and `preview()` the same rows framed
+  shows them (`é`, `£`, `½`, `Œ`...; `Cell::text()`), and the G0 characters it draws
+  otherwise than in ASCII as the closest character (checked in MiniPavi's emulator, #143):
+  `0x5E` as `↑`, `0x60` (a middle `<line>`) as `─`, `0x7B` as `▏`, `0x7D` as `▕`, `0x7E` (a
+  bottom `<line>`) as `▔` and `0x7F` as `█` (`0x5F`, a top `<line>`, is `_`, and `0x7C`
+  `|`), and `preview()` the same rows framed
   and numbered, to read in a terminal. `SYN` (0x16) starts a G2 character as `SS2` (0x19)
   does, as on a Minitel. An accent (`SS2`, then grave, acute, circumflex, diaeresis or
   cedilla) takes the byte after
