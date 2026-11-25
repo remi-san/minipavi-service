@@ -1099,6 +1099,20 @@ final class ScreenTest extends TestCase
         self::assertNull($screen->cell(5, col: 3));
     }
 
+    public function testDoubleSizeCharacterInTheLastColumnShowsItsLeftQuarters(): void
+    {
+        // Row 6, column 40: ESC O and W, its top left quarter on row 5, its bottom left one
+        // on row 6, as in MiniPavi's emulator (#141); Z wraps two rows down
+        $screen = Screen::of(new Vdt("\x1F\x46\x68" . Videotex::SIZE_DOUBLE . 'WZ'));
+
+        $top = $screen->cell(5, col: 40) ?? self::fail('Nothing at row 5, column 40');
+        self::assertSame('W', $top->bytes);
+        self::assertFalse($top->part->isRight());
+        self::assertFalse($top->part->isBottom());
+        self::assertTrue($screen->cell(6, col: 40)?->part->isBottom());
+        self::assertSame('ZZ', substr($screen->line(8), offset: 0, length: 2));
+    }
+
     /**
      * A tall delimiter shows its top half on the row above, on its zone's background (#151,
      * checked in MiniPavi's emulator by the tester on PR #150)
