@@ -855,9 +855,10 @@ echo Screen::of($moved)->preview();              // the screen, as text
   over later (e.g. CAN's, with a background colour waiting, then text over it) starts no zone,
   and is written as a space, while one drawn after the cells it colours does (#126). A
   double-height or double-size cell is on the row above too: a tall delimiter whose top half
-  still shows there is written, even when its bottom half is drawn over; and where the zone
-  starts again in a tall space whose top half shows another zone, the space is written as
-  drawn, then a delimiter at normal height over its bottom half (`ESC L`, or `ESC N` for
+  still shows there is written, even when its bottom half is drawn over (a double-height
+  CAN's first space too, #162); and where the zone starts again in a tall space whose top
+  half shows another zone, the space is written as drawn, then a delimiter at normal height
+  over its bottom half (`ESC L`, or `ESC N` for
   double size, and back to `ESC M` or `ESC O` after it), which leaves that top half as it
   shows. The zone of the row above may start again in such a top half too: once the tall
   space is written, a delimiter at normal height is written over its top half (one column
