@@ -445,7 +445,7 @@ Unknown elements and attributes are rejected, which the parser does for elements
 
 	<xs:simpleType name="lineChar">
 		<xs:annotation>
-			<xs:documentation>top (_), middle (`, default), bottom (~), or any single ASCII character</xs:documentation>
+			<xs:documentation>top (_, a line across the bottom of each cell), middle (`, default, across the middle of each cell), bottom (~, across the top of each cell): the Minitel draws these three as lines; or any single ASCII character</xs:documentation>
 		</xs:annotation>
 		<xs:union memberTypes="placeholder">
 			<xs:simpleType>

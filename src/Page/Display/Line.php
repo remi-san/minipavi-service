@@ -16,7 +16,9 @@ use MiniPaviService\Vdt\Videotex;
  */
 final readonly class Line implements Element
 {
-    // Characters for char="top", "middle" and "bottom" in the configuration
+    // Characters for char="top", "middle" and "bottom" in the configuration, which the
+    // Minitel draws as a line: across the bottom of each cell (top, to go above what follows),
+    // across its middle, and across its top (bottom, to go below what precedes)
     public const TOP = '_';
     public const MIDDLE = "\x60";
     public const BOTTOM = "\x7E";

@@ -60,7 +60,7 @@ final class PageXmlParserTest extends TestCase
             [
                 ' 2|               HHeelllloo               |',
                 ' 4|  Left                                  |',
-                ' 5|  ~~~~~~                                |',
+                ' 5|  ▔▔▔▔▔▔                                |',
                 ' 7|           Envoi                        |',
                 ' 9|    ##                                  |',
                 '10|    ok                                  |',
@@ -329,7 +329,7 @@ final class PageXmlParserTest extends TestCase
     public static function elementsWithoutPosition(): iterable
     {
         yield 'text' => ['<text>Top</text>', [' 1|Top' . str_repeat(' ', times: 37) . '|']];
-        yield 'line' => ['<line length="3"/>', [' 1|```' . str_repeat(' ', times: 37) . '|']];
+        yield 'line' => ['<line length="3"/>', [' 1|───' . str_repeat(' ', times: 37) . '|']];
         // An underlined space, " Envoi " in reverse video, and a space
         yield 'key' => ['<key>Envoi</key>', [' 1|  Envoi' . str_repeat(' ', times: 33) . '|']];
         yield 'image' => [
@@ -702,7 +702,7 @@ final class PageXmlParserTest extends TestCase
             [
                 ' 1|Games (2)                               |',
                 ' 3|  1/2 Harbour Pirates                   |',
-                ' 4|  ````                                  |',
+                ' 4|  ────                                  |',
                 ' 5|  2/2 Rocket Rescue  new                |',
             ],
             $this->drawnRows($page->display(new Terminal(), [

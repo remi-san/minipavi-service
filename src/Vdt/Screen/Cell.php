@@ -29,9 +29,10 @@ final readonly class Cell
     }
 
     /**
-     * The character as text (UTF-8): text characters as they are, G2 ones (after SS2 or SYN)
-     * as the Minitel shows them (G2Characters: _ for one it doesn't have), mosaic cells as # when they have
-     * pixels or a background color, a space otherwise
+     * The character as text (UTF-8), as the Minitel shows it: G0 characters as in ASCII, but
+     * those it draws otherwise (G0Characters: e.g. ▔ for 0x7E, a line across the top), G2
+     * ones (after SS2 or SYN) as their character (G2Characters: _ for one it doesn't have),
+     * mosaic cells as # when they have pixels or a background color, a space otherwise
      */
     public function text(): string
     {
@@ -42,6 +43,8 @@ final readonly class Cell
             return '?';
         }
 
-        return G2Characters::starts($this->bytes[0]) ? G2Characters::text($this->bytes) : $this->bytes;
+        return G2Characters::starts($this->bytes[0])
+            ? G2Characters::text($this->bytes)
+            : G0Characters::text($this->bytes);
     }
 }
