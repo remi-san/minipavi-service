@@ -119,7 +119,8 @@ final class OffsetWriter implements ScreenListener
      * Where a character drawn at row, col goes, and the attributes it is written with; null if
      * off the screen. Row 0 stays where it is; the other rows stay within rows 1 to ROWS, the
      * character written with a size the Minitel accepts on the row it is moved to (no ESC M or
-     * ESC O on row 1)
+     * ESC O on row 1). A double-width one moved into the last column is written there: the
+     * Minitel shows its left half (MiniPavi's emulator, decoder.js, printG0Char())
      *
      * @return ?array{int, int, Attributes} the row, the column and the attributes
      */
@@ -133,7 +134,7 @@ final class OffsetWriter implements ScreenListener
             }
             $attributes = $attributes->writableOn($row);
         }
-        if ($col < 1 || ($col + $attributes->width() - 1) > ScreenSize::COLS) {
+        if ($col < 1 || $col > ScreenSize::COLS) {
             return null;
         }
 

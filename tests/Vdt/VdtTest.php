@@ -478,6 +478,34 @@ final class VdtTest extends TestCase
         self::assertScreenMoved(new Vdt($drawn), $x, y: 0);
     }
 
+    /**
+     * Double-width and double-size cells moved right partly off the screen: their left half
+     * shows in the last column, as the Minitel shows a wide character written there
+     * (MiniPavi's emulator, decoder.js, printG0Char(), printDelimiter(): the cells past the
+     * last column aren't drawn), not nothing (#152)
+     *
+     * @return iterable<string, array{string, int}> what is drawn, and x
+     */
+    public static function wideCellsMovedOffTheRight(): iterable
+    {
+        // Row 10, column 36: X and Y in double width, Y's left half in column 40
+        yield 'double width, by 2' => ["\x1F\x4A\x64\x1BNXY", 2];
+        // X in columns 39 and 40, Y off the screen
+        yield 'double width, by 3' => ["\x1F\x4A\x64\x1BNXY", 3];
+        // Row 10, column 37: X in double size, its left half in column 40 of rows 9 and 10
+        yield 'double size' => ["\x1F\x4A\x65\x1BOX", 3];
+        // Row 10, column 39: a red double-width delimiter, then X, moved to column 40
+        yield 'a double-width delimiter' => ["\x1F\x4A\x67\x1BN\x1BQ X", 1];
+        // The same in double size
+        yield 'a double-size delimiter' => ["\x1F\x4A\x67\x1BO\x1BQ X", 1];
+    }
+
+    #[DataProvider('wideCellsMovedOffTheRight')]
+    public function testOffsetShowsTheLeftHalfOfAWideCellMovedIntoTheLastColumn(string $drawn, int $x): void
+    {
+        self::assertScreenMoved(new Vdt($drawn), $x, y: 0);
+    }
+
     public function testOffsetWritesAClearLineMovedLeftAsSpaces(): void
     {
         // Row 10: A, ESC Z, CAN from column 2, moved to column 1: its delimiter, then spaces
@@ -676,8 +704,8 @@ final class VdtTest extends TestCase
     /**
      * The screen drawn by the moved content is the original one, moved: every cell is found
      * x columns right and y rows down, with the same character and attributes, except on
-     * row 0 (the status row), which stays as it is; nothing else is drawn. A double-width
-     * character that would be partly off the screen is not drawn at all.
+     * row 0 (the status row), which stays as it is; nothing else is drawn (see
+     * assertScreenMoved() for what shows of a double-width character partly off the screen)
      */
     #[DataProvider('offsets')]
     public function testOffsetDrawsTheSameScreenMoved(string $file, int $x, int $y): void
@@ -689,8 +717,9 @@ final class VdtTest extends TestCase
      * The screen drawn by the original content, moved by offset(x, y), is the original one,
      * moved: every cell is found x columns right and y rows down, with the same character and
      * attributes, except on row 0 (the status row), which stays as it is; nothing else is
-     * drawn. A double-width character that would be partly off the screen is not drawn at
-     * all. On a row moved left, a zone whose delimiter goes off the screen can only start
+     * drawn. A double-width character moved partly off the screen on the right shows its left
+     * half in the last column, as the Minitel shows one written there (MiniPavi's emulator,
+     * decoder.js, printG0Char()). On a row moved left, a zone whose delimiter goes off the screen can only start
      * again at a space (Writer): on a row whose text space went off the screen, the cells
      * before its first one left show what they do without it (withoutZoneFromOffTheScreen()).
      * The bottom half of a space is compared as the space at normal height it shows as
@@ -711,11 +740,7 @@ final class VdtTest extends TestCase
                 }
                 [$fromRow, $fromCol] = [$row - $y, $col - $x];
                 [$start, $width] = $glyphs[$fromRow][$fromCol] ?? [$fromCol, 1];
-                $onScreen =
-                    $fromRow >= 1
-                    && $fromRow <= ScreenSize::ROWS
-                    && ($start + $x) >= 1
-                    && ($start + $x + $width - 1) <= ScreenSize::COLS;
+                $onScreen = $fromRow >= 1 && $fromRow <= ScreenSize::ROWS && ($start + $x) >= 1;
                 $expected = $onScreen ? $before->cell($fromRow, $fromCol) : null;
                 $actual = $after->cell($row, $col);
                 if (
