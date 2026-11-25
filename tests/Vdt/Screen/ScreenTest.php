@@ -1170,25 +1170,55 @@ final class ScreenTest extends TestCase
 
     /**
      * A tall delimiter shows its top half on the row above, on its zone's background (#151,
-     * checked in MiniPavi's emulator by the tester on PR #150)
+     * checked in MiniPavi's emulator by the tester on PR #150), even once a tall character
+     * from the row below draws over its bottom half; a double-size one in both of its columns
+     * there, as the emulator writes it in each of its cells (decoder.js, printDelimiter())
      *
-     * @return iterable<string, array{string, Color}> the space drawn on row 10, column 2, and
-     *                                                the background of row 9, column 2
+     * @return iterable<string, array{string, string, array{?Color, ?Color}}> the size and
+     *                                                                       the space drawn on
+     *                                                                       row 10, column 2,
+     *                                                                       what is drawn
+     *                                                                       after, and the
+     *                                                                       backgrounds of
+     *                                                                       row 9, columns 2
+     *                                                                       and 3
      */
     public static function tallDelimiters(): iterable
     {
-        yield 'a delimiter' => [Videotex::backgroundColor(Color::Blue) . ' ', Color::Blue];
-        yield 'a space' => [' ', Color::Black];
+        $blue = Videotex::backgroundColor(Color::Blue) . ' ';
+        $tallX = "\x1F\x4B\x42" . Videotex::SIZE_DOUBLE_HEIGHT . 'X';
+
+        yield 'a delimiter' => [Videotex::SIZE_DOUBLE_HEIGHT . $blue, '', [Color::Blue, null]];
+        yield 'a space' => [Videotex::SIZE_DOUBLE_HEIGHT . ' ', '', [Color::Black, null]];
+        yield 'a delimiter, drawn over from the row below' => [
+            Videotex::SIZE_DOUBLE_HEIGHT . $blue,
+            $tallX,
+            [Color::Blue, null],
+        ];
+        yield 'a space, drawn over from the row below' => [
+            Videotex::SIZE_DOUBLE_HEIGHT . ' ',
+            $tallX,
+            [Color::Black, null],
+        ];
+        yield 'a double-size delimiter' => [Videotex::SIZE_DOUBLE . $blue, '', [Color::Blue, Color::Blue]];
+        yield 'a double-size space' => [Videotex::SIZE_DOUBLE . ' ', '', [Color::Black, Color::Black]];
     }
 
+    /**
+     * @param array{?Color, ?Color} $backgrounds
+     */
     #[DataProvider('tallDelimiters')]
-    public function testTallDelimiterShowsItsTopHalfOnTheRowAbove(string $space, Color $background): void
-    {
-        $screen = Screen::of(
-            new Vdt("\x1F\x4A\x42" . Videotex::SIZE_DOUBLE_HEIGHT . $space . Videotex::SIZE_NORMAL . '   '),
-        );
+    public function testTallDelimiterShowsItsTopHalfOnTheRowAbove(
+        string $space,
+        string $after,
+        array $backgrounds,
+    ): void {
+        $screen = Screen::of(new Vdt("\x1F\x4A\x42{$space}" . Videotex::SIZE_NORMAL . "   {$after}"));
 
-        self::assertSame($background, $screen->cell(9, col: 2)?->attributes->background());
+        self::assertSame($backgrounds, [
+            $screen->cell(9, col: 2)?->attributes->background(),
+            $screen->cell(9, col: 3)?->attributes->background(),
+        ]);
     }
 
     public function testClearLineClearsUpToTheLastColumn(): void
