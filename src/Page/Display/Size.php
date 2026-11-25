@@ -27,6 +27,15 @@ enum Size: string
     }
 
     /**
+     * Videotex attribute for this size one column wide, its height kept: normal size (ESC L)
+     * in normal size and double width, double height (ESC M) in double height and double size
+     */
+    public function narrowedToVdt(): Vdt
+    {
+        return new Vdt($this->attribute()->narrowed()->code());
+    }
+
+    /**
      * Number of columns taken by a character of this size (Attributes::width())
      */
     public function width(): int

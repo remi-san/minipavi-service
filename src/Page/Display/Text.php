@@ -80,14 +80,18 @@ final readonly class Text implements Element
 
     /**
      * What is written after the text, from column next, characters charWidth columns wide:
-     * filled, the row cleared on the background color; otherwise, with a background color, a
+     * filled, the row cleared on the background color, at normal width, as a Minitel clears
+     * it with a space per column in the cursor's size, which, two columns wide, would wrap
+     * onto the next row (two in double size); otherwise, with a background color, a
      * space on black ending it, when the space fits whole on the row. Nothing when the text
      * ends in or past the last column, the cursor being then on the next row
      */
     private function after(int $next, int $charWidth): Vdt
     {
         if ($this->fill) {
-            return $next > ScreenSize::COLS ? new Vdt() : new Vdt(Videotex::CLEAR_LINE);
+            return $next > ScreenSize::COLS
+                ? new Vdt()
+                : Vdt::join($this->size?->narrowedToVdt() ?? new Vdt(), new Vdt(Videotex::CLEAR_LINE));
         }
         if ($this->bg === null || ($next + $charWidth - 1) > ScreenSize::COLS) {
             return new Vdt();
