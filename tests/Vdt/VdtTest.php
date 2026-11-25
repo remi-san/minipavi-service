@@ -11,6 +11,7 @@ use MiniPaviService\Minitel\ScreenSize;
 use MiniPaviService\Tests\Vdt\Screen\ScreenTest;
 use MiniPaviService\Vdt\Offset;
 use MiniPaviService\Vdt\Screen\Cell;
+use MiniPaviService\Vdt\Screen\Part;
 use MiniPaviService\Vdt\Screen\Screen;
 use MiniPaviService\Vdt\Screen\Zone;
 use MiniPaviService\Vdt\Vdt;
@@ -333,16 +334,10 @@ final class VdtTest extends TestCase
             -1,
             "\x1F\x40\x41   \x1F\x40\x41X",
         ];
-        // A double-height blue delimiter on row 10, drawn over there by a tall X from row 11:
-        // its top half, on row 9, still shows it, so it is written (Screen::of() doesn't show
-        // that top half, #151)
-        yield 'a tall delimiter drawn over on its row only' => [
-            "\x1F\x4A\x42\x1B\x4D\x1B\x54 \x1B\x4C   \x1F\x4B\x42\x1B\x4DX",
-            0,
-            "\x1F\x4A\x42\x1B\x4D\x1B\x54 \x1B\x4C   \x1F\x4B\x42\x1B\x4DX",
-        ];
         // A clear line's delimiter drawn over by a double-height space, whose bottom half a tall
-        // X from row 11 draws over: a clear line starting no zone
+        // X from row 11 draws over: a clear line starting no zone. The screen would be the
+        // same with the delimiter written, as the tall space draws over it: only the bytes
+        // show that none is
         yield 'a clear line, its delimiter drawn over by a tall space' => [
             "\x1F\x4A\x41\x1B\x52\x18\x1F\x4A\x41\x1B\x4D \x1F\x4B\x41\x1B\x4DX",
             0,
@@ -395,39 +390,6 @@ final class VdtTest extends TestCase
         yield 'over a character' => ["\x1F\x4A\x41\x1B\x52 A\x1F\x4A\x42 ", -1, "\x1F\x4A\x41A\x1F\x4A\x41\x1B\x52 "];
         // A masked zone, then column 2 empty: the masking runs past it, up to A
         yield 'after an empty cell' => ["\x1F\x4A\x41\x1B\x58 \x1F\x4A\x43 A", -1, "\x1F\x4A\x42\x1B\x58 A"];
-        // Tall cells (pinned as written: Screen::of() doesn't show their top halves, #151)
-        // ESC M ESC R, a green double-height delimiter, then tall spaces: the delimiter in
-        // column 2 tall too, its top half in the same zone
-        yield 'in a tall cell' => ["\x1F\x4A\x41\x1B\x4D\x1B\x52    ", -1, "\x1F\x4A\x41\x1B\x4D\x1B\x52   "];
-        // ESC R, then a double-height blue delimiter in column 2 and tall spaces, a tall X from
-        // row 11 drawn over column 2 on row 10: the blue delimiter is written (row 9 shows its
-        // top half), then the first tall space, and a green delimiter at normal height over its
-        // bottom half, which leaves its blue top half on row 9 (a tall one would turn it green)
-        yield 'over the bottom half of a tall cell whose top half shows another zone' => [
-            "\x1F\x4A\x41\x1B\x52 \x1B\x4D\x1B\x54    \x1F\x4B\x42\x1B\x4DX",
-            -1,
-            "\x1F\x4A\x41\x1B\x4D\x1B\x54  \x1F\x4A\x42\x1B\x52 \x1B\x4D  \x1F\x4B\x41\x1B\x4DX",
-        ];
-        // ESC Q, a red delimiter, then a tall B and a tall space, whose top halves, on row 9,
-        // are in no zone: the red delimiter at normal height over the tall space's bottom half
-        yield 'over the bottom half of a tall cell whose top half shows no zone' => [
-            "\x1F\x4A\x41\x1B\x51 \x1B\x4DB \x1B\x52AA",
-            -1,
-            "\x1F\x4A\x41\x1B\x4DB \x1F\x4A\x42\x1B\x51 \x1B\x4DAA",
-        ];
-        // The same in double size: the delimiter double width, in the two columns of the space
-        yield 'over the bottom half of a double-size cell' => [
-            "\x1F\x4A\x41\x1B\x51 \x1B\x4FB \x1B\x52AA",
-            -1,
-            "\x1F\x4A\x41\x1B\x4FB \x1F\x4A\x43\x1B\x4E\x1B\x51 \x1B\x4FAA",
-        ];
-        // The same with normal-height spaces after the blue delimiter: the green zone starts
-        // again in column 3, the blue delimiter written too
-        yield 'after a tall delimiter drawn over on its row only' => [
-            "\x1F\x4A\x41\x1B\x52 \x1B\x4D\x1B\x54 \x1B\x4C   \x1F\x4B\x42\x1B\x4DX",
-            -1,
-            "\x1F\x4A\x41\x1B\x4D\x1B\x54 \x1B\x4C\x1B\x52   \x1F\x4B\x41\x1B\x4DX",
-        ];
         // CAN's zone is erased by a clear screen, not drawn over: it starts again
         yield 'erased' => ["\x1F\x4A\x41\x1B\x52\x18\x0C", -2, "\x1F\x4A\x41\x1B\x52 \x12\x65\x0C"];
         yield 'after a clear screen' => ["\x0C\x1F\x4A\x41\x1B\x52\x18", -2, "\x0C\x1F\x4A\x41\x1B\x52 \x12\x65"];
@@ -468,6 +430,52 @@ final class VdtTest extends TestCase
     public function testOffsetShowsTheZonesTheColumnsOffTheScreenFinallyLeave(string $drawn, int $x): void
     {
         self::assertScreenMoved(new Vdt("\x1F\x4A\x41{$drawn}"), $x, y: 0);
+    }
+
+    /**
+     * Rows 10 with tall cells, moved left or kept in place: the row above, 9, shows what their
+     * top halves show, as in MiniPavi's emulator (#126, #151)
+     *
+     * @return iterable<string, array{string, int}> what is drawn, and x
+     */
+    public static function zonesOfTallCells(): iterable
+    {
+        // A double-height blue delimiter on row 10, drawn over there by a tall X from row 11:
+        // its top half, on row 9, still shows it
+        yield 'a tall delimiter drawn over on its row only' => [
+            "\x1F\x4A\x42\x1B\x4D\x1B\x54 \x1B\x4C   \x1F\x4B\x42\x1B\x4DX",
+            0,
+        ];
+        // The same with ESC R before it: the green zone starts again in column 3
+        yield 'after a tall delimiter drawn over on its row only' => [
+            "\x1F\x4A\x41\x1B\x52 \x1B\x4D\x1B\x54 \x1B\x4C   \x1F\x4B\x42\x1B\x4DX",
+            -1,
+        ];
+        // ESC M ESC R, a green double-height delimiter, then tall spaces: their zone starts
+        // again in column 2, on rows 9 and 10
+        yield 'in a tall cell' => ["\x1F\x4A\x41\x1B\x4D\x1B\x52    ", -1];
+        // ESC R, then a double-height blue delimiter in column 2 and tall spaces, a tall X from
+        // row 11 drawn over column 2 on row 10: row 9 shows the blue zone, row 10 the green one
+        // from column 3 (Offset writes the green delimiter at normal height, over the bottom
+        // half of a tall space, leaving its blue top half on row 9)
+        yield 'over the bottom half of a tall cell whose top half shows another zone' => [
+            "\x1F\x4A\x41\x1B\x52 \x1B\x4D\x1B\x54    \x1F\x4B\x42\x1B\x4DX",
+            -1,
+        ];
+        // ESC Q, a red delimiter, then a tall B and a tall space, whose top halves, on row 9,
+        // are in no zone
+        yield 'over the bottom half of a tall cell whose top half shows no zone' => [
+            "\x1F\x4A\x41\x1B\x51 \x1B\x4DB \x1B\x52AA",
+            -1,
+        ];
+        // The same in double size
+        yield 'over the bottom half of a double-size cell' => ["\x1F\x4A\x41\x1B\x51 \x1B\x4FB \x1B\x52AA", -1];
+    }
+
+    #[DataProvider('zonesOfTallCells')]
+    public function testOffsetShowsTheZonesOfTallCellsOnTheRowAbove(string $drawn, int $x): void
+    {
+        self::assertScreenMoved(new Vdt($drawn), $x, y: 0);
     }
 
     public function testOffsetWritesAClearLineMovedLeftAsSpaces(): void
@@ -684,7 +692,9 @@ final class VdtTest extends TestCase
      * drawn. A double-width character that would be partly off the screen is not drawn at
      * all. On a row moved left, a zone whose delimiter goes off the screen can only start
      * again at a space (Writer): on a row whose text space went off the screen, the cells
-     * before its first one left show what they do without it (withoutZoneFromOffTheScreen())
+     * before its first one left show what they do without it (withoutZoneFromOffTheScreen()).
+     * The bottom half of a space is compared as the space at normal height it shows as
+     * (asShown())
      */
     private static function assertScreenMoved(Vdt $original, int $x, int $y): void
     {
@@ -718,9 +728,25 @@ final class VdtTest extends TestCase
                         self::withoutZoneFromOffTheScreen($actual),
                     ];
                 }
-                self::assertEquals($expected, $actual, "row {$row}, column {$col}");
+                self::assertEquals(self::asShown($expected), self::asShown($actual), "row {$row}, column {$col}");
             }
         }
+    }
+
+    /**
+     * The cell as it shows: the bottom half of a text space shows as a space at normal height
+     * does, its background, and its underline at the bottom of the cell (MiniPavi's emulator,
+     * font-sprite.js, writeChar()). Offset writes such a space where a zone starts again over
+     * a tall space's bottom half, leaving its top half on the row above, which is compared as
+     * it is, as every other cell
+     */
+    private static function asShown(?Cell $cell): ?Cell
+    {
+        if ($cell?->bytes !== ' ' || !$cell->part->isBottom()) {
+            return $cell;
+        }
+
+        return new Cell($cell->bytes, $cell->attributes->flattened(), new Part($cell->part->isRight(), bottom: false));
     }
 
     /**
