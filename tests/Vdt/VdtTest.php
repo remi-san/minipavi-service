@@ -531,6 +531,34 @@ final class VdtTest extends TestCase
         yield 'an inverted double-width space' => ["\x1F\x4A\x41\x1B\x5D\x1BN XY", -1];
     }
 
+    /**
+     * Double-width and double-size characters other than a space moved left so that only their
+     * right half stays: the Minitel can't show a right half alone (a character is drawn from
+     * its left half, and a positioning in column 0 is ignored: MiniPavi's emulator, decoder.js,
+     * locate()), so it is written as a space one column wide, with its attributes, which shows
+     * its background (or its colour, inverted) without its glyph, rather than nothing, which
+     * would leave what was drawn there before it (#152)
+     *
+     * @return iterable<string, array{string, int}> what is drawn from row 10, column 1, and x
+     */
+    public static function wideCharactersMovedOffTheLeft(): iterable
+    {
+        // X and Y from column 1: column 1 blank, Y in columns 2 and 3
+        yield 'from column 1' => ["\x1F\x4A\x41\x1BNXY", -1];
+        // AB, then X over columns 1 and 2, then C: column 1 blank, not B
+        yield 'drawn over a character' => ["\x1F\x4A\x41AB\x1F\x4A\x41\x1BNXC", -1];
+        // Inverted: column 1 shows the foreground colour
+        yield 'inverted' => ["\x1F\x4A\x41AB\x1F\x4A\x41\x1B\x5D\x1BNXC", -1];
+        // Double size, over AB on rows 9 and 10: column 1 blank on both
+        yield 'double size' => ["\x1F\x49\x41AB\x1F\x4A\x41AB\x1F\x4A\x41\x1BOXC", -1];
+    }
+
+    #[DataProvider('wideCharactersMovedOffTheLeft')]
+    public function testOffsetWritesTheRightHalfOfAWideCharacterAsASpace(string $drawn, int $x): void
+    {
+        self::assertScreenMoved(new Vdt($drawn), $x, y: 0);
+    }
+
     #[DataProvider('wideSpacesMovedOffTheLeft')]
     public function testOffsetWritesTheRightHalfOfAWideSpaceAsANormalWidthSpace(string $drawn, int $x): void
     {
@@ -810,18 +838,20 @@ final class VdtTest extends TestCase
     }
 
     /**
-     * The screen drawn by the original content, moved by offset(x, y), is the original one,
-     * moved: every cell is found x columns right and y rows down, with the same character and
-     * attributes, except on row 0 (the status row), which stays as it is; nothing else is
-     * drawn. A double-width character moved partly off the screen on the right shows its left
-     * half in the last column, as the Minitel shows one written there (MiniPavi's emulator,
-     * decoder.js, printG0Char()); moved partly off on the left, the right half of a space
-     * shows as a normal-width space does (narrowed()), and the right half of another
-     * character, which the Minitel can't show alone, isn't compared. On a row moved left, a zone whose delimiter goes off the screen can only start
-     * again at a space (Writer): on a row whose text space went off the screen, the cells
-     * before its first one left show what they do without it (withoutZoneFromOffTheScreen()).
-     * The bottom half of a space is compared as the space at normal height it shows as
-     * (asShown())
+     * The screen drawn by the original content, moved by offset(x, y), is the original one, moved:
+     * every cell is found x columns right and y rows down, with the same character and attributes,
+     * except on row 0 (the status row), which stays as it is; nothing else is drawn. A double-width
+     * character moved partly off the screen on the right shows its left half in the last column, as
+     * the Minitel shows one written there (MiniPavi's emulator, decoder.js, printG0Char()); moved
+     * partly off on the left, its right half shows as a space one column wide (narrowed()) does: a
+     * space's right half as it is, another character's without its glyph (its background, or its
+     * colour when inverted), as the Minitel can't show a right half alone. The right half the
+     * Minitel doesn't show of a character other than a space in the last column, moved left, isn't
+     * compared: it is written whole. On a row moved left, a zone whose delimiter goes off the
+     * screen can only start again at a space (Writer): on a row whose text space went off the
+     * screen, the cells before its first one left show what they do without it
+     * (withoutZoneFromOffTheScreen()). The bottom half of a space is compared as the space at
+     * normal height it shows as (asShown())
      */
     private static function assertScreenMoved(Vdt $original, int $x, int $y): void
     {
@@ -861,12 +891,11 @@ final class VdtTest extends TestCase
                     }
                 }
                 if ($fromRow >= 1 && $fromRow <= ScreenSize::ROWS && ($start + $x) < 1) {
+                    // The right half of a character, which the Minitel can't show alone: as a
+                    // space one column wide, with its attributes
                     $source = $before->cell($fromRow, $fromCol);
-                    if ($source?->bytes !== ' ') {
-                        // The right half of another character, which the Minitel can't show alone
-                        continue;
-                    }
-                    [$expected, $actual] = [self::narrowed($source), self::narrowed($actual)];
+                    $space = $source === null ? null : new Cell(' ', $source->attributes, $source->part);
+                    [$expected, $actual] = [self::narrowed($space), self::narrowed($actual)];
                 }
                 if (
                     $x < 0
