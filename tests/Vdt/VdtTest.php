@@ -506,6 +506,37 @@ final class VdtTest extends TestCase
         self::assertScreenMoved(new Vdt($drawn), $x, y: 0);
     }
 
+    /**
+     * Double-width and double-size spaces and delimiters moved left partly off the screen:
+     * the right half that stays shows as a space one column wide does, so it is written as
+     * one (at normal width, or double height for double size), and a delimiter's zone starts
+     * there (#152). The Minitel can't show a right half alone (MiniPavi's emulator,
+     * decoder.js, locate() ignores column 0, and a character is drawn from its left half)
+     *
+     * @return iterable<string, array{string, int}> what is drawn from row 10, column 1, and x
+     */
+    public static function wideSpacesMovedOffTheLeft(): iterable
+    {
+        yield 'a double-width space' => ["\x1F\x4A\x41\x1BN  X", -1];
+        // A red double-width delimiter in columns 1 and 2, then X: red from column 1
+        yield 'a double-width delimiter' => ["\x1F\x4A\x41\x1BN\x1BQ XY", -1];
+        // The same in double size: red from column 1 on rows 9 and 10
+        yield 'a double-size delimiter' => ["\x1F\x4A\x41\x1BO\x1BQ XY", -1];
+        // A red delimiter in column 1, then a double-width space in columns 2 and 3 and X:
+        // the red zone starts again in column 1, the space's right half
+        yield 'a double-width space restarting a zone' => ["\x1F\x4A\x41\x1BQ \x1BN XY", -2];
+        // The same in double size
+        yield 'a double-size space restarting a zone' => ["\x1F\x4A\x41\x1BQ \x1BO XY", -2];
+        // Inverted: the right half shows the foreground colour, as a normal-width space does
+        yield 'an inverted double-width space' => ["\x1F\x4A\x41\x1B\x5D\x1BN XY", -1];
+    }
+
+    #[DataProvider('wideSpacesMovedOffTheLeft')]
+    public function testOffsetWritesTheRightHalfOfAWideSpaceAsANormalWidthSpace(string $drawn, int $x): void
+    {
+        self::assertScreenMoved(new Vdt($drawn), $x, y: 0);
+    }
+
     public function testOffsetWritesAClearLineMovedLeftAsSpaces(): void
     {
         // Row 10: A, ESC Z, CAN from column 2, moved to column 1: its delimiter, then spaces
@@ -719,7 +750,9 @@ final class VdtTest extends TestCase
      * attributes, except on row 0 (the status row), which stays as it is; nothing else is
      * drawn. A double-width character moved partly off the screen on the right shows its left
      * half in the last column, as the Minitel shows one written there (MiniPavi's emulator,
-     * decoder.js, printG0Char()). On a row moved left, a zone whose delimiter goes off the screen can only start
+     * decoder.js, printG0Char()); moved partly off on the left, the right half of a space
+     * shows as a normal-width space does (narrowed()), and the right half of another
+     * character, which the Minitel can't show alone, isn't compared. On a row moved left, a zone whose delimiter goes off the screen can only start
      * again at a space (Writer): on a row whose text space went off the screen, the cells
      * before its first one left show what they do without it (withoutZoneFromOffTheScreen()).
      * The bottom half of a space is compared as the space at normal height it shows as
@@ -743,10 +776,18 @@ final class VdtTest extends TestCase
                 $onScreen = $fromRow >= 1 && $fromRow <= ScreenSize::ROWS && ($start + $x) >= 1;
                 $expected = $onScreen ? $before->cell($fromRow, $fromCol) : null;
                 $actual = $after->cell($row, $col);
+                if ($fromRow >= 1 && $fromRow <= ScreenSize::ROWS && ($start + $x) < 1) {
+                    $source = $before->cell($fromRow, $fromCol);
+                    if ($source?->bytes !== ' ') {
+                        // The right half of another character, which the Minitel can't show alone
+                        continue;
+                    }
+                    [$expected, $actual] = [self::narrowed($source), self::narrowed($actual)];
+                }
                 if (
                     $x < 0
                     && self::losesADelimiterOffTheScreen($before, $fromRow, firstCol: 1 - $x)
-                    && self::isBeforeTheFirstSpace($before, $fromRow, $fromCol, firstCol: 1 - $x)
+                    && self::isBeforeTheFirstSpace($before, $fromRow, $start, firstCol: 1 - $x)
                 ) {
                     [$expected, $actual] = [
                         self::withoutZoneFromOffTheScreen($expected),
@@ -772,6 +813,25 @@ final class VdtTest extends TestCase
         }
 
         return new Cell($cell->bytes, $cell->attributes->flattened(), new Part($cell->part->isRight(), bottom: false));
+    }
+
+    /**
+     * The cell as a space one column wide shows: the right half of a double-width space shows
+     * as a space at normal width does, its background, and its underline across the cell
+     * (MiniPavi's emulator, font-sprite.js, writeChar()). Offset writes such a space where only
+     * the right half of a double-width one stays on the screen
+     */
+    private static function narrowed(?Cell $cell): ?Cell
+    {
+        if ($cell === null) {
+            return null;
+        }
+
+        return new Cell(
+            $cell->bytes,
+            $cell->attributes->narrowed(),
+            new Part(right: false, bottom: $cell->part->isBottom()),
+        );
     }
 
     /**
