@@ -97,9 +97,9 @@ final readonly class HtmlRenderer
 
     /**
      * Style placing an element over the screen (e.g. an input field of the overlay) at a cell,
-     * length cells wide and a cell high, its border included, and above the screen's double
-     * height cells: all of the screen's geometry, kept with its CSS, so the element's own style
-     * needn't know it
+     * length cells wide and a cell high, its border included, and above the screen's cells:
+     * all of the screen's geometry, kept with its CSS, so the element's own style needn't
+     * know it
      *
      * @param Position $position the cell of the element's first character
      * @param int $length the element's width, in cells
