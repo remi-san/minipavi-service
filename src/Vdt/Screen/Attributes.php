@@ -193,7 +193,7 @@ final readonly class Attributes
     /**
      * These attributes, with a size that can be set on row: where ESC M and ESC O would be
      * discarded, double height becomes normal size and double size double width (ESC N is
-     * accepted there, CharacterSize::flattened()), so that a character written there takes
+     * accepted on row 1, CharacterSize::flattened()), so that a character written there takes
      * the columns it is given
      */
     public function writableOn(int $row): self

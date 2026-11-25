@@ -45,10 +45,20 @@ final class ScreenCells implements ScreenListener
         return array_map($cells->inZones(...), $cells->cells, array_keys($cells->cells));
     }
 
+    /**
+     * A character drawn at row, col: in each cell it covers (Zones::cells()), the part of it
+     * the cell shows (Part), as MiniPavi's emulator draws it (decoder.js, printG0Char()): a
+     * tall one's top half on the row above, over what is there; a wide one in the last
+     * column its left half only
+     */
     public function glyph(int $row, int $col, string $bytes, int $width, Attributes $attributes): void
     {
-        for ($i = 0; $i < $width && ($col + $i) <= ScreenSize::COLS; $i++) {
-            $this->cells[$row][$col + $i] = new Cell($bytes, $attributes);
+        foreach (Zones::cells($row, $col, $width, $attributes->height()) as [$cellRow, $cellCol]) {
+            if ($cellCol > ScreenSize::COLS) {
+                continue;
+            }
+            $part = new Part(right: $cellCol > $col, bottom: $cellRow === $row && $attributes->height() > 1);
+            $this->cells[$cellRow][$cellCol] = new Cell($bytes, $attributes, $part);
         }
         $this->zones->draw($row, $col, $width, $attributes);
     }
@@ -59,12 +69,25 @@ final class ScreenCells implements ScreenListener
         $this->zones->delimiter($row, $col, $width, $attributes->height(), $zone);
     }
 
+    /**
+     * CAN at row, col, as MiniPavi's emulator prints it (decoder.js, clear("eol")): a space
+     * with these attributes for each column from col to the last, the first one a delimiter
+     * starting zone delimiter, if not null, each where the cursor goes after the one before
+     * (Cursor::advance()). So in double height they clear the row above too, and in double
+     * width they run on over the next row (two rows down in double size), as text wraps
+     */
     public function clearLine(int $row, int $col, Attributes $attributes, ?Zone $delimiter): void
     {
-        for ($cleared = $col; $cleared <= ScreenSize::COLS; $cleared++) {
-            $this->cells[$row][$cleared] = new Cell(' ', $attributes);
+        $width = $attributes->width();
+        $this->glyph($row, $col, bytes: ' ', width: $width, attributes: $attributes);
+        if ($delimiter !== null) {
+            $this->zones->delimiter($row, $col, $width, $attributes->height(), $delimiter);
         }
-        $this->zones->clearLine($row, $col, $attributes, $delimiter);
+        $cursor = Cursor::at($row, $col, $attributes);
+        for ($space = $col + 1; $space <= ScreenSize::COLS; $space++) {
+            $cursor->advance($width);
+            $this->glyph($cursor->row(), $cursor->col(), bytes: ' ', width: $width, attributes: $attributes);
+        }
     }
 
     public function clear(): void

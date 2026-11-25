@@ -10,7 +10,8 @@ use MiniPaviService\Vdt\Videotex;
 
 /**
  * The size of the characters: ESC L (normal), M (double height), N (double width) or O
- * (double size). The Minitel discards it in mosaic, and double height on rows 0 and 1.
+ * (double size). The Minitel discards it in mosaic, any size on row 0, and double height on
+ * row 1.
  *
  * isTall() and isWide() each match over the cases: what each size is, said by the size
  * itself.
@@ -58,9 +59,13 @@ enum CharacterSize: string implements Attribute
         return Videotex::ESC . $this->value;
     }
 
+    /**
+     * Whether the Minitel accepts this size on row: no size on row 0, the status row, and no
+     * double height on row 1 (MiniPavi's emulator, decoder.js, setSize())
+     */
     public function appliesOn(int $row): bool
     {
-        return !$this->isTall() || Attributes::allowsDoubleHeight($row);
+        return $row > 0 && (!$this->isTall() || Attributes::allowsDoubleHeight($row));
     }
 
     public function appliesInMosaic(): bool

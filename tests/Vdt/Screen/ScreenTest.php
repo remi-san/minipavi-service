@@ -365,24 +365,29 @@ final class ScreenTest extends TestCase
     }
 
     /**
+     * Every size but the normal one, which the Minitel discards on row 0 (MiniPavi's
+     * emulator, decoder.js, setSize(); double width checked by the tester on PR #156)
+     *
      * @return iterable<string, array{string}>
      */
-    public static function tallSizes(): iterable
+    public static function doubleSizes(): iterable
     {
         yield 'double height' => [Videotex::SIZE_DOUBLE_HEIGHT];
+        yield 'double width' => [Videotex::SIZE_DOUBLE_WIDTH];
         yield 'double size' => [Videotex::SIZE_DOUBLE];
     }
 
-    #[DataProvider('tallSizes')]
-    public function testDoubleHeightIsDiscardedOnRow0(string $size): void
+    #[DataProvider('doubleSizes')]
+    public function testSizeIsDiscardedOnRow0(string $size): void
     {
         $screen = Screen::of(new Vdt("\x1F\x40\x41{$size}ZY"));
 
         $cell = $screen->cell(0, col: 1) ?? self::fail('Nothing on row 0');
         self::assertSame('Z', $cell->bytes);
         self::assertFalse($cell->attributes->isDoubleHeight());
+        self::assertFalse($cell->attributes->isDoubleWidth());
         // Normal size: one column
-        self::assertSame('Y', $screen->cell(0, col: 2)?->bytes);
+        self::assertSame('ZY', substr($screen->line(0), offset: 0, length: 2));
     }
 
     /**
@@ -894,34 +899,34 @@ final class ScreenTest extends TestCase
         $row10 = static fn(int $col): string => "\x1F\x4A" . \chr(0x40 + $col);
 
         // The issue's two cases (seen by the tester on PR #91)
-        yield 'a background' => ["{$row9(5)}XYZ{$row10(4)}{$tall}{$blue} ", 9, '    BBB'];
-        yield 'masking' => ["{$row9(5)}MNO{$row10(4)}{$mask}{$tall} ", 9, '    MMM'];
-        yield 'underline' => ["{$row9(5)}UND{$row10(4)}{$tall}" . Videotex::UNDERLINE_ON . ' ', 9, '    UUU'];
+        yield 'a background' => ["{$row9(5)}XYZ{$row10(4)}{$tall}{$blue} ", 9, '   BBBB'];
+        yield 'masking' => ["{$row9(5)}MNO{$row10(4)}{$mask}{$tall} ", 9, '   .MMM'];
+        yield 'underline' => ["{$row9(5)}UND{$row10(4)}{$tall}" . Videotex::UNDERLINE_ON . ' ', 9, '   .UUU'];
         // Empty cells end the background, not the masking
         yield 'a background up to empty cells' => [
             "{$row9(5)}AB{$row9(10)}CD{$row10(4)}{$tall}{$blue} ",
             9,
-            '    BB   ..',
+            '   BBB   ..',
         ];
-        yield 'masking across empty cells' => ["{$row9(5)}EF{$row9(10)}GH{$row10(4)}{$tall}{$mask} ", 9, '    MM   MM'];
+        yield 'masking across empty cells' => ["{$row9(5)}EF{$row9(10)}GH{$row10(4)}{$tall}{$mask} ", 9, '   .MM   MM'];
         // Columns 4 and 5 of rows 9 and 10: P, drawn over by its top half, is in the zone
         yield 'a double-size delimiter' => [
             "{$row9(5)}PQRSTU{$row10(4)}" . Videotex::SIZE_DOUBLE . "{$blue} ",
             9,
-            '    BBBBBB',
+            '   BBBBBBB',
         ];
         // Q, R and S are text on row 9 too: the zone carries on over them to c, d and e
-        yield 'tall text after the delimiter' => ["{$row9(7)}cde{$row10(3)}{$tall}{$blue} QRS", 9, '      BBB'];
+        yield 'tall text after the delimiter' => ["{$row9(7)}cde{$row10(3)}{$tall}{$blue} QRS", 9, '  BBBBBBB'];
         // A space written on the row above afterwards is in the zone, as V after it
         yield 'a space written after it' => [
             "{$row9(5)}U{$row10(4)}{$tall}" . Videotex::UNDERLINE_ON . " {$row9(6)} V",
             9,
-            '    UUU',
+            '   .UUU',
         ];
         // Tall text, with no tall delimiter, is text on the row above too: x's top half
         // (column 5) carries the zone of row 9 on, over an empty cell, a mosaic cell (on green)
         // and an underlined zone's gap, and ends the zone of the delimiter it draws over
-        yield 'tall text over an empty cell' => ["{$row9(2)}{$blue} AB{$row9(6)}CD{$row10(5)}{$tall}x", 9, ' BBB BB'];
+        yield 'tall text over an empty cell' => ["{$row9(2)}{$blue} AB{$row9(6)}CD{$row10(5)}{$tall}x", 9, ' BBBBBB'];
         yield 'tall text over a mosaic cell' => [
             "{$row9(2)}{$red} AB"
                 . Videotex::MOSAIC_SET
@@ -934,7 +939,7 @@ final class ScreenTest extends TestCase
         yield 'tall text over an underlined gap' => [
             "{$row9(2)}" . Videotex::UNDERLINE_ON . " AB{$row9(6)}CD{$row10(5)}{$tall}x",
             9,
-            ' .UU UU',
+            ' .UUUUU',
         ];
         // The delimiter's space, in column 4, is shown out of a zone too
         yield 'tall text over a delimiter' => ["{$row9(2)}ab{$blue} cd{$row10(4)}{$tall}x", 9, ' .....'];
@@ -960,16 +965,16 @@ final class ScreenTest extends TestCase
         yield 'up to a delimiter on the row above' => [
             "{$row9(5)}ijkl{$green} nop{$row10(4)}{$tall}{$blue} ",
             9,
-            '    BBBBGGGG',
+            '   BBBBBGGGG',
         ];
         yield 'up to the end of the row above' => [
             "{$row9(30)}ABCDEFGHIJK{$row10(29)}{$tall}{$blue} ",
             9,
-            str_repeat(' ', times: 29) . str_repeat('B', times: 11),
+            str_repeat(' ', times: 28) . str_repeat('B', times: 12),
         ];
         // Its top half is on row 8: row 10 is below it
         yield 'not below' => ["{$row10(5)}XYZ{$row9(4)}{$tall}{$blue} ", 10, '    ...'];
-        // At normal size, CAN's delimiter is a cell high (a tall CAN is #141's)
+        // At normal size, CAN's delimiter is a cell high (a tall one is two: testTallClearLineStartsItsZoneOnTheRowAboveToo())
         yield 'not above a CAN delimiter' => ["{$row9(5)}XYZ{$row10(4)}{$blue}" . Videotex::CLEAR_LINE, 9, '    ...'];
         // Its own row, as before
         yield 'the delimiter row' => [
@@ -1049,6 +1054,93 @@ final class ScreenTest extends TestCase
         return $cells;
     }
 
+    public function testTallCharacterShowsItsTopHalfOnTheRowAbove(): void
+    {
+        // Rows 2 and 3 full of x and y, then ESC M and AB from row 3, column 1: their top
+        // halves are drawn over row 2's x, as in MiniPavi's emulator (#141)
+        $screen = Screen::of(
+            new Vdt("\x1F\x42\x41x\x12\x67\x1F\x43\x41y\x12\x67\x1F\x43\x41" . Videotex::SIZE_DOUBLE_HEIGHT . 'AB'),
+        );
+
+        self::assertSame('AB' . str_repeat('x', times: 38), $screen->line(2));
+        self::assertSame('AB' . str_repeat('y', times: 38), $screen->line(3));
+        $top = $screen->cell(2, col: 1) ?? self::fail('Nothing at row 2, column 1');
+        self::assertTrue($top->attributes->isDoubleHeight());
+        self::assertFalse($top->part->isBottom());
+        self::assertTrue($screen->cell(3, col: 1)?->part->isBottom());
+    }
+
+    public function testTopHalfIsOnTheZoneOfTheRowAbove(): void
+    {
+        // Row 3: x, then a zone on blue to the end of the row; ESC M and ABC from row 4,
+        // column 5: their top halves are on blue, their bottom halves on black (the emulator)
+        $screen = Screen::of(new Vdt(
+            "\x1F\x43\x41x"
+            . Videotex::backgroundColor(Color::Blue)
+            . ' '
+            . Videotex::CLEAR_LINE
+            . "\x1F\x44\x45"
+            . Videotex::SIZE_DOUBLE_HEIGHT
+            . 'ABC',
+        ));
+
+        self::assertSame('A', $screen->cell(3, col: 5)?->bytes);
+        self::assertSame(Color::Blue, $screen->cell(3, col: 5)?->attributes->background());
+        self::assertSame(Color::Black, $screen->cell(4, col: 5)?->attributes->background());
+    }
+
+    public function testDoubleSizeCharacterShowsAQuarterInEachOfItsCells(): void
+    {
+        $screen = Screen::of(new Vdt("\x1F\x46\x41" . Videotex::SIZE_DOUBLE . 'W'));
+
+        // Each cell: right, bottom (1 if so)
+        $parts = [];
+        foreach ([[5, 1], [5, 2], [6, 1], [6, 2]] as [$row, $col]) {
+            $cell = $screen->cell($row, $col) ?? self::fail("Nothing at row {$row}, column {$col}");
+            self::assertSame('W', $cell->bytes);
+            $parts[] = ($cell->part->isRight() ? '1' : '0') . ($cell->part->isBottom() ? '1' : '0');
+        }
+        self::assertSame(['00', '10', '01', '11'], $parts);
+        self::assertNull($screen->cell(5, col: 3));
+    }
+
+    public function testDoubleSizeCharacterInTheLastColumnShowsItsLeftQuarters(): void
+    {
+        // Row 6, column 40: ESC O and W, its top left quarter on row 5, its bottom left one
+        // on row 6, as in MiniPavi's emulator (#141); Z wraps two rows down
+        $screen = Screen::of(new Vdt("\x1F\x46\x68" . Videotex::SIZE_DOUBLE . 'WZ'));
+
+        $top = $screen->cell(5, col: 40) ?? self::fail('Nothing at row 5, column 40');
+        self::assertSame('W', $top->bytes);
+        self::assertFalse($top->part->isRight());
+        self::assertFalse($top->part->isBottom());
+        self::assertTrue($screen->cell(6, col: 40)?->part->isBottom());
+        self::assertSame('ZZ', substr($screen->line(8), offset: 0, length: 2));
+    }
+
+    /**
+     * A tall delimiter shows its top half on the row above, on its zone's background (#151,
+     * checked in MiniPavi's emulator by the tester on PR #150)
+     *
+     * @return iterable<string, array{string, Color}> the space drawn on row 10, column 2, and
+     *                                                the background of row 9, column 2
+     */
+    public static function tallDelimiters(): iterable
+    {
+        yield 'a delimiter' => [Videotex::backgroundColor(Color::Blue) . ' ', Color::Blue];
+        yield 'a space' => [' ', Color::Black];
+    }
+
+    #[DataProvider('tallDelimiters')]
+    public function testTallDelimiterShowsItsTopHalfOnTheRowAbove(string $space, Color $background): void
+    {
+        $screen = Screen::of(
+            new Vdt("\x1F\x4A\x42" . Videotex::SIZE_DOUBLE_HEIGHT . $space . Videotex::SIZE_NORMAL . '   '),
+        );
+
+        self::assertSame($background, $screen->cell(9, col: 2)?->attributes->background());
+    }
+
     public function testClearLineClearsUpToTheLastColumn(): void
     {
         // Row 10: a mosaic character on red in column 40, then from column 1, a blue
@@ -1059,6 +1151,135 @@ final class ScreenTest extends TestCase
         self::assertSame(' ', $last->bytes);
         self::assertFalse($last->attributes->isMosaic());
         self::assertSame(Color::Blue, $last->attributes->background());
+    }
+
+    /**
+     * CAN prints a space at the cursor, in its attributes, for each column from the cursor's
+     * to the last, as MiniPavi's emulator does (decoder.js, clear("eol"), checked there in
+     * #141): in double height, they clear the row above too; in double width, they run on
+     * over the next row, two rows down in double size, as text wraps
+     *
+     * @return iterable<string, array{string, array<int, string>}> what is sent after rows 1 to
+     *                                                              24 are filled (with a to x,
+     *                                                              by row), and the text
+     *                                                              of rows
+     */
+    public static function clearedLines(): iterable
+    {
+        $tall = Videotex::SIZE_DOUBLE_HEIGHT;
+        $wide = Videotex::SIZE_DOUBLE_WIDTH;
+        /** @param non-negative-int $count */
+        $spaces = static fn(int $count): string => str_repeat(' ', $count);
+        /** @param non-negative-int $count */
+        $row = static fn(string $char, int $count = 40): string => str_repeat($char, $count);
+
+        yield 'double height' => [
+            "\x1F\x43\x41{$tall}ABC" . Videotex::CLEAR_LINE,
+            [
+                1 => $row('a'),
+                2 => 'ABC' . $spaces(37),
+                3 => 'ABC' . $spaces(37),
+                4 => $row('d'),
+            ],
+        ];
+        yield 'double size' => [
+            "\x1F\x51\x41" . Videotex::SIZE_DOUBLE . 'AB' . Videotex::CLEAR_LINE,
+            [
+                15 => $row('o'),
+                16 => 'AABB' . $spaces(36),
+                17 => 'AABB' . $spaces(36),
+                18 => $spaces(36) . $row('r', count: 4),
+                19 => $spaces(36) . $row('s', count: 4),
+                20 => $row('t'),
+            ],
+        ];
+        yield 'double width' => [
+            "\x1F\x42\x41{$wide}AB" . Videotex::CLEAR_LINE,
+            [
+                2 => 'AABB' . $spaces(36),
+                3 => $spaces(36) . $row('c', count: 4),
+                4 => $row('d'),
+            ],
+        ];
+        // From column 2, the 20th space shows its left half in column 40, then 19 more
+        yield 'double width from an even column' => [
+            "\x1F\x47\x42{$wide}" . Videotex::CLEAR_LINE,
+            [
+                7 => 'g' . $spaces(39),
+                8 => $spaces(38) . $row('h', count: 2),
+            ],
+        ];
+        yield 'double width in the last column' => [
+            "\x1F\x56\x68{$wide}" . Videotex::CLEAR_LINE . 'Z',
+            [
+                22 => $row('v', count: 39) . 'Z',
+                23 => $row('w'),
+            ],
+        ];
+        // From row 24 to row 1, as text wraps
+        yield 'double width on the last row' => [
+            "\x1F\x58\x45{$wide}" . Videotex::CLEAR_LINE,
+            [
+                24 => $row('x', count: 4) . $spaces(36),
+                1 => $spaces(36) . $row('a', count: 4),
+                2 => $row('b'),
+            ],
+        ];
+    }
+
+    /**
+     * @param array<int, string> $lines
+     */
+    #[DataProvider('clearedLines')]
+    public function testClearLinePrintsASpaceForEachColumnLeft(string $sent, array $lines): void
+    {
+        $filled = '';
+        for ($row = 1; $row <= 24; $row++) {
+            $filled .= "\x1F" . chr(0x40 + $row) . "\x41" . chr(0x60 + $row) . Videotex::REPEAT . chr(0x40 + 39);
+        }
+
+        $screen = Screen::of(new Vdt($filled . $sent));
+
+        foreach ($lines as $row => $line) {
+            self::assertSame($line, $screen->line($row), "Row {$row}");
+        }
+    }
+
+    public function testClearLineOnTheStatusRowIsAtNormalSize(): void
+    {
+        // Row 0, column 30: ESC N, discarded there, underline waiting, CAN: a delimiter in
+        // column 30, then spaces a column wide in the underlined zone, as in MiniPavi's
+        // emulator (checked by the tester on PR #156)
+        $screen = Screen::of(
+            new Vdt("\x1F\x40\x5E" . Videotex::SIZE_DOUBLE_WIDTH . Videotex::UNDERLINE_ON . Videotex::CLEAR_LINE),
+        );
+
+        self::assertFalse($screen->cell(0, col: 30)?->attributes->isUnderlined());
+        self::assertTrue($screen->cell(0, col: 31)?->attributes->isUnderlined());
+        self::assertTrue($screen->cell(0, col: 40)?->attributes->isUnderlined());
+        self::assertSame(1, $screen->cell(0, col: 31)?->attributes->width());
+    }
+
+    public function testTallClearLineStartsItsZoneOnTheRowAboveToo(): void
+    {
+        // Row 8: x, then a zone on blue to the end of the row; from row 9, column 5: ESC M, a
+        // red background waiting, ABC and CAN, its first space a delimiter: on row 8 too, the
+        // rest of the row is red (checked in MiniPavi's emulator, #141)
+        $screen = Screen::of(new Vdt(
+            "\x1F\x48\x41x"
+            . Videotex::backgroundColor(Color::Blue)
+            . ' '
+            . Videotex::CLEAR_LINE
+            . "\x1F\x49\x45"
+            . Videotex::SIZE_DOUBLE_HEIGHT
+            . Videotex::backgroundColor(Color::Red)
+            . 'ABC'
+            . Videotex::CLEAR_LINE,
+        ));
+
+        self::assertSame('.BBBBBBRRRRR', self::zonesOfRow($screen, row: 8, length: 12));
+        self::assertSame('    ...RRRRR', self::zonesOfRow($screen, row: 9, length: 12));
+        self::assertSame(Color::Red, $screen->cell(8, col: 40)?->attributes->background());
     }
 
     public function testUnderlinedZoneEndsWithItsRow(): void

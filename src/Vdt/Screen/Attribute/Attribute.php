@@ -24,7 +24,7 @@ interface Attribute
 
     /**
      * Whether the Minitel applies this attribute on row: it discards double height (ESC M
-     * and ESC O) on rows 0 and 1 (Attributes::allowsDoubleHeight())
+     * and ESC O) on rows 0 and 1 (Attributes::allowsDoubleHeight()), and any size on row 0
      */
     public function appliesOn(int $row): bool;
 

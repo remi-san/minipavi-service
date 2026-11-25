@@ -106,22 +106,70 @@ final class HtmlRendererTest extends TestCase
         );
     }
 
-    public function testDoubleWidthTakesTwoColumns(): void
+    public function testDoubleWidthShowsAHalfInEachOfItsColumns(): void
     {
         $html = $this->render(Vdt::join(Vdt::position(new Position(row: 1)), new Vdt("\x1B\x4E"), Vdt::text('W')));
 
-        self::assertStringContainsString('class="c w2"', $html);
-        // The character's second column is not drawn again
-        self::assertSame(((ScreenSize::ROWS + 1) * ScreenSize::COLS) - 1, substr_count(
+        // Each cell in its own column, as MiniPavi's emulator draws them: the character
+        // twice as wide, each column showing its half
+        self::assertSame((ScreenSize::ROWS + 1) * ScreenSize::COLS, substr_count($html, needle: '<span class="c'));
+        self::assertStringContainsString(
+            '<span class="c w2" style="color:#ffffff;background:#000000"><span class="g">W</span></span>'
+            . '<span class="c w2 right" style="color:#ffffff;background:#000000"><span class="g">W</span></span>',
             $html,
-            needle: '<span class="c',
-        ));
+        );
+    }
+
+    public function testDoubleWidthInTheLastColumnShowsItsLeftHalfOnly(): void
+    {
+        // As in MiniPavi's emulator (#141): the row keeps its 40 columns, the next row is
+        // where it was
+        $html = $this->render(new Vdt("\x1F\x41\x68\x1B\x4EW\x1F\x42\x41Z"));
+
+        self::assertSame((ScreenSize::ROWS + 1) * ScreenSize::COLS, substr_count($html, needle: '<span class="c'));
+        self::assertStringContainsString(
+            '<span class="c w2" style="color:#ffffff;background:#000000"><span class="g">W</span></span>'
+            . '<span class="c" style="color:#ffffff;background:#000000">Z</span>',
+            $html,
+        );
+        self::assertStringNotContainsString('right', $html);
+    }
+
+    public function testDoubleHeightShowsItsTopHalfOnTheRowAbove(): void
+    {
+        // Row 1: a zone on blue; ESC M and x on row 2, column 3: its top half on blue, on
+        // row 1, its bottom half on black, as in MiniPavi's emulator (#141)
+        $html = $this->render(new Vdt("\x1F\x41\x41\x1B\x54 \x18\x1F\x42\x43\x1B\x4Dx"));
+
+        self::assertStringContainsString(
+            '<span class="c h2" style="color:#ffffff;background:#0000ff"><span class="g">x</span></span>',
+            $html,
+        );
+        self::assertStringContainsString(
+            '<span class="c h2 bottom" style="color:#ffffff;background:#000000"><span class="g">x</span></span>',
+            $html,
+        );
+    }
+
+    public function testEachPartShowsTheCharacterScaledFromItsCell(): void
+    {
+        $style = (new HtmlRenderer(HtmlRenderer::MINITEL_FONT))->style();
+
+        self::assertStringContainsString(
+            '.c { position: relative; white-space: pre; text-align: center; overflow: hidden; }',
+            $style,
+        );
+        self::assertStringContainsString('.w2 > .g { transform: scaleX(2); }', $style);
+        self::assertStringContainsString('.h2 > .g { transform: scaleY(2); }', $style);
+        self::assertStringContainsString('.w2.h2 > .g { transform: scale(2); }', $style);
+        self::assertStringContainsString('.right > .g { left: calc(-1 * var(--w)); }', $style);
+        self::assertStringContainsString('.bottom > .g { top: calc(-1 * var(--h)); }', $style);
     }
 
     public function testDoubleHeightBlinkAndUnderline(): void
     {
         // On row 2: row 1 has no double height
-        self::assertStringContainsString('class="c h2"', $this->render(new Vdt("\x1F\x42\x41\x1B\x4Dx")));
+        self::assertStringContainsString('class="c h2 bottom"', $this->render(new Vdt("\x1F\x42\x41\x1B\x4Dx")));
         self::assertStringContainsString('class="c blink"', $this->renderCell("\x1B\x48x"));
         // Underlined from a delimiter, a space (Screen\Zone)
         self::assertStringContainsString('class="c u"', $this->renderCell("\x1B\x5A x"));
@@ -152,7 +200,7 @@ final class HtmlRendererTest extends TestCase
         );
         // In double size too
         self::assertStringContainsString(
-            '<span class="c w2 h2 blink" style="color:#ffffff;background:#000000">x</span>',
+            '<span class="c w2 h2 bottom blink" style="color:#ffffff;background:#000000"><span class="g">x</span></span>',
             $this->render(new Vdt("\x1F\x42\x41\x1B\x4F\x1B\x48x")),
         );
         // And in mosaic, where inverse video doesn't apply

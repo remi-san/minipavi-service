@@ -857,16 +857,21 @@ echo Screen::of($moved)->preview();              // the screen, as text
   with `$overlay` over it), `style()` its CSS (the cell size in `--w`, `--h`, the Minitel font
   in `--font`) with the font embedded, and `place($position, $length)` the style placing an
   element over a cell, with all of its geometry (position, size, its border included, and
-  stacking above double-height cells), so the element's own style only says how it looks (it
+  stacking above the screen), so the element's own style only says how it looks (it
   is inline, so it takes over the element's own `position`, `height`, `box-sizing` and
   `z-index`); the page around it is the HTML client's (`Client\HtmlForm`, see
-  `HtmlClient` above).
-- **`Screen::of($vdt)`**: the `Screen` drawn by the content: a `Cell` (character and attributes) or
-  `null` per row and column. `line($row)` and `text()` give the text of a row and of the
-  screen, G2 characters decoded as a Minitel shows them (`é`, `£`, `½`, `Œ`...;
-  `Cell::text()`), and `preview()` the same rows framed and numbered, to read in a
-  terminal. `SYN` (0x16) starts a G2 character as `SS2` (0x19) does, as on a Minitel. An
-  accent (`SS2`, then grave, acute, circumflex, diaeresis or cedilla) takes the byte after
+  `HtmlClient` above). Each cell takes one column and one row, as in MiniPavi's emulator: a
+  character bigger than a cell (double width, height or size) is drawn at its size in each
+  cell it covers, which shows its part of it on that cell's own background (a tall
+  character's top half on the zone of the row above), and a double-width character in
+  column 40 shows its left half only.
+- **`Screen::of($vdt)`**: the `Screen` drawn by the content: a `Cell` (character, attributes,
+  and the `Part` of the character the cell shows) or `null` per row and column. `line($row)`
+  and `text()` give the text of a row and of the screen, G2 characters decoded as a Minitel
+  shows them (`é`, `£`, `½`, `Œ`...; `Cell::text()`), and `preview()` the same rows framed
+  and numbered, to read in a terminal. `SYN` (0x16) starts a G2 character as `SS2` (0x19)
+  does, as on a Minitel. An accent (`SS2`, then grave, acute, circumflex, diaeresis or
+  cedilla) takes the byte after
   it, whatever it is: a letter the Minitel has with that accent (`é`, not `á` or `ü`), or
   `_` otherwise, as for a G2 code it doesn't have (`ß`, `§`); a G2 character cut at the
   end of the content draws nothing. As on a Minitel, a positioning
@@ -874,7 +879,8 @@ echo Screen::of($moved)->preview();              // the screen, as text
   ignored, the cursor and its attributes staying as they were; in digits (`US`, then `0`,
   `1` or `2` and a digit), a positioning gives the row, the cursor in column 1 (`US 0 5`
   is row 5). `ESC M` (double height) and `ESC O` (double size) received on rows 0 and 1
-  are discarded, the size staying as it was; a double height already set when a cursor move
+  are discarded, and `ESC N` (double width) on row 0 (checked in MiniPavi's emulator,
+  #141), the size staying as it was; a double height already set when a cursor move
   (LF, VT) brings the cursor onto row 1 is kept, the character drawn over row 0. A tall text character (double height or
   double size) wrapping at the end of a row goes 2 rows down, cycling through rows 1 to 24
   (24 to 2, 23 to 1), and the text carries on along that row; a move right (HT) from column
@@ -894,17 +900,27 @@ echo Screen::of($moved)->preview();              // the screen, as text
   its background), its masking up to the next delimiter, mosaic and empty cells included.
   The delimiter itself is on the zone's background, not underlined. A tall character (double
   height or double size) is drawn on the row above too, where its top half is (row 0 above
-  row 1). A tall delimiter starts its zone along that row as well: `ESC M`, `ESC T` and a
-  space on row 6 colour the text after it on row 5, up to the next delimiter, mosaic or
-  empty cell. Tall text is text there: it carries that row's zone on over the empty or
-  mosaic cell it covers, and ends the zone of a delimiter it covers. To colour or underline
+  row 1), over what was there and on that row's zone (checked in MiniPavi's emulator, #141):
+  each cell it covers has the character, its `Part` saying which half (or, in double size,
+  quarter) it shows, so `line()` gives a tall character on both of its rows, as a wide one
+  in both of its columns. A double-width character in column 40 shows its left half there.
+  A tall delimiter starts its zone along that row as well: `ESC M`, `ESC T` and a space on
+  row 6 colour the text after it on row 5, up to the next delimiter, mosaic or empty cell.
+  Tall text is text there: it carries that row's zone on over the empty or mosaic cell it
+  covers, and ends the zone of a delimiter it covers. To colour or underline
   text, write the attribute, a space, then the text (as `Page\Display\Key` does): `ESC T`
   then `AB` draws `AB` on black. A positioning drops what waits, and SO ends the underline
   and applies the background colour waiting. In mosaic, the background colour applies at
   once, and masking waits too; a delimiter with no background colour waiting takes the last
   one applied. CAN clears with spaces, so while a zone attribute waits, the first one is a
   delimiter: `ESC T`, CAN colours the rest of the row, but text written then over its first
-  column draws over the delimiter, and the row is black. A mosaic character uses up nothing
+  column draws over the delimiter, and the row is black. As on a Minitel (checked in
+  MiniPavi's emulator, #141), CAN prints a space in the cursor's attributes for each column
+  from the cursor's to the last, the cursor staying where it is: in double height they clear
+  the row above too (a delimiter starting its zone there as well); in double width they are
+  two columns wide, so they run on over the next row (two rows down in double size), as
+  text wraps: `ESC N`, `AB` and CAN clear the rest of the row, then columns 1 to 36 of the
+  next one. A mosaic character uses up nothing
   that waits. Each `Cell` has the background, masking and (in text) underline its zone
   shows, which `HtmlRenderer` draws.
 - **`Vdt\Player::play($vdt, $listener)`** (internal, what `Screen::of()` and `Offset` are
