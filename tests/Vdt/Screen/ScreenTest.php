@@ -6,6 +6,9 @@ namespace MiniPaviService\Tests\Vdt\Screen;
 
 use MiniPaviService\Minitel\Color;
 use MiniPaviService\Minitel\Position;
+use MiniPaviService\Minitel\Span;
+use MiniPaviService\Minitel\Terminal;
+use MiniPaviService\Page\Display\Line;
 use MiniPaviService\Vdt\Screen\Attributes;
 use MiniPaviService\Vdt\Screen\Screen;
 use MiniPaviService\Vdt\Vdt;
@@ -267,6 +270,53 @@ final class ScreenTest extends TestCase
     public function testSynStartsAG2CharacterAsSs2Does(string $sent, string $shown): void
     {
         self::assertSame($shown, rtrim(Screen::of(new Vdt("\x1F\x41\x41{$sent}"))->line(1)));
+    }
+
+    /**
+     * The G0 characters the Minitel draws otherwise than in ASCII (MiniPavi's emulator, its
+     * sprite sheet font/ef9345-g0.png, #143), and the closest character to what it draws
+     *
+     * @return iterable<string, array{string, string}> the G0 character, and its text
+     */
+    public static function g0Characters(): iterable
+    {
+        yield '0x5E, an arrow up' => ["\x5E", '↑'];
+        yield '0x60, a line across the middle' => ["\x60", '─'];
+        yield '0x7B, a line down the left edge' => ["\x7B", '▏'];
+        yield '0x7D, a line down the right edge' => ["\x7D", '▕'];
+        yield '0x7E, a line across the top' => ["\x7E", '▔'];
+        yield '0x7F, a full block' => ["\x7F", '█'];
+        // As in ASCII
+        yield '0x5F, a line across the bottom' => ["\x5F", '_'];
+        yield '0x7C, a line down the middle' => ["\x7C", '|'];
+    }
+
+    #[DataProvider('g0Characters')]
+    public function testShowsTheG0CharactersAsTheMinitelDrawsThem(string $char, string $text): void
+    {
+        self::assertSame("{$text}!", rtrim(Screen::of(new Vdt("\x1F\x41\x41{$char}!"))->line(1)));
+    }
+
+    public function testShowsTheLinesOfAPageAsTheMinitelDrawsThem(): void
+    {
+        $page = Vdt::join(
+            (new Line(new Span(new Position(2, 1), 3), Line::TOP, Color::White))->toVdt(new Terminal()),
+            (new Line(new Span(new Position(3, 1), 3), Line::MIDDLE, Color::White))->toVdt(new Terminal()),
+            (new Line(new Span(new Position(4, 1), 3), Line::BOTTOM, Color::White))->toVdt(new Terminal()),
+        );
+
+        $screen = Screen::of($page);
+
+        self::assertSame(['___', '───', '▔▔▔'], [
+            rtrim($screen->line(2)),
+            rtrim($screen->line(3)),
+            rtrim($screen->line(4)),
+        ]);
+    }
+
+    public function testG0CharactersInMosaicAreMosaic(): void
+    {
+        self::assertSame('#####!', rtrim(Screen::of(new Vdt("\x1F\x41\x41\x0E\x5E\x60\x7B\x7E\x7F\x0F!"))->line(1)));
     }
 
     /**

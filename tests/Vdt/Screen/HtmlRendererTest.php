@@ -366,6 +366,16 @@ final class HtmlRendererTest extends TestCase
         );
     }
 
+    public function testOtherG0CharactersAreDrawnWithTheMinitelFont(): void
+    {
+        // As the emulator draws them: 0x5E an arrow up (Cell::text()), which the font has,
+        // 0x5F a line across the bottom, 0x7C a line down the middle
+        $cell = static fn(string $text) => (
+            '<span class="c" style="color:#ffffff;background:#000000">' . $text . '</span>'
+        );
+        self::assertSame(self::screenWith($cell('↑'), $cell('_'), $cell('|')), $this->renderCell("\x5E\x5F\x7C"));
+    }
+
     public function testMosaicCharactersOfTheG0LinesArePixels(): void
     {
         self::assertStringNotContainsString('class="l', $this->renderCell("\x0E\x60\x7B\x7D\x7E"));
