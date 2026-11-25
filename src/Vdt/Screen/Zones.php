@@ -61,16 +61,18 @@ final class Zones
     }
 
     /**
-     * CAN at row, col: spaces with these attributes up to the last column, the first one a
-     * delimiter starting zone delimiter, if not null
+     * CAN at row, col: spaces with these attributes up to the last column (draw()), the first
+     * one a delimiter starting zone delimiter, if not null (delimiter()): in double height, on
+     * the row above too, as the emulator prints them (decoder.js, clear("eol"); a CAN in
+     * double width is told as its spaces, Pen::clearLine())
      */
     public function clearLine(int $row, int $col, Attributes $attributes, ?Zone $delimiter): void
     {
         for ($cleared = $col; $cleared <= ScreenSize::COLS; $cleared++) {
-            $this->drawCell($row, $cleared, $attributes);
+            $this->draw($row, $cleared, width: $attributes->width(), attributes: $attributes);
         }
         if ($delimiter !== null) {
-            $this->delimiter($row, $col, width: 1, height: 1, zone: $delimiter);
+            $this->delimiter($row, $col, width: $attributes->width(), height: $attributes->height(), zone: $delimiter);
         }
     }
 

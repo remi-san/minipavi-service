@@ -179,12 +179,24 @@ final class OffsetWriter implements ScreenListener
     }
 
     /**
-     * CAN, moved: the cleared cells of the moved row stop at the screen's last column
+     * CAN, moved: the cleared cells of the moved row stop at the screen's last column. Moved
+     * left, they must stop before the columns that came from beyond the screen: its spaces
+     * are written one by one instead, each told to this writer as drawn (ClearedSpaces): the
+     * first a delimiter (delimiter(): written while it shows), the others as any space
+     * (glyph(): one where the zone of the columns gone off the screen starts again a
+     * delimiter, a tall one's top half in the zone of the row above)
      */
     public function clearLine(int $row, int $col, Attributes $attributes, ?Zone $delimiter): void
     {
-        // A delimiter drawn over: its zone doesn't last, nor is it written
-        $delimiter = $this->shown->shows($row, $col, width: 1, height: 1) ? $delimiter : null;
+        if ($row !== 0 && $this->x < 0) {
+            (new ClearedSpaces($row, $col, $attributes, $delimiter))->tellTo($this);
+            return;
+        }
+        // A delimiter drawn over, on its row and in double height the row above: its zone
+        // doesn't last, nor is it written
+        $delimiter = $this->shown->shows($row, $col, width: $attributes->width(), height: $attributes->height())
+            ? $delimiter
+            : null;
         $zone = $this->zoneBefore($row, $col);
         $this->zones->clearLine($row, $col, $attributes, $delimiter);
         if ($row === 0) {
@@ -193,32 +205,6 @@ final class OffsetWriter implements ScreenListener
         }
         $movedRow = $row + $this->y;
         if ($movedRow < 1 || $movedRow > ScreenSize::ROWS) {
-            return;
-        }
-        // CAN clears up to the last column: moved left, the cleared cells must stop before the
-        // columns that came from beyond the screen, so they are written as spaces instead (one
-        // where the zone of the columns gone off the screen starts again a delimiter)
-        if ($this->x < 0) {
-            for ($cleared = max(1, $col + $this->x); $cleared <= (ScreenSize::COLS + $this->x); $cleared++) {
-                $from = $cleared - $this->x;
-                if ($delimiter !== null && $from === $col) {
-                    $this->out->delimiter($movedRow, $cleared, width: 1, attributes: $attributes, zone: $delimiter);
-                    continue;
-                }
-                $restart = $this->restartAt($row, $row, $from, bytes: ' ', attributes: $attributes);
-                if ($restart !== null) {
-                    $this->delimiter($row, $from, width: 1, attributes: $attributes, zone: $restart);
-                    continue;
-                }
-                $this->out->glyph(
-                    $movedRow,
-                    $cleared,
-                    bytes: ' ',
-                    width: 1,
-                    attributes: $attributes,
-                    zone: $this->zoneBefore($row, $from),
-                );
-            }
             return;
         }
         if (($col + $this->x) <= ScreenSize::COLS) {
