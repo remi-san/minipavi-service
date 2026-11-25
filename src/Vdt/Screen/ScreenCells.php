@@ -53,13 +53,7 @@ final class ScreenCells implements ScreenListener
      */
     public function glyph(int $row, int $col, string $bytes, int $width, Attributes $attributes): void
     {
-        foreach (Zones::cells($row, $col, $width, $attributes->height()) as [$cellRow, $cellCol]) {
-            if ($cellCol > ScreenSize::COLS) {
-                continue;
-            }
-            $part = new Part(right: $cellCol > $col, bottom: $cellRow === $row && $attributes->height() > 1);
-            $this->cells[$cellRow][$cellCol] = new Cell($bytes, $attributes, $part);
-        }
+        $this->fill($row, $col, $bytes, $width, $attributes);
         $this->zones->draw($row, $col, $width, $attributes);
     }
 
@@ -72,17 +66,15 @@ final class ScreenCells implements ScreenListener
     /**
      * CAN at row, col, as MiniPavi's emulator prints it (decoder.js, clear("eol")): a space
      * with these attributes in each column from col to the last, the first one a delimiter
-     * starting zone delimiter, if not null. So in double height they clear the row above too
-     * (a CAN in double width is told as its spaces, Pen::clearLine())
+     * starting zone delimiter, if not null (Zones::clearLine()). So in double height they
+     * clear the row above too (a CAN in double width is told as its spaces, Pen::clearLine())
      */
     public function clearLine(int $row, int $col, Attributes $attributes, ?Zone $delimiter): void
     {
         for ($space = $col; $space <= ScreenSize::COLS; $space++) {
-            $this->glyph($row, $space, bytes: ' ', width: $attributes->width(), attributes: $attributes);
+            $this->fill($row, $space, bytes: ' ', width: $attributes->width(), attributes: $attributes);
         }
-        if ($delimiter !== null) {
-            $this->zones->delimiter($row, $col, width: 1, height: $attributes->height(), zone: $delimiter);
-        }
+        $this->zones->clearLine($row, $col, $attributes, $delimiter);
     }
 
     public function clear(): void
@@ -116,6 +108,21 @@ final class ScreenCells implements ScreenListener
         }
 
         return $cells;
+    }
+
+    /**
+     * Puts a character drawn at row, col in each cell it covers (Zones::cells()), the part of
+     * it the cell shows (Part): see glyph()
+     */
+    private function fill(int $row, int $col, string $bytes, int $width, Attributes $attributes): void
+    {
+        foreach (Zones::cells($row, $col, $width, $attributes->height()) as [$cellRow, $cellCol]) {
+            if ($cellCol > ScreenSize::COLS) {
+                continue;
+            }
+            $part = new Part(right: $cellCol > $col, bottom: $cellRow === $row && $attributes->height() > 1);
+            $this->cells[$cellRow][$cellCol] = new Cell($bytes, $attributes, $part);
+        }
     }
 
     /**
