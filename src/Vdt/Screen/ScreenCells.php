@@ -82,10 +82,11 @@ final class ScreenCells implements ScreenListener
         $width = $attributes->width();
         for ($space = $col; $space <= ScreenSize::COLS; $space++) {
             $this->glyph($cursor->row(), $cursor->col(), bytes: ' ', width: $width, attributes: $attributes);
-            if ($delimiter !== null && $space === $col) {
-                $this->zones->delimiter($row, $col, $width, $attributes->height(), $delimiter);
-            }
             $cursor->advance($width);
+        }
+        // The first space, which the others never draw over
+        if ($delimiter !== null) {
+            $this->zones->delimiter($row, $col, $width, $attributes->height(), $delimiter);
         }
     }
 
