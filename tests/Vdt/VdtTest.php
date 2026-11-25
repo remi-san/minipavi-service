@@ -10,7 +10,6 @@ use MiniPaviService\Minitel\Position;
 use MiniPaviService\Minitel\ScreenSize;
 use MiniPaviService\Tests\Vdt\Screen\ScreenTest;
 use MiniPaviService\Vdt\Offset;
-use MiniPaviService\Vdt\Screen\Attribute\Underlining;
 use MiniPaviService\Vdt\Screen\Cell;
 use MiniPaviService\Vdt\Screen\Part;
 use MiniPaviService\Vdt\Screen\Screen;
@@ -958,11 +957,10 @@ final class VdtTest extends TestCase
 
     /**
      * The cell as it shows: each half of a tall text space shows as a space at normal height
-     * does, its background, and the bottom half its underline at the bottom of the cell, the
-     * top half none, as the underline is drawn under the character only (MiniPavi's
-     * emulator, font-sprite.js, writeChar()). Offset writes such a space where a zone starts
-     * again over a tall space's bottom half, leaving its top half on the row above, or over
-     * its top half, leaving its bottom half (#153)
+     * does, its background, and the bottom half its underline at the bottom of the cell
+     * (MiniPavi's emulator, font-sprite.js, writeChar()). Offset writes such a space where a
+     * zone starts again over a tall space's bottom half, leaving its top half on the row
+     * above, or over its top half, leaving its bottom half (#153)
      */
     private static function asShown(?Cell $cell): ?Cell
     {
@@ -970,9 +968,6 @@ final class VdtTest extends TestCase
             return $cell;
         }
         $attributes = $cell->attributes->flattened();
-        if (!$cell->part->isBottom()) {
-            $attributes = $attributes->withUnderlining(Underlining::NoUnderline);
-        }
 
         return new Cell($cell->bytes, $attributes, new Part($cell->part->isRight(), bottom: false));
     }
