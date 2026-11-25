@@ -83,10 +83,7 @@ final class ShownScreen
     public function glyph(int $row, int $col, string $bytes, int $width, Attributes $attributes): void
     {
         $this->zones->draw($row, $col, $width, $attributes);
-        $space = $bytes === ' ' && !$attributes->isMosaic() ? [$row, $col] : null;
-        foreach (Zones::cells($row, $col, $width, $attributes->height()) as [$cellRow, $cellCol]) {
-            $this->spaces[$cellRow][$cellCol] = $space;
-        }
+        $this->cover($row, $col, $bytes, $width, $attributes);
     }
 
     /**
@@ -99,13 +96,26 @@ final class ShownScreen
     }
 
     /**
-     * CAN at row, col (Zones::clearLine()): spaces up to the last column
+     * CAN at row, col (Zones::clearLine()): spaces with these attributes up to the last
+     * column, on the row above too in double height
      */
     public function clearLine(int $row, int $col, Attributes $attributes, ?Zone $delimiter): void
     {
         $this->zones->clearLine($row, $col, $attributes, $delimiter);
         for ($cleared = $col; $cleared <= ScreenSize::COLS; $cleared++) {
-            $this->spaces[$row][$cleared] = $attributes->isMosaic() ? null : [$row, $cleared];
+            $this->cover($row, $cleared, ' ', width: $attributes->width(), attributes: $attributes);
+        }
+    }
+
+    /**
+     * Remembers, in each cell a character drawn at row, col covers (Zones::cells()), whether it
+     * shows a text space, and drawn where
+     */
+    private function cover(int $row, int $col, string $bytes, int $width, Attributes $attributes): void
+    {
+        $space = $bytes === ' ' && !$attributes->isMosaic() ? [$row, $col] : null;
+        foreach (Zones::cells($row, $col, $width, $attributes->height()) as [$cellRow, $cellCol]) {
+            $this->spaces[$cellRow][$cellCol] = $space;
         }
     }
 

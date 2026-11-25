@@ -673,6 +673,46 @@ final class VdtTest extends TestCase
         self::assertScreenMoved(new Vdt($drawn), $x, $y);
     }
 
+    /**
+     * CANs in double height on row 10, their spaces' top halves on row 9, the first one a
+     * delimiter drawn there too (MiniPavi's emulator, decoder.js, printDelimiter()): its top
+     * half still starts its zone on row 9 once its bottom half is drawn over, and the top
+     * halves on row 9 show row 9's zone (#162)
+     *
+     * @return iterable<string, array{string, int, int}> what is drawn, x and y
+     */
+    public static function tallClearLinesMoved(): iterable
+    {
+        // ESC Q, ESC M, CAN: a red tall delimiter in column 1, drawn over on row 10 by a
+        // double-width N: row 9 stays red
+        $drawnOverWide = "\x1F\x4A\x41\x1B\x51\x1B\x4D\x18\x1B\x4EN";
+        yield 'its delimiter drawn over on its row only, in place' => [$drawnOverWide, 0, 0];
+        yield 'its delimiter drawn over on its row only, right' => [$drawnOverWide, 2, 0];
+        yield 'its delimiter drawn over on its row only, down' => [$drawnOverWide, 1, 1];
+        // The same, drawn over by an X at normal size (ESC L)
+        yield 'its delimiter drawn over by a normal character' => ["\x1F\x4A\x41\x1B\x51\x1B\x4D\x18\x1B\x4CX", 0, 0];
+        // From column 2, after A: moved left, its delimiter in column 1
+        yield 'its delimiter drawn over on its row only, left' => [
+            "\x1F\x4A\x41A\x1B\x51\x1B\x4D\x18\x1B\x4EN",
+            -1,
+            0,
+        ];
+        // ESC W, a white delimiter at normal height in column 1, then a tall CAN from column 2:
+        // its top halves, on row 9, show no zone; moved left, the white zone starts again on
+        // row 10 only
+        yield 'after a delimiter at normal height, left' => ["\x1F\x4A\x41\x1B\x57 \x1B\x4D\x18", -5, 0];
+        yield 'after a delimiter at normal height, left and down' => ["\x1F\x4A\x41\x1B\x52 \x1B\x4D\x18", -5, 1];
+        // Row 9 green from column 1, then a tall CAN on row 10 from column 2: its top halves,
+        // on row 9, in the green zone, which starts again there once moved left
+        yield 'in the zone of the row above, left' => ["\x1F\x49\x41\x1B\x52\x18\x1F\x4A\x42\x1B\x4D\x18", -1, 0];
+    }
+
+    #[DataProvider('tallClearLinesMoved')]
+    public function testOffsetShowsTheTopHalvesOfATallClearLine(string $drawn, int $x, int $y): void
+    {
+        self::assertScreenMoved(new Vdt($drawn), $x, $y);
+    }
+
     public function testOffsetWritesAClearLineMovedLeftAsSpaces(): void
     {
         // Row 10: A, ESC Z, CAN from column 2, moved to column 1: its delimiter, then spaces
