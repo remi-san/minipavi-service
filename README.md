@@ -865,10 +865,11 @@ echo Screen::of($moved)->preview();              // the screen, as text
   `null` per row and column. `line($row)` and `text()` give the text of a row and of the
   screen, G2 characters decoded as a Minitel shows them (`é`, `£`, `½`, `Œ`...;
   `Cell::text()`), and `preview()` the same rows framed and numbered, to read in a
-  terminal. An accent (`SS2`, then grave, acute, circumflex, diaeresis or cedilla) takes
-  the byte after it, whatever it is: a letter the Minitel has with that accent (`é`, not
-  `á` or `ü`), or `_` otherwise, as for a G2 code it doesn't have (`ß`, `§`); a G2
-  character cut at the end of the content draws nothing. As on a Minitel, a positioning
+  terminal. `SYN` (0x16) starts a G2 character as `SS2` (0x19) does, as on a Minitel. An
+  accent (`SS2`, then grave, acute, circumflex, diaeresis or cedilla) takes the byte after
+  it, whatever it is: a letter the Minitel has with that accent (`é`, not `á` or `ü`), or
+  `_` otherwise, as for a G2 code it doesn't have (`ß`, `§`); a G2 character cut at the
+  end of the content draws nothing. As on a Minitel, a positioning
   (`US`) outside the screen (to a row other than 0 to 24, or a column other than 1 to 40) is
   ignored, the cursor and its attributes staying as they were; in digits (`US`, then `0`,
   `1` or `2` and a digit), a positioning gives the row, the cursor in column 1 (`US 0 5`
