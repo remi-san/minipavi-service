@@ -43,9 +43,6 @@ final readonly class HtmlRenderer
     // Pixels of a mosaic character, top left to bottom right, and the bit of each
     private const MOSAIC_BITS = [0x01, 0x02, 0x04, 0x08, 0x10, 0x40];
 
-    // All six pixels in mosaic, a full block in text too
-    private const FULL_BLOCK = "\x7F";
-
     // G0 characters the emulator draws as a line along an edge or across the middle of the
     // cell (its sprite sheet, font/ef9345-g0.png), which the Minitel font doesn't have: the
     // class of each line
@@ -256,7 +253,7 @@ final readonly class HtmlRenderer
     // in text too (the emulator's G0 character)
     private static function isPixels(string $bytes, Attributes $attributes): bool
     {
-        return $bytes === self::FULL_BLOCK || $attributes->isMosaic() && \strlen($bytes) === 1;
+        return $bytes === G0Characters::FULL_BLOCK || $attributes->isMosaic() && \strlen($bytes) === 1;
     }
 
     private static function color(Color $color): string

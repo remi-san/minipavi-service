@@ -13,9 +13,6 @@ use MiniPaviService\Vdt\Videotex;
  */
 final readonly class Cell
 {
-    // The character SUB is shown as: a full block in text, all six pixels in mosaic
-    private const FULL_BLOCK = "\x7F";
-
     public function __construct(
         public string $bytes,
         public Attributes $attributes,
@@ -56,6 +53,6 @@ final readonly class Cell
      */
     public function shownBytes(): string
     {
-        return $this->bytes === Videotex::SUB ? self::FULL_BLOCK : $this->bytes;
+        return $this->bytes === Videotex::SUB ? G0Characters::FULL_BLOCK : $this->bytes;
     }
 }

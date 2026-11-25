@@ -14,6 +14,10 @@ namespace MiniPaviService\Vdt\Screen;
  */
 final class G0Characters
 {
+    // 0x7F, a full block: all six pixels in mosaic too, and how the error character (SUB)
+    // is shown (Cell::shownBytes())
+    public const FULL_BLOCK = "\x7F";
+
     // The characters, by their code
     private const CHARACTERS = [
         "\x5E" => '↑',
@@ -21,7 +25,7 @@ final class G0Characters
         "\x7B" => '▏', // a line down its left edge
         "\x7D" => '▕', // a line down its right edge
         "\x7E" => '▔', // a line across its top
-        "\x7F" => '█',
+        self::FULL_BLOCK => '█',
     ];
 
     /**
