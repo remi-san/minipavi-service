@@ -245,9 +245,8 @@ final class ScreenTest extends TestCase
     /**
      * SYN (0x16) starts a G2 character as SS2 (0x19) does (MiniPavi's emulator, #139)
      *
-     * @return iterable<string, array{string, non-empty-string}> content (after positioning at
-     *                                                           row 1, column 1), and the
-     *                                                           start of row 1
+     * @return iterable<string, array{string, string}> content (after positioning at row 1,
+     *                                                 column 1), and row 1 shown
      */
     public static function g2AfterSyn(): iterable
     {
@@ -261,16 +260,13 @@ final class ScreenTest extends TestCase
         yield 'followed by SS2' => ["\x16\x19\x42e!", '_Be!'];
         yield 'SS2 followed by SYN' => ["\x19\x16\x42e!", '_Be!'];
         // Cut at the end of the content: nothing drawn yet
-        yield 'at the end of the content' => ["A\x16", 'A '];
+        yield 'at the end of the content' => ["A\x16", 'A'];
     }
 
-    /**
-     * @param non-empty-string $shown
-     */
     #[DataProvider('g2AfterSyn')]
     public function testSynStartsAG2CharacterAsSs2Does(string $sent, string $shown): void
     {
-        self::assertStringStartsWith($shown, Screen::of(new Vdt("\x1F\x41\x41{$sent}"))->line(1));
+        self::assertSame($shown, rtrim(Screen::of(new Vdt("\x1F\x41\x41{$sent}"))->line(1)));
     }
 
     /**
