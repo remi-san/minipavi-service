@@ -10,6 +10,7 @@ use MiniPaviService\Minitel\Position;
 use MiniPaviService\Minitel\ScreenSize;
 use MiniPaviService\Tests\Vdt\Screen\ScreenTest;
 use MiniPaviService\Vdt\Offset;
+use MiniPaviService\Vdt\Screen\Attribute\Underlining;
 use MiniPaviService\Vdt\Screen\Cell;
 use MiniPaviService\Vdt\Screen\Part;
 use MiniPaviService\Vdt\Screen\Screen;
@@ -390,6 +391,15 @@ final class VdtTest extends TestCase
         yield 'over a character' => ["\x1F\x4A\x41\x1B\x52 A\x1F\x4A\x42 ", -1, "\x1F\x4A\x41A\x1F\x4A\x41\x1B\x52 "];
         // A masked zone, then column 2 empty: the masking runs past it, up to A
         yield 'after an empty cell' => ["\x1F\x4A\x41\x1B\x58 \x1F\x4A\x43 A", -1, "\x1F\x4A\x42\x1B\x58 A"];
+        // ESC M ESC R, a green double-height delimiter, then tall spaces: the zone starts again
+        // in the first one, whose top half shows it too, as a tall delimiter (the screen
+        // would be the same with the space written, then delimiters at normal height over
+        // both halves: only the bytes show which is written)
+        yield 'in a tall space whose top half shows the zone' => [
+            "\x1F\x4A\x41\x1B\x4D\x1B\x52    ",
+            -1,
+            "\x1F\x4A\x41\x1B\x4D\x1B\x52   ",
+        ];
         // CAN's zone is erased by a clear screen, not drawn over: it starts again
         yield 'erased' => ["\x1F\x4A\x41\x1B\x52\x18\x0C", -2, "\x1F\x4A\x41\x1B\x52 \x12\x65\x0C"];
         yield 'after a clear screen' => ["\x0C\x1F\x4A\x41\x1B\x52\x18", -2, "\x0C\x1F\x4A\x41\x1B\x52 \x12\x65"];
@@ -470,6 +480,40 @@ final class VdtTest extends TestCase
         ];
         // The same in double size
         yield 'over the bottom half of a double-size cell' => ["\x1F\x4A\x41\x1B\x51 \x1B\x4FB \x1B\x52AA", -1];
+        // Row 9 green (ESC R, CAN), then row 10 as above: row 9's zone goes off the screen, and
+        // starts again in the top half of the tall space from row 10 (#153)
+        yield 'in the top half of a tall space from the row below' => [
+            "\x1F\x49\x41\x1B\x52\x18\x1F\x4A\x41\x1B\x51 \x1B\x4DB \x1B\x52AA",
+            -1,
+        ];
+        // The same, row 9 underlined (ESC Z): the top half shows no underline, nor does the
+        // delimiter written over it, as the zone before it isn't underlined
+        yield 'in the top half of a tall space from the row below, underlined' => [
+            "\x1F\x49\x41\x1B\x5A\x1B\x52\x18\x1F\x4A\x41\x1B\x51 \x1B\x4DB \x1B\x52AA",
+            -1,
+        ];
+        // Row 10 losing no zone: only row 9's starts again
+        yield 'in the top half of a tall space, its own row keeping its zone' => [
+            "\x1F\x49\x41\x1B\x52\x18\x1F\x4A\x42\x1B\x4DB AA",
+            -1,
+        ];
+        // Then spaces drawn after it on row 9, and on row 8 next to the column above it: each
+        // in the zone its row shows there
+        yield 'in the top half of a tall space, spaces drawn after it' => [
+            "\x1F\x49\x41\x1B\x52\x18\x1F\x4A\x41\x1B\x51 \x1B\x4DB \x1B\x52AA\x1F\x49\x48 \x1F\x48\x44 ",
+            -1,
+        ];
+        // In double size: a double-width delimiter over both columns of the top half
+        yield 'in the top half of a double-size space from the row below' => [
+            "\x1F\x49\x41\x1B\x52\x18\x1F\x4A\x41\x1B\x51 \x1B\x4FB \x1B\x52AA",
+            -1,
+        ];
+        // The same, moved so that only the right half of the space stays: a delimiter one
+        // column wide in column 1
+        yield 'in the right half of the top half of a double-size space' => [
+            "\x1F\x49\x41\x1B\x52\x18\x1F\x4A\x41\x1B\x51 \x1B\x4FB \x1B\x52AA",
+            -4,
+        ];
     }
 
     #[DataProvider('zonesOfTallCells')]
@@ -913,19 +957,24 @@ final class VdtTest extends TestCase
     }
 
     /**
-     * The cell as it shows: the bottom half of a text space shows as a space at normal height
-     * does, its background, and its underline at the bottom of the cell (MiniPavi's emulator,
-     * font-sprite.js, writeChar()). Offset writes such a space where a zone starts again over
-     * a tall space's bottom half, leaving its top half on the row above, which is compared as
-     * it is, as every other cell
+     * The cell as it shows: each half of a tall text space shows as a space at normal height
+     * does, its background, and the bottom half its underline at the bottom of the cell, the
+     * top half none, as the underline is drawn under the character only (MiniPavi's
+     * emulator, font-sprite.js, writeChar()). Offset writes such a space where a zone starts
+     * again over a tall space's bottom half, leaving its top half on the row above, or over
+     * its top half, leaving its bottom half (#153)
      */
     private static function asShown(?Cell $cell): ?Cell
     {
-        if ($cell?->bytes !== ' ' || !$cell->part->isBottom()) {
+        if ($cell?->bytes !== ' ' || $cell->attributes->height() === 1) {
             return $cell;
         }
+        $attributes = $cell->attributes->flattened();
+        if (!$cell->part->isBottom()) {
+            $attributes = $attributes->withUnderlining(Underlining::NoUnderline);
+        }
 
-        return new Cell($cell->bytes, $cell->attributes->flattened(), new Part($cell->part->isRight(), bottom: false));
+        return new Cell($cell->bytes, $attributes, new Part($cell->part->isRight(), bottom: false));
     }
 
     /**
