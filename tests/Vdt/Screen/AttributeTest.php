@@ -121,21 +121,22 @@ final class AttributeTest extends TestCase
 
     /**
      * A size is double height when tall, double width when wide; in a single row (on rows 0
-     * and 1), double height is normal size, and double size double width
+     * and 1), double height is normal size, and double size double width; in a single
+     * column, double width is normal size, and double size double height
      */
     public function testSizes(): void
     {
         $sizes = [];
         foreach (CharacterSize::cases() as $size) {
-            $sizes[$size->name] = [$size->isTall(), $size->isWide(), $size->flattened()];
+            $sizes[$size->name] = [$size->isTall(), $size->isWide(), $size->flattened(), $size->narrowed()];
         }
 
         self::assertSame(
             [
-                'Normal' => [false, false, CharacterSize::Normal],
-                'DoubleHeight' => [true, false, CharacterSize::Normal],
-                'DoubleWidth' => [false, true, CharacterSize::DoubleWidth],
-                'Double' => [true, true, CharacterSize::DoubleWidth],
+                'Normal' => [false, false, CharacterSize::Normal, CharacterSize::Normal],
+                'DoubleHeight' => [true, false, CharacterSize::Normal, CharacterSize::DoubleHeight],
+                'DoubleWidth' => [false, true, CharacterSize::DoubleWidth, CharacterSize::Normal],
+                'Double' => [true, true, CharacterSize::DoubleWidth, CharacterSize::DoubleHeight],
             ],
             $sizes,
         );

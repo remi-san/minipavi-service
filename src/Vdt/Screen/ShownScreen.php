@@ -53,8 +53,9 @@ final class ShownScreen
     /**
      * Where the zone the columns before first leave starts again on row, once moved left so
      * that first is its column 1, and that zone: at its first text space (that isn't a
-     * delimiter) drawn on row whose zone isn't the one the columns from first leave alone.
-     * Null if none is, nor is any needed
+     * delimiter) drawn on row whose zone isn't the one the columns from first leave alone,
+     * the column it is drawn at (before first for a double-width one whose right half only
+     * is from first). Null if none is, nor is any needed
      *
      * @return ?array{int, Zone} the column (not moved) and the zone
      */
@@ -67,7 +68,7 @@ final class ShownScreen
             $alone = $this->zones->after($alone, $row, $col);
             $space = $this->spaces[$row][$col] ?? null;
             if ($space !== null && $space[0] === $row && !$zone->showsAs($alone)) {
-                return [$col, $zone];
+                return [$space[1], $zone];
             }
         }
 

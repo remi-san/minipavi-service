@@ -478,6 +478,158 @@ final class VdtTest extends TestCase
         self::assertScreenMoved(new Vdt($drawn), $x, y: 0);
     }
 
+    /**
+     * Double-width and double-size cells moved right partly off the screen: their left half
+     * shows in the last column, as the Minitel shows a wide character written there
+     * (MiniPavi's emulator, decoder.js, printG0Char(), printDelimiter(): the cells past the
+     * last column aren't drawn), not nothing (#152)
+     *
+     * @return iterable<string, array{string, int}> what is drawn, and x
+     */
+    public static function wideCellsMovedOffTheRight(): iterable
+    {
+        // Row 10, column 36: X and Y in double width, Y's left half in column 40
+        yield 'double width, by 2' => ["\x1F\x4A\x64\x1BNXY", 2];
+        // X in columns 39 and 40, Y off the screen
+        yield 'double width, by 3' => ["\x1F\x4A\x64\x1BNXY", 3];
+        // Row 10, column 37: X in double size, its left half in column 40 of rows 9 and 10
+        yield 'double size' => ["\x1F\x4A\x65\x1BOX", 3];
+        // Row 10, column 39: a red double-width delimiter, then X, moved to column 40
+        yield 'a double-width delimiter' => ["\x1F\x4A\x67\x1BN\x1BQ X", 1];
+        // The same in double size
+        yield 'a double-size delimiter' => ["\x1F\x4A\x67\x1BO\x1BQ X", 1];
+    }
+
+    #[DataProvider('wideCellsMovedOffTheRight')]
+    public function testOffsetShowsTheLeftHalfOfAWideCellMovedIntoTheLastColumn(string $drawn, int $x): void
+    {
+        self::assertScreenMoved(new Vdt($drawn), $x, y: 0);
+    }
+
+    /**
+     * Double-width and double-size spaces and delimiters moved left partly off the screen:
+     * the right half that stays shows as a space one column wide does, so it is written as
+     * one (at normal width, or double height for double size), and a delimiter's zone starts
+     * there (#152). The Minitel can't show a right half alone (MiniPavi's emulator,
+     * decoder.js, locate() ignores column 0, and a character is drawn from its left half)
+     *
+     * @return iterable<string, array{string, int}> what is drawn from row 10, column 1, and x
+     */
+    public static function wideSpacesMovedOffTheLeft(): iterable
+    {
+        yield 'a double-width space' => ["\x1F\x4A\x41\x1BN  X", -1];
+        // A red double-width delimiter in columns 1 and 2, then X: red from column 1
+        yield 'a double-width delimiter' => ["\x1F\x4A\x41\x1BN\x1BQ XY", -1];
+        // The same in double size: red from column 1 on rows 9 and 10
+        yield 'a double-size delimiter' => ["\x1F\x4A\x41\x1BO\x1BQ XY", -1];
+        // A red delimiter in column 1, then a double-width space in columns 2 and 3 and X:
+        // the red zone starts again in column 1, the space's right half
+        yield 'a double-width space restarting a zone' => ["\x1F\x4A\x41\x1BQ \x1BN XY", -2];
+        // The same in double size
+        yield 'a double-size space restarting a zone' => ["\x1F\x4A\x41\x1BQ \x1BO XY", -2];
+        // Inverted: the right half shows the foreground colour, as a normal-width space does
+        yield 'an inverted double-width space' => ["\x1F\x4A\x41\x1B\x5D\x1BN XY", -1];
+    }
+
+    /**
+     * Double-width and double-size characters other than a space moved left so that only their
+     * right half stays: the Minitel can't show a right half alone (a character is drawn from
+     * its left half, and a positioning in column 0 is ignored: MiniPavi's emulator, decoder.js,
+     * locate()), so it is written as a space one column wide, with its attributes, which shows
+     * its background (or its colour, inverted) without its glyph, rather than nothing, which
+     * would leave what was drawn there before it (#152)
+     *
+     * @return iterable<string, array{string, int}> what is drawn from row 10, column 1, and x
+     */
+    public static function wideCharactersMovedOffTheLeft(): iterable
+    {
+        // X and Y from column 1: column 1 blank, Y in columns 2 and 3
+        yield 'from column 1' => ["\x1F\x4A\x41\x1BNXY", -1];
+        // AB, then X over columns 1 and 2, then C: column 1 blank, not B
+        yield 'drawn over a character' => ["\x1F\x4A\x41AB\x1F\x4A\x41\x1BNXC", -1];
+        // Inverted: column 1 shows the foreground colour
+        yield 'inverted' => ["\x1F\x4A\x41AB\x1F\x4A\x41\x1B\x5D\x1BNXC", -1];
+        // Double size, over AB on rows 9 and 10: column 1 blank on both
+        yield 'double size' => ["\x1F\x49\x41AB\x1F\x4A\x41AB\x1F\x4A\x41\x1BOXC", -1];
+    }
+
+    #[DataProvider('wideCharactersMovedOffTheLeft')]
+    public function testOffsetWritesTheRightHalfOfAWideCharacterAsASpace(string $drawn, int $x): void
+    {
+        self::assertScreenMoved(new Vdt($drawn), $x, y: 0);
+    }
+
+    #[DataProvider('wideSpacesMovedOffTheLeft')]
+    public function testOffsetWritesTheRightHalfOfAWideSpaceAsANormalWidthSpace(string $drawn, int $x): void
+    {
+        self::assertScreenMoved(new Vdt($drawn), $x, y: 0);
+    }
+
+    /**
+     * Double-width and double-size spaces and delimiters in the last column, which shows their
+     * left half only, moved left: that half is written as a space one column wide, and the
+     * column after it stays as it was, as in the source (#152)
+     *
+     * @return iterable<string, array{string, int}> what is drawn, and x
+     */
+    public static function wideSpacesCutByTheLastColumn(): iterable
+    {
+        // Row 10: a green zone from column 38, then a double-width space in column 40
+        yield 'a double-width space' => ["\x1F\x4A\x66\x1BR X\x1BN ", -2];
+        // A red double-width delimiter in column 40, moved to column 39: column 40 stays empty
+        yield 'a double-width delimiter' => ["\x1F\x4A\x68\x1BN\x1BQ ", -1];
+        // The same in double size, on rows 9 and 10
+        yield 'a double-size delimiter' => ["\x1F\x4A\x68\x1BO\x1BQ ", -3];
+        // Not moved: written as it is, its left half in column 40
+        yield 'a double-width delimiter in place' => ["\x1F\x4A\x68\x1BN\x1BQ ", 0];
+        // Another character keeps its width: its left half shows what the source's does (what
+        // its right half shows isn't compared, see assertScreenMoved())
+        yield 'a double-width character' => ["\x1F\x4A\x68\x1BNX", -2];
+    }
+
+    #[DataProvider('wideSpacesCutByTheLastColumn')]
+    public function testOffsetWritesTheLeftHalfOfAWideSpaceInTheLastColumnAsANormalWidthSpace(
+        string $drawn,
+        int $x,
+    ): void {
+        self::assertScreenMoved(new Vdt($drawn), $x, y: 0);
+    }
+
+    /**
+     * CAN in double width or double size: its spaces are two columns wide, so they run on over
+     * the next row (two rows down in double size), as text wraps (MiniPavi's emulator,
+     * decoder.js, clear("eol")). Moved, each space is where the source's is, moved: none
+     * runs on from the moved column, and the run-on part stays when the CAN's row goes off
+     * the screen (#152)
+     *
+     * @return iterable<string, array{string, int, int}> what is drawn, x and y
+     */
+    public static function wideClearLinesMoved(): iterable
+    {
+        // Row 10, column 1: spaces over rows 10 and 11
+        yield 'double width, in place' => ["\x1F\x4A\x41\x1BN\x18", 0, 0];
+        yield 'double width, right' => ["\x1F\x4A\x41\x1BN\x18", 1, 0];
+        yield 'double width, left' => ["\x1F\x4A\x41\x1BN\x18", -1, 0];
+        yield 'double width, two left' => ["\x1F\x4A\x41\x1BN\x18", -2, 0];
+        // Row 1: only its run-on part, on row 2, stays, moved onto row 1
+        yield 'double width, its row off the screen' => ["\x1F\x41\x41\x1BN\x18", 0, -1];
+        // Row 10, column 3, after AB: the spaces from column 3 to 40, then 1 to 36 of row 11
+        yield 'double width, after text, right' => ["\x1F\x4A\x41\x1BNAB\x18", 3, 1];
+        // ESC R: the first space a green delimiter
+        yield 'double width, its delimiter left' => ["\x1F\x4A\x41\x1BN\x1BR\x18", -2, 0];
+        yield 'double width, its delimiter right' => ["\x1F\x4A\x43\x1BN\x1BR\x18", 1, 0];
+        // Row 10, column 1, in double size: rows 9 to 12
+        yield 'double size, left' => ["\x1F\x4A\x41\x1BO\x18", -2, 0];
+        yield 'double size, right' => ["\x1F\x4A\x41\x1BO\x18", 1, 0];
+        yield 'double size, its delimiter, down' => ["\x1F\x4A\x41\x1BO\x1BQ\x18", -1, 1];
+    }
+
+    #[DataProvider('wideClearLinesMoved')]
+    public function testOffsetMovesEachSpaceOfAWideClearLine(string $drawn, int $x, int $y): void
+    {
+        self::assertScreenMoved(new Vdt($drawn), $x, $y);
+    }
+
     public function testOffsetWritesAClearLineMovedLeftAsSpaces(): void
     {
         // Row 10: A, ESC Z, CAN from column 2, moved to column 1: its delimiter, then spaces
@@ -676,8 +828,8 @@ final class VdtTest extends TestCase
     /**
      * The screen drawn by the moved content is the original one, moved: every cell is found
      * x columns right and y rows down, with the same character and attributes, except on
-     * row 0 (the status row), which stays as it is; nothing else is drawn. A double-width
-     * character that would be partly off the screen is not drawn at all.
+     * row 0 (the status row), which stays as it is; nothing else is drawn (see
+     * assertScreenMoved() for what shows of a double-width character partly off the screen)
      */
     #[DataProvider('offsets')]
     public function testOffsetDrawsTheSameScreenMoved(string $file, int $x, int $y): void
@@ -686,15 +838,20 @@ final class VdtTest extends TestCase
     }
 
     /**
-     * The screen drawn by the original content, moved by offset(x, y), is the original one,
-     * moved: every cell is found x columns right and y rows down, with the same character and
-     * attributes, except on row 0 (the status row), which stays as it is; nothing else is
-     * drawn. A double-width character that would be partly off the screen is not drawn at
-     * all. On a row moved left, a zone whose delimiter goes off the screen can only start
-     * again at a space (Writer): on a row whose text space went off the screen, the cells
-     * before its first one left show what they do without it (withoutZoneFromOffTheScreen()).
-     * The bottom half of a space is compared as the space at normal height it shows as
-     * (asShown())
+     * The screen drawn by the original content, moved by offset(x, y), is the original one, moved:
+     * every cell is found x columns right and y rows down, with the same character and attributes,
+     * except on row 0 (the status row), which stays as it is; nothing else is drawn. A double-width
+     * character moved partly off the screen on the right shows its left half in the last column, as
+     * the Minitel shows one written there (MiniPavi's emulator, decoder.js, printG0Char()); moved
+     * partly off on the left, its right half shows as a space one column wide (narrowed()) does: a
+     * space's right half as it is, another character's without its glyph (its background, or its
+     * colour when inverted), as the Minitel can't show a right half alone. The right half the
+     * Minitel doesn't show of a character other than a space in the last column, moved left, isn't
+     * compared: it is written whole. On a row moved left, a zone whose delimiter goes off the
+     * screen can only start again at a space (Writer): on a row whose text space went off the
+     * screen, the cells before its first one left show what they do without it
+     * (withoutZoneFromOffTheScreen()). The bottom half of a space is compared as the space at
+     * normal height it shows as (asShown())
      */
     private static function assertScreenMoved(Vdt $original, int $x, int $y): void
     {
@@ -711,17 +868,39 @@ final class VdtTest extends TestCase
                 }
                 [$fromRow, $fromCol] = [$row - $y, $col - $x];
                 [$start, $width] = $glyphs[$fromRow][$fromCol] ?? [$fromCol, 1];
-                $onScreen =
-                    $fromRow >= 1
-                    && $fromRow <= ScreenSize::ROWS
-                    && ($start + $x) >= 1
-                    && ($start + $x + $width - 1) <= ScreenSize::COLS;
+                $onScreen = $fromRow >= 1 && $fromRow <= ScreenSize::ROWS && ($start + $x) >= 1;
                 $expected = $onScreen ? $before->cell($fromRow, $fromCol) : null;
                 $actual = $after->cell($row, $col);
+                if ($x < 0 && $fromCol === ScreenSize::COLS && ($start + $width - 1) > ScreenSize::COLS) {
+                    // The left half of a double-width character in the last column, moved left
+                    $source = $before->cell($fromRow, $fromCol);
+                    if ($source?->bytes === ' ') {
+                        [$expected, $actual] = [self::narrowed($source), self::narrowed($actual)];
+                    }
+                }
+                if ($x < 0 && $fromCol === (ScreenSize::COLS + 1)) {
+                    $cut = $before->cell($fromRow, ScreenSize::COLS);
+                    if (
+                        $cut !== null
+                        && $cut->bytes !== ' '
+                        && $cut->attributes->width() === 2
+                        && !$cut->part->isRight()
+                    ) {
+                        // The right half the Minitel doesn't show of a character in the last column
+                        continue;
+                    }
+                }
+                if ($fromRow >= 1 && $fromRow <= ScreenSize::ROWS && ($start + $x) < 1) {
+                    // The right half of a character, which the Minitel can't show alone: as a
+                    // space one column wide, with its attributes
+                    $source = $before->cell($fromRow, $fromCol);
+                    $space = $source === null ? null : new Cell(' ', $source->attributes, $source->part);
+                    [$expected, $actual] = [self::narrowed($space), self::narrowed($actual)];
+                }
                 if (
                     $x < 0
                     && self::losesADelimiterOffTheScreen($before, $fromRow, firstCol: 1 - $x)
-                    && self::isBeforeTheFirstSpace($before, $fromRow, $fromCol, firstCol: 1 - $x)
+                    && self::isBeforeTheFirstSpace($before, $fromRow, $start, firstCol: 1 - $x)
                 ) {
                     [$expected, $actual] = [
                         self::withoutZoneFromOffTheScreen($expected),
@@ -747,6 +926,25 @@ final class VdtTest extends TestCase
         }
 
         return new Cell($cell->bytes, $cell->attributes->flattened(), new Part($cell->part->isRight(), bottom: false));
+    }
+
+    /**
+     * The cell as a space one column wide shows: the right half of a double-width space shows
+     * as a space at normal width does, its background, and its underline across the cell
+     * (MiniPavi's emulator, font-sprite.js, writeChar()). Offset writes such a space where only
+     * the right half of a double-width one stays on the screen
+     */
+    private static function narrowed(?Cell $cell): ?Cell
+    {
+        if ($cell === null) {
+            return null;
+        }
+
+        return new Cell(
+            $cell->bytes,
+            $cell->attributes->narrowed(),
+            new Part(right: false, bottom: $cell->part->isBottom()),
+        );
     }
 
     /**
@@ -791,9 +989,9 @@ final class VdtTest extends TestCase
 
     /**
      * For each cell of the screen a character takes: the first column of that character, and
-     * its width. A double-width text character takes two cells, read from the left: its second
-     * one only if it still shows it (a character drawn over it since takes that cell). A
-     * second half left alone, its first one drawn over, reads as a character of its own.
+     * its width. A double-width text character takes two cells: the cell showing its right
+     * half (Part) is in the column after its first one, even when its left half was drawn
+     * over since.
      *
      * @return array<int, array<int, array{int, int}>>
      */
@@ -803,13 +1001,10 @@ final class VdtTest extends TestCase
         for ($row = 0; $row <= ScreenSize::ROWS; $row++) {
             for ($col = 1; $col <= ScreenSize::COLS; $col++) {
                 $cell = $screen->cell($row, $col);
-                $width = $cell?->attributes->width() ?? 1;
-                $columns[$row][$col] = [$col, $width];
-                $next = $screen->cell($row, $col + 1);
-                if ($width === 2 && $next?->bytes === $cell?->bytes && $next?->attributes->width() === 2) {
-                    $columns[$row][$col + 1] = [$col, $width];
-                    $col++;
-                }
+                $columns[$row][$col] = [
+                    $cell?->part->isRight() === true ? $col - 1 : $col,
+                    $cell?->attributes->width() ?? 1,
+                ];
             }
         }
 

@@ -81,9 +81,9 @@ final class OffsetWriter implements ScreenListener
     {
         $zone = $this->zoneBefore($row, $col);
         $this->zones->draw($row, $col, $width, $attributes);
-        $moved = $this->moved($row, $col, $attributes);
+        $moved = $this->moved($row, $col, $bytes, $attributes);
         if ($moved !== null) {
-            [$row, $col, $attributes] = $moved;
+            [$row, $col, $bytes, $attributes] = $moved;
             $this->out->glyph($row, $col, $bytes, $attributes->width(), $attributes, $zone);
         }
     }
@@ -96,9 +96,9 @@ final class OffsetWriter implements ScreenListener
             return;
         }
         $this->zones->delimiter($row, $col, $width, $attributes->height(), $zone);
-        $moved = $this->moved($row, $col, $attributes);
+        $moved = $this->moved($row, $col, ' ', $attributes);
         if ($moved !== null) {
-            [$row, $col, $attributes] = $moved;
+            [$row, $col, , $attributes] = $moved;
             $this->out->delimiter($row, $col, $attributes->width(), $attributes, $zone);
         }
     }
@@ -116,16 +116,28 @@ final class OffsetWriter implements ScreenListener
     }
 
     /**
-     * Where a character drawn at row, col goes, and the attributes it is written with; null if
-     * off the screen. Row 0 stays where it is; the other rows stay within rows 1 to ROWS, the
+     * Where a character drawn at row, col goes, and the bytes and attributes it is written
+     * with; null if off the screen. Row 0 stays where it is; the other rows stay within rows 1 to ROWS, the
      * character written with a size the Minitel accepts on the row it is moved to (no ESC M or
-     * ESC O on row 1)
+     * ESC O on row 1). A double-width one moved into the last column is written there: the
+     * Minitel shows its left half (MiniPavi's emulator, decoder.js, printG0Char()). One moved
+     * left so that only its right half stays can't be shown (a character is drawn from its
+     * left half, and the Minitel ignores a positioning in column 0): a space is written in
+     * column 1 instead, one column wide (Attributes::narrowed()), with its attributes, which
+     * shows a space's right half as it is, and another character's background (or colour,
+     * inverted) without its glyph. A space drawn in the last column, of which the Minitel
+     * shows the left half only, moved left is written one column wide too: what it shows of
+     * it. Another character there is written whole
      *
-     * @return ?array{int, int, Attributes} the row, the column and the attributes
+     * @return ?array{int, int, string, Attributes} the row, the column, the bytes and the
+     *                                              attributes
      */
-    private function moved(int $row, int $col, Attributes $attributes): ?array
+    private function moved(int $row, int $col, string $bytes, Attributes $attributes): ?array
     {
         if ($row !== 0) {
+            if ($bytes === ' ' && $this->x < 0 && ($col + $attributes->width() - 1) > ScreenSize::COLS) {
+                $attributes = $attributes->narrowed();
+            }
             $row += $this->y;
             $col += $this->x;
             if ($row < 1 || $row > ScreenSize::ROWS) {
@@ -133,11 +145,14 @@ final class OffsetWriter implements ScreenListener
             }
             $attributes = $attributes->writableOn($row);
         }
-        if ($col < 1 || ($col + $attributes->width() - 1) > ScreenSize::COLS) {
+        if ($col < 1 && ($col + $attributes->width()) > 1) {
+            return [$row, 1, ' ', $attributes->narrowed()];
+        }
+        if ($col < 1 || $col > ScreenSize::COLS) {
             return null;
         }
 
-        return [$row, $col, $attributes];
+        return [$row, $col, $bytes, $attributes];
     }
 
     /**

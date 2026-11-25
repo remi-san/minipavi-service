@@ -216,6 +216,16 @@ final readonly class Attributes
     }
 
     /**
+     * These attributes, at normal width: double width becomes normal size and double size
+     * double height (CharacterSize::narrowed()), a character written with them taking one
+     * column of the two it would
+     */
+    public function narrowed(): self
+    {
+        return $this->copy(size: $this->size->narrowed());
+    }
+
+    /**
      * Columns taken by a character: double width only applies to text characters
      */
     public function width(): int

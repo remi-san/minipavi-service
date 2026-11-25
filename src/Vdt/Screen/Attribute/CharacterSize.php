@@ -54,6 +54,15 @@ enum CharacterSize: string implements Attribute
         return $this->isWide() ? self::DoubleWidth : self::Normal;
     }
 
+    /**
+     * This size in a single column: double width becomes normal size, and double size double
+     * height
+     */
+    public function narrowed(): self
+    {
+        return $this->isTall() ? self::DoubleHeight : self::Normal;
+    }
+
     public function code(): string
     {
         return Videotex::ESC . $this->value;
