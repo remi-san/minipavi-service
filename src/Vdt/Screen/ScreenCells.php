@@ -74,19 +74,21 @@ final class ScreenCells implements ScreenListener
      * with these attributes for each column from col to the last, the first one a delimiter
      * starting zone delimiter, if not null, each where the cursor goes after the one before
      * (Cursor::advance()). So in double height they clear the row above too, and in double
-     * width they run on over the next row (two rows down in double size), as text wraps
+     * width they run on over the next row (two rows down in double size), as text wraps. On
+     * row 0, where the cursor stays in the last column, they are drawn over it, after the
+     * first one
      */
     public function clearLine(int $row, int $col, Attributes $attributes, ?Zone $delimiter): void
     {
-        $cursor = Cursor::at($row, $col, $attributes);
         $width = $attributes->width();
-        for ($space = $col; $space <= ScreenSize::COLS; $space++) {
-            $this->glyph($cursor->row(), $cursor->col(), bytes: ' ', width: $width, attributes: $attributes);
-            $cursor->advance($width);
-        }
-        // The first space, which the others never draw over
+        $this->glyph($row, $col, bytes: ' ', width: $width, attributes: $attributes);
         if ($delimiter !== null) {
             $this->zones->delimiter($row, $col, $width, $attributes->height(), $delimiter);
+        }
+        $cursor = Cursor::at($row, $col, $attributes);
+        for ($space = $col + 1; $space <= ScreenSize::COLS; $space++) {
+            $cursor->advance($width);
+            $this->glyph($cursor->row(), $cursor->col(), bytes: ' ', width: $width, attributes: $attributes);
         }
     }
 

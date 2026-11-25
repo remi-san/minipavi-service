@@ -1240,6 +1240,20 @@ final class ScreenTest extends TestCase
         }
     }
 
+    public function testWideClearLineOnTheStatusRowDrawsItsLastSpacesInItsLastColumn(): void
+    {
+        // Row 0, column 39: ESC N, underline waiting, CAN. Its first space, a delimiter, is
+        // in columns 39 and 40; the cursor staying in the last column of row 0, the next
+        // space is drawn over column 40, a space in the underlined zone, as in MiniPavi's
+        // emulator (printDelimiter(), then printG0Char() over its right half)
+        $screen = Screen::of(
+            new Vdt("\x1F\x40\x67" . Videotex::SIZE_DOUBLE_WIDTH . Videotex::UNDERLINE_ON . Videotex::CLEAR_LINE),
+        );
+
+        self::assertFalse($screen->cell(0, col: 39)?->attributes->isUnderlined());
+        self::assertTrue($screen->cell(0, col: 40)?->attributes->isUnderlined());
+    }
+
     public function testTallClearLineStartsItsZoneOnTheRowAboveToo(): void
     {
         // Row 8: x, then a zone on blue to the end of the row; from row 9, column 5: ESC M, a
