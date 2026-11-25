@@ -48,7 +48,8 @@ final class ScreenCells implements ScreenListener
     public function glyph(int $row, int $col, string $bytes, int $width, Attributes $attributes): void
     {
         for ($i = 0; $i < $width && ($col + $i) <= ScreenSize::COLS; $i++) {
-            $this->cells[$row][$col + $i] = new Cell($bytes, $attributes);
+            $part = new Part(right: $i > 0, bottom: $attributes->height() > 1);
+            $this->cells[$row][$col + $i] = new Cell($bytes, $attributes, $part);
         }
         $this->zones->draw($row, $col, $width, $attributes);
     }
@@ -62,7 +63,7 @@ final class ScreenCells implements ScreenListener
     public function clearLine(int $row, int $col, Attributes $attributes, ?Zone $delimiter): void
     {
         for ($cleared = $col; $cleared <= ScreenSize::COLS; $cleared++) {
-            $this->cells[$row][$cleared] = new Cell(' ', $attributes);
+            $this->cells[$row][$cleared] = new Cell(' ', $attributes, new Part(right: false, bottom: false));
         }
         $this->zones->clearLine($row, $col, $attributes, $delimiter);
     }

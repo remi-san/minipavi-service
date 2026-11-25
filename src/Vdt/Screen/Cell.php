@@ -8,13 +8,15 @@ use MiniPaviService\Minitel\Color;
 use MiniPaviService\Vdt\Videotex;
 
 /**
- * Character shown in a cell of the Screen, with its attributes (see Attributes)
+ * Character shown in a cell of the Screen, with its attributes (see Attributes), and the part
+ * of it the cell shows (Part: a half, or a quarter, of a character bigger than a cell)
  */
 final readonly class Cell
 {
     public function __construct(
         public string $bytes,
         public Attributes $attributes,
+        public Part $part,
     ) {}
 
     /**
@@ -23,7 +25,7 @@ final readonly class Cell
      */
     public function inZone(Zone $zone): self
     {
-        return new self($this->bytes, $zone->shownWith($this->attributes));
+        return new self($this->bytes, $zone->shownWith($this->attributes), $this->part);
     }
 
     /**
