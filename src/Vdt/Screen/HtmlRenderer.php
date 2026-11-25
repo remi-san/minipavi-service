@@ -22,11 +22,13 @@ use MiniPaviService\Vdt\Videotex;
  * the other way round in inverse video). Text is drawn with a Minitel font
  * (MINITEL_FONT: Minitel-Canvas's, whose glyphs fill the cells), embedded in style(). Mosaic
  * cells are drawn as their 2 × 3 pixels (separated when underlined), without depending on a
- * font, and so is 0x7F, a full block in text too, as SUB is shown. Each cell takes one column
- * and one row, as in the emulator: a character bigger than a cell (double width, height or
- * size) is drawn at its size in each cell it covers, which shows its part of it (Part), on
- * that cell's background (e.g. a tall character's top half on the zone of the row above),
- * and a double-width one in the last column its left half only. No JavaScript.
+ * font, and so is 0x7F, a full block in text too, as SUB is shown. In text, 0x60, 0x7B, 0x7D
+ * and 0x7E, which the Minitel font hasn't, are drawn as the emulator draws them: a line
+ * across the middle of the cell, down its left or right edge, or across its top. Each cell
+ * takes one column and one row, as in the emulator: a character bigger than a cell (double
+ * width, height or size) is drawn at its size in each cell it covers, which shows its part of
+ * it (Part), on that cell's background (e.g. a tall character's top half on the zone of the
+ * row above), and a double-width one in the last column its left half only. No JavaScript.
  *
  * It draws the screen only: the page around it (e.g. Client\HtmlForm's) puts render() in its
  * body, and style() in its <style>. style() sets, for the whole page, --w and --h, the size
@@ -44,6 +46,11 @@ final readonly class HtmlRenderer
 
     // All six pixels in mosaic, a full block in text too
     private const FULL_BLOCK = "\x7F";
+
+    // G0 characters the emulator draws as a line along an edge or across the middle of the
+    // cell (its sprite sheet, font/ef9345-g0.png), which the Minitel font doesn't have: the
+    // class of each line
+    private const LINES = ["\x60" => 'middle', "\x7B" => 'left', "\x7D" => 'right', "\x7E" => 'top'];
 
     private const STYLE = <<<'CSS'
         :root { --w: 16px; --h: 20px; --pad: 12px; --font: var(--w)/var(--h) Minitel, "DejaVu Sans Mono", Menlo, Consolas, monospace; }
@@ -65,6 +72,13 @@ final readonly class HtmlRenderer
         .m i { background: transparent; }
         .m i.on { background: currentColor; }
         .m.sep i.on { margin: 0 2px 2px 0; }
+        .l { position: absolute; background: currentColor; }
+        .l.top, .l.middle { left: 0; width: 100%; height: 10%; }
+        .l.top { top: 0; }
+        .l.middle { top: 40%; }
+        .l.left, .l.right { top: 0; width: 12.5%; height: 100%; }
+        .l.left { left: 0; }
+        .l.right { right: 0; }
         CSS;
 
     /**
@@ -180,17 +194,30 @@ final readonly class HtmlRenderer
             return '<span class="' . implode(' ', $classes) . '" style="' . $style . '"> </span>';
         }
 
-        // SUB is shown as 0x7F, as MiniPavi's emulator prints it
-        $bytes = $cell->bytes === Videotex::SUB ? self::FULL_BLOCK : $cell->bytes;
-        $content = self::isPixels($bytes, $attributes)
-            ? self::mosaic($bytes, $attributes)
-            : Html::escape($cell->text());
+        $content = self::content($cell);
         if ($sized) {
             // Drawn at its size from the cell's top left corner, the cell showing its part
             $content = '<span class="g">' . $content . '</span>';
         }
 
         return '<span class="' . implode(' ', $classes) . '" style="' . $style . '">' . $content . '</span>';
+    }
+
+    /**
+     * What the cell draws: pixels (mosaic, or a full block), a line (LINES), or text
+     */
+    private static function content(Cell $cell): string
+    {
+        // SUB is shown as 0x7F, as MiniPavi's emulator prints it
+        $bytes = $cell->bytes === Videotex::SUB ? self::FULL_BLOCK : $cell->bytes;
+        if (self::isPixels($bytes, $cell->attributes)) {
+            return self::mosaic($bytes, $cell->attributes);
+        }
+        if (\array_key_exists($bytes, self::LINES)) {
+            return self::line(self::LINES[$bytes]);
+        }
+
+        return Html::escape($cell->text());
     }
 
     /**
@@ -201,6 +228,15 @@ final readonly class HtmlRenderer
         $classes = $attributes->isSeparated() ? 'm sep' : 'm';
 
         return '<span class="' . $classes . '">' . self::pixels($byte) . '</span>';
+    }
+
+    /**
+     * A G0 character drawn as a line (LINES), in the text's colour, beside a space, which an
+     * underlined zone draws its underline under
+     */
+    private static function line(string $class): string
+    {
+        return ' <i class="l ' . $class . '"></i>';
     }
 
     /**

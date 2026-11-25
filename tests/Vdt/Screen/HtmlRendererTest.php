@@ -315,6 +315,62 @@ final class HtmlRendererTest extends TestCase
         );
     }
 
+    /**
+     * The G0 characters MiniPavi's emulator draws as a line across or down the cell (its
+     * sprite sheet, font/ef9345-g0.png), which the Minitel font doesn't have (#143)
+     *
+     * @return iterable<string, array{string, string}> the character, and the edge of its line
+     */
+    public static function g0Lines(): iterable
+    {
+        yield '0x60, a line across the middle' => ["\x60", 'middle'];
+        yield '0x7B, a line down the left edge' => ["\x7B", 'left'];
+        yield '0x7D, a line down the right edge' => ["\x7D", 'right'];
+        yield '0x7E, a line across the top' => ["\x7E", 'top'];
+    }
+
+    #[DataProvider('g0Lines')]
+    public function testDrawsTheG0LinesAsTheEmulatorDoes(string $char, string $line): void
+    {
+        self::assertSame(
+            self::screenWith(
+                '<span class="c" style="color:#ffffff;background:#000000"> <i class="l ' . $line . '"></i></span>',
+            ),
+            $this->renderCell($char),
+        );
+    }
+
+    #[DataProvider('g0Lines')]
+    public function testDrawsTheG0LinesAtTheirSize(string $char, string $line): void
+    {
+        // Double size on row 2: the bottom left quarter, scaled with the character
+        self::assertStringContainsString(
+            '<span class="c w2 h2 bottom" style="color:#ffffff;background:#000000">'
+            . '<span class="g"> <i class="l '
+            . $line
+            . '"></i></span></span>',
+            $this->render(new Vdt("\x1F\x42\x41\x1B\x4F{$char}")),
+        );
+    }
+
+    public function testG0LinesAreUnderlinedAndBlinkAsText(): void
+    {
+        // Drawn in the text's colour, which blinking makes transparent, beside a space,
+        // which underlining draws under
+        $style = (new HtmlRenderer(HtmlRenderer::MINITEL_FONT))->style();
+        self::assertStringContainsString('.l { position: absolute; background: currentColor; }', $style);
+        self::assertStringContainsString(
+            '<span class="c blink u" style="color:#ffffff;background:#000000"> <i class="l top"></i></span>',
+            // From a delimiter, a space, which starts the underlined zone
+            $this->renderCell("\x1B\x5A \x1B\x48\x7E"),
+        );
+    }
+
+    public function testMosaicCharactersOfTheG0LinesArePixels(): void
+    {
+        self::assertStringNotContainsString('class="l', $this->renderCell("\x0E\x60\x7B\x7D\x7E"));
+    }
+
     public function testMosaicSpaceIsDrawnAsPixelsOnItsBackground(): void
     {
         // No pixel, on the blue background: not as text (Cell::text() shows it as #)
