@@ -866,11 +866,12 @@ echo Screen::of($moved)->preview();              // the screen, as text
   character's top half on the zone of the row above), and a double-width character in
   column 40 shows its left half only.
 - **`Screen::of($vdt)`**: the `Screen` drawn by the content: a `Cell` (character, attributes,
-  and the `Part` of the character the cell shows) or `null` per row and column. `line($row)` and `text()` give the text of a row and of the
-  screen, G2 characters decoded as a Minitel shows them (`é`, `£`, `½`, `Œ`...;
-  `Cell::text()`), and `preview()` the same rows framed and numbered, to read in a
-  terminal. `SYN` (0x16) starts a G2 character as `SS2` (0x19) does, as on a Minitel. An
-  accent (`SS2`, then grave, acute, circumflex, diaeresis or cedilla) takes the byte after
+  and the `Part` of the character the cell shows) or `null` per row and column. `line($row)`
+  and `text()` give the text of a row and of the screen, G2 characters decoded as a Minitel
+  shows them (`é`, `£`, `½`, `Œ`...; `Cell::text()`), and `preview()` the same rows framed
+  and numbered, to read in a terminal. `SYN` (0x16) starts a G2 character as `SS2` (0x19)
+  does, as on a Minitel. An accent (`SS2`, then grave, acute, circumflex, diaeresis or
+  cedilla) takes the byte after
   it, whatever it is: a letter the Minitel has with that accent (`é`, not `á` or `ü`), or
   `_` otherwise, as for a G2 code it doesn't have (`ß`, `§`); a G2 character cut at the
   end of the content draws nothing. As on a Minitel, a positioning
@@ -901,10 +902,11 @@ echo Screen::of($moved)->preview();              // the screen, as text
   row 1), over what was there and on that row's zone (checked in MiniPavi's emulator, #141):
   each cell it covers has the character, its `Part` saying which half (or, in double size,
   quarter) it shows, so `line()` gives a tall character on both of its rows, as a wide one
-  in both of its columns. A double-width character in column 40 shows its left half there. A tall delimiter starts its zone along that row as well: `ESC M`, `ESC T` and a
-  space on row 6 colour the text after it on row 5, up to the next delimiter, mosaic or
-  empty cell. Tall text is text there: it carries that row's zone on over the empty or
-  mosaic cell it covers, and ends the zone of a delimiter it covers. To colour or underline
+  in both of its columns. A double-width character in column 40 shows its left half there.
+  A tall delimiter starts its zone along that row as well: `ESC M`, `ESC T` and a space on
+  row 6 colour the text after it on row 5, up to the next delimiter, mosaic or empty cell.
+  Tall text is text there: it carries that row's zone on over the empty or mosaic cell it
+  covers, and ends the zone of a delimiter it covers. To colour or underline
   text, write the attribute, a space, then the text (as `Page\Display\Key` does): `ESC T`
   then `AB` draws `AB` on black. A positioning drops what waits, and SO ends the underline
   and applies the background colour waiting. In mosaic, the background colour applies at
