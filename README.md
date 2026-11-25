@@ -830,7 +830,14 @@ echo Screen::of($moved)->preview();              // the screen, as text
 - **`(new Offset($x, $y))->apply($vdt)`**: Videotex positions are mostly absolute, but text also flows from cell
   to cell and wraps at column 40, so the content is played on a simulated screen (`Vdt\Player`) rather than
   having its positions patched. Characters that end up off the screen are dropped instead of
-  wrapping onto the next row, and the cursor is positioned again where needed, with the
+  wrapping onto the next row. A double-width or double-size character moved into column 40
+  is written there, where the Minitel shows its left half. Only a space can show a half on
+  its own, one column wide: a wide space with only its right half left in column 1, or one
+  in column 40 (where its left half shows) moved left, is written as a space one column
+  wide (at normal width, or double height for double size), as a delimiter when it is one.
+  The Minitel can't show the right half of another character on its own, so such a
+  character is dropped (#152). A CAN in double width or double size, whose spaces run on
+  over the next row, is written as those spaces, each where it is moved to. The cursor is positioned again where needed, with the
   current attributes (character set, colors, size...), which a positioning resets. Row 0,
   the status line, is not moved. A double-height or double-size character moved onto row 1,
   where the Minitel discards `ESC M` and `ESC O`, is written without them: at normal size, or
@@ -931,7 +938,8 @@ echo Screen::of($moved)->preview();              // the screen, as text
   built on): plays the content on the simulated screen, telling a `Vdt\ScreenListener` each
   character (`glyph()`, with its row, column, width and attributes), each delimiter
   (`delimiter()`, with the `Screen\Zone` it starts), each CAN (`clearLine()`, with the zone
-  its first space starts if it is a delimiter), each FF (`clear()`) and the bytes sent as
+  its first space starts if it is a delimiter; in double width or double size, whose spaces
+  run on over the next row, each space as drawn instead), each FF (`clear()`) and the bytes sent as
   they are (`raw()`). Each `Vdt\Token\Token` the content is cut into plays what it does on
   the cursor, or with the `Vdt\Pen` that draws and tells the listener. An attribute (ESC and
   a byte) is a `Screen\Attribute\Attribute` (`TextColor`, `BackgroundColor`,
