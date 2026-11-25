@@ -10,7 +10,6 @@ use MiniPaviService\Io\Files;
 use MiniPaviService\Minitel\Color;
 use MiniPaviService\Minitel\Position;
 use MiniPaviService\Minitel\ScreenSize;
-use MiniPaviService\Vdt\Videotex;
 
 /**
  * Draws a Screen in HTML, as the Minitel would show it (checked against MiniPavi's emulator):
@@ -208,8 +207,7 @@ final readonly class HtmlRenderer
      */
     private static function content(Cell $cell): string
     {
-        // SUB is shown as 0x7F, as MiniPavi's emulator prints it
-        $bytes = $cell->bytes === Videotex::SUB ? self::FULL_BLOCK : $cell->bytes;
+        $bytes = $cell->shownBytes();
         if (self::isPixels($bytes, $cell->attributes)) {
             return self::mosaic($bytes, $cell->attributes);
         }

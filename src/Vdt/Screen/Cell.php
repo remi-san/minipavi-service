@@ -13,7 +13,7 @@ use MiniPaviService\Vdt\Videotex;
  */
 final readonly class Cell
 {
-    // The G0 character SUB is shown as: a full block in text
+    // The character SUB is shown as: a full block in text, all six pixels in mosaic
     private const FULL_BLOCK = "\x7F";
 
     public function __construct(
@@ -44,9 +44,18 @@ final readonly class Cell
         if ($this->attributes->isMosaic()) {
             return $this->bytes === ' ' && $this->attributes->background() === Color::Black ? ' ' : '#';
         }
-        // SUB is shown as 0x7F, as MiniPavi's emulator prints it (and HtmlRenderer draws it)
-        $bytes = $this->bytes === Videotex::SUB ? self::FULL_BLOCK : $this->bytes;
+        $bytes = $this->shownBytes();
 
         return G2Characters::starts($bytes[0]) ? G2Characters::text($bytes) : G0Characters::text($bytes);
+    }
+
+    /**
+     * The bytes of the character the Minitel shows: the cell's, but for the error character
+     * (SUB), shown as 0x7F, as MiniPavi's emulator prints it (a full block in text, all six
+     * pixels in mosaic). text() reads them, and HtmlRenderer draws them
+     */
+    public function shownBytes(): string
+    {
+        return $this->bytes === Videotex::SUB ? self::FULL_BLOCK : $this->bytes;
     }
 }
