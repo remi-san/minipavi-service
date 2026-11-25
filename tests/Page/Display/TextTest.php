@@ -244,6 +244,51 @@ final class TextTest extends TestCase
         self::assertSame(ScreenSize::COLS, $columns);
     }
 
+    /**
+     * Filled, a text of any size paints its row (both rows when tall) to the last column, and
+     * leaves the rows after it as they are. A Minitel clears the rest of a row with a space per
+     * column in the cursor's size, which, two columns wide, wraps onto the next row (two in
+     * double size): the row is cleared at normal width, keeping the height (MiniPavi's
+     * emulator, #155)
+     *
+     * @return iterable<string, array{?Size, list<int>, string}> the size, the rows it paints,
+     *                                                              then their backgrounds
+     */
+    public static function filledSizes(): iterable
+    {
+        // The space before the text in column 9, or in columns 8 and 9 in double width
+        $narrow = str_repeat('.', times: 8) . str_repeat('R', times: 32);
+        $wide = str_repeat('.', times: 7) . str_repeat('R', times: 33);
+        yield 'normal size' => [null, [self::ROW], $narrow];
+        yield 'double height' => [Size::DoubleHeight, [self::ROW - 1, self::ROW], $narrow];
+        yield 'double width' => [Size::DoubleWidth, [self::ROW], $wide];
+        yield 'double size' => [Size::Double, [self::ROW - 1, self::ROW], $wide];
+    }
+
+    /**
+     * @param list<int> $painted
+     */
+    #[DataProvider('filledSizes')]
+    public function testFilledTextLeavesTheRowsAfterIt(?Size $size, array $painted, string $backgrounds): void
+    {
+        $drawn = new Vdt();
+        for ($row = self::ROW - 2; $row <= (self::ROW + 2); $row++) {
+            $drawn = Vdt::join($drawn, Vdt::position(new Position($row)), Vdt::text(str_repeat('X', times: 40)));
+        }
+        $screen = Screen::of(Vdt::join(
+            $drawn,
+            self::text('Rouge', col: 10, size: $size, fill: true)->toVdt(new Terminal()),
+        ));
+
+        foreach ($painted as $row) {
+            self::assertSame($backgrounds, self::backgrounds($screen, $row));
+        }
+        foreach ([self::ROW + 1, self::ROW + 2] as $row) {
+            self::assertSame(str_repeat('X', times: 40), $screen->line($row));
+            self::assertSame(str_repeat('.', times: 40), self::backgrounds($screen, $row));
+        }
+    }
+
     private static function text(
         string $text,
         int $col = 1,

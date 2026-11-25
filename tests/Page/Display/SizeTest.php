@@ -24,4 +24,19 @@ final class SizeTest extends TestCase
             $sizes,
         );
     }
+
+    public function testEachSizeNarrowsToOneColumnKeepingItsHeight(): void
+    {
+        $narrowed = array_map(static fn(Size $size): string => $size->narrowedToVdt()->toString(), Size::cases());
+
+        self::assertSame(
+            [
+                Videotex::SIZE_NORMAL,
+                Videotex::SIZE_DOUBLE_HEIGHT,
+                Videotex::SIZE_NORMAL,
+                Videotex::SIZE_DOUBLE_HEIGHT,
+            ],
+            $narrowed,
+        );
+    }
 }
