@@ -879,7 +879,8 @@ echo Screen::of($moved)->preview();              // the screen, as text
   ignored, the cursor and its attributes staying as they were; in digits (`US`, then `0`,
   `1` or `2` and a digit), a positioning gives the row, the cursor in column 1 (`US 0 5`
   is row 5). `ESC M` (double height) and `ESC O` (double size) received on rows 0 and 1
-  are discarded, the size staying as it was; a double height already set when a cursor move
+  are discarded, and `ESC N` (double width) on row 0 (checked in MiniPavi's emulator,
+  #141), the size staying as it was; a double height already set when a cursor move
   (LF, VT) brings the cursor onto row 1 is kept, the character drawn over row 0. A tall text character (double height or
   double size) wrapping at the end of a row goes 2 rows down, cycling through rows 1 to 24
   (24 to 2, 23 to 1), and the text carries on along that row; a move right (HT) from column
