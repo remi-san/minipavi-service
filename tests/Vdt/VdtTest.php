@@ -10,6 +10,7 @@ use MiniPaviService\Minitel\Position;
 use MiniPaviService\Minitel\ScreenSize;
 use MiniPaviService\Tests\Vdt\Screen\ScreenTest;
 use MiniPaviService\Vdt\Offset;
+use MiniPaviService\Vdt\Screen\Attribute\Underlining;
 use MiniPaviService\Vdt\Screen\Cell;
 use MiniPaviService\Vdt\Screen\Part;
 use MiniPaviService\Vdt\Screen\Screen;
@@ -512,6 +513,19 @@ final class VdtTest extends TestCase
         yield 'in the right half of the top half of a double-size space' => [
             "\x1F\x49\x41\x1B\x52\x18\x1F\x4A\x41\x1B\x51 \x1B\x4FB \x1B\x52AA",
             -4,
+        ];
+        // ESC M ESC Z, an underlining double-height delimiter, then tall spaces, an L at
+        // normal height drawn over column 2 on row 10: the zone starts again in column 3, as
+        // a tall delimiter, whose top half isn't underlined. Nor does the source's show it:
+        // the Minitel underlines a tall cell's bottom half only (#168)
+        yield 'in a tall space whose top half is underlined' => [
+            "\x1F\x4A\x41\x1B\x4D\x1B\x5A   \x1F\x4A\x42L",
+            -1,
+        ];
+        // The same, as the fuzzer found it, with a double-width L
+        yield 'in a tall space whose top half is underlined, after a double-width character' => [
+            "\x1F\x4A\x41N\x1B\x4D \x1B\x5AS      \x1F\x4A\x45\x1B\x4EL",
+            -5,
         ];
     }
 
@@ -1135,20 +1149,28 @@ final class VdtTest extends TestCase
     }
 
     /**
-     * The cell as it shows: each half of a tall text space shows as a space at normal height
-     * does, its background, and the bottom half its underline at the bottom of the cell
-     * (MiniPavi's emulator, font-sprite.js, writeChar()). Offset writes such a space where a
-     * zone starts again over a tall space's bottom half, leaving its top half on the row
-     * above, or over its top half, leaving its bottom half (#153)
+     * The cell as it shows. The top half of a tall (text) cell shows no underline: the
+     * Minitel draws it at the bottom of the character, in its bottom half only (MiniPavi's
+     * emulator, font-sprite.js, writeChar()), so a tall delimiter's top half shows as an
+     * underlined top half does (#168). Each half of a tall text space shows as a space at
+     * normal height does, its background, and the bottom half its underline at the bottom of
+     * the cell. Offset writes such a space where a zone starts again over a tall space's
+     * bottom half, leaving its top half on the row above, or over its top half, leaving its
+     * bottom half (#153)
      */
     private static function asShown(?Cell $cell): ?Cell
     {
-        if ($cell?->bytes !== ' ' || $cell->attributes->height() === 1) {
+        if ($cell === null || $cell->attributes->height() === 1) {
             return $cell;
         }
-        $attributes = $cell->attributes->flattened();
+        $attributes = $cell->part->isBottom()
+            ? $cell->attributes
+            : $cell->attributes->withUnderlining(Underlining::NoUnderline);
+        if ($cell->bytes !== ' ') {
+            return new Cell($cell->bytes, $attributes, $cell->part);
+        }
 
-        return new Cell($cell->bytes, $attributes, new Part($cell->part->isRight(), bottom: false));
+        return new Cell($cell->bytes, $attributes->flattened(), new Part($cell->part->isRight(), bottom: false));
     }
 
     /**
