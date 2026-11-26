@@ -27,6 +27,12 @@ use MiniPaviService\Vdt\Screen\Zones;
  * with the zone the cells written before it leave (zoneBefore()), so that the Writer starts
  * no other.
  *
+ * The character a REP repeats before any is drawn, printed before the content, can't be known
+ * (ScreenListener::priorCharacter()): it is written with REP too, which repeats it as long as
+ * nothing is printed before. It is moved as the space that stands in for it (moved()): one
+ * column wide where only its right half stays in column 1, or where only its left half shows
+ * in column 40, moved left.
+ *
  * Its Writer keeps where it is and what it wrote (so it isn't readonly), so it listens to one
  * content only: it is only built, and played to, by write().
  *
@@ -124,6 +130,25 @@ final class OffsetWriter implements ScreenListener
             [$row, $col, , $attributes] = $moved;
             $this->out->delimiter($row, $col, $attributes->width(), $attributes, $zone);
         }
+    }
+
+    /**
+     * The character printed before the content, written with REP (Writer::priorCharacter()),
+     * moved as the space that stands in for it (StandInSpace, moved()). Where the zone of the
+     * columns going off the screen starts again (restartAt()), that space is a delimiter of
+     * that zone: its attributes are written just before it, which wait, as in the content, if
+     * that character isn't a space
+     */
+    public function priorCharacter(int $row, int $col, int $width, Attributes $attributes, ?Zone $delimiter): void
+    {
+        $delimiter ??= $this->restartAt($row, $row, $col, ' ', $attributes);
+        (new StandInSpace($row, $col, $width, $attributes, $delimiter))->drawIn($this->zones);
+        $moved = $this->moved($row, $col, ' ', $attributes);
+        if ($moved === null) {
+            return;
+        }
+        [$row, $col, , $attributes] = $moved;
+        $this->out->priorCharacter($row, $col, $attributes->width(), $attributes, $delimiter);
     }
 
     public function clear(): void

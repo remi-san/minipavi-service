@@ -839,7 +839,13 @@ echo Screen::of($moved)->preview();              // the screen, as text
   background (or its colour, inverted) without its glyph. A wide space in column 40 (where its
   left half shows) moved left is written one column wide too, and another character there is
   written whole (#152). A CAN in double width or double size, whose spaces run on over the
-  next row, is written as those spaces, each where it is moved to. The cursor is positioned
+  next row, is written as those spaces, each where it is moved to. A REP before any
+  character, which repeats the character printed before the content (see `Screen::of()`), is
+  written as a REP too, after the zone attributes waiting for it, so that it shows that
+  character as the original does, whatever it is. It is moved as the space that stands in for
+  it is: a wide one with only its right half left in column 1, or with its left half in
+  column 40 moved left, is written one column wide, still with REP, as a space written there
+  would be what REP repeats next (#163). The cursor is positioned
   again where needed, with the current attributes (character set, colors, size...), which a
   positioning resets. Row 0, the status line, is not moved. A double-height or double-size
   character moved onto row 1, where the Minitel discards `ESC M` and `ESC O`, is written
@@ -941,15 +947,22 @@ echo Screen::of($moved)->preview();              // the screen, as text
   above too (a delimiter starting its zone there as well); in double width they are two
   columns wide, so they run on over the next row (two rows down in double size), as text
   wraps: `ESC N`, `AB` and CAN clear the rest of the row, then columns 1 to 36 of the next
-  one. A mosaic character uses up nothing that waits. Each `Cell` has the background,
+  one. CAN's spaces are then the last character drawn, which REP repeats from where CAN left
+  the cursor (checked in MiniPavi's emulator, #163): `AB`, CAN, two BS and REP twice draw two
+  spaces over `AB`. Before any character, REP repeats the last character the Minitel printed
+  before the content: the gateway's PIN on a service's first page, or the previous page's last
+  character, which can't be known from the content; a space stands in for it, in the cursor's
+  attributes (a delimiter while a zone attribute waits). A mosaic character uses up nothing that waits. Each `Cell` has the background,
   masking and (in text) underline its zone shows, which `HtmlRenderer` draws.
 - **`Vdt\Player::play($vdt, $listener)`** (internal, what `Screen::of()` and `Offset` are
   built on): plays the content on the simulated screen, telling a `Vdt\ScreenListener` each
   character (`glyph()`, with its row, column, width and attributes), each delimiter
   (`delimiter()`, with the `Screen\Zone` it starts), each CAN (`clearLine()`, with the zone
   its first space starts if it is a delimiter; in double width or double size, whose spaces
-  run on over the next row, each space as drawn instead), each FF (`clear()`) and the bytes
-  sent as they are (`raw()`). Each `Vdt\Token\Token` the content is cut into plays what it
+  run on over the next row, each space as drawn instead), each repetition of a REP before any
+  character (`priorCharacter()`: the character printed before the content, which can't be
+  known; a `Vdt\StandInSpace` draws the space that stands in for it), each FF (`clear()`) and
+  the bytes sent as they are (`raw()`). Each `Vdt\Token\Token` the content is cut into plays what it
   does on the cursor, or with the `Vdt\Pen` that draws and tells the listener. An attribute
   (ESC and a byte) is a `Screen\Attribute\Attribute` (`TextColor`, `BackgroundColor`,
   `CharacterSize`, `Blinking`, `Masking`, `Underlining` or `Inversion`), which knows what it

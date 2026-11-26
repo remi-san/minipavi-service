@@ -27,6 +27,16 @@ interface ScreenListener
     public function delimiter(int $row, int $col, int $width, Attributes $attributes, Zone $zone): void;
 
     /**
+     * A repetition of REP before any character is drawn, at row, col, width cells wide: the
+     * last character the Minitel printed before the content (MiniPavi's emulator, decoder.js:
+     * REP repeats charCode, which only print() sets), e.g. the gateway's PIN on a service's
+     * first page, or the previous page's last character, which can't be known here. A space
+     * stands in for it where it must be drawn: the first one a delimiter starting delimiter,
+     * if not null, as a space would be while a zone attribute waits
+     */
+    public function priorCharacter(int $row, int $col, int $width, Attributes $attributes, ?Zone $delimiter): void;
+
+    /**
      * CAN at row, col: a space drawn with these attributes in each column from there to the
      * last, the first one a delimiter starting zone delimiter, if not null (MiniPavi's
      * emulator prints CAN's spaces, clear()): the row cleared to its end, and in double
