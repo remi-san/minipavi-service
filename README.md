@@ -839,7 +839,12 @@ echo Screen::of($moved)->preview();              // the screen, as text
   background (or its colour, inverted) without its glyph. A wide space in column 40 (where its
   left half shows) moved left is written one column wide too, and another character there is
   written whole (#152). A CAN in double width or double size, whose spaces run on over the
-  next row, is written as those spaces, each where it is moved to. The cursor is positioned
+  next row, is written as those spaces, each where it is moved to. A REP before any
+  character, which repeats the character printed before the content (see `Screen::of()`), is
+  written as a REP too, after the zone attributes waiting for it, so that it shows that
+  character as the original does, whatever it is; a space written for its right half alone in
+  column 1 is written once it is no longer repeated, as REP would repeat that space (#163).
+  The cursor is positioned
   again where needed, with the current attributes (character set, colors, size...), which a
   positioning resets. Row 0, the status line, is not moved. A double-height or double-size
   character moved onto row 1, where the Minitel discards `ESC M` and `ESC O`, is written
@@ -943,8 +948,10 @@ echo Screen::of($moved)->preview();              // the screen, as text
   wraps: `ESC N`, `AB` and CAN clear the rest of the row, then columns 1 to 36 of the next
   one. CAN's spaces are then the last character drawn, which REP repeats from where CAN left
   the cursor (checked in MiniPavi's emulator, #163): `AB`, CAN, two BS and REP twice draw two
-  spaces over `AB`. Before any character, REP repeats a space too, the emulator's last
-  character until one is drawn. A mosaic character uses up nothing that waits. Each `Cell` has the background,
+  spaces over `AB`. Before any character, REP repeats the last character the Minitel printed
+  before the content: the gateway's PIN on a service's first page, or the previous page's last
+  character, which can't be known from the content; a space stands in for it, in the cursor's
+  attributes (a delimiter while a zone attribute waits). A mosaic character uses up nothing that waits. Each `Cell` has the background,
   masking and (in text) underline its zone shows, which `HtmlRenderer` draws.
 - **`Vdt\Player::play($vdt, $listener)`** (internal, what `Screen::of()` and `Offset` are
   built on): plays the content on the simulated screen, telling a `Vdt\ScreenListener` each
