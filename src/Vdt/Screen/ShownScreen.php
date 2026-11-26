@@ -9,8 +9,9 @@ use MiniPaviService\Minitel\ScreenSize;
 /**
  * What a screen content draws shows once drawn, up to the clear screen that erases it or the
  * end of the content (ShownScreens): its zones (Zones), and which of its cells show a text
- * space (a delimiter is one), and drawn where: a tall one is on the row above too
- * (Zones::cells()), which a tall character drawn from the row below may cover, or not.
+ * character, a space (a delimiter is one) or not, and drawn where: a tall one is on the row
+ * above too (Zones::cells()), which a tall character drawn from the row below may cover, or
+ * not.
  *
  * It is drawn as ShownScreens listens (so it isn't readonly), then only read.
  *
@@ -21,11 +22,13 @@ final class ShownScreen
     private Zones $zones;
 
     /**
-     * @var array<int, array<int, ?array{int, int}>> by row, then column (from 1), the row and
-     *                                               column a text space a cell shows is drawn
-     *                                               at; null if it shows another character
+     * @var array<int, array<int, ?array{int, int, bool}>> by row, then column (from 1), the
+     *                                                     row and column the text character
+     *                                                     a cell shows is drawn at, and
+     *                                                     whether it is a space; null if it
+     *                                                     shows a mosaic one
      */
-    private array $spaces = [];
+    private array $text = [];
 
     // The screen the clear screen erasing this one starts, once there is one
     private ?self $next = null;
@@ -42,7 +45,8 @@ final class ShownScreen
     public function shows(int $row, int $col, int $width, int $height): bool
     {
         foreach (Zones::cells($row, $col, $width, $height) as [$cellRow, $cellCol]) {
-            if (($this->spaces[$cellRow][$cellCol][0] ?? null) === $row) {
+            $text = $this->text[$cellRow][$cellCol] ?? null;
+            if ($text !== null && $text[2] && $text[0] === $row) {
                 return true;
             }
         }
@@ -53,10 +57,11 @@ final class ShownScreen
     /**
      * Where the zone the columns before first leave starts again on row, once moved left so
      * that first is its column 1, and that zone: at its first text space (that isn't a
-     * delimiter) whose zone isn't the one the columns from first leave alone, drawn on row,
-     * or on the row below when it is the top half of a tall space; the row and column it is
-     * drawn at (the column before first for a double-width one whose right half only is from
-     * first). Null if none is, nor is any needed
+     * delimiter), or the right half in first of a double-width text character, which is
+     * written as a space there (#170), whose zone isn't the one the columns from first leave
+     * alone, drawn on row, or on the row below when it is the top half of a tall one; the row
+     * and column it is drawn at (the column before first for a double-width one whose right
+     * half only is from first). Null if none is, nor is any needed
      *
      * @return ?array{int, int, Zone} the row and column (not moved), and the zone
      */
@@ -67,9 +72,9 @@ final class ShownScreen
         for ($col = $first; $col <= ScreenSize::COLS; $col++) {
             $zone = $this->zones->after($zone, $row, $col);
             $alone = $this->zones->after($alone, $row, $col);
-            $space = $this->spaces[$row][$col] ?? null;
-            if ($space !== null && !$zone->showsAs($alone)) {
-                return [$space[0], $space[1], $zone];
+            $text = $this->text[$row][$col] ?? null;
+            if ($text !== null && ($text[2] || $text[1] < $first) && !$zone->showsAs($alone)) {
+                return [$text[0], $text[1], $zone];
             }
         }
 
@@ -109,26 +114,27 @@ final class ShownScreen
 
     /**
      * Remembers, in each cell a character drawn at row, col covers (Zones::cells()), whether it
-     * shows a text space, and drawn where
+     * shows a text character, drawn where, and whether it is a space
      */
     private function cover(int $row, int $col, string $bytes, int $width, Attributes $attributes): void
     {
-        $space = $bytes === ' ' && !$attributes->isMosaic() ? [$row, $col] : null;
+        $text = $attributes->isMosaic() ? null : [$row, $col, $bytes === ' '];
         foreach (Zones::cells($row, $col, $width, $attributes->height()) as [$cellRow, $cellCol]) {
-            $this->spaces[$cellRow][$cellCol] = $space;
+            $this->text[$cellRow][$cellCol] = $text;
         }
     }
 
     /**
-     * Whether the top half of the tall text space drawn at row, col, on the row above, still
-     * shows, in zone: a tall delimiter starting zone there shows what it does
+     * Whether the top half of the tall text character drawn at row, col (a space, or one whose
+     * right half only stays, written as a space), on the row above, still shows, in zone: a
+     * tall delimiter starting zone there shows what it does
      */
     public function showsOnTop(int $row, int $col, Zone $zone): bool
     {
         $above = $row - 1;
 
         return (
-            ($this->spaces[$above][$col] ?? null) === $this->spaces[$row][$col]
+            ($this->text[$above][$col] ?? null) === $this->text[$row][$col]
             && $this->zones->before($above, $col)->showsAs($zone)
         );
     }

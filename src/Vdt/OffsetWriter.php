@@ -19,9 +19,10 @@ use MiniPaviService\Vdt\Screen\Zones;
  * clear screen that erases it, or the end of the content.
  *
  * On a row moved left, the zone the columns going off the screen leave starts again at a
- * delimiter written in the first text space it shows in (ShownScreen::restart()), as what is
- * drawn there isn't written: what is before that space has no column left for one, and loses
- * it. That space may be the top half of a tall space drawn from the row below: the delimiter
+ * delimiter written in the first text space it shows in, or in the right half of a
+ * double-width character left in column 1, which is written as a space (moved(),
+ * ShownScreen::restart(), #170), as what is drawn there isn't written: what is before that
+ * space has no column left for one, and loses it. That space may be the top half of a tall space drawn from the row below: the delimiter
  * is written at normal height over it, once that space is written. A delimiter something is
  * drawn over later is written as a space, as its zone doesn't last. Each text cell is written
  * with the zone the cells written before it leave (zoneBefore()), so that the Writer starts
@@ -74,14 +75,14 @@ final class OffsetWriter implements ScreenListener
         $tall = $attributes->height() > 1;
         if ($restart !== null && (!$tall || $this->shown->showsOnTop($row, $col, $restart))) {
             // A tall one starts the zone again on the row above too, where it shows the same
-            $this->delimiter($row, $col, $width, $attributes, $restart);
+            $this->writeDelimiter($row, $col, $width, $attributes, $restart);
             return;
         }
         $this->writeMoved($row, $col, $bytes, $width, $attributes);
         if ($restart !== null) {
             // A tall space whose top half shows another zone, which a tall delimiter would
             // change: a delimiter at normal height over its bottom half
-            $this->delimiter($row, $col, $width, $attributes->flattened(), $restart);
+            $this->writeDelimiter($row, $col, $width, $attributes->flattened(), $restart);
         }
         $above = $tall ? $this->restartAt($row - 1, $row, $col, $bytes, $attributes) : null;
         if ($above !== null) {
@@ -124,6 +125,16 @@ final class OffsetWriter implements ScreenListener
             $this->glyph($row, $col, ' ', $width, $attributes);
             return;
         }
+        $this->writeDelimiter($row, $col, $width, $attributes, $zone);
+    }
+
+    /**
+     * Writes a delimiter starting zone at row, col (not moved), moved: a space, one column
+     * wide in column 1 for a character whose right half only stays (moved()). Where the zone
+     * starts again (restartAt()), what is drawn there shows once drawn, so it is written
+     */
+    private function writeDelimiter(int $row, int $col, int $width, Attributes $attributes, Zone $zone): void
+    {
         $this->zones->delimiter($row, $col, $width, $attributes->height(), $zone);
         $moved = $this->moved($row, $col, ' ', $attributes);
         if ($moved !== null) {
@@ -240,12 +251,14 @@ final class OffsetWriter implements ScreenListener
     /**
      * The zone of row restarted (not moved) a delimiter written for bytes drawn at row, col
      * (not moved) starts again, if the zone the columns going off the screen leave starts
-     * again there (ShownScreen::restart()): a text space, on a moved row (restarted is row,
-     * or the row above for the top half of a tall space)
+     * again there (ShownScreen::restart()): a text space, or a character moved before column
+     * 1, of which only one whose right half stays is restarted at, as it is written as a
+     * space (moved(), #170), on a moved row (restarted is row, or the row above for the top
+     * half of a tall one)
      */
     private function restartAt(int $restarted, int $row, int $col, string $bytes, Attributes $attributes): ?Zone
     {
-        if ($restarted === 0 || $bytes !== ' ' || $attributes->isMosaic()) {
+        if ($restarted === 0 || $bytes !== ' ' && ($col + $this->x) >= 1 || $attributes->isMosaic()) {
             return null;
         }
         $restart = $this->shown->restart($restarted, 1 - $this->x);
