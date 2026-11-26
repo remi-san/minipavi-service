@@ -812,6 +812,62 @@ final class VdtTest extends TestCase
         self::assertScreenMoved(new Vdt($drawn), $x, $y);
     }
 
+    /**
+     * Tall cells drawn from row 24, moved down by one row: their top halves, on row 23, move
+     * to row 24, their bottom halves off the screen. The Minitel draws a tall character from
+     * its bottom row, so it can't show a top half alone on row 24 (MiniPavi's emulator,
+     * decoder.js, printG0Char()): Offset writes it as a space at normal height, with its
+     * attributes, which shows its background (or its colour, inverted) without its glyph,
+     * rather than nothing, which would leave what was drawn there before it (#173)
+     *
+     * @return iterable<string, array{string, int, int}> what is drawn, x and y
+     */
+    public static function tallCellsWhoseBottomRowIsMovedOffTheScreen(): iterable
+    {
+        // Row 23: a red delimiter, then ABCDE; tall spaces from row 24 over C and D. Moved
+        // left, the red zone starts again in the top half of the first one, in column 1
+        yield 'tall spaces in a background' => ["\x1F\x57\x41\x1B\x51 ABCDE\x1F\x58\x44\x1B\x4D  ", -3, 1];
+        // The same, underlined: the second space shows the underline of its zone, which the
+        // top half of a tall space doesn't, as the Minitel draws it at the bottom of the
+        // character, and a delimiter there would end the zone before E
+        yield 'tall spaces in an underline' => ["\x1F\x57\x41\x1B\x5A ABCDE\x1F\x58\x44\x1B\x4D  ", -3, 1];
+        // The same, a double-size L over C and D: its top half as a double-width space, in
+        // which the red zone starts again
+        yield 'a double-size character in a background' => ["\x1F\x57\x41\x1B\x51 ABCDE\x1F\x58\x44\x1B\x4FL", -3, 1];
+        yield 'a double-size character in an underline' => ["\x1F\x57\x41\x1B\x5A ABCDE\x1F\x58\x44\x1B\x4FL", -3, 1];
+        // Row 24: a red delimiter, AB, then tall spaces: the red zone, off the screen, isn't
+        // written in their top halves, on row 23, which show no zone
+        yield 'tall spaces after a zone of the row going off the screen' => [
+            "\x1F\x58\x41\x1B\x51 AB\x1B\x4D  ",
+            -3,
+            1,
+        ];
+        // Row 24 moved left, its text at normal height: the red zone starts again in the space
+        // after AB, as its characters are written as they are
+        yield 'no tall cell, the zone starting again on the last row' => ["\x1F\x58\x41\x1B\x51 AB CD", -2, 0];
+        // Moved down only: double-height A and B over XY
+        yield 'tall characters over others' => ["\x1F\x57\x41XYZ\x1F\x58\x41\x1B\x4DAB", 0, 1];
+        // Inverted, in double size: its colour, over two columns
+        yield 'an inverted double-size character' => ["\x1F\x57\x41XYZ\x1F\x58\x41\x1B\x5D\x1B\x4FAB", 0, 1];
+        // A red tall delimiter, whose top half starts the red zone on row 23 too
+        yield 'a tall delimiter' => ["\x1F\x57\x41XYZ\x1F\x58\x41\x1B\x4D\x1B\x51 AB", 0, 1];
+        // Moved right, a double-size A whose left half only stays, in column 40
+        yield 'a double-size character cut by the last column' => ["\x1F\x57\x41XYZ\x1F\x58\x41\x1B\x4FAB", 39, 1];
+        // Moved left, a double-size A whose right half only stays, in column 1
+        yield 'a double-size character cut by the first column' => ["\x1F\x57\x41XYZ\x1F\x58\x41\x1B\x4FAB", -1, 1];
+        // A tall CAN, its spaces' top halves on row 23
+        yield 'a tall clear line' => ["\x1F\x57\x41XYZ\x1F\x58\x41\x1B\x51\x1B\x4D\x18", 0, 1];
+        yield 'a tall clear line, left' => ["\x1F\x57\x41XYZ\x1F\x58\x42\x1B\x51\x1B\x4D\x18", -1, 1];
+        // A REP before any character, in double height
+        yield 'a tall repeat before any character' => ["\x1F\x57\x41XYZ\x1F\x58\x41\x1B\x4D\x12\x42", 0, 1];
+    }
+
+    #[DataProvider('tallCellsWhoseBottomRowIsMovedOffTheScreen')]
+    public function testOffsetWritesTheTopHalfOfATallCellOnTheLastRowAsASpace(string $drawn, int $x, int $y): void
+    {
+        self::assertScreenMoved(new Vdt($drawn), $x, $y);
+    }
+
     public function testOffsetWritesAClearLineMovedLeftAsSpaces(): void
     {
         // Row 10: A, ESC Z, CAN from column 2, moved to column 1: its delimiter, then spaces
@@ -1189,6 +1245,7 @@ final class VdtTest extends TestCase
      */
     private static function assertShowsMoved(Screen $before, Screen $after, int $x, int $y): void
     {
+        $before = self::withTopHalvesAsSpaces($before, ScreenSize::ROWS - $y);
         $glyphs = self::glyphColumns($before);
 
         for ($row = 0; $row <= ScreenSize::ROWS; $row++) {
@@ -1201,11 +1258,11 @@ final class VdtTest extends TestCase
                 [$fromRow, $fromCol] = [$row - $y, $col - $x];
                 [$start, $width] = $glyphs[$fromRow][$fromCol] ?? [$fromCol, 1];
                 $onScreen = $fromRow >= 1 && $fromRow <= ScreenSize::ROWS && ($start + $x) >= 1;
-                $expected = $onScreen ? $before->cell($fromRow, $fromCol) : null;
+                $source = $before->cell($fromRow, $fromCol);
+                $expected = $onScreen ? $source : null;
                 $actual = $after->cell($row, $col);
                 if ($x < 0 && $fromCol === ScreenSize::COLS && ($start + $width - 1) > ScreenSize::COLS) {
                     // The left half of a double-width character in the last column, moved left
-                    $source = $before->cell($fromRow, $fromCol);
                     if ($source?->bytes === ' ') {
                         [$expected, $actual] = [self::narrowed($source), self::narrowed($actual)];
                     }
@@ -1225,7 +1282,6 @@ final class VdtTest extends TestCase
                 if ($fromRow >= 1 && $fromRow <= ScreenSize::ROWS && ($start + $x) < 1) {
                     // The right half of a character, which the Minitel can't show alone: as a
                     // space one column wide, with its attributes
-                    $source = $before->cell($fromRow, $fromCol);
                     $space = $source === null ? null : new Cell(' ', $source->attributes, $source->part);
                     [$expected, $actual] = [self::narrowed($space), self::narrowed($actual)];
                 }
@@ -1242,6 +1298,27 @@ final class VdtTest extends TestCase
                 self::assertEquals(self::asShown($expected), self::asShown($actual), "row {$row}, column {$col}");
             }
         }
+    }
+
+    /**
+     * The screen, the top halves of the tall cells on row, whose bottom row is moved off the
+     * screen, below the last row, each as a space at normal height with its attributes: its
+     * background (or its colour, inverted) and its zone's underline, without its glyph. The
+     * Minitel can't show a top half alone on the last row, as it draws a tall character from
+     * its bottom row: Offset writes such a space instead, in which a zone can start again
+     * (#173)
+     */
+    private static function withTopHalvesAsSpaces(Screen $screen, int $row): Screen
+    {
+        $cells = $screen->cells;
+        foreach ($cells[$row] ?? [] as $col => $cell) {
+            if ($cell === null || $cell->attributes->height() === 1 || $cell->part->isBottom()) {
+                continue;
+            }
+            $cells[$row][$col] = new Cell(' ', $cell->attributes->flattened(), $cell->part);
+        }
+
+        return new Screen($cells);
     }
 
     /**
