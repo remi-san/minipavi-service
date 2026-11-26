@@ -29,9 +29,8 @@ use MiniPaviService\Vdt\Screen\Zones;
  *
  * The character a REP repeats before any is drawn, printed before the content, can't be known
  * (ScreenListener::priorCharacter()): it is written with REP too, which repeats it as long as
- * nothing is printed before. So the space written for one whose right half only stays in
- * column 1, moved left, is written once that character is no longer repeated: before what is
- * printed next, or at the end (dropped if a clear screen erases it first).
+ * nothing is printed before, one column wide where only its right half stays in column 1
+ * (moved()), as a space written there would be what REP repeats next.
  *
  * Its Writer keeps where it is and what it wrote (so it isn't readonly), so it listens to one
  * content only: it is only built, and played to, by write().
@@ -47,16 +46,6 @@ final class OffsetWriter implements ScreenListener
     // The bytes moved() is given for the character printed before the content: not a space,
     // as it may be another character
     private const PRIOR = Videotex::REPEAT;
-
-    /**
-     * @var list<array{int, int, Attributes, Zone, ?Zone}> the spaces written for the right
-     *                                                     halves of the character printed
-     *                                                     before the content, moved into
-     *                                                     column 1, once it is no longer
-     *                                                     repeated: row and column (moved),
-     *                                                     attributes, zone before, delimiter
-     */
-    private array $clippedPriors = [];
 
     /**
      * @param ShownScreen $shown the screen being drawn, as it shows once drawn (not moved): up
@@ -78,14 +67,12 @@ final class OffsetWriter implements ScreenListener
     {
         $writer = new self(ShownScreens::of($vdt), $x, $y);
         (new Player())->play($vdt, $writer);
-        $writer->writeClippedPriors();
 
         return new Vdt($writer->out->vdt());
     }
 
     public function glyph(int $row, int $col, string $bytes, int $width, Attributes $attributes): void
     {
-        $this->writeClippedPriors();
         $restart = $this->restartAt($row, $row, $col, $bytes, $attributes);
         $tall = $attributes->height() > 1;
         if ($restart !== null && (!$tall || $this->shown->showsOnTop($row, $col, $restart))) {
@@ -135,7 +122,6 @@ final class OffsetWriter implements ScreenListener
 
     public function delimiter(int $row, int $col, int $width, Attributes $attributes, Zone $zone): void
     {
-        $this->writeClippedPriors();
         if (!$this->shown->shows($row, $col, $width, $attributes->height())) {
             // Drawn over: its zone doesn't last
             $this->glyph($row, $col, ' ', $width, $attributes);
@@ -151,8 +137,7 @@ final class OffsetWriter implements ScreenListener
 
     /**
      * The character printed before the content, moved, written with REP (Writer::priorCharacter()),
-     * in the zone the cells written before it leave; the space written for its right half
-     * alone in column 1 waits until it is no longer repeated (writeClippedPriors()). Where the
+     * one column wide where only its right half stays in column 1 (moved()). Where the
      * zone of the columns going off the screen starts again (restartAt()), the space that
      * stands in for it is a delimiter of that zone: its attributes are written just before
      * it, which wait, as in the content, if that character isn't a space
@@ -160,40 +145,17 @@ final class OffsetWriter implements ScreenListener
     public function priorCharacter(int $row, int $col, int $width, Attributes $attributes, ?Zone $delimiter): void
     {
         $delimiter ??= $this->restartAt($row, $row, $col, ' ', $attributes);
-        $zone = $this->zoneBefore($row, $col);
         (new StandInSpace($row, $col, $width, $attributes, $delimiter))->drawIn($this->zones);
         $moved = $this->moved($row, $col, self::PRIOR, $attributes);
         if ($moved === null) {
             return;
         }
-        [$row, $col, $bytes, $attributes] = $moved;
-        if ($bytes === self::PRIOR) {
-            $this->out->priorCharacter($row, $col, $attributes->width(), $attributes, $delimiter);
-            return;
-        }
-        $this->clippedPriors[] = [$row, $col, $attributes, $zone, $delimiter];
-    }
-
-    /**
-     * Writes the spaces waiting for the right halves of the character printed before the
-     * content moved into column 1 (priorCharacter()): a delimiter when it is one
-     */
-    private function writeClippedPriors(): void
-    {
-        foreach ($this->clippedPriors as [$row, $col, $attributes, $zone, $delimiter]) {
-            if ($delimiter === null) {
-                $this->out->glyph($row, $col, ' ', $attributes->width(), $attributes, $zone);
-                continue;
-            }
-            $this->out->delimiter($row, $col, $attributes->width(), $attributes, $delimiter);
-        }
-        $this->clippedPriors = [];
+        [$row, $col, , $attributes] = $moved;
+        $this->out->priorCharacter($row, $col, $attributes->width(), $attributes, $delimiter);
     }
 
     public function clear(): void
     {
-        // Erased before they are written
-        $this->clippedPriors = [];
         $this->shown = $this->shown->cleared();
         $this->zones->clear();
         $this->out->clear();
@@ -254,7 +216,6 @@ final class OffsetWriter implements ScreenListener
      */
     public function clearLine(int $row, int $col, Attributes $attributes, ?Zone $delimiter): void
     {
-        $this->writeClippedPriors();
         if ($row !== 0 && $this->x < 0) {
             (new ClearedSpaces($row, $col, $attributes, $delimiter))->tellTo($this);
             return;

@@ -850,49 +850,33 @@ final class VdtTest extends TestCase
         // Its first one, which a blue zone starts at, off the screen: the zone starts again at
         // the second one, ESC T written before it
         yield 'a zone attribute waiting, moved left' => ["\x1BT\x12\x42X", -1, "\x1F\x4A\x41\x1BT\x12\x41X"];
-        // The first one's right half in column 1: written as a space, once the second one is
-        // written with REP (a space written before would be what REP repeats), before X
+        // The first one's right half in column 1: the Minitel can't show it alone, so it is
+        // written one column wide with REP, which keeps repeating the character printed
+        // before (a space written there would be what REP repeats next)
         yield 'in double width, moved left' => [
             "\x1BN\x12\x42X",
             -1,
-            "\x1F\x4A\x42\x1BN\x12\x41\x1F\x4A\x41 \x1F\x4A\x44\x1BNX",
+            "\x1F\x4A\x41\x12\x41\x1BN\x12\x41X",
         ];
-        // ESC T waiting: the first one, a delimiter, written as a delimiter one column wide in
-        // column 1 once the second one is written
+        // ESC T waiting: the first one, a delimiter if it is a space, written one column wide
+        // after ESC T, which waits otherwise, as in the content
         yield 'in double width, a zone attribute waiting, moved left' => [
             "\x1BN\x1BT\x12\x42X",
             -1,
-            "\x1F\x4A\x42\x1BN\x12\x41\x1F\x4A\x41\x1BT \x1F\x4A\x44\x1BNX",
-        ];
-        // Written before the delimiter after them
-        yield 'in double width, moved left, then a delimiter' => [
-            "\x1BN\x12\x42\x1BT X",
-            -1,
-            "\x1F\x4A\x42\x1BN\x12\x41\x1F\x4A\x41 \x1F\x4A\x44\x1BN\x1BT X",
-        ];
-        // Written before a CAN on row 0, which isn't moved
-        yield 'in double width, moved left, then a CAN on row 0' => [
-            "\x1BN\x12\x42\x1F\x40\x41\x18",
-            -1,
-            "\x1F\x4A\x42\x1BN\x12\x41\x1F\x4A\x41 \x1F\x40\x41\x18",
+            "\x1F\x4A\x41\x1BT\x12\x41\x1BN\x12\x41X",
         ];
         // 21 times: 20 on row 10, then one on row 11, each first one's right half in column 1
         yield 'in double width, moved left, over two rows' => [
             "\x1BN\x12\x55X",
             -1,
-            "\x1F\x4A\x42\x1BN\x12\x53\x1F\x4A\x41 \x1F\x4B\x41 \x1BNX",
+            "\x1F\x4A\x41\x12\x41\x1BN\x12\x53\x1F\x4B\x41\x12\x41\x1BNX",
         ];
-        yield 'in double width, moved left, at the end' => [
-            "\x1BN\x12\x42",
-            -1,
-            "\x1F\x4A\x42\x1BN\x12\x41\x1F\x4A\x41 ",
-        ];
-        // A clear screen erases it before it is written; the REP after it still repeats the
-        // character printed before (its one character off the screen)
+        // The REP after a clear screen still repeats the character printed before (its one
+        // character off the screen)
         yield 'in double width, moved left, then a clear screen' => [
             "\x1BN\x12\x42\x0C\x1F\x4A\x41\x12\x42",
             -1,
-            "\x1F\x4A\x42\x1BN\x12\x41\x0C\x1F\x4A\x41\x12\x41",
+            "\x1F\x4A\x41\x12\x41\x1BN\x12\x41\x0C\x1F\x4A\x41\x12\x41",
         ];
     }
 
