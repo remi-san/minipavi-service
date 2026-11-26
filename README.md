@@ -810,7 +810,8 @@ Codes to send as they are have names: `Vdt\Videotex` for Videotex (`CLEAR_LINE`,
 They replace MiniPaviCli's global `VDT_*` and `PRO_*` constants, which are only defined once
 `MiniPaviCli` is loaded. `Vdt` holds Videotex content, its bytes, and joins it (`join()`,
 `append()`). Its constructors encode as MiniPaviCli's Videotex helpers do, without calling
-them: `Vdt::text()` (as `toG2()`), `Vdt::position($position)` (a `Minitel\Position`,
+them: `Vdt::text()` (as `toG2()`, except where MiniPavi's emulator shows `toG2()` is wrong: it
+sends `Ç` as `ç`, `Vdt::text()` as `Ç`), `Vdt::position($position)` (a `Minitel\Position`,
 `setPos()`), `Vdt::line0()` (`writeLine0()`), `Vdt::clearScreen()` and
 `Vdt::repeat($char, $count)` (`repeatChar()`, up to 64; beyond, as one REP can't count more,
 more follow, as the MiniPavi emulator writes them; a count below 1 is an
