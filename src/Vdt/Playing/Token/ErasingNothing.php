@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace MiniPaviService\Vdt\Token;
+namespace MiniPaviService\Vdt\Playing\Token;
 
 /**
  * A token that erases nothing (any but a clear screen): its bytes are kept as read, after

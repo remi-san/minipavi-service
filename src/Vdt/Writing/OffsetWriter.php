@@ -2,14 +2,19 @@
 
 declare(strict_types=1);
 
-namespace MiniPaviService\Vdt;
+namespace MiniPaviService\Vdt\Writing;
 
 use MiniPaviService\Minitel\ScreenSize;
+use MiniPaviService\Vdt\Playing\ClearedSpaces;
+use MiniPaviService\Vdt\Playing\Player;
+use MiniPaviService\Vdt\Playing\ScreenListener;
+use MiniPaviService\Vdt\Playing\StandInSpace;
 use MiniPaviService\Vdt\Screen\Attributes;
 use MiniPaviService\Vdt\Screen\ShownScreen;
 use MiniPaviService\Vdt\Screen\ShownScreens;
 use MiniPaviService\Vdt\Screen\Zone;
 use MiniPaviService\Vdt\Screen\Zones;
+use MiniPaviService\Vdt\Vdt;
 
 /**
  * Writes again (Writer) what content draws, moved by x columns right and y rows down: what

@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace MiniPaviService\Tests\Vdt;
+namespace MiniPaviService\Tests\Vdt\Writing;
 
 use MiniPaviService\Minitel\Color;
 use MiniPaviService\Vdt\Screen\Attributes;
 use MiniPaviService\Vdt\Screen\Screen;
 use MiniPaviService\Vdt\Screen\Zone;
 use MiniPaviService\Vdt\Vdt;
-use MiniPaviService\Vdt\Writer;
+use MiniPaviService\Vdt\Writing\Writer;
 use PHPUnit\Framework\TestCase;
 
 final class WriterTest extends TestCase

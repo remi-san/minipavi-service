@@ -2,9 +2,10 @@
 
 declare(strict_types=1);
 
-namespace MiniPaviService\Vdt;
+namespace MiniPaviService\Vdt\Playing;
 
 use MiniPaviService\Vdt\Screen\Cursor;
+use MiniPaviService\Vdt\Vdt;
 
 /**
  * Plays Videotex content on a simulated Minitel screen in page mode: follows the cursor and

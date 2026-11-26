@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace MiniPaviService\Vdt;
+namespace MiniPaviService\Vdt\Playing;
 
 use MiniPaviService\Minitel\ScreenSize;
 use MiniPaviService\Vdt\Screen\Attributes;

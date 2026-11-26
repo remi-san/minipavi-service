@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace MiniPaviService\Vdt;
+namespace MiniPaviService\Vdt\Writing;
 
 use MiniPaviService\Minitel\ScreenSize;
 use MiniPaviService\Vdt\Screen\Attribute\Attribute;
@@ -10,6 +10,7 @@ use MiniPaviService\Vdt\Screen\Attributes;
 use MiniPaviService\Vdt\Screen\Cursor;
 use MiniPaviService\Vdt\Screen\Zone;
 use MiniPaviService\Vdt\Screen\Zones;
+use MiniPaviService\Vdt\Videotex;
 
 /**
  * Writes Videotex content cell by cell: positions the cursor only where the next character

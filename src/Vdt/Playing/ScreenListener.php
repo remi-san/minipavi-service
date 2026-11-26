@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace MiniPaviService\Vdt;
+namespace MiniPaviService\Vdt\Playing;
 
 use MiniPaviService\Vdt\Screen\Attributes;
 use MiniPaviService\Vdt\Screen\Zone;

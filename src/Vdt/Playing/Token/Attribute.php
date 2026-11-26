@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace MiniPaviService\Vdt\Token;
+namespace MiniPaviService\Vdt\Playing\Token;
 
-use MiniPaviService\Vdt\Pen;
+use MiniPaviService\Vdt\Playing\Pen;
 use MiniPaviService\Vdt\Screen\Attribute\Attribute as ScreenAttribute;
 use MiniPaviService\Vdt\Screen\Cursor;
 

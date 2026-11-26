@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Vdt;
 
-use MiniPaviService\Vdt\Token\Token;
+use MiniPaviService\Vdt\Playing\Parser;
+use MiniPaviService\Vdt\Playing\Token\Token;
 
 /**
  * What the clear screens (FF) of Videotex content do to it: what still shows after the last

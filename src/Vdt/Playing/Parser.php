@@ -2,25 +2,26 @@
 
 declare(strict_types=1);
 
-namespace MiniPaviService\Vdt;
+namespace MiniPaviService\Vdt\Playing;
 
+use MiniPaviService\Vdt\Playing\Token\Attribute;
+use MiniPaviService\Vdt\Playing\Token\CarriageReturn;
+use MiniPaviService\Vdt\Playing\Token\Charset;
+use MiniPaviService\Vdt\Playing\Token\ClearLine;
+use MiniPaviService\Vdt\Playing\Token\ClearScreen;
+use MiniPaviService\Vdt\Playing\Token\CursorDown;
+use MiniPaviService\Vdt\Playing\Token\CursorLeft;
+use MiniPaviService\Vdt\Playing\Token\CursorRight;
+use MiniPaviService\Vdt\Playing\Token\CursorUp;
+use MiniPaviService\Vdt\Playing\Token\Glyph;
+use MiniPaviService\Vdt\Playing\Token\Home;
+use MiniPaviService\Vdt\Playing\Token\Position;
+use MiniPaviService\Vdt\Playing\Token\Raw;
+use MiniPaviService\Vdt\Playing\Token\Repeat;
+use MiniPaviService\Vdt\Playing\Token\Token;
 use MiniPaviService\Vdt\Screen\Attribute\AttributeReader;
 use MiniPaviService\Vdt\Screen\G2Characters;
-use MiniPaviService\Vdt\Token\Attribute;
-use MiniPaviService\Vdt\Token\CarriageReturn;
-use MiniPaviService\Vdt\Token\Charset;
-use MiniPaviService\Vdt\Token\ClearLine;
-use MiniPaviService\Vdt\Token\ClearScreen;
-use MiniPaviService\Vdt\Token\CursorDown;
-use MiniPaviService\Vdt\Token\CursorLeft;
-use MiniPaviService\Vdt\Token\CursorRight;
-use MiniPaviService\Vdt\Token\CursorUp;
-use MiniPaviService\Vdt\Token\Glyph;
-use MiniPaviService\Vdt\Token\Home;
-use MiniPaviService\Vdt\Token\Position;
-use MiniPaviService\Vdt\Token\Raw;
-use MiniPaviService\Vdt\Token\Repeat;
-use MiniPaviService\Vdt\Token\Token;
+use MiniPaviService\Vdt\Videotex;
 
 /**
  * Cuts Videotex content into Tokens: how Vdt reads it, tested through what it draws
