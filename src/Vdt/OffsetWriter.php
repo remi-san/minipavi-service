@@ -110,7 +110,7 @@ final class OffsetWriter implements ScreenListener
     // Writes a character drawn at row, col, moved, in the zone the cells written before it leave
     private function writeMoved(int $row, int $col, string $bytes, int $width, Attributes $attributes): void
     {
-        $zone = $this->zoneBefore($this->shownRow($row, $attributes), $col);
+        $zone = $this->zoneBefore($this->asShown($row, $bytes, $attributes)[0], $col);
         $this->zones->draw($row, $col, $width, $attributes);
         $moved = $this->moved($row, $col, $bytes, $attributes);
         if ($moved !== null) {
@@ -189,7 +189,7 @@ final class OffsetWriter implements ScreenListener
      * shows the left half only, moved left is written one column wide too: what it shows of
      * it. Another character there is written whole. The top half of a tall one left alone on
      * the last row, its bottom row moved off the screen, is written there as a space at
-     * normal height (shownRow()), with its attributes, which shows the same way
+     * normal height (asShown()), with its attributes, which shows the same way
      *
      * @return ?array{int, int, string, Attributes} the row, the column, the bytes and the
      *                                              attributes
@@ -197,10 +197,7 @@ final class OffsetWriter implements ScreenListener
     private function moved(int $row, int $col, string $bytes, Attributes $attributes): ?array
     {
         if ($row !== 0) {
-            $shownRow = $this->shownRow($row, $attributes);
-            if ($shownRow !== $row) {
-                [$row, $bytes, $attributes] = [$shownRow, ' ', $attributes->flattened()];
-            }
+            [$row, $bytes, $attributes] = $this->asShown($row, $bytes, $attributes);
             if ($bytes === ' ' && $this->x < 0 && ($col + $attributes->width() - 1) > ScreenSize::COLS) {
                 $attributes = $attributes->narrowed();
             }
@@ -222,20 +219,24 @@ final class OffsetWriter implements ScreenListener
     }
 
     /**
-     * The row (not moved) a character drawn at row with these attributes shows on, once
-     * moved: its own, or the row above for a tall one whose bottom row is moved off the
-     * screen, below the last row, leaving its top half alone on it. The Minitel draws a tall
-     * character from its bottom row (MiniPavi's emulator, decoder.js, printG0Char()), so that
-     * top half is written as a space at normal height (moved(), #173)
+     * What of a character drawn at row (not moved) with these bytes and attributes shows once
+     * moved: the row (not moved) it shows on, and the bytes and attributes it is written with
+     * there. It is the character as it is, unless it is a tall one whose bottom row is moved
+     * off the screen, below the last row, leaving its top half alone on it: the Minitel draws
+     * a tall character from its bottom row (MiniPavi's emulator, decoder.js, printG0Char()),
+     * so that top half is written on the row above as a space at normal height, with its
+     * attributes (#173)
+     *
+     * @return array{int, string, Attributes} the row (not moved), the bytes and the attributes
      */
-    private function shownRow(int $row, Attributes $attributes): int
+    private function asShown(int $row, string $bytes, Attributes $attributes): array
     {
         // Row 0, the status row, not moved, has no tall character (Attributes::allowsDoubleHeight())
         if (($row + $this->y) !== (ScreenSize::ROWS + 1) || $attributes->height() === 1) {
-            return $row;
+            return [$row, $bytes, $attributes];
         }
 
-        return $row - 1;
+        return [$row - 1, ' ', $attributes->flattened()];
     }
 
     /**
@@ -257,7 +258,8 @@ final class OffsetWriter implements ScreenListener
         $delimiter = $this->shown->shows($row, $col, width: $attributes->width(), height: $attributes->height())
             ? $delimiter
             : null;
-        $shownRow = $this->shownRow($row, $attributes);
+        // The top halves alone on the last row at normal height (asShown())
+        [$shownRow, , $written] = $this->asShown($row, ' ', $attributes);
         $zone = $this->zoneBefore($shownRow, $col);
         $this->zones->clearLine($row, $col, $attributes, $delimiter);
         if ($row === 0) {
@@ -269,9 +271,7 @@ final class OffsetWriter implements ScreenListener
             return;
         }
         if (($col + $this->x) <= ScreenSize::COLS) {
-            // The top halves alone on the last row (shownRow()) at normal height
-            $shown = $shownRow === $row ? $attributes : $attributes->flattened();
-            $this->out->clearLine($movedRow, $col + $this->x, $shown, $zone, $delimiter);
+            $this->out->clearLine($movedRow, $col + $this->x, $written, $zone, $delimiter);
         }
     }
 
