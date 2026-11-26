@@ -53,6 +53,16 @@ final class ShownScreens implements ScreenListener
         $this->screen->delimiter($row, $col, $width, $attributes, $zone);
     }
 
+    public function priorCharacter(int $row, int $col, int $width, Attributes $attributes, ?Zone $delimiter): void
+    {
+        // As the space that stands in for it
+        if ($delimiter !== null) {
+            $this->screen->delimiter($row, $col, $width, $attributes, $delimiter);
+            return;
+        }
+        $this->screen->glyph($row, $col, ' ', $width, $attributes);
+    }
+
     public function clearLine(int $row, int $col, Attributes $attributes, ?Zone $delimiter): void
     {
         $this->screen->clearLine($row, $col, $attributes, $delimiter);

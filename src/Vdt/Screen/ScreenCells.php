@@ -64,6 +64,19 @@ final class ScreenCells implements ScreenListener
     }
 
     /**
+     * The character printed before the content, as a space that stands in for it: a delimiter
+     * starting delimiter, if not null
+     */
+    public function priorCharacter(int $row, int $col, int $width, Attributes $attributes, ?Zone $delimiter): void
+    {
+        if ($delimiter !== null) {
+            $this->delimiter($row, $col, $width, $attributes, $delimiter);
+            return;
+        }
+        $this->glyph($row, $col, ' ', $width, $attributes);
+    }
+
+    /**
      * CAN at row, col, as MiniPavi's emulator prints it (decoder.js, clear("eol")): a space
      * with these attributes in each column from col to the last, the first one a delimiter
      * starting zone delimiter, if not null (Zones::clearLine()). So in double height they

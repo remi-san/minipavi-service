@@ -152,8 +152,9 @@ final class ScreenTest extends TestCase
     }
 
     /**
-     * REP before any character repeats a space: the emulator's last character starts as one
-     * (MiniPavi's emulator, decoder.js: charCode = 0x20)
+     * REP before any character repeats the character printed before the content (the
+     * gateway's PIN, the previous page's last character), which can't be known: a space
+     * stands in for it, in the cursor's attributes (#163)
      *
      * @return iterable<string, array{string, array<int, string>}> what is sent after a clear
      *                                                              screen, and the text of rows
@@ -187,8 +188,9 @@ final class ScreenTest extends TestCase
 
     public function testRepeatBeforeAnyCharacterDrawsADelimiterWhileAZoneAttributeWaits(): void
     {
-        // Blue background waiting, REP: its first space a delimiter, which colours the text
-        // after it blue, as a space drawn there does
+        // Blue background waiting, REP: the first space standing in for the character
+        // printed before is a delimiter, which colours the text after it blue, as a space
+        // drawn there does
         $screen = Screen::of(
             new Vdt(
                 Videotex::CLEAR_SCREEN

@@ -14,6 +14,8 @@ use MiniPaviService\Vdt\Screen\Zones;
 /**
  * Writes Videotex content cell by cell: positions the cursor only where the next character
  * isn't already, sends only the attributes that changed, and repeats characters with REP.
+ * It writes the character printed before the content (ScreenListener::priorCharacter()) with
+ * REP too, which repeats it as long as nothing was printed before.
  *
  * It keeps the zones of the text it writes (Zone): their background, masking and underline
  * are sent only before a delimiter, as on the Minitel they wait for one (a text character's
@@ -36,6 +38,9 @@ final class Writer
     private ?string $pending = null;
     /** @var non-negative-int */
     private int $repeat = 0;
+    // How many times the character printed before the content is to be written with REP
+    /** @var non-negative-int */
+    private int $priors = 0;
 
     public function __construct()
     {
@@ -69,6 +74,29 @@ final class Writer
         $this->moveTo($row, $col);
         $this->setAttributes($attributes);
         $this->delimit($row, $col, $width, $zone);
+    }
+
+    /**
+     * The character printed before the content at row, col, width cells wide, which can't be
+     * known (ScreenListener::priorCharacter()): written with REP, which repeats it if nothing
+     * was printed before it, a delimiter starting delimiter, if not null, made one by the zone
+     * attributes sent just before it (Zone::delimiterAttributesFrom()), as a space would be
+     */
+    public function priorCharacter(int $row, int $col, int $width, Attributes $attributes, ?Zone $delimiter): void
+    {
+        $this->moveTo($row, $col);
+        $this->setAttributes($attributes);
+        if ($delimiter === null) {
+            $this->putPrior();
+            $this->zones->draw($row, $col, $width, $this->cursor->attributes());
+            $this->movePast($col, $width);
+            return;
+        }
+        $this->sendZone($delimiter);
+        $this->putPrior();
+        $this->cursor->delimit();
+        $this->zones->delimiter($row, $col, $width, $this->cursor->attributes()->height(), $this->cursor->zone());
+        $this->movePast($col, $width);
     }
 
     /**
@@ -124,6 +152,14 @@ final class Writer
         $this->flush();
         $this->vdt .= $bytes;
         $this->pending = $bytes;
+    }
+
+    // One more repetition of the character printed before the content: sending anything
+    // else sends the REP first (flush()). Nothing was printed before it, so no other
+    // character waits to be repeated
+    private function putPrior(): void
+    {
+        $this->priors++;
     }
 
     // Whether a text space at row, col (at the cursor, its attributes sent) loses zone: the
@@ -204,12 +240,17 @@ final class Writer
         $this->vdt .= $bytes;
     }
 
-    // Sends the repetitions of the last character: REP, or the character again when shorter
+    // Sends the repetitions of the last character: REP, or the character again when shorter;
+    // or those of the character printed before the content, REP
     private function flush(): void
     {
         $repeated = str_repeat($this->pending ?? '', $this->repeat);
         $this->vdt .= \strlen($repeated) <= 2 ? $repeated : Videotex::REPEAT . chr(0x40 + $this->repeat);
         $this->pending = null;
         $this->repeat = 0;
+        if ($this->priors > 0) {
+            $this->vdt .= Videotex::REPEAT . chr(0x40 + $this->priors);
+            $this->priors = 0;
+        }
     }
 }

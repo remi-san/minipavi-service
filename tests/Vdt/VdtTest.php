@@ -817,9 +817,94 @@ final class VdtTest extends TestCase
         yield 'at normal size, right' => ["\x1F\x4A\x41\x12\x43X", 1, 1];
         yield 'at normal size, left' => ["\x1F\x4A\x41\x12\x43X", -1, 0];
         yield 'in double width, left' => ["\x1F\x4A\x41\x1BN\x12\x42X", -1, 0];
+        yield 'in double width, a delimiter, left' => ["\x1F\x4A\x41\x1BN\x1BT\x12\x42X", -1, 0];
+        yield 'in double size, left' => ["\x1F\x4A\x41\x1BO\x12\x42X", -1, 0];
+        yield 'in double size, right and down' => ["\x1F\x4A\x41\x1BO\x12\x42X", 1, 1];
         // ESC T: the first space a blue delimiter
         yield 'a delimiter, right' => ["\x1F\x4A\x41\x1BT\x12\x42X", 1, 0];
         yield 'a delimiter, left' => ["\x1F\x4A\x41\x1BT\x12\x42X", -1, 0];
+    }
+
+    /**
+     * REP before any character repeats the character printed before the content, which can't
+     * be known (the gateway's PIN, the previous page's last character): written with REP too,
+     * so that it shows the same, whatever it is (#163)
+     *
+     * @return iterable<string, array{string, int, string}> what is drawn from row 10, column 1,
+     *                                                     x, and how it is written
+     */
+    public static function repeatsBeforeAnyCharacterWritten(): iterable
+    {
+        yield 'moved right' => ["\x12\x43X", 1, "\x1F\x4A\x42\x12\x43X"];
+        // ESC T waiting: the first one a blue delimiter, then X and a space in its zone
+        yield 'a zone attribute waiting, then text' => ["\x1BT\x12\x42X Y", 1, "\x1F\x4A\x42\x1BT\x12\x42X Y"];
+        // The first one off the screen
+        yield 'moved left' => ["\x12\x43X", -1, "\x1F\x4A\x41\x12\x42X"];
+        // Then a space, written as one
+        yield 'then a space' => ["\x12\x42 Y", 1, "\x1F\x4A\x42\x12\x42 Y"];
+        yield 'in mosaic' => ["\x0E\x12\x42", 1, "\x1F\x4A\x42\x0E\x12\x42"];
+        // 45 times: 40 on row 10, 5 on row 11; moved right, the 40th goes off the screen
+        yield 'over two rows' => ["\x12\x6D", 1, "\x1F\x4A\x42\x12\x67\x1F\x4B\x42\x12\x45"];
+        // ESC T waiting: written before REP, as in the content (a delimiter if it is a space)
+        yield 'a zone attribute waiting' => ["\x1BT\x12\x42X", 1, "\x1F\x4A\x42\x1BT\x12\x42X"];
+        // Its first one, which a blue zone starts at, off the screen: the zone starts again at
+        // the second one, ESC T written before it
+        yield 'a zone attribute waiting, moved left' => ["\x1BT\x12\x42X", -1, "\x1F\x4A\x41\x1BT\x12\x41X"];
+        // The first one's right half in column 1: written as a space, once the second one is
+        // written with REP (a space written before would be what REP repeats), before X
+        yield 'in double width, moved left' => [
+            "\x1BN\x12\x42X",
+            -1,
+            "\x1F\x4A\x42\x1BN\x12\x41\x1F\x4A\x41 \x1F\x4A\x44\x1BNX",
+        ];
+        // ESC T waiting: the first one, a delimiter, written as a delimiter one column wide in
+        // column 1 once the second one is written
+        yield 'in double width, a zone attribute waiting, moved left' => [
+            "\x1BN\x1BT\x12\x42X",
+            -1,
+            "\x1F\x4A\x42\x1BN\x12\x41\x1F\x4A\x41\x1BT \x1F\x4A\x44\x1BNX",
+        ];
+        // Written before the delimiter after them
+        yield 'in double width, moved left, then a delimiter' => [
+            "\x1BN\x12\x42\x1BT X",
+            -1,
+            "\x1F\x4A\x42\x1BN\x12\x41\x1F\x4A\x41 \x1F\x4A\x44\x1BN\x1BT X",
+        ];
+        // Written before a CAN on row 0, which isn't moved
+        yield 'in double width, moved left, then a CAN on row 0' => [
+            "\x1BN\x12\x42\x1F\x40\x41\x18",
+            -1,
+            "\x1F\x4A\x42\x1BN\x12\x41\x1F\x4A\x41 \x1F\x40\x41\x18",
+        ];
+        // 21 times: 20 on row 10, then one on row 11, each first one's right half in column 1
+        yield 'in double width, moved left, over two rows' => [
+            "\x1BN\x12\x55X",
+            -1,
+            "\x1F\x4A\x42\x1BN\x12\x53\x1F\x4A\x41 \x1F\x4B\x41 \x1BNX",
+        ];
+        yield 'in double width, moved left, at the end' => [
+            "\x1BN\x12\x42",
+            -1,
+            "\x1F\x4A\x42\x1BN\x12\x41\x1F\x4A\x41 ",
+        ];
+        // A clear screen erases it before it is written; the REP after it still repeats the
+        // character printed before (its one character off the screen)
+        yield 'in double width, moved left, then a clear screen' => [
+            "\x1BN\x12\x42\x0C\x1F\x4A\x41\x12\x42",
+            -1,
+            "\x1F\x4A\x42\x1BN\x12\x41\x0C\x1F\x4A\x41\x12\x41",
+        ];
+    }
+
+    #[DataProvider('repeatsBeforeAnyCharacterWritten')]
+    public function testOffsetWritesARepeatBeforeAnyCharacterWithRep(string $drawn, int $x, string $written): void
+    {
+        self::assertSame(
+            $written,
+            (new Offset($x, y: 0))
+                ->apply(new Vdt("\x1F\x4A\x41{$drawn}"))
+                ->toString(),
+        );
     }
 
     #[DataProvider('repeatsBeforeAnyCharacterMoved')]
