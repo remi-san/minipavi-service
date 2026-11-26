@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace MiniPaviService\Tests\Client;
+namespace MiniPaviService\Tests\Client\MiniPavi;
 
-use MiniPaviService\Client\MiniPaviCliGateway;
+use MiniPaviService\Client\MiniPavi\MiniPaviCliGateway;
 use MiniPaviService\Gateway\CallMode;
 use MiniPaviService\Gateway\GatewayRequest;
 use MiniPaviService\Gateway\InputCommand;
@@ -209,7 +209,7 @@ final class MiniPaviCliGatewayTest extends TestCase
 
     public function testIsTheOnlyFacadeOfMiniPaviCli(): void
     {
-        $src = \dirname(__DIR__, levels: 2) . '/src/';
+        $src = \dirname(__DIR__, levels: 3) . '/src/';
         $files = new \RecursiveIteratorIterator(
             new \RecursiveDirectoryIterator($src, flags: \FilesystemIterator::SKIP_DOTS),
         );
@@ -217,14 +217,15 @@ final class MiniPaviCliGatewayTest extends TestCase
         foreach ($files as $file) {
             // A file's info is its path as text
             $path = (string) $file;
-            if (!str_contains((string) file_get_contents($path), 'MiniPavi\\MiniPaviCli')) {
+            // The library's class, not the namespace Client\MiniPavi of the framework's classes
+            if (!preg_match('/(?<!\w)(?<!\w\\\\)MiniPavi\\\\MiniPaviCli(?!\w)/', (string) file_get_contents($path))) {
                 continue;
             }
             $users[] = substr($path, \strlen($src));
         }
         sort($users);
 
-        self::assertSame(['Client/MiniPaviCliGateway.php'], $users);
+        self::assertSame(['Client/MiniPavi/MiniPaviCliGateway.php'], $users);
     }
 
     /**

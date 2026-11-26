@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace MiniPaviService\Tests\Client;
+namespace MiniPaviService\Tests\Client\Html;
 
-use MiniPaviService\Client\HtmlForm;
+use MiniPaviService\Client\Html\HtmlForm;
 use MiniPaviService\Gateway\InputCommand;
 use MiniPaviService\Message\MessagesXmlParser;
 use MiniPaviService\Minitel\FunctionKey;

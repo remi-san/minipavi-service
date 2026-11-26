@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace MiniPaviService\Tests\Client;
+namespace MiniPaviService\Tests\Client\MiniPavi;
 
 use MiniPaviService\Client\ClientExchange;
-use MiniPaviService\Client\MiniPaviClient;
+use MiniPaviService\Client\MiniPavi\MiniPaviClient;
 use MiniPaviService\Gateway\CallMode;
 use MiniPaviService\Gateway\GatewayRequest;
 use MiniPaviService\Gateway\GatewayResponse;

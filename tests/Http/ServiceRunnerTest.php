@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Tests\Http;
 
-use MiniPaviService\Client\MiniPaviClient;
+use MiniPaviService\Client\MiniPavi\MiniPaviClient;
 use MiniPaviService\Controller\Parameters\NoParameters;
 use MiniPaviService\Controller\Request;
 use MiniPaviService\Controller\Response\DisplayPage;

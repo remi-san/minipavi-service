@@ -2,8 +2,9 @@
 
 declare(strict_types=1);
 
-namespace MiniPaviService\Client;
+namespace MiniPaviService\Client\Html;
 
+use MiniPaviService\Client\Client;
 use MiniPaviService\Gateway\GatewayRequest;
 use MiniPaviService\Message\Messages;
 use MiniPaviService\Minitel\ConnectionCode;

@@ -2,8 +2,9 @@
 
 declare(strict_types=1);
 
-namespace MiniPaviService\Client;
+namespace MiniPaviService\Client\MiniPavi;
 
+use MiniPaviService\Client\ClientExchange;
 use MiniPaviService\Gateway\GatewayRequest;
 use MiniPaviService\Gateway\GatewayResponse;
 use Nyholm\Psr7\Response;

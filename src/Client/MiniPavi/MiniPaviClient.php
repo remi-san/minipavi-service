@@ -2,8 +2,9 @@
 
 declare(strict_types=1);
 
-namespace MiniPaviService\Client;
+namespace MiniPaviService\Client\MiniPavi;
 
+use MiniPaviService\Client\Client;
 use MiniPaviService\Gateway\GatewayRequest;
 use Psr\Http\Message\ServerRequestInterface;
 

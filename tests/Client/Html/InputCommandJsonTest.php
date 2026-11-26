@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace MiniPaviService\Tests\Client;
+namespace MiniPaviService\Tests\Client\Html;
 
-use MiniPaviService\Client\InputCommandJson;
+use MiniPaviService\Client\Html\InputCommandJson;
 use MiniPaviService\Gateway\InputCommand;
 use MiniPaviService\Minitel\FunctionKey;
 use MiniPaviService\Minitel\InputField;

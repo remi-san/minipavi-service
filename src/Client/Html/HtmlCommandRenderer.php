@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace MiniPaviService\Client;
+namespace MiniPaviService\Client\Html;
 
 use MiniPaviService\Gateway\CommandSender;
 use MiniPaviService\Gateway\GatewayResponse;

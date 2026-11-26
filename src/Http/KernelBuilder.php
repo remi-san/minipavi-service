@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Http;
 
-use MiniPaviService\Client\HtmlClient;
-use MiniPaviService\Client\HtmlForm;
-use MiniPaviService\Client\MiniPaviClient;
-use MiniPaviService\Client\MiniPaviCliGateway;
+use MiniPaviService\Client\Html\HtmlClient;
+use MiniPaviService\Client\Html\HtmlForm;
+use MiniPaviService\Client\MiniPavi\MiniPaviClient;
+use MiniPaviService\Client\MiniPavi\MiniPaviCliGateway;
 use MiniPaviService\Core\ContextSerializer;
 use MiniPaviService\Core\Router;
 use MiniPaviService\Core\Service;

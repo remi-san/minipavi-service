@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace MiniPaviService\Tests\Client;
+namespace MiniPaviService\Tests\Client\Html;
 
 use DOMDocument;
 use DOMElement;
 use DOMXPath;
-use MiniPaviService\Client\HtmlClient;
-use MiniPaviService\Client\HtmlForm;
+use MiniPaviService\Client\Html\HtmlClient;
+use MiniPaviService\Client\Html\HtmlForm;
 use MiniPaviService\Controller\Parameters\NoParameters;
 use MiniPaviService\Controller\Request;
 use MiniPaviService\Controller\Response\ChangePage;
