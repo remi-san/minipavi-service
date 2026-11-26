@@ -39,6 +39,16 @@ final class VdtTest extends TestCase
         self::assertStringStartsWith('a b ', Screen::of(Vdt::text("a\x0Cb"))->line(1));
     }
 
+    /**
+     * Uppercase letters keep their case (#58): Ç is the Minitel's Ç, not ç. The Minitel has
+     * no Î, which it would show as _ (as MiniPavi's emulator does): Î is shown as I
+     */
+    public function testTextShowsUppercaseLettersAsTheMinitelHasThem(): void
+    {
+        self::assertStringStartsWith('ÇA ç ILE île ', Screen::of(Vdt::text('ÇA ç ÎLE île'))->line(1));
+        self::assertStringStartsWith('ÇA ç ILE île ', Screen::of(Vdt::line0('ÇA ç ÎLE île'))->line(0));
+    }
+
     public function testJoinsContents(): void
     {
         $a = new Vdt("\x0C");

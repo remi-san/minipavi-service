@@ -7,7 +7,8 @@ namespace MiniPaviService\Vdt;
 /**
  * Text (UTF-8) as Videotex: accented and special characters encoded in G2 (SS2, then their
  * code), a few others as the letter closest to them, as MiniPaviCli's toG2() does (CodesTest
- * checks they encode the same)
+ * checks they encode the same), except where MiniPavi's emulator shows toG2() is wrong: Ç,
+ * which toG2() sends as ç (#58)
  *
  * @internal
  */
@@ -23,7 +24,7 @@ final class G2
         'É' => Videotex::G2 . "\x42E",
         'È' => Videotex::G2 . "\x41E",
         'À' => Videotex::G2 . "\x41A",
-        'Ç' => Videotex::G2 . "\x4B\x63",
+        'Ç' => Videotex::G2 . "\x4BC",
         'Ê' => Videotex::G2 . "\x43E",
         'β' => Videotex::G2 . "\x7B",
         'ß' => Videotex::G2 . "\x7B",
