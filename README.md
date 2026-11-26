@@ -849,7 +849,14 @@ echo Screen::of($moved)->preview();              // the screen, as text
   again where needed, with the current attributes (character set, colors, size...), which a
   positioning resets. Row 0, the status line, is not moved. A double-height or double-size
   character moved onto row 1, where the Minitel discards `ESC M` and `ESC O`, is written
-  without them: at normal size, or double width for double size, in the columns it had. Text
+  without them: at normal size, or double width for double size, in the columns it had. One
+  moved down so that its bottom row goes off the screen, leaving its top half alone on row 24,
+  can't be shown there, as the Minitel draws a tall character from its bottom row: that top
+  half is written as a space at normal height (double width for double size), with its
+  attributes, as a delimiter when it is one (a tall CAN's spaces too). For a space that is
+  what it shows, but for its zone's underline, which the Minitel draws in a tall cell's
+  bottom half only; for another character, its background (or its colour, inverted) without
+  its glyph, and a zone can start again in it, as in a space (#173). Text
   keeps its zone (see `Screen::of()`): its background colour, masking and underline are sent
   only before its delimiter (with `ESC Z` or `ESC Y` when none of them changes), never with a
   text character, and a space that would otherwise lose its zone (its delimiter went off the
@@ -857,8 +864,8 @@ echo Screen::of($moved)->preview();              // the screen, as text
   isn't. Text moved to column 1 before such a space has no column left for its delimiter, and
   loses its zone. That zone is the one the columns going off the screen leave once the screen
   is drawn (up to the clear screen that erases it, or the end), and that space the first text
-  space showing it then, or the right half of a wide character left in column 1, as it is
-  written as a space (#170), so that what is drawn there later doesn't erase it: a delimiter drawn
+  space showing it then, the right half of a wide character left in column 1, or the top half
+  of a tall one alone on row 24, as each is written as a space (#170, #173), so that what is drawn there later doesn't erase it: a delimiter drawn
   over later (e.g. CAN's, with a background colour waiting, then text over it) starts no zone,
   and is written as a space, while one drawn after the cells it colours does (#126). A
   double-height or double-size cell is on the row above too: a tall delimiter whose top half
