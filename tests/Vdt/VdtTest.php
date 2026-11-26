@@ -1091,8 +1091,15 @@ final class VdtTest extends TestCase
      */
     private static function assertScreenMoved(Vdt $original, int $x, int $y): void
     {
-        $before = Screen::of($original);
-        $after = Screen::of((new Offset($x, $y))->apply($original));
+        self::assertShowsMoved(Screen::of($original), Screen::of((new Offset($x, $y))->apply($original)), $x, $y);
+    }
+
+    /**
+     * The after screen shows the before one, moved by x columns right and y rows down, as
+     * assertScreenMoved() says
+     */
+    private static function assertShowsMoved(Screen $before, Screen $after, int $x, int $y): void
+    {
         $glyphs = self::glyphColumns($before);
 
         for ($row = 0; $row <= ScreenSize::ROWS; $row++) {
