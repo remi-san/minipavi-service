@@ -67,6 +67,9 @@ helpers = [
 minitel = ["MiniPaviService\\Minitel\\**"]
 vdt = ["MiniPaviService\\Vdt\\**"]
 gateway = ["MiniPaviService\\Gateway\\**"]
+# Inside Gateway: Command (what a response asks the gateway to do next) <- the request and the
+# response
+gateway-command = ["MiniPaviService\\Gateway\\Command\\**"]
 message = ["MiniPaviService\\Message\\**"]
 # A layer's root type (MiniPaviService\Page) belongs to it
 page = ["MiniPaviService\\Page", "MiniPaviService\\Page\\**"]
@@ -78,7 +81,16 @@ page-building = ["MiniPaviService\\Page\\Building\\**"]
 page-template = ["MiniPaviService\\Page\\Template\\**"]
 controller = ["MiniPaviService\\Controller", "MiniPaviService\\Controller\\**"]
 core = ["MiniPaviService\\Core\\**"]
+# Inside Core: Routing (the routes and what each keeps) <- Context (the context of a session,
+# by route) <- the rest of Core (running a request)
+core-routing = ["MiniPaviService\\Core\\Routing\\**"]
+core-context = ["MiniPaviService\\Core\\Context\\**"]
 client = ["MiniPaviService\\Client\\**"]
+# Inside Client: the interfaces <- each client (the browser's, the gateway's), which don't use
+# each other
+client-interfaces = ["MiniPaviService\\Client\\Client", "MiniPaviService\\Client\\ClientExchange"]
+client-html = ["MiniPaviService\\Client\\Html\\**"]
+client-minipavi = ["MiniPaviService\\Client\\MiniPavi\\**"]
 http = ["MiniPaviService\\Http\\**"]
 cli = ["MiniPaviService\\Cli\\**"]
 testing = ["MiniPaviService\\Testing\\**"]
@@ -115,8 +127,12 @@ namespace = "MiniPaviService\\Vdt\\"
 permit = ["@native", "@layer:helpers", "@layer:minitel", "@layer:vdt"]
 
 [[guard.perimeter.rules]]
+namespace = "MiniPaviService\\Gateway\\Command\\"
+permit = ["@native", "@layer:helpers", "@layer:minitel", "@layer:vdt", "@layer:gateway-command"]
+
+[[guard.perimeter.rules]]
 namespace = "MiniPaviService\\Gateway\\"
-permit = ["@native", "@layer:helpers", "@layer:minitel", "@layer:vdt", "@layer:gateway", "@layer:psr-http"]
+permit = ["@native", "@layer:helpers", "@layer:minitel", "@layer:vdt", "@layer:gateway"]
 
 [[guard.perimeter.rules]]
 namespace = "MiniPaviService\\Message\\"
@@ -174,6 +190,35 @@ permit = [
 ]
 
 [[guard.perimeter.rules]]
+namespace = "MiniPaviService\\Core\\Routing\\"
+permit = [
+    "@native",
+    "@layer:helpers",
+    "@layer:minitel",
+    "@layer:vdt",
+    "@layer:gateway",
+    "@layer:message",
+    "@layer:page",
+    "@layer:controller",
+    "@layer:core-routing",
+]
+
+[[guard.perimeter.rules]]
+namespace = "MiniPaviService\\Core\\Context\\"
+permit = [
+    "@native",
+    "@layer:helpers",
+    "@layer:minitel",
+    "@layer:vdt",
+    "@layer:gateway",
+    "@layer:message",
+    "@layer:page",
+    "@layer:controller",
+    "@layer:core-routing",
+    "@layer:core-context",
+]
+
+[[guard.perimeter.rules]]
 namespace = "MiniPaviService\\Core\\"
 permit = [
     "@native",
@@ -189,6 +234,37 @@ permit = [
 ]
 
 [[guard.perimeter.rules]]
+namespace = "MiniPaviService\\Client\\Html\\"
+permit = [
+    "@native",
+    "@layer:helpers",
+    "@layer:minitel",
+    "@layer:vdt",
+    "@layer:gateway",
+    "@layer:message",
+    "@layer:client-interfaces",
+    "@layer:client-html",
+    "@layer:psr-http",
+    "@layer:nyholm",
+]
+
+[[guard.perimeter.rules]]
+namespace = "MiniPaviService\\Client\\MiniPavi\\"
+permit = [
+    "@native",
+    "@layer:helpers",
+    "@layer:minitel",
+    "@layer:vdt",
+    "@layer:gateway",
+    "@layer:message",
+    "@layer:client-interfaces",
+    "@layer:client-minipavi",
+    "@layer:psr-http",
+    "@layer:nyholm",
+    "@layer:minipavi-cli",
+]
+
+[[guard.perimeter.rules]]
 namespace = "MiniPaviService\\Client\\"
 permit = [
     "@native",
@@ -197,10 +273,8 @@ permit = [
     "@layer:vdt",
     "@layer:gateway",
     "@layer:message",
-    "@layer:client",
+    "@layer:client-interfaces",
     "@layer:psr-http",
-    "@layer:nyholm",
-    "@layer:minipavi-cli",
 ]
 
 [[guard.perimeter.rules]]
