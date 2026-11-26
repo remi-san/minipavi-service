@@ -818,6 +818,10 @@ final class VdtTest extends TestCase
         yield 'at normal size, left' => ["\x1F\x4A\x41\x12\x43X", -1, 0];
         yield 'in double width, left' => ["\x1F\x4A\x41\x1BN\x12\x42X", -1, 0];
         yield 'in double width, a delimiter, left' => ["\x1F\x4A\x41\x1BN\x1BT\x12\x42X", -1, 0];
+        yield 'in double width in the last column, left' => ["\x1F\x4A\x68\x1BN\x1B]\x12\x41", -1, 0];
+        // 45 times: 40 on row 10, 5 on row 11
+        yield 'over two rows, down' => ["\x1F\x4A\x41\x12\x6D", 0, 1];
+        yield 'over two rows, right and up' => ["\x1F\x4A\x41\x12\x6D", 1, -1];
         yield 'in double size, left' => ["\x1F\x4A\x41\x1BO\x12\x42X", -1, 0];
         yield 'in double size, right and down' => ["\x1F\x4A\x41\x1BO\x12\x42X", 1, 1];
         // ESC T: the first space a blue delimiter
@@ -870,6 +874,13 @@ final class VdtTest extends TestCase
             "\x1BN\x12\x55X",
             -1,
             "\x1F\x4A\x41\x12\x41\x1BN\x12\x53\x1F\x4B\x41\x12\x41\x1BNX",
+        ];
+        // In column 40, inverted, where the Minitel shows its left half: moved left, written
+        // one column wide, as a space there is (a wide one would show one column more)
+        yield 'in double width in the last column, moved left' => [
+            "\x1F\x4A\x68\x1BN\x1B]\x12\x41",
+            -1,
+            "\x1F\x4A\x67\x1B]\x12\x41",
         ];
         // The REP after a clear screen still repeats the character printed before (its one
         // character off the screen)

@@ -29,8 +29,9 @@ use MiniPaviService\Vdt\Screen\Zones;
  *
  * The character a REP repeats before any is drawn, printed before the content, can't be known
  * (ScreenListener::priorCharacter()): it is written with REP too, which repeats it as long as
- * nothing is printed before, one column wide where only its right half stays in column 1
- * (moved()), as a space written there would be what REP repeats next.
+ * nothing is printed before. It is moved as the space that stands in for it (moved()): one
+ * column wide where only its right half stays in column 1, or where only its left half shows
+ * in column 40, moved left.
  *
  * Its Writer keeps where it is and what it wrote (so it isn't readonly), so it listens to one
  * content only: it is only built, and played to, by write().
@@ -42,10 +43,6 @@ final class OffsetWriter implements ScreenListener
     private readonly Writer $out;
     // The zones of what is written, where the content draws it (not moved)
     private readonly Zones $zones;
-
-    // The bytes moved() is given for the character printed before the content: not a space,
-    // as it may be another character
-    private const PRIOR = Videotex::REPEAT;
 
     /**
      * @param ShownScreen $shown the screen being drawn, as it shows once drawn (not moved): up
@@ -136,17 +133,17 @@ final class OffsetWriter implements ScreenListener
     }
 
     /**
-     * The character printed before the content, moved, written with REP (Writer::priorCharacter()),
-     * one column wide where only its right half stays in column 1 (moved()). Where the
-     * zone of the columns going off the screen starts again (restartAt()), the space that
-     * stands in for it is a delimiter of that zone: its attributes are written just before
-     * it, which wait, as in the content, if that character isn't a space
+     * The character printed before the content, written with REP (Writer::priorCharacter()),
+     * moved as the space that stands in for it (StandInSpace, moved()). Where the zone of the
+     * columns going off the screen starts again (restartAt()), that space is a delimiter of
+     * that zone: its attributes are written just before it, which wait, as in the content, if
+     * that character isn't a space
      */
     public function priorCharacter(int $row, int $col, int $width, Attributes $attributes, ?Zone $delimiter): void
     {
         $delimiter ??= $this->restartAt($row, $row, $col, ' ', $attributes);
         (new StandInSpace($row, $col, $width, $attributes, $delimiter))->drawIn($this->zones);
-        $moved = $this->moved($row, $col, self::PRIOR, $attributes);
+        $moved = $this->moved($row, $col, ' ', $attributes);
         if ($moved === null) {
             return;
         }
