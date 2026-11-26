@@ -10,13 +10,16 @@ use MiniPaviService\Minitel\Position;
 use MiniPaviService\Minitel\ScreenSize;
 use MiniPaviService\Tests\Vdt\Screen\ScreenTest;
 use MiniPaviService\Vdt\Offset;
+use MiniPaviService\Vdt\Screen\Attribute\CharacterSize;
 use MiniPaviService\Vdt\Screen\Attribute\Underlining;
+use MiniPaviService\Vdt\Screen\Attributes;
 use MiniPaviService\Vdt\Screen\Cell;
 use MiniPaviService\Vdt\Screen\Part;
 use MiniPaviService\Vdt\Screen\Screen;
 use MiniPaviService\Vdt\Screen\Zone;
 use MiniPaviService\Vdt\Vdt;
 use MiniPaviService\Vdt\Videotex;
+use PHPUnit\Framework\AssertionFailedError;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\DataProviderExternal;
 use PHPUnit\Framework\TestCase;
@@ -533,6 +536,44 @@ final class VdtTest extends TestCase
     public function testOffsetShowsTheZonesOfTallCellsOnTheRowAbove(string $drawn, int $x): void
     {
         self::assertScreenMoved(new Vdt($drawn), $x, y: 0);
+    }
+
+    /**
+     * A tall character's top half shows no underline (MiniPavi's emulator, font-sprite.js,
+     * writeChar(): it is drawn at the bottom of the character): two screens differing only
+     * by it show the same, for the screen tests (asShown(), #168)
+     */
+    public function testScreensDifferingByATallCharactersTopHalfUnderlineShowTheSame(): void
+    {
+        $underlined = self::tallA(top: Underlining::Underline, bottom: Underlining::Underline);
+        $topNotUnderlined = self::tallA(top: Underlining::NoUnderline, bottom: Underlining::Underline);
+
+        self::assertShowsMoved($underlined, $topNotUnderlined, x: 0, y: 0);
+    }
+
+    /**
+     * A tall character's bottom half shows its underline: two screens differing by it don't
+     * show the same, for the screen tests (asShown())
+     */
+    public function testScreensDifferingByATallCharactersBottomHalfUnderlineShowOtherwise(): void
+    {
+        $underlined = self::tallA(top: Underlining::Underline, bottom: Underlining::Underline);
+        $bottomNotUnderlined = self::tallA(top: Underlining::Underline, bottom: Underlining::NoUnderline);
+
+        $this->expectException(AssertionFailedError::class);
+        self::assertShowsMoved($underlined, $bottomNotUnderlined, x: 0, y: 0);
+    }
+
+    // A screen with a double-height A in column 1 of row 10, its top half on row 9, each half
+    // underlined or not
+    private static function tallA(Underlining $top, Underlining $bottom): Screen
+    {
+        $tall = Attributes::defaults()->withSize(CharacterSize::DoubleHeight);
+
+        return new Screen([
+            9 => [1 => new Cell('A', $tall->withUnderlining($top), new Part(right: false, bottom: false))],
+            10 => [1 => new Cell('A', $tall->withUnderlining($bottom), new Part(right: false, bottom: true))],
+        ]);
     }
 
     /**
