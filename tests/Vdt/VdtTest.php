@@ -10,12 +10,16 @@ use MiniPaviService\Minitel\Position;
 use MiniPaviService\Minitel\ScreenSize;
 use MiniPaviService\Tests\Vdt\Screen\ScreenTest;
 use MiniPaviService\Vdt\Offset;
+use MiniPaviService\Vdt\Screen\Attribute\CharacterSize;
+use MiniPaviService\Vdt\Screen\Attribute\Underlining;
+use MiniPaviService\Vdt\Screen\Attributes;
 use MiniPaviService\Vdt\Screen\Cell;
 use MiniPaviService\Vdt\Screen\Part;
 use MiniPaviService\Vdt\Screen\Screen;
 use MiniPaviService\Vdt\Screen\Zone;
 use MiniPaviService\Vdt\Vdt;
 use MiniPaviService\Vdt\Videotex;
+use PHPUnit\Framework\AssertionFailedError;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\DataProviderExternal;
 use PHPUnit\Framework\TestCase;
@@ -513,12 +517,63 @@ final class VdtTest extends TestCase
             "\x1F\x49\x41\x1B\x52\x18\x1F\x4A\x41\x1B\x51 \x1B\x4FB \x1B\x52AA",
             -4,
         ];
+        // ESC M ESC Z, an underlining double-height delimiter, then tall spaces, an L at
+        // normal height drawn over column 2 on row 10: the zone starts again in column 3, as
+        // a tall delimiter, whose top half isn't underlined. Nor does the source's show it:
+        // the Minitel underlines a tall cell's bottom half only (#168)
+        yield 'in a tall space whose top half is underlined' => [
+            "\x1F\x4A\x41\x1B\x4D\x1B\x5A   \x1F\x4A\x42L",
+            -1,
+        ];
+        // The same, as the fuzzer found it, with a double-width L
+        yield 'in a tall space whose top half is underlined, after a double-width character' => [
+            "\x1F\x4A\x41N\x1B\x4D \x1B\x5AS      \x1F\x4A\x45\x1B\x4EL",
+            -5,
+        ];
     }
 
     #[DataProvider('zonesOfTallCells')]
     public function testOffsetShowsTheZonesOfTallCellsOnTheRowAbove(string $drawn, int $x): void
     {
         self::assertScreenMoved(new Vdt($drawn), $x, y: 0);
+    }
+
+    /**
+     * A tall character's top half shows no underline (MiniPavi's emulator, font-sprite.js,
+     * writeChar(): it is drawn at the bottom of the character): two screens differing only
+     * by it show the same, for the screen tests (asShown(), #168)
+     */
+    public function testScreensDifferingByATallCharactersTopHalfUnderlineShowTheSame(): void
+    {
+        $underlined = self::tallA(top: Underlining::Underline, bottom: Underlining::Underline);
+        $topNotUnderlined = self::tallA(top: Underlining::NoUnderline, bottom: Underlining::Underline);
+
+        self::assertShowsMoved($underlined, $topNotUnderlined, x: 0, y: 0);
+    }
+
+    /**
+     * A tall character's bottom half shows its underline: two screens differing by it don't
+     * show the same, for the screen tests (asShown())
+     */
+    public function testScreensDifferingByATallCharactersBottomHalfUnderlineShowOtherwise(): void
+    {
+        $underlined = self::tallA(top: Underlining::Underline, bottom: Underlining::Underline);
+        $bottomNotUnderlined = self::tallA(top: Underlining::Underline, bottom: Underlining::NoUnderline);
+
+        $this->expectException(AssertionFailedError::class);
+        self::assertShowsMoved($underlined, $bottomNotUnderlined, x: 0, y: 0);
+    }
+
+    // A screen with a double-height A in column 1 of row 10, its top half on row 9, each half
+    // underlined or not
+    private static function tallA(Underlining $top, Underlining $bottom): Screen
+    {
+        $tall = Attributes::defaults()->withSize(CharacterSize::DoubleHeight);
+
+        return new Screen([
+            9 => [1 => new Cell('A', $tall->withUnderlining($top), new Part(right: false, bottom: false))],
+            10 => [1 => new Cell('A', $tall->withUnderlining($bottom), new Part(right: false, bottom: true))],
+        ]);
     }
 
     /**
@@ -1072,13 +1127,21 @@ final class VdtTest extends TestCase
      * compared: it is written whole. On a row moved left, a zone whose delimiter goes off the
      * screen can only start again at a space (Writer): on a row whose text space went off the
      * screen, the cells before its first one left show what they do without it
-     * (withoutZoneFromOffTheScreen()). The bottom half of a space is compared as the space at
-     * normal height it shows as (asShown())
+     * (withoutZoneFromOffTheScreen()). Each cell is compared as it shows (asShown()): a tall
+     * character's top half without its underline, which the Minitel draws in the bottom half
+     * only, and each half of a tall space as the space at normal height it shows as
      */
     private static function assertScreenMoved(Vdt $original, int $x, int $y): void
     {
-        $before = Screen::of($original);
-        $after = Screen::of((new Offset($x, $y))->apply($original));
+        self::assertShowsMoved(Screen::of($original), Screen::of((new Offset($x, $y))->apply($original)), $x, $y);
+    }
+
+    /**
+     * The after screen shows the before one, moved by x columns right and y rows down, as
+     * assertScreenMoved() says
+     */
+    private static function assertShowsMoved(Screen $before, Screen $after, int $x, int $y): void
+    {
         $glyphs = self::glyphColumns($before);
 
         for ($row = 0; $row <= ScreenSize::ROWS; $row++) {
@@ -1135,20 +1198,28 @@ final class VdtTest extends TestCase
     }
 
     /**
-     * The cell as it shows: each half of a tall text space shows as a space at normal height
-     * does, its background, and the bottom half its underline at the bottom of the cell
-     * (MiniPavi's emulator, font-sprite.js, writeChar()). Offset writes such a space where a
-     * zone starts again over a tall space's bottom half, leaving its top half on the row
-     * above, or over its top half, leaving its bottom half (#153)
+     * The cell as it shows. The top half of a tall (text) cell shows no underline: the
+     * Minitel draws it at the bottom of the character, in its bottom half only (MiniPavi's
+     * emulator, font-sprite.js, writeChar()), so a tall delimiter's top half shows as an
+     * underlined top half does (#168). Each half of a tall text space shows as a space at
+     * normal height does, its background, and the bottom half its underline at the bottom of
+     * the cell. Offset writes such a space where a zone starts again over a tall space's
+     * bottom half, leaving its top half on the row above, or over its top half, leaving its
+     * bottom half (#153)
      */
     private static function asShown(?Cell $cell): ?Cell
     {
-        if ($cell?->bytes !== ' ' || $cell->attributes->height() === 1) {
+        if ($cell === null || $cell->attributes->height() === 1) {
             return $cell;
         }
-        $attributes = $cell->attributes->flattened();
+        $attributes = $cell->part->isBottom()
+            ? $cell->attributes
+            : $cell->attributes->withUnderlining(Underlining::NoUnderline);
+        if ($cell->bytes !== ' ') {
+            return new Cell($cell->bytes, $attributes, $cell->part);
+        }
 
-        return new Cell($cell->bytes, $attributes, new Part($cell->part->isRight(), bottom: false));
+        return new Cell($cell->bytes, $attributes->flattened(), new Part($cell->part->isRight(), bottom: false));
     }
 
     /**
