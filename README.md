@@ -842,9 +842,10 @@ echo Screen::of($moved)->preview();              // the screen, as text
   next row, is written as those spaces, each where it is moved to. A REP before any
   character, which repeats the character printed before the content (see `Screen::of()`), is
   written as a REP too, after the zone attributes waiting for it, so that it shows that
-  character as the original does, whatever it is; a space written for its right half alone in
-  column 1 is written once it is no longer repeated, as REP would repeat that space (#163).
-  The cursor is positioned
+  character as the original does, whatever it is. It is moved as the space that stands in for
+  it is: a wide one with only its right half left in column 1, or with its left half in
+  column 40 moved left, is written one column wide, still with REP, as a space written there
+  would be what REP repeats next (#163). The cursor is positioned
   again where needed, with the current attributes (character set, colors, size...), which a
   positioning resets. Row 0, the status line, is not moved. A double-height or double-size
   character moved onto row 1, where the Minitel discards `ESC M` and `ESC O`, is written
@@ -958,8 +959,10 @@ echo Screen::of($moved)->preview();              // the screen, as text
   character (`glyph()`, with its row, column, width and attributes), each delimiter
   (`delimiter()`, with the `Screen\Zone` it starts), each CAN (`clearLine()`, with the zone
   its first space starts if it is a delimiter; in double width or double size, whose spaces
-  run on over the next row, each space as drawn instead), each FF (`clear()`) and the bytes
-  sent as they are (`raw()`). Each `Vdt\Token\Token` the content is cut into plays what it
+  run on over the next row, each space as drawn instead), each repetition of a REP before any
+  character (`priorCharacter()`: the character printed before the content, which can't be
+  known; a `Vdt\StandInSpace` draws the space that stands in for it), each FF (`clear()`) and
+  the bytes sent as they are (`raw()`). Each `Vdt\Token\Token` the content is cut into plays what it
   does on the cursor, or with the `Vdt\Pen` that draws and tells the listener. An attribute
   (ESC and a byte) is a `Screen\Attribute\Attribute` (`TextColor`, `BackgroundColor`,
   `CharacterSize`, `Blinking`, `Masking`, `Underlining` or `Inversion`), which knows what it
