@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace MiniPaviService\Gateway;
+namespace MiniPaviService\Gateway\Command;
 
 /**
  * How a client sends each command to its terminal (Command::sendWith()): a method per

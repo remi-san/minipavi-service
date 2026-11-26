@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Client\Html;
 
-use MiniPaviService\Gateway\InputCommand;
+use MiniPaviService\Gateway\Command\InputCommand;
 use MiniPaviService\InvalidValueException;
 use MiniPaviService\Minitel\FunctionKey;
 use MiniPaviService\Minitel\InputField;

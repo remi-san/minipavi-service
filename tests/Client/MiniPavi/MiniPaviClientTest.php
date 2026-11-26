@@ -6,11 +6,11 @@ namespace MiniPaviService\Tests\Client\MiniPavi;
 
 use MiniPaviService\Client\ClientExchange;
 use MiniPaviService\Client\MiniPavi\MiniPaviClient;
-use MiniPaviService\Gateway\CallMode;
+use MiniPaviService\Gateway\Command\CallMode;
+use MiniPaviService\Gateway\Command\InputCommand;
+use MiniPaviService\Gateway\Command\ServiceCallCommand;
 use MiniPaviService\Gateway\GatewayRequest;
 use MiniPaviService\Gateway\GatewayResponse;
-use MiniPaviService\Gateway\InputCommand;
-use MiniPaviService\Gateway\ServiceCallCommand;
 use MiniPaviService\Minitel\FunctionKey;
 use MiniPaviService\Minitel\InputField;
 use MiniPaviService\Minitel\Position;

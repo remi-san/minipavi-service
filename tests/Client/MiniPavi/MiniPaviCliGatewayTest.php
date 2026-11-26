@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace MiniPaviService\Tests\Client\MiniPavi;
 
 use MiniPaviService\Client\MiniPavi\MiniPaviCliGateway;
-use MiniPaviService\Gateway\CallMode;
+use MiniPaviService\Gateway\Command\CallMode;
+use MiniPaviService\Gateway\Command\InputCommand;
 use MiniPaviService\Gateway\GatewayRequest;
-use MiniPaviService\Gateway\InputCommand;
 use MiniPaviService\Minitel\ConnectionCode;
 use MiniPaviService\Minitel\FunctionKey;
 use MiniPaviService\Minitel\InputField;

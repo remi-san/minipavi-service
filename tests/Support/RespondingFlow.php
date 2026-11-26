@@ -7,9 +7,9 @@ namespace MiniPaviService\Tests\Support;
 use MiniPaviService\Controller\Flow;
 use MiniPaviService\Controller\Parameters\Parameters;
 use MiniPaviService\Controller\State;
-use MiniPaviService\Gateway\Command;
+use MiniPaviService\Gateway\Command\Command;
+use MiniPaviService\Gateway\Command\WaitForKeyCommand;
 use MiniPaviService\Gateway\GatewayResponse;
-use MiniPaviService\Gateway\WaitForKeyCommand;
 use MiniPaviService\Vdt\Vdt;
 
 /**

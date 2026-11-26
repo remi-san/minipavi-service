@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace MiniPaviService\Gateway;
+namespace MiniPaviService\Gateway\Command;
 
 /**
  * How the gateway calls another service, right away (ServiceCallCommand)

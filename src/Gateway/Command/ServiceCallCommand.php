@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace MiniPaviService\Gateway;
+namespace MiniPaviService\Gateway\Command;
 
 /**
  * Command calling a service at once, without waiting for the user (RunCommand::connectTo()):

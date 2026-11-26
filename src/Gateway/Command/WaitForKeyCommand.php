@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace MiniPaviService\Gateway;
+namespace MiniPaviService\Gateway\Command;
 
 /**
  * Command waiting for the user's next key, then calling this service with it: what the gateway

@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Client\MiniPavi;
 
-use MiniPaviService\Gateway\CommandSender;
+use MiniPaviService\Gateway\Command\CommandSender;
+use MiniPaviService\Gateway\Command\InputCommand;
+use MiniPaviService\Gateway\Command\ServiceCallCommand;
+use MiniPaviService\Gateway\Command\WaitForKeyCommand;
 use MiniPaviService\Gateway\GatewayResponse;
-use MiniPaviService\Gateway\InputCommand;
-use MiniPaviService\Gateway\ServiceCallCommand;
-use MiniPaviService\Gateway\WaitForKeyCommand;
 
 /**
  * Writes a response through the MiniPaviGateway (MiniPaviExchange), sending its command as what

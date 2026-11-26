@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace MiniPaviService\Controller;
 
 use MiniPaviService\Controller\Parameters\Parameters;
-use MiniPaviService\Gateway\Command;
+use MiniPaviService\Gateway\Command\Command;
+use MiniPaviService\Gateway\Command\WaitForKeyCommand;
 use MiniPaviService\Gateway\GatewayResponse;
-use MiniPaviService\Gateway\WaitForKeyCommand;
 use MiniPaviService\Vdt\Vdt;
 
 /**

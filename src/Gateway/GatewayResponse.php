@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Gateway;
 
+use MiniPaviService\Gateway\Command\Command;
+use MiniPaviService\Gateway\Command\WaitForKeyCommand;
 use MiniPaviService\Vdt\Vdt;
 
 /**

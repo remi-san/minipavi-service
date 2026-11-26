@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Client\MiniPavi;
 
-use MiniPaviService\Gateway\CallMode;
+use MiniPaviService\Gateway\Command\CallMode;
+use MiniPaviService\Gateway\Command\InputCommand;
 use MiniPaviService\Gateway\GatewayRequest;
-use MiniPaviService\Gateway\InputCommand;
 use MiniPaviService\Vdt\Vdt;
 
 /**

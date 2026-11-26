@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace MiniPaviService\Gateway;
+namespace MiniPaviService\Gateway\Command;
 
 /**
  * What the gateway does after showing a response's content, besides waiting for a key: read an
