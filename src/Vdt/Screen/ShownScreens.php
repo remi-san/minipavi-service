@@ -6,6 +6,7 @@ namespace MiniPaviService\Vdt\Screen;
 
 use MiniPaviService\Vdt\Player;
 use MiniPaviService\Vdt\ScreenListener;
+use MiniPaviService\Vdt\StandInSpace;
 use MiniPaviService\Vdt\Vdt;
 
 /**
@@ -56,11 +57,7 @@ final class ShownScreens implements ScreenListener
     public function priorCharacter(int $row, int $col, int $width, Attributes $attributes, ?Zone $delimiter): void
     {
         // As the space that stands in for it
-        if ($delimiter !== null) {
-            $this->screen->delimiter($row, $col, $width, $attributes, $delimiter);
-            return;
-        }
-        $this->screen->glyph($row, $col, ' ', $width, $attributes);
+        (new StandInSpace($row, $col, $width, $attributes, $delimiter))->tellTo($this);
     }
 
     public function clearLine(int $row, int $col, Attributes $attributes, ?Zone $delimiter): void

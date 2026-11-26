@@ -161,7 +161,7 @@ final class OffsetWriter implements ScreenListener
     {
         $delimiter ??= $this->restartAt($row, $row, $col, ' ', $attributes);
         $zone = $this->zoneBefore($row, $col);
-        $this->drawZones($row, $col, $width, $attributes, $delimiter);
+        (new StandInSpace($row, $col, $width, $attributes, $delimiter))->drawIn($this->zones);
         $moved = $this->moved($row, $col, self::PRIOR, $attributes);
         if ($moved === null) {
             return;
@@ -172,17 +172,6 @@ final class OffsetWriter implements ScreenListener
             return;
         }
         $this->clippedPriors[] = [$row, $col, $attributes, $zone, $delimiter];
-    }
-
-    // Draws the character printed before the content in the zones of what is written, a
-    // delimiter starting delimiter if not null, as the space that stands in for it
-    private function drawZones(int $row, int $col, int $width, Attributes $attributes, ?Zone $delimiter): void
-    {
-        if ($delimiter === null) {
-            $this->zones->draw($row, $col, $width, $attributes);
-            return;
-        }
-        $this->zones->delimiter($row, $col, $width, $attributes->height(), $delimiter);
     }
 
     /**

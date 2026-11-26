@@ -7,6 +7,7 @@ namespace MiniPaviService\Vdt\Screen;
 use MiniPaviService\Minitel\ScreenSize;
 use MiniPaviService\Vdt\Player;
 use MiniPaviService\Vdt\ScreenListener;
+use MiniPaviService\Vdt\StandInSpace;
 use MiniPaviService\Vdt\Vdt;
 
 /**
@@ -64,16 +65,12 @@ final class ScreenCells implements ScreenListener
     }
 
     /**
-     * The character printed before the content, as a space that stands in for it: a delimiter
-     * starting delimiter, if not null
+     * The character printed before the content, as the space that stands in for it
+     * (StandInSpace)
      */
     public function priorCharacter(int $row, int $col, int $width, Attributes $attributes, ?Zone $delimiter): void
     {
-        if ($delimiter !== null) {
-            $this->delimiter($row, $col, $width, $attributes, $delimiter);
-            return;
-        }
-        $this->glyph($row, $col, ' ', $width, $attributes);
+        (new StandInSpace($row, $col, $width, $attributes, $delimiter))->tellTo($this);
     }
 
     /**

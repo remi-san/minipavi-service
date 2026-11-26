@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MiniPaviService\Vdt;
 
 use MiniPaviService\Vdt\Screen\Cursor;
+use MiniPaviService\Vdt\Screen\Zone;
 
 /**
  * Draws at the cursor what the tokens of Videotex content draw, and tells it to a
@@ -72,11 +73,7 @@ final class Pen
     private function drawPrior(Cursor $cursor): void
     {
         $width = $cursor->attributes()->width();
-        $delimiter = null;
-        if ($cursor->delimits(' ')) {
-            $cursor->delimit();
-            $delimiter = $cursor->zone();
-        }
+        $delimiter = $this->spaceStartsZone($cursor);
         $this->listener->priorCharacter($cursor->row(), $cursor->col(), $width, $cursor->attributes(), $delimiter);
         $cursor->advance($width);
     }
@@ -93,17 +90,27 @@ final class Pen
     public function clearLine(Cursor $cursor): void
     {
         $this->last = ' ';
-        $delimiter = null;
-        if ($cursor->delimits(' ')) {
-            $cursor->delimit();
-            $delimiter = $cursor->zone();
-        }
+        $delimiter = $this->spaceStartsZone($cursor);
         $attributes = $cursor->attributes();
         if ($attributes->width() > 1) {
             (new ClearedSpaces($cursor->row(), $cursor->col(), $attributes, $delimiter))->tellTo($this->listener);
             return;
         }
         $this->listener->clearLine($cursor->row(), $cursor->col(), $attributes, $delimiter);
+    }
+
+    /**
+     * The zone a space drawn at the cursor starts, as a delimiter while a zone attribute waits
+     * (Cursor::delimits(), Cursor::delimit()); null if it isn't one
+     */
+    private function spaceStartsZone(Cursor $cursor): ?Zone
+    {
+        if (!$cursor->delimits(' ')) {
+            return null;
+        }
+        $cursor->delimit();
+
+        return $cursor->zone();
     }
 
     /**
