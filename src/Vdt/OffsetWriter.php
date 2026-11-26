@@ -19,9 +19,10 @@ use MiniPaviService\Vdt\Screen\Zones;
  * clear screen that erases it, or the end of the content.
  *
  * On a row moved left, the zone the columns going off the screen leave starts again at a
- * delimiter written in the first text space it shows in, or in the right half of a
- * double-width character left in column 1, which is written as a space (moved(),
- * ShownScreen::restart(), #170), as what is drawn there isn't written: what is before that
+ * delimiter written in the first text space it shows in, in the right half of a
+ * double-width character left in column 1, or in the top half of a tall one left alone on
+ * the last row, each written as a space (moved(), ShownScreen::restart(), #170, #173), as
+ * what is drawn there isn't written: what is before that
  * space has no column left for one, and loses it. That space may be the top half of a tall
  * space drawn from the row below: the delimiter is written at normal height over it, once
  * that space is written. A delimiter something is drawn over later is written as a space, as
@@ -109,7 +110,7 @@ final class OffsetWriter implements ScreenListener
     // Writes a character drawn at row, col, moved, in the zone the cells written before it leave
     private function writeMoved(int $row, int $col, string $bytes, int $width, Attributes $attributes): void
     {
-        $zone = $this->zoneBefore($row, $col);
+        $zone = $this->zoneBefore($this->asShown($row, $bytes, $attributes)[0], $col);
         $this->zones->draw($row, $col, $width, $attributes);
         $moved = $this->moved($row, $col, $bytes, $attributes);
         if ($moved !== null) {
@@ -186,7 +187,9 @@ final class OffsetWriter implements ScreenListener
      * shows a space's right half as it is, and another character's background (or colour,
      * inverted) without its glyph. A space drawn in the last column, of which the Minitel
      * shows the left half only, moved left is written one column wide too: what it shows of
-     * it. Another character there is written whole
+     * it. Another character there is written whole. The top half of a tall one left alone on
+     * the last row, its bottom row moved off the screen, is written there as a space at
+     * normal height (asShown()), with its attributes, which shows the same way
      *
      * @return ?array{int, int, string, Attributes} the row, the column, the bytes and the
      *                                              attributes
@@ -194,6 +197,7 @@ final class OffsetWriter implements ScreenListener
     private function moved(int $row, int $col, string $bytes, Attributes $attributes): ?array
     {
         if ($row !== 0) {
+            [$row, $bytes, $attributes] = $this->asShown($row, $bytes, $attributes);
             if ($bytes === ' ' && $this->x < 0 && ($col + $attributes->width() - 1) > ScreenSize::COLS) {
                 $attributes = $attributes->narrowed();
             }
@@ -215,6 +219,27 @@ final class OffsetWriter implements ScreenListener
     }
 
     /**
+     * What of a character drawn at row (not moved) with these bytes and attributes shows once
+     * moved: the row (not moved) it shows on, and the bytes and attributes it is written with
+     * there. It is the character as it is, unless it is a tall one whose bottom row is moved
+     * off the screen, below the last row, leaving its top half alone on it: the Minitel draws
+     * a tall character from its bottom row (MiniPavi's emulator, decoder.js, printG0Char()),
+     * so that top half is written on the row above as a space at normal height, with its
+     * attributes (#173)
+     *
+     * @return array{int, string, Attributes} the row (not moved), the bytes and the attributes
+     */
+    private function asShown(int $row, string $bytes, Attributes $attributes): array
+    {
+        // Row 0, the status row, not moved, has no tall character (Attributes::allowsDoubleHeight())
+        if (($row + $this->y) !== (ScreenSize::ROWS + 1) || $attributes->height() === 1) {
+            return [$row, $bytes, $attributes];
+        }
+
+        return [$row - 1, ' ', $attributes->flattened()];
+    }
+
+    /**
      * CAN, moved: the cleared cells of the moved row stop at the screen's last column. Moved
      * left, they must stop before the columns that came from beyond the screen: its spaces
      * are written one by one instead, each told to this writer as drawn (ClearedSpaces): the
@@ -233,26 +258,29 @@ final class OffsetWriter implements ScreenListener
         $delimiter = $this->shown->shows($row, $col, width: $attributes->width(), height: $attributes->height())
             ? $delimiter
             : null;
-        $zone = $this->zoneBefore($row, $col);
+        // The top halves alone on the last row at normal height (asShown())
+        [$shownRow, , $written] = $this->asShown($row, ' ', $attributes);
+        $zone = $this->zoneBefore($shownRow, $col);
         $this->zones->clearLine($row, $col, $attributes, $delimiter);
         if ($row === 0) {
             $this->out->clearLine(0, $col, $attributes, $zone, $delimiter);
             return;
         }
-        $movedRow = $row + $this->y;
+        $movedRow = $shownRow + $this->y;
         if ($movedRow < 1 || $movedRow > ScreenSize::ROWS) {
             return;
         }
         if (($col + $this->x) <= ScreenSize::COLS) {
-            $this->out->clearLine($movedRow, $col + $this->x, $attributes, $zone, $delimiter);
+            $this->out->clearLine($movedRow, $col + $this->x, $written, $zone, $delimiter);
         }
     }
 
     /**
      * The zone of row restarted (not moved) a delimiter written for bytes drawn at row, col
      * (not moved) starts again, if the zone the columns going off the screen leave starts
-     * again there (ShownScreen::restart()): a text cell written as a space (moved(): a
-     * space, or a character whose right half only stays in column 1, #170), on a moved row
+     * again there (ShownScreen::restart()): a text cell written as a space (moved() of the
+     * character drawn at row: a space, a character whose right half only stays in column 1,
+     * #170, or the top half of a tall one alone on the last row, #173), on a moved row
      * (restarted is row, or the row above for the top half of a tall one)
      */
     private function restartAt(int $restarted, int $row, int $col, string $bytes, Attributes $attributes): ?Zone
@@ -260,10 +288,10 @@ final class OffsetWriter implements ScreenListener
         if ($restarted === 0 || $attributes->isMosaic()) {
             return null;
         }
-        if (($this->moved($restarted, $col, $bytes, $attributes)[2] ?? null) !== ' ') {
+        if (($this->moved($row, $col, $bytes, $attributes)[2] ?? null) !== ' ') {
             return null;
         }
-        $restart = $this->shown->restart($restarted, 1 - $this->x);
+        $restart = $this->shown->restart($restarted, 1 - $this->x, ScreenSize::ROWS - $this->y);
         if ($restart === null || $restart[0] !== $row || $restart[1] !== $col) {
             return null;
         }

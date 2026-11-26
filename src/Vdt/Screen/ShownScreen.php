@@ -57,15 +57,17 @@ final class ShownScreen
     /**
      * Where the zone the columns before first leave starts again on row, once moved left so
      * that first is its column 1, and that zone: at its first text space (that isn't a
-     * delimiter), or the right half in first of a double-width text character, which is
-     * written as a space there (#170), whose zone isn't the one the columns from first leave
-     * alone, drawn on row, or on the row below when it is the top half of a tall one; the row
-     * and column it is drawn at (the column before first for a double-width one whose right
-     * half only is from first). Null if none is, nor is any needed
+     * delimiter), the right half in first of a double-width text character, which is
+     * written as a space there (#170), or the top half of a tall text character drawn from
+     * below last, the last row on the screen once moved, which is written as a space too
+     * (#173), whose zone isn't the one the columns from first leave alone, drawn on row, or on
+     * the row below when it is the top half of a tall one; the row and column it is drawn at
+     * (the column before first for a double-width one whose right half only is from first).
+     * Null if none is, nor is any needed
      *
      * @return ?array{int, int, Zone} the row and column (not moved), and the zone
      */
-    public function restart(int $row, int $first): ?array
+    public function restart(int $row, int $first, int $last): ?array
     {
         $zone = $this->zones->before($row, $first);
         $alone = Zone::none();
@@ -73,7 +75,7 @@ final class ShownScreen
             $zone = $this->zones->after($zone, $row, $col);
             $alone = $this->zones->after($alone, $row, $col);
             $text = $this->text[$row][$col] ?? null;
-            if ($text !== null && ($text[2] || $text[1] < $first) && !$zone->showsAs($alone)) {
+            if ($text !== null && ($text[2] || $text[1] < $first || $text[0] > $last) && !$zone->showsAs($alone)) {
                 return [$text[0], $text[1], $zone];
             }
         }
