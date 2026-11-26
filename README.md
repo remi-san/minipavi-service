@@ -857,7 +857,8 @@ echo Screen::of($moved)->preview();              // the screen, as text
   isn't. Text moved to column 1 before such a space has no column left for its delimiter, and
   loses its zone. That zone is the one the columns going off the screen leave once the screen
   is drawn (up to the clear screen that erases it, or the end), and that space the first text
-  space showing it then, so that what is drawn there later doesn't erase it: a delimiter drawn
+  space showing it then, or the right half of a wide character left in column 1, as it is
+  written as a space (#170), so that what is drawn there later doesn't erase it: a delimiter drawn
   over later (e.g. CAN's, with a background colour waiting, then text over it) starts no zone,
   and is written as a space, while one drawn after the cells it colours does (#126). A
   double-height or double-size cell is on the row above too: a tall delimiter whose top half

@@ -11,6 +11,7 @@ use MiniPaviService\Minitel\ScreenSize;
 use MiniPaviService\Tests\Vdt\Screen\ScreenTest;
 use MiniPaviService\Vdt\Offset;
 use MiniPaviService\Vdt\Screen\Attribute\CharacterSize;
+use MiniPaviService\Vdt\Screen\Attribute\Masking;
 use MiniPaviService\Vdt\Screen\Attribute\Underlining;
 use MiniPaviService\Vdt\Screen\Attributes;
 use MiniPaviService\Vdt\Screen\Cell;
@@ -657,6 +658,49 @@ final class VdtTest extends TestCase
         self::assertScreenMoved(new Vdt($drawn), $x, y: 0);
     }
 
+    /**
+     * A zone whose delimiter goes off the screen starts again at the right half of a
+     * double-width or double-size character that stays in column 1, written as a space one
+     * column wide (#170): the cells after it show their zone from column 2, rather than from
+     * the next space
+     *
+     * @return iterable<string, array{string, int, int}> what is drawn, x and y
+     */
+    public static function zonesRestartedAtAWideCharactersRightHalf(): iterable
+    {
+        // Row 10: a red delimiter, AB, two spaces, then a double-width L over columns 3 and 4,
+        // and three double-width spaces: red from column 1 once moved
+        yield 'a background' => ["\x1F\x4A\x41\x1B\x51 AB  \x1F\x4A\x43\x1B\x4EL   ", -3, 0];
+        // The same, underlined: the double-width spaces underlined from column 2
+        yield 'an underline' => ["\x1F\x4A\x41\x1B\x5A AB  \x1F\x4A\x43\x1B\x4EL   ", -3, 0];
+        // The same, red and underlined: red from column 1, underlined from column 2
+        yield 'a background and an underline' => ["\x1F\x4A\x41\x1B\x51\x1B\x5A AB  \x1F\x4A\x43\x1B\x4EL   ", -3, 0];
+        // The same, masked (ESC X): masked from column 2
+        yield 'a masking' => ["\x1F\x4A\x41\x1B\x58 AB  \x1F\x4A\x43\x1B\x4EL   ", -3, 0];
+        // The same, the L inverted
+        yield 'an inverted character' => ["\x1F\x4A\x41\x1B\x5A AB  \x1F\x4A\x43\x1B\x5D\x1B\x4EL   ", -3, 0];
+        // The same, a double-size L, row 9 red: the zones start again on rows 9 and 10
+        yield 'a double-size character' => [
+            "\x1F\x49\x41\x1B\x51\x18\x1F\x4A\x41\x1B\x5A AB  \x1F\x4A\x43\x1B\x4FL\x1B\x4E   ",
+            -3,
+            0,
+        ];
+        // The fuzzer's (#168): an underlining zone from column 4 of tall spaces, a
+        // double-width L at normal height over columns 5 and 6
+        yield 'tall spaces after it, moved up' => [
+            "\x1F\x4A\x41N\x1B\x4D \x1B\x5AS      \x1F\x4A\x45\x1B\x4EL",
+            -5,
+            -1,
+        ];
+        yield 'tall spaces after it' => ["\x1F\x4A\x41N\x1B\x4D \x1B\x5AS      \x1F\x4A\x45\x1B\x4EL", -5, 0];
+    }
+
+    #[DataProvider('zonesRestartedAtAWideCharactersRightHalf')]
+    public function testOffsetStartsAZoneAgainAtTheRightHalfOfAWideCharacter(string $drawn, int $x, int $y): void
+    {
+        self::assertScreenMoved(new Vdt($drawn), $x, $y);
+    }
+
     #[DataProvider('wideSpacesMovedOffTheLeft')]
     public function testOffsetWritesTheRightHalfOfAWideSpaceAsANormalWidthSpace(string $drawn, int $x): void
     {
@@ -1126,10 +1170,13 @@ final class VdtTest extends TestCase
      * Minitel doesn't show of a character other than a space in the last column, moved left, isn't
      * compared: it is written whole. On a row moved left, a zone whose delimiter goes off the
      * screen can only start again at a space (Writer): on a row whose text space went off the
-     * screen, the cells before its first one left show what they do without it
-     * (withoutZoneFromOffTheScreen()). Each cell is compared as it shows (asShown()): a tall
-     * character's top half without its underline, which the Minitel draws in the bottom half
-     * only, and each half of a tall space as the space at normal height it shows as
+     * screen, the cells before the first one left show what they do without it
+     * (withoutZoneFromOffTheScreen()), and that space as its delimiter does: its background,
+     * neither underlined nor masked (asADelimiter()); the right half of a wide character in
+     * the column moved to column 1, written as a space, is that space (#170).
+     * Each cell is compared as it shows (asShown()): a tall character's top half without its
+     * underline, which the Minitel draws in the bottom half only, and each half of a tall
+     * space as the space at normal height it shows as
      */
     private static function assertScreenMoved(Vdt $original, int $x, int $y): void
     {
@@ -1185,12 +1232,12 @@ final class VdtTest extends TestCase
                 if (
                     $x < 0
                     && self::losesADelimiterOffTheScreen($before, $fromRow, firstCol: 1 - $x)
-                    && self::isBeforeTheFirstSpace($before, $fromRow, $start, firstCol: 1 - $x)
+                    && self::isUpToTheRestart($before, $fromRow, $start, firstCol: 1 - $x)
                 ) {
-                    [$expected, $actual] = [
-                        self::withoutZoneFromOffTheScreen($expected),
-                        self::withoutZoneFromOffTheScreen($actual),
-                    ];
+                    $shown = self::isTheRestart($before, $fromRow, $fromCol, firstCol: 1 - $x)
+                        ? self::asADelimiter(...)
+                        : self::withoutZoneFromOffTheScreen(...);
+                    [$expected, $actual] = [$shown($expected), $shown($actual)];
                 }
                 self::assertEquals(self::asShown($expected), self::asShown($actual), "row {$row}, column {$col}");
             }
@@ -1247,23 +1294,62 @@ final class VdtTest extends TestCase
      */
     private static function losesADelimiterOffTheScreen(Screen $screen, int $row, int $firstCol): bool
     {
-        return !self::isBeforeTheFirstSpace($screen, $row, col: $firstCol, firstCol: 1);
+        for ($col = 1; $col < $firstCol; $col++) {
+            if (self::isTextSpace($screen->cell($row, $col))) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
-     * Whether the cell at row, col comes before the first text space of its row, or is that
-     * space, from firstCol
+     * Whether the cell at row, col comes before the first cell of its row a zone can start
+     * again in, once moved left so that firstCol is its column 1, or is that cell
+     * (isTheRestart())
      */
-    private static function isBeforeTheFirstSpace(Screen $screen, int $row, int $col, int $firstCol): bool
+    private static function isUpToTheRestart(Screen $screen, int $row, int $col, int $firstCol): bool
     {
         for ($before = $firstCol; $before < $col; $before++) {
-            $cell = $screen->cell($row, $before);
-            if ($cell?->bytes === ' ' && !$cell->attributes->isMosaic()) {
+            if (self::isTheRestart($screen, $row, $before, $firstCol)) {
                 return false;
             }
         }
 
         return true;
+    }
+
+    /**
+     * Whether a zone can start again in the cell at row, col, once moved left so that
+     * firstCol is its column 1: a text space, or the right half of a double-width character
+     * in firstCol, which Offset writes as a space (#170)
+     */
+    private static function isTheRestart(Screen $screen, int $row, int $col, int $firstCol): bool
+    {
+        $cell = $screen->cell($row, $col);
+
+        return self::isTextSpace($cell) || $col === $firstCol && $cell?->part->isRight() === true;
+    }
+
+    // Whether the cell shows a text space (a delimiter is one)
+    private static function isTextSpace(?Cell $cell): bool
+    {
+        return $cell?->bytes === ' ' && !$cell->attributes->isMosaic();
+    }
+
+    /**
+     * The cell as the delimiter starting its zone again shows: its background, but neither
+     * underlined, as a delimiter isn't (Writer), nor masked, which shows nothing more on a
+     * space (#170)
+     */
+    private static function asADelimiter(?Cell $cell): ?Cell
+    {
+        if ($cell === null) {
+            return null;
+        }
+        $attributes = $cell->attributes->withUnderlining(Underlining::NoUnderline)->withMasking(Masking::Unmask);
+
+        return new Cell($cell->bytes, $attributes, $cell->part);
     }
 
     /**
