@@ -806,6 +806,28 @@ final class VdtTest extends TestCase
         self::assertScreenMoved(new Vdt($drawn), $x, $y);
     }
 
+    /**
+     * REP before any character, which repeats a space (#163)
+     *
+     * @return iterable<string, array{string, int, int}> what is drawn, x and y
+     */
+    public static function repeatsBeforeAnyCharacterMoved(): iterable
+    {
+        // Row 10: REP 3, then X in column 4
+        yield 'at normal size, right' => ["\x1F\x4A\x41\x12\x43X", 1, 1];
+        yield 'at normal size, left' => ["\x1F\x4A\x41\x12\x43X", -1, 0];
+        yield 'in double width, left' => ["\x1F\x4A\x41\x1BN\x12\x42X", -1, 0];
+        // ESC T: the first space a blue delimiter
+        yield 'a delimiter, right' => ["\x1F\x4A\x41\x1BT\x12\x42X", 1, 0];
+        yield 'a delimiter, left' => ["\x1F\x4A\x41\x1BT\x12\x42X", -1, 0];
+    }
+
+    #[DataProvider('repeatsBeforeAnyCharacterMoved')]
+    public function testOffsetMovesARepeatBeforeAnyCharacter(string $drawn, int $x, int $y): void
+    {
+        self::assertScreenMoved(new Vdt($drawn), $x, $y);
+    }
+
     public function testOffsetSetsTheAttributesBackAfterAClearScreen(): void
     {
         // Red X at row 1, column 1, a clear screen, then Y there, white: nothing to send again

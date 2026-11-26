@@ -151,6 +151,58 @@ final class ScreenTest extends TestCase
         }
     }
 
+    /**
+     * REP before any character repeats a space: the emulator's last character starts as one
+     * (MiniPavi's emulator, decoder.js: charCode = 0x20)
+     *
+     * @return iterable<string, array{string, array<int, string>}> what is sent after a clear
+     *                                                              screen, and the text of rows
+     */
+    public static function repeatsBeforeAnyCharacter(): iterable
+    {
+        // Three spaces, then X in column 4
+        yield 'at normal size' => [
+            "\x1F\x42\x41" . Videotex::REPEAT . "\x43X",
+            [2 => '   X' . str_repeat(' ', times: 36)],
+        ];
+        // Two spaces two columns wide, then X in columns 5 and 6
+        yield 'in double width' => [
+            "\x1F\x42\x41" . Videotex::SIZE_DOUBLE_WIDTH . Videotex::REPEAT . "\x42X",
+            [2 => '    XX' . str_repeat(' ', times: 34)],
+        ];
+    }
+
+    /**
+     * @param array<int, string> $lines
+     */
+    #[DataProvider('repeatsBeforeAnyCharacter')]
+    public function testRepeatBeforeAnyCharacterRepeatsASpace(string $sent, array $lines): void
+    {
+        $screen = Screen::of(new Vdt(Videotex::CLEAR_SCREEN . $sent));
+
+        foreach ($lines as $row => $line) {
+            self::assertSame($line, $screen->line($row), "Row {$row}");
+        }
+    }
+
+    public function testRepeatBeforeAnyCharacterDrawsADelimiterWhileAZoneAttributeWaits(): void
+    {
+        // Blue background waiting, REP: its first space a delimiter, which colours the text
+        // after it blue, as a space drawn there does
+        $screen = Screen::of(
+            new Vdt(
+                Videotex::CLEAR_SCREEN
+                . "\x1F\x42\x41"
+                . Videotex::backgroundColor(Color::Blue)
+                . Videotex::REPEAT
+                . "\x42X",
+            ),
+        );
+
+        self::assertSame('  X', rtrim($screen->line(2)));
+        self::assertSame(Color::Blue, $screen->cell(row: 2, col: 3)?->attributes->background());
+    }
+
     public function testRepeatAfterClearLineDrawsOverItsDelimiter(): void
     {
         // Blue background waiting, CAN: its first space, in column 3, a delimiter colouring
@@ -1738,13 +1790,5 @@ final class ScreenTest extends TestCase
         self::assertTrue($cell->attributes->isBlinking());
         self::assertSame(Color::Blue, $cell->attributes->background());
         self::assertTrue($cell->attributes->isSeparated());
-    }
-
-    public function testRepeatWithoutACharacterDrawsNothing(): void
-    {
-        // REP 3 with nothing sent before, then A: drawn where the cursor was
-        $screen = Screen::of(new Vdt("\x1F\x41\x41" . Videotex::REPEAT . "\x43A"));
-
-        self::assertSame('A', rtrim($screen->line(1)));
     }
 }

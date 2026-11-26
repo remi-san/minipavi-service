@@ -9,9 +9,10 @@ use MiniPaviService\Vdt\Screen\Cursor;
 /**
  * Draws at the cursor what the tokens of Videotex content draw, and tells it to a
  * ScreenListener: characters or delimiters (Cursor::delimits()), CAN, FF and the bytes sent as
- * they are. It remembers the last character drawn, which REP repeats: a space after a CAN,
- * whose spaces are drawn last (MiniPavi's emulator, decoder.js: print() remembers each
- * character it prints, those of clear("eol") too).
+ * they are. It remembers the last character drawn, which REP repeats: a space before the
+ * first one, and after a CAN, whose spaces are drawn last (MiniPavi's emulator, decoder.js:
+ * charCode starts as 0x20, and print() remembers each character it prints, those of
+ * clear("eol") too).
  *
  * It remembers it as it draws (so it isn't readonly), for one content only: it is only built
  * by Player::play().
@@ -20,8 +21,8 @@ use MiniPaviService\Vdt\Screen\Cursor;
  */
 final class Pen
 {
-    // The last character drawn, which REP repeats; null before the first one
-    private ?string $last = null;
+    // The last character drawn, which REP repeats; a space before the first one
+    private string $last = ' ';
 
     public function __construct(
         private readonly ScreenListener $listener,
@@ -45,15 +46,11 @@ final class Pen
     }
 
     /**
-     * REP: draws the last character again, count times; nothing, nor told, with no character
-     * before
+     * REP: draws the last character again, count times (a space with no character before)
      */
     public function repeat(Cursor $cursor, int $count): void
     {
         $last = $this->last;
-        if ($last === null) {
-            return;
-        }
         for ($n = 0; $n < $count; $n++) {
             $this->draw($cursor, $last);
         }
