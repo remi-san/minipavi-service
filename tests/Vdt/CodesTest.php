@@ -15,6 +15,7 @@ use MiniPaviService\Vdt\Screen\Attribute\AttributeReader;
 use MiniPaviService\Vdt\Screen\Attribute\CharacterSize;
 use MiniPaviService\Vdt\Screen\Attribute\Inversion;
 use MiniPaviService\Vdt\Screen\Attributes;
+use MiniPaviService\Vdt\Screen\Screen;
 use MiniPaviService\Vdt\Vdt;
 use MiniPaviService\Vdt\Videotex;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -166,8 +167,9 @@ final class CodesTest extends TestCase
      */
     public static function texts(): iterable
     {
+        // Except the deviations (below)
         yield 'every character it encodes' => [
-            'éèàçêÉÈÀÇÊβßœŒüûúùöôóòïîíìëäâá£°±←↑→↓¼½¾ÂÎōá’ ňćřýšíąā',
+            'éèàçêÉÈÀÊβßœŒüûúùöôóòïîíìëäâá£°±←↑→↓¼½¾ÂÎōá’ ňćřýšíąā',
         ];
         yield 'control characters' => ["a\x00b\x0Ac\x1Fd\x7Fe"];
         yield 'plain text' => ['Hello, world! 0123456789 {}~'];
@@ -182,6 +184,31 @@ final class CodesTest extends TestCase
     {
         self::assertSame(MiniPaviCli::toG2($text), Vdt::text($text)->toString());
         self::assertSame(MiniPaviCli::writeLine0($text), Vdt::line0($text)->toString());
+    }
+
+    /**
+     * @return iterable<string, array{string, string}>
+     */
+    public static function deviations(): iterable
+    {
+        // MiniPaviCli sends the cedilla with a lowercase c (#58)
+        yield 'Ç' => ['Ç', 'ç'];
+    }
+
+    /**
+     * Where MiniPavi's emulator shows MiniPaviCli's text is wrong, Vdt deviates from it on
+     * purpose: the Minitel shows what MiniPaviCli sends otherwise, and the text as Vdt sends it
+     */
+    #[DataProvider('deviations')]
+    public function testVdtDeviatesFromMiniPaviCliWhereTheMinitelShowsItIsWrong(
+        string $text,
+        string $shownWithMiniPaviCli,
+    ): void {
+        self::assertStringStartsWith(
+            $shownWithMiniPaviCli . ' ',
+            Screen::of(new Vdt(MiniPaviCli::toG2($text)))->line(1),
+        );
+        self::assertStringStartsWith($text . ' ', Screen::of(Vdt::text($text))->line(1));
     }
 
     public function testVdtEncodesSequencesAsMiniPaviCli(): void
