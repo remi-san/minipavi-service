@@ -251,14 +251,16 @@ final class OffsetWriter implements ScreenListener
     /**
      * The zone of row restarted (not moved) a delimiter written for bytes drawn at row, col
      * (not moved) starts again, if the zone the columns going off the screen leave starts
-     * again there (ShownScreen::restart()): a text space, or a character moved before column
-     * 1, of which only one whose right half stays is restarted at, as it is written as a
-     * space (moved(), #170), on a moved row (restarted is row, or the row above for the top
-     * half of a tall one)
+     * again there (ShownScreen::restart()): a text cell written as a space (moved(): a
+     * space, or a character whose right half only stays in column 1, #170), on a moved row
+     * (restarted is row, or the row above for the top half of a tall one)
      */
     private function restartAt(int $restarted, int $row, int $col, string $bytes, Attributes $attributes): ?Zone
     {
-        if ($restarted === 0 || $bytes !== ' ' && ($col + $this->x) >= 1 || $attributes->isMosaic()) {
+        if ($restarted === 0 || $attributes->isMosaic()) {
+            return null;
+        }
+        if (($this->moved($restarted, $col, $bytes, $attributes)[2] ?? null) !== ' ') {
             return null;
         }
         $restart = $this->shown->restart($restarted, 1 - $this->x);
