@@ -1127,8 +1127,9 @@ final class VdtTest extends TestCase
      * compared: it is written whole. On a row moved left, a zone whose delimiter goes off the
      * screen can only start again at a space (Writer): on a row whose text space went off the
      * screen, the cells before its first one left show what they do without it
-     * (withoutZoneFromOffTheScreen()). The bottom half of a space is compared as the space at
-     * normal height it shows as (asShown())
+     * (withoutZoneFromOffTheScreen()). Each cell is compared as it shows (asShown()): a tall
+     * character's top half without its underline, which the Minitel draws in the bottom half
+     * only, and each half of a tall space as the space at normal height it shows as
      */
     private static function assertScreenMoved(Vdt $original, int $x, int $y): void
     {
