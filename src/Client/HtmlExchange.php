@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Client;
 
-use MiniPaviService\Gateway\ClientExchange;
 use MiniPaviService\Gateway\GatewayRequest;
 use MiniPaviService\Gateway\GatewayResponse;
 use MiniPaviService\Message\Messages;

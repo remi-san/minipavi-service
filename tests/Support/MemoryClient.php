@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Tests\Support;
 
-use MiniPaviService\Gateway\Client;
-use MiniPaviService\Gateway\ClientExchange;
+use MiniPaviService\Client\Client;
+use MiniPaviService\Client\ClientExchange;
 use MiniPaviService\Gateway\GatewayRequest;
 use MiniPaviService\Gateway\GatewayResponse;
 use Nyholm\Psr7\Response;

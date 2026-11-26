@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Tests\Client;
 
+use MiniPaviService\Client\ClientExchange;
 use MiniPaviService\Client\MiniPaviClient;
 use MiniPaviService\Gateway\CallMode;
-use MiniPaviService\Gateway\ClientExchange;
 use MiniPaviService\Gateway\GatewayRequest;
 use MiniPaviService\Gateway\GatewayResponse;
 use MiniPaviService\Gateway\InputCommand;
