@@ -11,6 +11,7 @@ use MiniPaviService\Minitel\ScreenSize;
 use MiniPaviService\Tests\Vdt\Screen\ScreenTest;
 use MiniPaviService\Vdt\Offset;
 use MiniPaviService\Vdt\Screen\Attribute\CharacterSize;
+use MiniPaviService\Vdt\Screen\Attribute\Masking;
 use MiniPaviService\Vdt\Screen\Attribute\Underlining;
 use MiniPaviService\Vdt\Screen\Attributes;
 use MiniPaviService\Vdt\Screen\Cell;
@@ -672,6 +673,10 @@ final class VdtTest extends TestCase
         yield 'a background' => ["\x1F\x4A\x41\x1B\x51 AB  \x1F\x4A\x43\x1B\x4EL   ", -3, 0];
         // The same, underlined: the double-width spaces underlined from column 2
         yield 'an underline' => ["\x1F\x4A\x41\x1B\x5A AB  \x1F\x4A\x43\x1B\x4EL   ", -3, 0];
+        // The same, red and underlined: red from column 1, underlined from column 2
+        yield 'a background and an underline' => ["\x1F\x4A\x41\x1B\x51\x1B\x5A AB  \x1F\x4A\x43\x1B\x4EL   ", -3, 0];
+        // The same, masked (ESC X): masked from column 2
+        yield 'a masking' => ["\x1F\x4A\x41\x1B\x58 AB  \x1F\x4A\x43\x1B\x4EL   ", -3, 0];
         // The same, the L inverted
         yield 'an inverted character' => ["\x1F\x4A\x41\x1B\x5A AB  \x1F\x4A\x43\x1B\x5D\x1B\x4EL   ", -3, 0];
         // The same, a double-size L, row 9 red: the zones start again on rows 9 and 10
@@ -1165,9 +1170,10 @@ final class VdtTest extends TestCase
      * Minitel doesn't show of a character other than a space in the last column, moved left, isn't
      * compared: it is written whole. On a row moved left, a zone whose delimiter goes off the
      * screen can only start again at a space (Writer): on a row whose text space went off the
-     * screen, the cells before the first one left show what they do without it, and so does
-     * that space, its delimiter (withoutZoneFromOffTheScreen()); the right half of a wide
-     * character in the column moved to column 1, written as a space, is that space (#170).
+     * screen, the cells before the first one left show what they do without it
+     * (withoutZoneFromOffTheScreen()), and that space as its delimiter does: its background,
+     * neither underlined nor masked (asADelimiter()); the right half of a wide character in
+     * the column moved to column 1, written as a space, is that space (#170).
      * Each cell is compared as it shows (asShown()): a tall character's top half without its
      * underline, which the Minitel draws in the bottom half only, and each half of a tall
      * space as the space at normal height it shows as
@@ -1228,10 +1234,10 @@ final class VdtTest extends TestCase
                     && self::losesADelimiterOffTheScreen($before, $fromRow, firstCol: 1 - $x)
                     && self::isUpToTheRestart($before, $fromRow, $start, firstCol: 1 - $x)
                 ) {
-                    [$expected, $actual] = [
-                        self::withoutZoneFromOffTheScreen($expected),
-                        self::withoutZoneFromOffTheScreen($actual),
-                    ];
+                    $shown = self::isTheRestart($before, $fromRow, $fromCol, firstCol: 1 - $x)
+                        ? self::asADelimiter(...)
+                        : self::withoutZoneFromOffTheScreen(...);
+                    [$expected, $actual] = [$shown($expected), $shown($actual)];
                 }
                 self::assertEquals(self::asShown($expected), self::asShown($actual), "row {$row}, column {$col}");
             }
@@ -1299,15 +1305,13 @@ final class VdtTest extends TestCase
 
     /**
      * Whether the cell at row, col comes before the first cell of its row a zone can start
-     * again in, once moved left so that firstCol is its column 1, or is that cell: a text
-     * space, or the right half of a double-width character in firstCol, which Offset writes
-     * as a space (#170)
+     * again in, once moved left so that firstCol is its column 1, or is that cell
+     * (isTheRestart())
      */
     private static function isUpToTheRestart(Screen $screen, int $row, int $col, int $firstCol): bool
     {
         for ($before = $firstCol; $before < $col; $before++) {
-            $cell = $screen->cell($row, $before);
-            if (self::isTextSpace($cell) || $before === $firstCol && $cell?->part->isRight() === true) {
+            if (self::isTheRestart($screen, $row, $before, $firstCol)) {
                 return false;
             }
         }
@@ -1315,10 +1319,37 @@ final class VdtTest extends TestCase
         return true;
     }
 
+    /**
+     * Whether a zone can start again in the cell at row, col, once moved left so that
+     * firstCol is its column 1: a text space, or the right half of a double-width character
+     * in firstCol, which Offset writes as a space (#170)
+     */
+    private static function isTheRestart(Screen $screen, int $row, int $col, int $firstCol): bool
+    {
+        $cell = $screen->cell($row, $col);
+
+        return self::isTextSpace($cell) || $col === $firstCol && $cell?->part->isRight() === true;
+    }
+
     // Whether the cell shows a text space (a delimiter is one)
     private static function isTextSpace(?Cell $cell): bool
     {
         return $cell?->bytes === ' ' && !$cell->attributes->isMosaic();
+    }
+
+    /**
+     * The cell as the delimiter starting its zone again shows: its background, but neither
+     * underlined, as a delimiter isn't (Writer), nor masked, which shows nothing more on a
+     * space (#170)
+     */
+    private static function asADelimiter(?Cell $cell): ?Cell
+    {
+        if ($cell === null) {
+            return null;
+        }
+        $attributes = $cell->attributes->withUnderlining(Underlining::NoUnderline)->withMasking(Masking::Unmask);
+
+        return new Cell($cell->bytes, $attributes, $cell->part);
     }
 
     /**
