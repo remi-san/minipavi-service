@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Tests\Support;
 
-use MiniPaviService\Client\MiniPaviGateway;
-use MiniPaviService\Gateway\CallMode;
+use MiniPaviService\Client\MiniPavi\MiniPaviGateway;
+use MiniPaviService\Gateway\Command\CallMode;
+use MiniPaviService\Gateway\Command\InputCommand;
 use MiniPaviService\Gateway\GatewayRequest;
-use MiniPaviService\Gateway\InputCommand;
 use MiniPaviService\Vdt\Vdt;
 
 /**

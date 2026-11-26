@@ -18,21 +18,23 @@ below it (`mago guard` checks it, with the rules in `mago.toml`). At the bottom,
 then `Vdt\` (Videotex), then `Gateway\` (the requests, responses and commands); `Message\`
 beside them. Above them, `Page\` → `Controller\` → `Core\` (the runtime) → `Http\` (the
 entry point), which also uses `Client\` (the clients, on `Gateway\`). `Cli\` (on `Page\`)
-and `Testing\` (on `Core\`) sit on top.
+and `Testing\` (on `Core\`) sit on top. Some layers are layered inside too: `Page\`, `Core\`
+(`Routing\` → `Context\` → the rest), `Gateway\` (`Command\` → the rest) and `Client\` (the
+interfaces → `Html\` and `MiniPavi\`, which don't use each other).
 
 | Namespace | Holds |
 |---|---|
 | `MiniPaviService` | the `Controller` and `Page` interfaces, and the `InvalidValueException` of a value the framework can't take (e.g. a `Position` off the screen) |
-| `Core\` | the runtime: `Service` and its `Sessions`, `Router` and its `Route`s, `Context` and its `RouteContext`s, `RequestFlow` |
+| `Core\` | the runtime: `Service` and its `Sessions`, `RequestFlow`, `RequestServer`; in `Routing\`, the `Router` (built by `RouterBuilder`), its `Route`s and the `RouteContext` each keeps, `UnknownRouteException`; in `Context\`, the user's `Context`, its `KeptRoute`s and its `ContextSerializer`, which signs it with a `Signing\ContextSigner` (`HmacContextSigner`, `UnsignedContext`) |
 | `Controller\` | `AbstractController`, `Request`, `Response` and the response types, `Flow`, the states (`State`, `ControllerState`) |
 | `Controller\Parameters\` | what a controller keeps: `Parameters`, `NoParameters`, their `ParametersType` (what `Controller::parametersType()` returns), and the raw `Values` they are read from |
 | `Controller\Pagination\` | `PaginatedController`, the `PaginatedList` it shows and its `ShownPage`, `Paginator`, `PageParameters`, `OpeningPage` |
 | `Page\` | static and template pages, their display elements, and the page XML parser; inside it, layered too: `Display\` (what is drawn) → `Building\` (what building one needs: the `ElementBuilder` of a display element, the `AttributeValues` it reads, the `Placement` it is told, the `PageXmlException` it throws) → `Template\` (a template's nodes) → `Parser\` (reading the XML files into them) |
 | `Message\` | the messages shown on screen: `Message`, `FrameworkMessage`, `Messages` and their XML parser |
 | `Minitel\` | the user's terminal: `Terminal`, the `Key` a request comes with (its `FunctionKey`s, or a `ConnectionCode`) and the `KeyHandler` it tells what happened, its settings (`Keyboard`, `LocalEcho`, `Scroll`), its `ScreenSize` and `Color`s, and the `InputField` where the user types |
-| `Vdt\` | Videotex: codes, reading, writing and moving Videotex content (`Vdt`, `Videotex`); in `Screen\`, the Minitel screen it draws (`Screen`, `Cell`) and its HTML rendering (`HtmlRenderer`) |
-| `Gateway\` | the requests and responses the service handles (`GatewayRequest`, `GatewayResponse`), the commands a response sends (`Command`: the `WaitForKeyCommand` waiting for a key, the `InputCommand` reading a field, the `ServiceCallCommand` calling a service, with its `CallMode`), and the `Client` interface reading and sending them |
-| `Client\` | the clients: `MiniPaviClient` for the MiniPavi gateway, `HtmlClient` for a browser (`?web=true`) |
+| `Vdt\` | Videotex: the content and its codes (`Vdt`, `Videotex`, `G2`), its clear screens (`ClearScreens`), and moving it (`Offset`); in `Playing\`, playing it on a simulated screen (`Parser` and its `Token`s in `Playing\Token\`, `Player`, `Pen`, `ScreenListener`); in `Writing\`, writing it again (`Writer`, `OffsetWriter`); in `Screen\`, the Minitel screen it draws (`Screen`, `Cell`) and its HTML rendering (`HtmlRenderer`) |
+| `Gateway\` | the requests and responses the service handles (`GatewayRequest`, `GatewayResponse`), and, in `Command\`, the commands a response sends (`Command`: the `WaitForKeyCommand` waiting for a key, the `InputCommand` reading a field, the `ServiceCallCommand` calling a service, with its `CallMode`) and the `CommandSender` a client sends them with |
+| `Client\` | the clients, translating between HTTP and the service's values (`Client`, `ClientExchange`): in `MiniPavi\`, `MiniPaviClient` for the MiniPavi gateway (through `MiniPaviCliGateway`); in `Html\`, `HtmlClient` for a browser (`?web=true`, with its page, `HtmlForm`) |
 | `Http\` | the entry point for the web server, on PSR-7 / PSR-15: `Kernel`, `ResponseEmitter`, `ServiceRunner`; in `Dispatch\`, who handles the request (`Dispatcher`, `ConditionalRequestHandler`, `RequestMatcher`s); in `Url\`, the request's URLs (`RequestUrl`, `UrlAttribute`, `WithUrls`); in `Emulator\`, the emulator browsers are sent to (`EmulatorConfig`, `EmulatorRedirect`) |
 | `Testing\` | `ServiceTester`, functional tests of a service (needs PHPUnit) |
 
@@ -66,7 +68,7 @@ The skeleton, [remi-san/minipavi-service-skeleton](https://github.com/remi-san/m
 ```php
 use Monolog\Handler\ErrorLogHandler;
 use Monolog\Logger;
-use MiniPaviService\Core\RouterBuilder;
+use MiniPaviService\Core\Routing\RouterBuilder;
 use MiniPaviService\Http\Emulator\EmulatorConfig;
 use MiniPaviService\Http\KernelBuilder;
 use MiniPaviService\Http\Url\RequestUrl;
@@ -161,8 +163,8 @@ KernelBuilder::for($router, $messages)
   check) with its own matchers. The `Dispatcher` logs the handler of each request, at debug
   level.
 - **`ServiceRunner`** runs the service for an HTTP request, through a client
-  (`Gateway\Client`, in `Client\`) translating between HTTP and the service's values: the
-  client reads the HTTP request into a **`Gateway\ClientExchange`** (`exchange()`), whose
+  (`Client\Client`) translating between HTTP and the service's values: the
+  client reads the HTTP request into a **`Client\ClientExchange`** (`exchange()`), whose
   `request()` the service responds to, and whose `respond()` turns the `GatewayResponse` into the
   HTTP response. What the client needs to respond, besides what the service gets (the service's
   URL, the page `HtmlClient`'s browser showed), stays in the exchange. A request that can't be
@@ -173,9 +175,9 @@ KernelBuilder::for($router, $messages)
   as critical).
   **The context is signed** on its way through the gateway (or the browser), so that the user
   can't change it: anyone could otherwise send another route, or other parameters.
-  `Service` takes its **`Core\ContextSerializer`** (`KernelBuilder` gives it), which signs the
+  `Service` takes its **`Core\Context\ContextSerializer`** (`KernelBuilder` gives it), which signs the
   context of each response and checks the one of each request it reads with a
-  **`Core\Signing\ContextSigner`** (that of a connection, a disconnection or a
+  **`Core\Context\Signing\ContextSigner`** (that of a connection, a disconnection or a
   background call isn't read, so it isn't checked). **`HmacContextSigner`** signs it with an
   HMAC-SHA256 of a secret key (`<signature>.<context>`), **`UnsignedContext`** doesn't. A context
   the signer didn't sign (`ForgedContextException`) is responded to as one that can't be read.
@@ -184,24 +186,24 @@ KernelBuilder::for($router, $messages)
   a warning. Changing the key makes the users of sessions in progress start again at the
   default route. A serializer without signer (`new ContextSerializer($router)`, e.g. for a
   `ServiceTester`) doesn't sign it (`UnsignedContext`). Two clients:
-  - **`MiniPaviClient`**, for the MiniPavi gateway, through a **`MiniPaviGateway`**, which
+  - **`MiniPaviClient`** (in `Client\MiniPavi\`), for the MiniPavi gateway, through a **`MiniPaviGateway`**, which
     reads the gateway's request (background calls included, which the service doesn't respond
     to) and sends it the response: its exchange and the commands it sends go through it.
     `KernelBuilder` gives it **`MiniPaviCliGateway`**, which does both through `MiniPaviCli`
     used unchanged: `MiniPaviCli` reads the request itself, and writes the response itself,
     captured as the body of the HTTP response. It is the only class calling `MiniPaviCli`. A
     test can give the client a gateway of its own;
-  - **`HtmlClient`**, for a browser: it shows the service's screen as an HTML page
+  - **`HtmlClient`** (in `Client\Html\`), for a browser: it shows the service's screen as an HTML page
     (`Vdt\Screen\HtmlRenderer`), and lets the user navigate it as on a Minitel. The first request is a
     connection, at the default route, as the gateway's. The page is a form posting back to its URL,
-    which `Client\HtmlForm` renders and reads back (`PostedForm`), `HtmlClient` turning it into
+    which `HtmlForm` renders and reads back (`PostedForm`), `HtmlClient` turning it into
     a `GatewayRequest`, and a response into the page:
     - the response's **input field** (the `InputField` of its `InputCommand`: a text field, or a message of several lines) over the screen, at its position
       and size, one input per line;
     - the 8 **function keys** under the screen, in the Minitel's 2 × 4 layout, those the
       input doesn't accept (`validwith`) disabled; Enter in a field presses Envoi;
     - hidden, the context of the response, its input command (as JSON,
-      `Client\InputCommandJson`), and the **screen so far**: a response drawing part of the
+      `InputCommandJson`), and the **screen so far**: a response drawing part of the
       screen (e.g. "Dernière page" on line 0) is drawn over it, as on a Minitel (kept from its
       last clear screen). The page's screen and command come back
       with the key as the client's state (`HtmlPageState`).
@@ -247,10 +249,10 @@ KernelBuilder::for($router, $messages)
   `ConnectionCode`, or null for another key; `GatewayRequest::keyOf()` reads it from what the
   gateway sends, `fctn()` gives its name back), `content` (the text typed), `context` (given back from the previous response) and
   `terminal`. **`GatewayResponse`** is what is sent back: `vdt`, `context` and `command`, what
-  the gateway does next (a `Gateway\Command`: a `WaitForKeyCommand`, the default, waiting for
+  the gateway does next (a `Gateway\Command\Command`: a `WaitForKeyCommand`, the default, waiting for
   a key, then calling this service; an `InputCommand` reading a field; a `ServiceCallCommand`
   calling a service at once, with its URL and `CallMode`). Each client sends a command its own
-  way, with its `Gateway\CommandSender`, whose method for it the command calls
+  way, with its `Gateway\Command\CommandSender`, whose method for it the command calls
   (`Command::sendWith()`). The commands are the framework's: a service sends them, but can't
   add one, since its clients wouldn't know it. The framework adds a command as a class
   implementing `Command` and a method of `CommandSender`, so that a client that doesn't
@@ -511,7 +513,7 @@ KernelBuilder::for($router, $messages)
 
   Behind it, `RouterBuilder::addRoute()` binds each controller with its types (`Route`), in
   the immutable `Router` it builds, and the `Context` keeps a `RouteContext` per route.
-  `Core\ContextSerializer` writes it as JSON (the enum's value and `toArray()`), and restores it
+  `Core\Context\ContextSerializer` writes it as JSON (the enum's value and `toArray()`), and restores it
   with these types (a state the enum doesn't have is the initial one, routes kept that the
   router doesn't have are dropped, and a context whose current route it doesn't have is
   refused with an `UnknownRouteException`). `initialState()` and `parametersType()` are called for
@@ -829,7 +831,7 @@ echo Screen::of($moved)->preview();              // the screen, as text
 ```
 
 - **`(new Offset($x, $y))->apply($vdt)`**: Videotex positions are mostly absolute, but text also flows from cell
-  to cell and wraps at column 40, so the content is played on a simulated screen (`Vdt\Player`) rather than
+  to cell and wraps at column 40, so the content is played on a simulated screen (`Vdt\Playing\Player`) rather than
   having its positions patched. Characters that end up off the screen are dropped instead of
   wrapping onto the next row. A double-width or double-size character moved into column 40 is
   written there, where the Minitel shows its left half. The Minitel can't show a right half on
@@ -887,7 +889,7 @@ echo Screen::of($moved)->preview();              // the screen, as text
   element over a cell, with all of its geometry (position, size, its border included, and
   stacking above the screen), so the element's own style only says how it looks (it
   is inline, so it takes over the element's own `position`, `height`, `box-sizing` and
-  `z-index`); the page around it is the HTML client's (`Client\HtmlForm`, see
+  `z-index`); the page around it is the HTML client's (`Client\Html\HtmlForm`, see
   `HtmlClient` above). Each cell takes one column and one row, as in MiniPavi's emulator: a
   character bigger than a cell (double width, height or size) is drawn at its size in each
   cell it covers, which shows its part of it on that cell's own background (a tall
@@ -962,22 +964,22 @@ echo Screen::of($moved)->preview();              // the screen, as text
   character, which can't be known from the content; a space stands in for it, in the cursor's
   attributes (a delimiter while a zone attribute waits). A mosaic character uses up nothing that waits. Each `Cell` has the background,
   masking and (in text) underline its zone shows, which `HtmlRenderer` draws.
-- **`Vdt\Player::play($vdt, $listener)`** (internal, what `Screen::of()` and `Offset` are
-  built on): plays the content on the simulated screen, telling a `Vdt\ScreenListener` each
+- **`Vdt\Playing\Player::play($vdt, $listener)`** (internal, what `Screen::of()` and `Offset` are
+  built on): plays the content on the simulated screen, telling a `ScreenListener` each
   character (`glyph()`, with its row, column, width and attributes), each delimiter
   (`delimiter()`, with the `Screen\Zone` it starts), each CAN (`clearLine()`, with the zone
   its first space starts if it is a delimiter; in double width or double size, whose spaces
   run on over the next row, each space as drawn instead), each repetition of a REP before any
   character (`priorCharacter()`: the character printed before the content, which can't be
-  known; a `Vdt\StandInSpace` draws the space that stands in for it), each FF (`clear()`) and
-  the bytes sent as they are (`raw()`). Each `Vdt\Token\Token` the content is cut into plays what it
-  does on the cursor, or with the `Vdt\Pen` that draws and tells the listener. An attribute
+  known; a `StandInSpace` draws the space that stands in for it), each FF (`clear()`) and
+  the bytes sent as they are (`raw()`). Each `Playing\Token\Token` the content is cut into plays what it
+  does on the cursor, or with the `Pen` that draws and tells the listener. An attribute
   (ESC and a byte) is a `Screen\Attribute\Attribute` (`TextColor`, `BackgroundColor`,
   `CharacterSize`, `Blinking`, `Masking`, `Underlining` or `Inversion`), which knows what it
   does: where the Minitel discards it, whether it waits for a delimiter, and what it sets in
   the cell's `Screen\Attributes`. `Screen\ScreenCells::of()` collects the cells of
   `Screen::of()`, `Screen\ShownScreens::of()` what each screen the content draws shows once
-  drawn (up to each clear screen, then the end), which `Vdt\OffsetWriter::write()` reads
+  drawn (up to each clear screen, then the end), which `Vdt\Writing\OffsetWriter::write()` reads
   before writing the content moved by `Offset`: each listens to one content, built by that
   static method only.
 

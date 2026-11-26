@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Tests\Page\Parser;
 
-use MiniPaviService\Gateway\InputCommand;
+use MiniPaviService\Gateway\Command\InputCommand;
 use MiniPaviService\InvalidValueException;
 use MiniPaviService\Message\FrameworkMessage;
 use MiniPaviService\Message\MessagesXmlParser;

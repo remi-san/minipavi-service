@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Page;
 
-use MiniPaviService\Gateway\InputCommand;
+use MiniPaviService\Gateway\Command\InputCommand;
 use MiniPaviService\Message\Message;
 use MiniPaviService\Message\Messages;
 use MiniPaviService\Minitel\InputField;

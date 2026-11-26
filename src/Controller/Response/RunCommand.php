@@ -8,12 +8,12 @@ use MiniPaviService\Controller\ControllerState;
 use MiniPaviService\Controller\Flow;
 use MiniPaviService\Controller\Parameters\Parameters;
 use MiniPaviService\Controller\State;
-use MiniPaviService\Gateway\CallMode;
-use MiniPaviService\Gateway\Command;
+use MiniPaviService\Gateway\Command\CallMode;
+use MiniPaviService\Gateway\Command\Command;
+use MiniPaviService\Gateway\Command\InputCommand;
+use MiniPaviService\Gateway\Command\ServiceCallCommand;
+use MiniPaviService\Gateway\Command\WaitForKeyCommand;
 use MiniPaviService\Gateway\GatewayResponse;
-use MiniPaviService\Gateway\InputCommand;
-use MiniPaviService\Gateway\ServiceCallCommand;
-use MiniPaviService\Gateway\WaitForKeyCommand;
 use MiniPaviService\Vdt\Vdt;
 
 /**

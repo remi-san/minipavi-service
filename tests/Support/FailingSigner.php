@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Tests\Support;
 
-use MiniPaviService\Core\Signing\ContextSigner;
+use MiniPaviService\Core\Context\Signing\ContextSigner;
 
 /**
  * Signer that cannot sign: no context can be sent, not even with the error response, so the

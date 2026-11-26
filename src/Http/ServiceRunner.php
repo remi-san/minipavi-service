@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Http;
 
+use MiniPaviService\Client\Client;
+use MiniPaviService\Client\ClientExchange;
 use MiniPaviService\Core\Service;
-use MiniPaviService\Gateway\Client;
-use MiniPaviService\Gateway\ClientExchange;
 use MiniPaviService\Gateway\GatewayResponse;
 use MiniPaviService\Http\Url\UrlAttribute;
 use Nyholm\Psr7\Response;

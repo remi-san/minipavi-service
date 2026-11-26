@@ -4,17 +4,17 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Http;
 
-use MiniPaviService\Client\HtmlClient;
-use MiniPaviService\Client\HtmlForm;
-use MiniPaviService\Client\MiniPaviClient;
-use MiniPaviService\Client\MiniPaviCliGateway;
-use MiniPaviService\Core\ContextSerializer;
-use MiniPaviService\Core\Router;
+use MiniPaviService\Client\Html\HtmlClient;
+use MiniPaviService\Client\Html\HtmlForm;
+use MiniPaviService\Client\MiniPavi\MiniPaviClient;
+use MiniPaviService\Client\MiniPavi\MiniPaviCliGateway;
+use MiniPaviService\Core\Context\ContextSerializer;
+use MiniPaviService\Core\Context\Signing\ContextSigner;
+use MiniPaviService\Core\Context\Signing\HmacContextSigner;
+use MiniPaviService\Core\Context\Signing\UnsignedContext;
+use MiniPaviService\Core\Routing\Router;
 use MiniPaviService\Core\Service;
 use MiniPaviService\Core\Sessions;
-use MiniPaviService\Core\Signing\ContextSigner;
-use MiniPaviService\Core\Signing\HmacContextSigner;
-use MiniPaviService\Core\Signing\UnsignedContext;
 use MiniPaviService\Http\Dispatch\ConditionalRequestHandler;
 use MiniPaviService\Http\Dispatch\Dispatcher;
 use MiniPaviService\Http\Dispatch\FromMiniPaviGateway;

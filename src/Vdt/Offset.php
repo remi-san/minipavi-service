@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Vdt;
 
+use MiniPaviService\Vdt\Writing\OffsetWriter;
+
 /**
  * Moves Videotex content by x columns right and y rows down (negative: left, up). Videotex
  * positions are mostly absolute, but text also flows from one cell to the next and wraps at

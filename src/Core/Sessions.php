@@ -4,6 +4,11 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Core;
 
+use MiniPaviService\Core\Context\Context;
+use MiniPaviService\Core\Context\ContextSerializer;
+use MiniPaviService\Core\Context\Signing\ForgedContextException;
+use MiniPaviService\Core\Routing\Router;
+use MiniPaviService\Core\Routing\UnknownRouteException;
 use MiniPaviService\InvalidValueException;
 use MiniPaviService\Minitel\Terminal;
 
@@ -59,7 +64,7 @@ final readonly class Sessions
      * @internal for RequestServer
      *
      * @throws UnknownRouteException for a context at a route the router doesn't have
-     * @throws Signing\ForgedContextException if the signer didn't sign it
+     * @throws ForgedContextException if the signer didn't sign it
      * @throws \RuntimeException if it isn't a JSON object
      */
     public function resume(string $context, Terminal $terminal): RequestFlow

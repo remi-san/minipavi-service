@@ -4,17 +4,17 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Tests\Http;
 
-use MiniPaviService\Client\MiniPaviClient;
+use MiniPaviService\Client\MiniPavi\MiniPaviClient;
 use MiniPaviService\Controller\Parameters\NoParameters;
 use MiniPaviService\Controller\Request;
 use MiniPaviService\Controller\Response\DisplayPage;
-use MiniPaviService\Core\ContextSerializer;
-use MiniPaviService\Core\RouterBuilder;
+use MiniPaviService\Core\Context\ContextSerializer;
+use MiniPaviService\Core\Context\Signing\ContextSigner;
+use MiniPaviService\Core\Context\Signing\ForgedContextException;
+use MiniPaviService\Core\Context\Signing\HmacContextSigner;
+use MiniPaviService\Core\Routing\RouterBuilder;
 use MiniPaviService\Core\Service;
 use MiniPaviService\Core\Sessions;
-use MiniPaviService\Core\Signing\ContextSigner;
-use MiniPaviService\Core\Signing\ForgedContextException;
-use MiniPaviService\Core\Signing\HmacContextSigner;
 use MiniPaviService\Gateway\GatewayRequest;
 use MiniPaviService\Http\ServiceRunner;
 use MiniPaviService\Message\FrameworkMessage;

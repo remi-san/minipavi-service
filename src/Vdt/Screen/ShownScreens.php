@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Vdt\Screen;
 
-use MiniPaviService\Vdt\Player;
-use MiniPaviService\Vdt\ScreenListener;
-use MiniPaviService\Vdt\StandInSpace;
+use MiniPaviService\Vdt\Playing\Player;
+use MiniPaviService\Vdt\Playing\ScreenListener;
+use MiniPaviService\Vdt\Playing\StandInSpace;
 use MiniPaviService\Vdt\Vdt;
 
 /**
