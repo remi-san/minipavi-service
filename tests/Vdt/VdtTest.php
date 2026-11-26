@@ -769,6 +769,43 @@ final class VdtTest extends TestCase
         );
     }
 
+    public function testOffsetWritesTheSpacesARepeatAfterAClearLineDraws(): void
+    {
+        // Row 2: AB, CAN, back to column 1, REP twice: two spaces over AB, as MiniPavi's
+        // emulator repeats the last space CAN printed (#163), written as spaces
+        self::assertSame(
+            "\x1F\x42\x42AB\x18\x1F\x42\x42  ",
+            (new Offset(x: 1, y: 0))
+                ->apply(new Vdt("\x1F\x42\x41AB\x18\x08\x08\x12\x42"))
+                ->toString(),
+        );
+    }
+
+    /**
+     * REP right after a CAN, which repeats a space (#163)
+     *
+     * @return iterable<string, array{string, int, int}> what is drawn, x and y
+     */
+    public static function repeatsAfterClearLineMoved(): iterable
+    {
+        // Row 10: AB, CAN, back over AB, REP
+        yield 'at normal size, right' => ["\x1F\x4A\x41AB\x18\x08\x08\x12\x42", 2, 1];
+        yield 'at normal size, left' => ["\x1F\x4A\x42AB\x18\x08\x08\x12\x42", -1, 0];
+        yield 'from where CAN leaves the cursor' => ["\x1F\x4A\x41AB\x18\x12\x45", 1, 0];
+        yield 'in double width' => ["\x1F\x4A\x41\x1BNAB\x18\x08\x08\x08\x08\x12\x42", 1, 0];
+        yield 'in double width, left' => ["\x1F\x4A\x41\x1BNAB\x18\x08\x08\x08\x08\x12\x42", -1, 0];
+        yield 'in double size' => ["\x1F\x4A\x41\x1BOAB\x18\x08\x08\x08\x08\x12\x42", 1, 1];
+        // ESC T: the first space of CAN a blue delimiter, drawn over by the first space of REP
+        yield 'over its delimiter' => ["\x1F\x4A\x41AB\x1BT\x18\x12\x43", 1, 0];
+        yield 'over its delimiter, left' => ["\x1F\x4A\x41AB\x1BT\x18\x12\x43", -1, 0];
+    }
+
+    #[DataProvider('repeatsAfterClearLineMoved')]
+    public function testOffsetMovesARepeatAfterAClearLine(string $drawn, int $x, int $y): void
+    {
+        self::assertScreenMoved(new Vdt($drawn), $x, $y);
+    }
+
     public function testOffsetSetsTheAttributesBackAfterAClearScreen(): void
     {
         // Red X at row 1, column 1, a clear screen, then Y there, white: nothing to send again

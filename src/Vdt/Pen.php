@@ -9,7 +9,9 @@ use MiniPaviService\Vdt\Screen\Cursor;
 /**
  * Draws at the cursor what the tokens of Videotex content draw, and tells it to a
  * ScreenListener: characters or delimiters (Cursor::delimits()), CAN, FF and the bytes sent as
- * they are. It remembers the last character drawn, which REP repeats.
+ * they are. It remembers the last character drawn, which REP repeats: a space after a CAN,
+ * whose spaces are drawn last (MiniPavi's emulator, decoder.js: print() remembers each
+ * character it prints, those of clear("eol") too).
  *
  * It remembers it as it draws (so it isn't readonly), for one content only: it is only built
  * by Player::play().
@@ -64,10 +66,11 @@ final class Pen
      * wide, so they run on over the next row (two rows down in double size), as text wraps
      * (MiniPavi's emulator, decoder.js, clear("eol"): a space printed for each column from the
      * cursor's to the last): it clears no row to its end, and each space is told as drawn
-     * (ClearedSpaces)
+     * (ClearedSpaces). A space is then the last character drawn, which REP repeats
      */
     public function clearLine(Cursor $cursor): void
     {
+        $this->last = ' ';
         $delimiter = null;
         if ($cursor->delimits(' ')) {
             $cursor->delimit();
