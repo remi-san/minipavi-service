@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace MiniPaviService\Core\Signing;
+namespace MiniPaviService\Core\Context\Signing;
 
 /**
  * Signs the context with an HMAC-SHA256 of a secret key: "<signature>.<context>", the

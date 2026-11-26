@@ -2,11 +2,14 @@
 
 declare(strict_types=1);
 
-namespace MiniPaviService\Core;
+namespace MiniPaviService\Core\Context;
 
 use MiniPaviService\Controller\Parameters\Parameters;
 use MiniPaviService\Controller\Response;
 use MiniPaviService\Controller\State;
+use MiniPaviService\Core\Routing\RouteContext;
+use MiniPaviService\Core\Routing\Router;
+use MiniPaviService\Core\Routing\UnknownRouteException;
 use MiniPaviService\Minitel\Key;
 use MiniPaviService\Minitel\Terminal;
 

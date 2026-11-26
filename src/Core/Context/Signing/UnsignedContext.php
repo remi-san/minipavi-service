@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace MiniPaviService\Core\Signing;
+namespace MiniPaviService\Core\Context\Signing;
 
 /**
  * Doesn't sign the context (null object): anyone can send one, with any route and parameters.

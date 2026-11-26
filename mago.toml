@@ -24,8 +24,8 @@ ignore = [
     { code = "invalid-extend", in = ["src/Controller/State.php", "src/Message/Message.php", "src/Minitel/Key.php"] },
     # The state is narrowed to the controller's type with instanceof on its initial state, or
     # found among its cases(), which Mago doesn't follow
-    { code = "invalid-return-statement", in = ["src/Core/Route.php"] },
-    { code = "invalid-property-assignment-value", in = ["src/Core/RouteContext.php"] },
+    { code = "invalid-return-statement", in = ["src/Core/Routing/Route.php"] },
+    { code = "invalid-property-assignment-value", in = ["src/Core/Routing/RouteContext.php"] },
     # Placeholders (of templates and messages) read the property of an object they name
     { code = "string-member-selector", in = ["src/Text/Placeholders.php"] },
     { code = "ambiguous-object-property-access", in = ["src/Text/Placeholders.php"] },

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace MiniPaviService\Core;
+namespace MiniPaviService\Core\Context;
 
 use MiniPaviService\Controller\Parameters\Parameters;
 use MiniPaviService\Controller\State;

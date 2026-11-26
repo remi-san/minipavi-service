@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Tests\Core;
 
-use MiniPaviService\Core\ContextSerializer;
-use MiniPaviService\Core\RouterBuilder;
+use MiniPaviService\Core\Context\ContextSerializer;
+use MiniPaviService\Core\Routing\RouterBuilder;
 use MiniPaviService\Core\Sessions;
 use MiniPaviService\InvalidValueException;
 use MiniPaviService\Tests\Support\StepController;

@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace MiniPaviService\Tests\Core\Signing;
+namespace MiniPaviService\Tests\Core\Context\Signing;
 
-use MiniPaviService\Core\Signing\ForgedContextException;
-use MiniPaviService\Core\Signing\HmacContextSigner;
+use MiniPaviService\Core\Context\Signing\ForgedContextException;
+use MiniPaviService\Core\Context\Signing\HmacContextSigner;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 

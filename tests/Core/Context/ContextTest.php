@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace MiniPaviService\Tests\Core;
+namespace MiniPaviService\Tests\Core\Context;
 
 use MiniPaviService\Controller\ControllerState;
 use MiniPaviService\Controller\Pagination\PageParameters;
@@ -10,11 +10,11 @@ use MiniPaviService\Controller\Parameters\NoParameters;
 use MiniPaviService\Controller\Parameters\Values;
 use MiniPaviService\Controller\Request;
 use MiniPaviService\Controller\Response\DisplayPage;
-use MiniPaviService\Core\Context;
-use MiniPaviService\Core\ContextSerializer;
-use MiniPaviService\Core\Router;
-use MiniPaviService\Core\RouterBuilder;
-use MiniPaviService\Core\UnknownRouteException;
+use MiniPaviService\Core\Context\Context;
+use MiniPaviService\Core\Context\ContextSerializer;
+use MiniPaviService\Core\Routing\Router;
+use MiniPaviService\Core\Routing\RouterBuilder;
+use MiniPaviService\Core\Routing\UnknownRouteException;
 use MiniPaviService\Minitel\FunctionKey;
 use MiniPaviService\Minitel\Terminal;
 use MiniPaviService\Tests\Support\CallbackController;

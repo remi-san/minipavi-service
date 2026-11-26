@@ -2,12 +2,14 @@
 
 declare(strict_types=1);
 
-namespace MiniPaviService\Core;
+namespace MiniPaviService\Core\Context;
 
 use MiniPaviService\Controller\Parameters\Values;
-use MiniPaviService\Core\Signing\ContextSigner;
-use MiniPaviService\Core\Signing\ForgedContextException;
-use MiniPaviService\Core\Signing\UnsignedContext;
+use MiniPaviService\Core\Context\Signing\ContextSigner;
+use MiniPaviService\Core\Context\Signing\ForgedContextException;
+use MiniPaviService\Core\Context\Signing\UnsignedContext;
+use MiniPaviService\Core\Routing\Router;
+use MiniPaviService\Core\Routing\UnknownRouteException;
 
 /**
  * The context as it goes to the gateway and comes back, JSON: {"route": ..., "states": {route:

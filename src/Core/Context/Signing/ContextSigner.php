@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace MiniPaviService\Core\Signing;
+namespace MiniPaviService\Core\Context\Signing;
 
 /**
  * Signs the context sent to the gateway, and checks the one given back (ContextSerializer),

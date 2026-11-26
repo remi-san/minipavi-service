@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Core;
 
+use MiniPaviService\Core\Routing\UnknownRouteException;
 use MiniPaviService\Gateway\GatewayRequest;
 use MiniPaviService\Gateway\GatewayResponse;
 use MiniPaviService\Minitel\ConnectionCode;

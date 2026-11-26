@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Testing;
 
-use MiniPaviService\Core\Context;
-use MiniPaviService\Core\ContextSerializer;
+use MiniPaviService\Core\Context\Context;
+use MiniPaviService\Core\Context\ContextSerializer;
 use MiniPaviService\Core\Service;
 use MiniPaviService\Gateway\Command\CallMode;
 use MiniPaviService\Gateway\Command\ServiceCallCommand;

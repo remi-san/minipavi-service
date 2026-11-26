@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace MiniPaviService\Core;
+namespace MiniPaviService\Core\Routing;
 
 /**
  * A route the router doesn't have (Router::route()): a context at such a route (e.g. removed in

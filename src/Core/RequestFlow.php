@@ -7,6 +7,8 @@ namespace MiniPaviService\Core;
 use MiniPaviService\Controller\Flow;
 use MiniPaviService\Controller\Parameters\Parameters;
 use MiniPaviService\Controller\State;
+use MiniPaviService\Core\Context\Context;
+use MiniPaviService\Core\Context\ContextSerializer;
 use MiniPaviService\Gateway\Command\Command;
 use MiniPaviService\Gateway\Command\WaitForKeyCommand;
 use MiniPaviService\Gateway\GatewayResponse;

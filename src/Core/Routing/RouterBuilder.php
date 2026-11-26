@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace MiniPaviService\Core;
+namespace MiniPaviService\Core\Routing;
 
 use MiniPaviService\Controller;
 use MiniPaviService\Controller\Parameters\Parameters;

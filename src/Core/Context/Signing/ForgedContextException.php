@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace MiniPaviService\Core\Signing;
+namespace MiniPaviService\Core\Context\Signing;
 
 /**
  * A context the service didn't sign (ContextSigner::verify()): it isn't restored, as a context
