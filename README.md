@@ -941,7 +941,9 @@ echo Screen::of($moved)->preview();              // the screen, as text
   above too (a delimiter starting its zone there as well); in double width they are two
   columns wide, so they run on over the next row (two rows down in double size), as text
   wraps: `ESC N`, `AB` and CAN clear the rest of the row, then columns 1 to 36 of the next
-  one. A mosaic character uses up nothing that waits. Each `Cell` has the background,
+  one. CAN's spaces are then the last character drawn, which REP repeats from where CAN left
+  the cursor (checked in MiniPavi's emulator, #163): `AB`, CAN, two BS and REP twice draw two
+  spaces over `AB`. A mosaic character uses up nothing that waits. Each `Cell` has the background,
   masking and (in text) underline its zone shows, which `HtmlRenderer` draws.
 - **`Vdt\Player::play($vdt, $listener)`** (internal, what `Screen::of()` and `Offset` are
   built on): plays the content on the simulated screen, telling a `Vdt\ScreenListener` each
