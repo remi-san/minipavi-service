@@ -645,9 +645,12 @@ the reader fall back to `Io\Files`.
 
 The commands of the [command line](#command-line) take theirs too: `Cli\PreviewCommand` reads
 the files it is given (the page and its `.vdt` files, the data, `--messages`) through a
-`FileReader`, and `Cli\VdtOffsetCommand` reads its input through a `FileReader` and writes its
-output through an `Io\FileWriter` (`write($file, $content)`, `false` if it can't), both
-`Io\Files` by default.
+`FileReader`; `Cli\LintCommand` finds the files of the paths it is given through an
+`Io\FileFinder` (`find($path, $extension)`: the file at the path, or the files with the
+extension of the folder and its subfolders, sorted; `null` if there is nothing at the path)
+and reads them (the pages and their `.vdt` files, `--messages`) through a `FileReader`; and
+`Cli\VdtOffsetCommand` reads its input through a `FileReader` and writes its output through an
+`Io\FileWriter` (`write($file, $content)`, `false` if it can't), all `Io\Files` by default.
 
 ## Page XML format
 
