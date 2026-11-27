@@ -78,12 +78,30 @@ final readonly class Messages
 
     /**
      * Checks there is a text for every one of these messages, e.g. at startup for every case
-     * of the service's enums: check(...FrameworkMessage::cases(), ...AccMessage::cases())
+     * of the service's enums: check(...FrameworkMessage::cases(), ...AccMessage::cases()),
+     * and that no two of them, of different enums, have the same name: they would share
+     * their text, which is by name
      *
-     * @throws MessagesException naming the messages without text
+     * @throws MessagesException naming the messages of different enums with the same name,
+     *                           or else the messages without text
      */
     public function check(Message ...$messages): self
     {
+        $byName = [];
+        $shared = [];
+        foreach ($messages as $message) {
+            $byName[$message->value] ??= $message;
+            $first = $byName[$message->value];
+            if ($first === $message) {
+                continue;
+            }
+
+            $shared[] = self::nameOf($first) . ' and ' . self::nameOf($message) . " are both \"{$message->value}\"";
+        }
+        if ($shared !== []) {
+            throw new MessagesException('Messages of different enums with the same name: ' . implode(', ', $shared));
+        }
+
         $missing = [];
         foreach ($messages as $message) {
             if ($this->has((string) $message->value)) {
@@ -97,6 +115,14 @@ final readonly class Messages
         }
 
         return $this;
+    }
+
+    /**
+     * A message as written in the code: its enum and case (e.g. FrameworkMessage::Error)
+     */
+    private static function nameOf(Message $message): string
+    {
+        return $message::class . '::' . $message->name;
     }
 
     /**
