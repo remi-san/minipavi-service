@@ -12,6 +12,7 @@ use MiniPaviService\Message\MessagesXmlParser;
 use MiniPaviService\Tests\Support\FailingProperties;
 use MiniPaviService\Tests\Support\MemoryFiles;
 use MiniPaviService\Tests\Support\PrivateProperties;
+use MiniPaviService\Tests\Support\SharingMessage;
 use MiniPaviService\Tests\Support\TestMessage;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
@@ -216,6 +217,44 @@ final class MessagesTest extends TestCase
     public function testCheckChecksOnlyTheMessagesGiven(): void
     {
         $messages = (new Messages(['welcome' => 'Bienvenue']))->check(TestMessage::Welcome);
+
+        self::assertSame('Bienvenue', $messages->get(TestMessage::Welcome));
+    }
+
+    public function testCheckNamesTheMessagesOfDifferentEnumsWithTheSameName(): void
+    {
+        $this->expectException(MessagesException::class);
+        $this->expectExceptionMessage(
+            'Messages of different enums with the same name: '
+            . 'MiniPaviService\Message\FrameworkMessage::Error and '
+            . 'MiniPaviService\Tests\Support\SharingMessage::Oops are both "error", '
+            . 'MiniPaviService\Tests\Support\TestMessage::Welcome and '
+            . 'MiniPaviService\Tests\Support\SharingMessage::Hello are both "welcome"',
+        );
+
+        (new MessagesXmlParser())
+            ->defaults()
+            ->with(['welcome' => 'Bienvenue', 'code.unknown' => 'Code inconnu'])
+            ->check(...FrameworkMessage::cases(), ...TestMessage::cases(), ...SharingMessage::cases());
+    }
+
+    public function testCheckNamesTheMessagesWithTheSameNameBeforeThoseWithoutText(): void
+    {
+        $this->expectException(MessagesException::class);
+        $this->expectExceptionMessage(
+            'Messages of different enums with the same name: '
+            . 'MiniPaviService\Tests\Support\SharingMessage::Oops and '
+            . 'MiniPaviService\Message\FrameworkMessage::Error are both "error"',
+        );
+
+        (new MessagesXmlParser())
+            ->defaults()
+            ->check(SharingMessage::Oops, ...TestMessage::cases(), ...FrameworkMessage::cases());
+    }
+
+    public function testCheckAcceptsAMessageGivenTwice(): void
+    {
+        $messages = (new Messages(['welcome' => 'Bienvenue']))->check(TestMessage::Welcome, TestMessage::Welcome);
 
         self::assertSame('Bienvenue', $messages->get(TestMessage::Welcome));
     }
