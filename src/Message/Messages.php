@@ -10,22 +10,37 @@ use MiniPaviService\Text\Placeholders;
 /**
  * Texts of the messages shown on the Minitel, by name (Message): the framework's defaults
  * (MessagesXmlParser::defaults()), a service's messages file over them (MessagesXmlParser), a page's
- * <message> over those (with()). A text can have {{placeholders}}, replaced by get().
+ * <message> over those (with()). A text can have {{placeholders}}, replaced by get(), and
+ * only those: a {{...}} that isn't one is refused when they are built.
  * Immutable.
  */
 final readonly class Messages
 {
     /**
      * @param array<string, string> $texts name => text
+     *
+     * @throws MessagesException naming the message, for a text with a {{...}} that isn't a
+     *                           placeholder (e.g. {{1}}): get() would leave it in the text,
+     *                           a mistake in the message, found when the messages are built
      */
     public function __construct(
         private array $texts = [],
-    ) {}
+    ) {
+        foreach ($texts as $name => $text) {
+            try {
+                Placeholders::check($text);
+            } catch (InvalidValueException $e) {
+                throw new MessagesException("Message \"{$name}\": " . $e->getMessage(), previous: $e);
+            }
+        }
+    }
 
     /**
      * These messages, with texts redefining or adding some
      *
      * @param array<string, string> $texts name => text
+     *
+     * @throws MessagesException for a text with a {{...}} that isn't a placeholder
      */
     public function with(array $texts): self
     {
@@ -44,10 +59,10 @@ final readonly class Messages
      * @param array<string, mixed> $variables name => value: text, number, array or object with
      *                                    properties
      *
-     * @throws \LogicException naming the message, for a message without text, a placeholder
-     *                         without variable or whose value isn't text, or a {{...}} that
-     *                         isn't a placeholder (e.g. {{1}}). An exception of a variable's own
-     *                         code (e.g. its __toString(), or __get()) goes through as it is.
+     * @throws \LogicException naming the message, for a message without text, or a
+     *                         placeholder without variable or whose value isn't text. An
+     *                         exception of a variable's own code (e.g. its __toString(), or
+     *                         __get()) goes through as it is.
      */
     public function get(Message $message, array $variables = []): string
     {
@@ -55,9 +70,6 @@ final readonly class Messages
         $text = $this->texts[$name] ?? throw new \LogicException("No text for the message \"{$name}\"");
 
         try {
-            // Unlike in a page, it would be left in the text: a mistake in the message
-            Placeholders::check($text);
-
             return (new Placeholders($variables))->substitute($text);
         } catch (InvalidValueException $e) {
             throw new \LogicException("Message \"{$name}\": " . $e->getMessage(), previous: $e);
