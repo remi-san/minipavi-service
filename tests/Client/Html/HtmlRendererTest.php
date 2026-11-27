@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MiniPaviService\Tests\Client\Html;
 
 use MiniPaviService\Client\Html\HtmlRenderer;
+use MiniPaviService\InvalidValueException;
 use MiniPaviService\Minitel\Color;
 use MiniPaviService\Minitel\Position;
 use MiniPaviService\Minitel\ScreenSize;
@@ -56,7 +57,7 @@ final class HtmlRendererTest extends TestCase
         // The screen doesn't need it
         $renderer->render(Screen::of(new Vdt()));
 
-        $this->expectException(\RuntimeException::class);
+        $this->expectException(InvalidValueException::class);
         $this->expectExceptionMessage('Font file not found: /missing.ttf');
 
         $renderer->style();

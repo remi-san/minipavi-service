@@ -10,6 +10,7 @@ use MiniPaviService\Core\Context\Signing\ForgedContextException;
 use MiniPaviService\Core\Context\Signing\UnsignedContext;
 use MiniPaviService\Core\Routing\Router;
 use MiniPaviService\Core\Routing\UnknownRouteException;
+use MiniPaviService\InvalidValueException;
 
 /**
  * The context as it goes to the gateway and comes back, JSON: {"route": ..., "states": {route:
@@ -30,7 +31,7 @@ final readonly class ContextSerializer
     ) {}
 
     /**
-     * @throws \RuntimeException if a parameter can't be JSON (e.g. text that isn't UTF-8)
+     * @throws InvalidValueException if a parameter can't be JSON (e.g. text that isn't UTF-8)
      */
     public function serialize(Context $context): string
     {
@@ -52,7 +53,7 @@ final readonly class ContextSerializer
                 JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES,
             ));
         } catch (\JsonException $e) {
-            throw new \RuntimeException('Cannot serialize context: ' . $e->getMessage(), previous: $e);
+            throw new InvalidValueException('Cannot serialize context: ' . $e->getMessage(), previous: $e);
         }
     }
 

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Client\Html;
 
+use MiniPaviService\InvalidValueException;
 use MiniPaviService\Io\FileReader;
 use MiniPaviService\Io\Files;
 use MiniPaviService\Minitel\Color;
@@ -128,13 +129,13 @@ final readonly class HtmlRenderer
      * The CSS of render()'s screen, its font included: read now, so only a page drawing the
      * screen needs it
      *
-     * @throws \RuntimeException if the font file can't be read
+     * @throws InvalidValueException if the font file can't be read
      */
     public function style(): string
     {
         $font = $this->files->read($this->fontFile);
         if ($font === null) {
-            throw new \RuntimeException("Font file not found: {$this->fontFile}");
+            throw new InvalidValueException("Font file not found: {$this->fontFile}");
         }
 
         return (

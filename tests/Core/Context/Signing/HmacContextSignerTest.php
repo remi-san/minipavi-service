@@ -6,6 +6,7 @@ namespace MiniPaviService\Tests\Core\Context\Signing;
 
 use MiniPaviService\Core\Context\Signing\ForgedContextException;
 use MiniPaviService\Core\Context\Signing\HmacContextSigner;
+use MiniPaviService\InvalidValueException;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
@@ -70,7 +71,8 @@ final class HmacContextSignerTest extends TestCase
 
     public function testRefusesAnEmptyKey(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidValueException::class);
+        $this->expectExceptionMessage('The key signing the context is empty');
 
         new HmacContextSigner('');
     }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MiniPaviService\Tests\Http\Url;
 
 use MiniPaviService\Http\Url\RequestUrl;
+use MiniPaviService\InvalidValueException;
 use Nyholm\Psr7\ServerRequest;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
@@ -148,7 +149,7 @@ final class RequestUrlTest extends TestCase
     #[DataProvider('invalidServiceUrls')]
     public function testServiceUrlMustBeAnOrigin(string $serviceUrl): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidValueException::class);
         $this->expectExceptionMessage('SERVICE_URL');
 
         new RequestUrl($serviceUrl);
@@ -175,7 +176,7 @@ final class RequestUrlTest extends TestCase
     #[DataProvider('invalidProxies')]
     public function testInvalidTrustedProxyIsRefused(string $proxy): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidValueException::class);
         $this->expectExceptionMessage("TRUSTED_PROXIES: \"{$proxy}\" is not an IP address or range");
 
         new RequestUrl(trustedProxies: "10.0.0.1, {$proxy}");

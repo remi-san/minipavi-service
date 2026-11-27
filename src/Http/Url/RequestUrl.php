@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Http\Url;
 
+use MiniPaviService\InvalidValueException;
 use Psr\Http\Message\ServerRequestInterface;
 
 /**
@@ -28,6 +29,9 @@ final readonly class RequestUrl
      * @param ?string $serviceUrl public URL of the service, without path (SERVICE_URL)
      * @param string $trustedProxies IP addresses or ranges (10.0.0.0/8), separated by commas
      *                               (TRUSTED_PROXIES)
+     *
+     * @throws InvalidValueException for a serviceUrl that isn't a scheme and host, or a trusted
+     *                               proxy that isn't an IP address or range
      */
     public function __construct(?string $serviceUrl = null, string $trustedProxies = '')
     {
@@ -140,7 +144,7 @@ final readonly class RequestUrl
             || array_key_exists('fragment', $parts)
             || array_key_exists('user', $parts)
         ) {
-            throw new \InvalidArgumentException(
+            throw new InvalidValueException(
                 "SERVICE_URL \"{$serviceUrl}\" must be the scheme and host of the service, e.g. https://minitel.example.org",
             );
         }
@@ -173,8 +177,8 @@ final readonly class RequestUrl
         return $proxies;
     }
 
-    private static function notAProxy(string $proxy): \InvalidArgumentException
+    private static function notAProxy(string $proxy): InvalidValueException
     {
-        return new \InvalidArgumentException("TRUSTED_PROXIES: \"{$proxy}\" is not an IP address or range");
+        return new InvalidValueException("TRUSTED_PROXIES: \"{$proxy}\" is not an IP address or range");
     }
 }

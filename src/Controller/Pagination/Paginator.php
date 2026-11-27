@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Controller\Pagination;
 
+use MiniPaviService\InvalidValueException;
+
 /**
  * A page of items shown $perPage at a time: which items it holds (offset(), $perPage, slice()),
  * where it is among the pages (number(), pageCount(), isFirst(), isLast()), and the pages
@@ -24,7 +26,7 @@ final readonly class Paginator
      * @param int $index index of the page (from 0), kept within the pages (e.g. the items got
      *                   fewer since it was kept)
      *
-     * @throws \InvalidArgumentException for a negative item count, or less than one item per page
+     * @throws InvalidValueException for a negative item count, or less than one item per page
      */
     public function __construct(
         public int $itemCount,
@@ -32,10 +34,10 @@ final readonly class Paginator
         int $index,
     ) {
         if ($itemCount < 0) {
-            throw new \InvalidArgumentException("Item count must not be negative, {$itemCount} given");
+            throw new InvalidValueException("Item count must not be negative, {$itemCount} given");
         }
         if ($perPage < 1) {
-            throw new \InvalidArgumentException("At least one item per page, {$perPage} given");
+            throw new InvalidValueException("At least one item per page, {$perPage} given");
         }
         $this->index = max(0, min($index, $this->pageCount() - 1));
     }

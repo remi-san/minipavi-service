@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MiniPaviService\Tests\Controller\Pagination;
 
 use MiniPaviService\Controller\Pagination\Paginator;
+use MiniPaviService\InvalidValueException;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
@@ -101,7 +102,7 @@ final class PaginatorTest extends TestCase
 
     public function testNeedsAPositiveSize(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidValueException::class);
         $this->expectExceptionMessage('At least one item per page, 0 given');
 
         new Paginator(10, 0, 0);
@@ -109,7 +110,7 @@ final class PaginatorTest extends TestCase
 
     public function testNeedsItemsToCount(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidValueException::class);
         $this->expectExceptionMessage('Item count must not be negative, -1 given');
 
         new Paginator(-1, 4, 0);

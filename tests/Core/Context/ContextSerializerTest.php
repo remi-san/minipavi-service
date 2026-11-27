@@ -18,6 +18,7 @@ use MiniPaviService\Core\Context\Signing\HmacContextSigner;
 use MiniPaviService\Core\Routing\Router;
 use MiniPaviService\Core\Routing\RouterBuilder;
 use MiniPaviService\Core\Routing\UnknownRouteException;
+use MiniPaviService\InvalidValueException;
 use MiniPaviService\Tests\Support\CallbackController;
 use MiniPaviService\Tests\Support\FromParameters;
 use MiniPaviService\Tests\Support\QueryParameters;
@@ -145,7 +146,7 @@ final class ContextSerializerTest extends TestCase
 
         try {
             $this->serializer()->serialize($context);
-        } catch (\RuntimeException $e) {
+        } catch (InvalidValueException $e) {
             self::assertSame(
                 'Cannot serialize context: Malformed UTF-8 characters, possibly incorrectly encoded',
                 $e->getMessage(),
