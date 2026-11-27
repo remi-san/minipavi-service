@@ -57,7 +57,7 @@ final readonly class ShownPage
      */
     public function parameters(): PageParameters
     {
-        return new PageParameters($this->paginator->index());
+        return new PageParameters($this->paginator->index);
     }
 
     /**

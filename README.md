@@ -401,7 +401,7 @@ KernelBuilder::for($router, $messages)
       // The template also gets the paginator's variables: {{page}}, {{pageCount}}, {{itemCount}}...
       public function pageData(Paginator $paginator): array
       {
-          return ['services' => $this->directory->getServices($paginator->offset(), $paginator->limit())];
+          return ['services' => $this->directory->getServices($paginator->offset(), $paginator->perPage)];
       }
 
       public function onOtherKey(Request $request, ShownPage $page): Response
@@ -418,16 +418,16 @@ KernelBuilder::for($router, $messages)
   new PaginatedController($page, new DirectoryList($directory));
   ```
 
-- **`Paginator`** (`new Paginator($itemCount, $perPage, $index)`) is a page of `itemCount()`
-  items, `limit()` at a time (immutable; there is always one page, empty without items, and an
+- **`Paginator`** (`new Paginator($itemCount, $perPage, $index)`) is a page of `$itemCount`
+  items, `$perPage` at a time (immutable; there is always one page, empty without items, and an
   index out of the pages is kept within them):
 
-  | Method | Gives |
+  | Property or method | Gives |
   |---|---|
-  | `offset()`, `limit()` | what to retrieve for the page (e.g. `LIMIT` / `OFFSET` of a query) |
+  | `offset()`, `$perPage` | what to retrieve for the page (e.g. `LIMIT` / `OFFSET` of a query) |
   | `slice($items)` | the page's items, out of a list of all of them |
-  | `index()`, `number()` | the page, from 0 (what `PageParameters` keeps) and from 1 (what the user sees) |
-  | `itemCount()`, `pageCount()`, `itemCountOnPage()` | the number of items, of pages, and of items on this one |
+  | `$index`, `number()` | the page, from 0 (what `PageParameters` keeps) and from 1 (what the user sees) |
+  | `$itemCount`, `pageCount()`, `itemCountOnPage()` | the number of items, of pages, and of items on this one |
   | `firstItem()`, `lastItem()` | the numbers of its first and last items, from 1 (0 without items) |
   | `isFirst()`, `isLast()`, `next()`, `previous()`, `at($index)` | where it is, and the pages around it (`next()` and `previous()`: null at the ends) |
   | `toArray()` | the variables of a template: `page`, `pageCount`, `itemCount`, `perPage`, `firstItem`, `lastItem` |
