@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Vdt\Playing;
 
+use MiniPaviService\Minitel\Position;
 use MiniPaviService\Vdt\Screen\Cursor;
 use MiniPaviService\Vdt\Screen\Zone;
 
@@ -40,12 +41,12 @@ final class Pen
         $this->last = $bytes;
         $width = $cursor->attributes()->width();
         if (!$cursor->delimits($bytes)) {
-            $this->listener->glyph($cursor->row(), $cursor->col(), $bytes, $width, $cursor->attributes());
+            $this->listener->glyph(self::positionOf($cursor), $bytes, $cursor->attributes());
             $cursor->advance($width);
             return;
         }
         $cursor->delimit();
-        $this->listener->delimiter($cursor->row(), $cursor->col(), $width, $cursor->attributes(), $cursor->zone());
+        $this->listener->delimiter(self::positionOf($cursor), $cursor->attributes(), $cursor->zone());
         $cursor->advance($width);
     }
 
@@ -74,7 +75,7 @@ final class Pen
     {
         $width = $cursor->attributes()->width();
         $delimiter = $this->spaceStartsZone($cursor);
-        $this->listener->priorCharacter($cursor->row(), $cursor->col(), $width, $cursor->attributes(), $delimiter);
+        $this->listener->priorCharacter(self::positionOf($cursor), $cursor->attributes(), $delimiter);
         $cursor->advance($width);
     }
 
@@ -93,10 +94,18 @@ final class Pen
         $delimiter = $this->spaceStartsZone($cursor);
         $attributes = $cursor->attributes();
         if ($attributes->width() > 1) {
-            (new ClearedSpaces($cursor->row(), $cursor->col(), $attributes, $delimiter))->tellTo($this->listener);
+            (new ClearedSpaces(self::positionOf($cursor), $attributes, $delimiter))->tellTo($this->listener);
             return;
         }
-        $this->listener->clearLine($cursor->row(), $cursor->col(), $attributes, $delimiter);
+        $this->listener->clearLine(self::positionOf($cursor), $attributes, $delimiter);
+    }
+
+    /**
+     * Where the cursor is: always on the screen (Cursor::position() ignores a position off it)
+     */
+    private static function positionOf(Cursor $cursor): Position
+    {
+        return new Position($cursor->row(), $cursor->col());
     }
 
     /**

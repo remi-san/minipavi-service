@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Vdt\Screen;
 
+use MiniPaviService\Minitel\Position;
 use MiniPaviService\Minitel\ScreenSize;
 use MiniPaviService\Vdt\Playing\Player;
 use MiniPaviService\Vdt\Playing\ScreenListener;
@@ -47,44 +48,44 @@ final class ScreenCells implements ScreenListener
     }
 
     /**
-     * A character drawn at row, col: in each cell it covers (Zones::cells()), the part of it
+     * A character drawn at position: in each cell it covers (Zones::cells()), the part of it
      * the cell shows (Part), as MiniPavi's emulator draws it (decoder.js, printG0Char()): a
      * tall one's top half on the row above, over what is there; a wide one in the last
      * column its left half only
      */
-    public function glyph(int $row, int $col, string $bytes, int $width, Attributes $attributes): void
+    public function glyph(Position $position, string $bytes, Attributes $attributes): void
     {
-        $this->fill($row, $col, $bytes, $width, $attributes);
-        $this->zones->draw($row, $col, $width, $attributes);
+        $this->fill($position->row, $position->col, $bytes, $attributes);
+        $this->zones->draw($position, $attributes);
     }
 
-    public function delimiter(int $row, int $col, int $width, Attributes $attributes, Zone $zone): void
+    public function delimiter(Position $position, Attributes $attributes, Zone $zone): void
     {
-        $this->glyph($row, $col, bytes: ' ', width: $width, attributes: $attributes);
-        $this->zones->delimiter($row, $col, $width, $attributes->height(), $zone);
+        $this->glyph($position, bytes: ' ', attributes: $attributes);
+        $this->zones->delimiter($position, $attributes, $zone);
     }
 
     /**
      * The character printed before the content, as the space that stands in for it
      * (StandInSpace)
      */
-    public function priorCharacter(int $row, int $col, int $width, Attributes $attributes, ?Zone $delimiter): void
+    public function priorCharacter(Position $position, Attributes $attributes, ?Zone $delimiter): void
     {
-        (new StandInSpace($row, $col, $width, $attributes, $delimiter))->tellTo($this);
+        (new StandInSpace($position, $attributes, $delimiter))->tellTo($this);
     }
 
     /**
-     * CAN at row, col, as MiniPavi's emulator prints it (decoder.js, clear("eol")): a space
+     * CAN at position, as MiniPavi's emulator prints it (decoder.js, clear("eol")): a space
      * with these attributes in each column from col to the last, the first one a delimiter
      * starting zone delimiter, if not null (Zones::clearLine()). So in double height they
      * clear the row above too (a CAN in double width is told as its spaces, Pen::clearLine())
      */
-    public function clearLine(int $row, int $col, Attributes $attributes, ?Zone $delimiter): void
+    public function clearLine(Position $position, Attributes $attributes, ?Zone $delimiter): void
     {
-        for ($space = $col; $space <= ScreenSize::COLS; $space++) {
-            $this->fill($row, $space, bytes: ' ', width: $attributes->width(), attributes: $attributes);
+        for ($space = $position->col; $space <= ScreenSize::COLS; $space++) {
+            $this->fill($position->row, $space, bytes: ' ', attributes: $attributes);
         }
-        $this->zones->clearLine($row, $col, $attributes, $delimiter);
+        $this->zones->clearLine($position, $attributes, $delimiter);
     }
 
     public function clear(): void
@@ -124,9 +125,9 @@ final class ScreenCells implements ScreenListener
      * Puts a character drawn at row, col in each cell it covers (Zones::cells()), the part of
      * it the cell shows (Part): see glyph()
      */
-    private function fill(int $row, int $col, string $bytes, int $width, Attributes $attributes): void
+    private function fill(int $row, int $col, string $bytes, Attributes $attributes): void
     {
-        foreach (Zones::cells($row, $col, $width, $attributes->height()) as [$cellRow, $cellCol]) {
+        foreach (Zones::cells($row, $col, $attributes->width(), $attributes->height()) as [$cellRow, $cellCol]) {
             if ($cellCol > ScreenSize::COLS) {
                 continue;
             }

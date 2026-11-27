@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Vdt\Screen;
 
+use MiniPaviService\Minitel\Position;
 use MiniPaviService\Vdt\Playing\Player;
 use MiniPaviService\Vdt\Playing\ScreenListener;
 use MiniPaviService\Vdt\Playing\StandInSpace;
@@ -44,25 +45,25 @@ final class ShownScreens implements ScreenListener
         return $screens->first;
     }
 
-    public function glyph(int $row, int $col, string $bytes, int $width, Attributes $attributes): void
+    public function glyph(Position $position, string $bytes, Attributes $attributes): void
     {
-        $this->screen->glyph($row, $col, $bytes, $width, $attributes);
+        $this->screen->glyph($position, $bytes, $attributes);
     }
 
-    public function delimiter(int $row, int $col, int $width, Attributes $attributes, Zone $zone): void
+    public function delimiter(Position $position, Attributes $attributes, Zone $zone): void
     {
-        $this->screen->delimiter($row, $col, $width, $attributes, $zone);
+        $this->screen->delimiter($position, $attributes, $zone);
     }
 
-    public function priorCharacter(int $row, int $col, int $width, Attributes $attributes, ?Zone $delimiter): void
+    public function priorCharacter(Position $position, Attributes $attributes, ?Zone $delimiter): void
     {
         // As the space that stands in for it
-        (new StandInSpace($row, $col, $width, $attributes, $delimiter))->tellTo($this);
+        (new StandInSpace($position, $attributes, $delimiter))->tellTo($this);
     }
 
-    public function clearLine(int $row, int $col, Attributes $attributes, ?Zone $delimiter): void
+    public function clearLine(Position $position, Attributes $attributes, ?Zone $delimiter): void
     {
-        $this->screen->clearLine($row, $col, $attributes, $delimiter);
+        $this->screen->clearLine($position, $attributes, $delimiter);
     }
 
     public function clear(): void

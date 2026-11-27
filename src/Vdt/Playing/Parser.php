@@ -65,9 +65,8 @@ final class Parser
                     $tokens[] = new Charset($byte);
                     break;
                 case Videotex::POSITION: // row, column as 0x40+n, or a row as 2 digits
-                    [$position, $skipped] = self::position($vdt, $i);
-                    $tokens[] = $position;
-                    $i += $skipped;
+                    $tokens[] = self::position($vdt, $i);
+                    $i += 2;
                     break;
                 case Videotex::CURSOR_LEFT:
                     $tokens[] = new CursorLeft();
@@ -130,14 +129,12 @@ final class Parser
     }
 
     /**
-     * Position (US) at offset i: the token, and the 2 bytes it takes after US. As the Minitel
+     * Position (US) at offset i, which takes the 2 bytes after US. As the Minitel
      * reads them (MiniPavi's emulator, locate()): the row and the column as 0x40 + n, or, when
      * the first is 0, 1 or 2, the row in digits (10 times the first, plus the second), the
      * cursor in column 1. Off the screen, the Player ignores it (Cursor::position())
-     *
-     * @return array{Token, int}
      */
-    private static function position(string $vdt, int $i): array
+    private static function position(string $vdt, int $i): Position
     {
         $first = ord($vdt[$i + 1] ?? "\x41");
         $second = ord($vdt[$i + 2] ?? "\x41");
@@ -146,7 +143,7 @@ final class Parser
                 ? [(10 * ($first - 0x30)) + ($second - 0x30), 1]
                 : [$first - 0x40, $second - 0x40];
 
-        return [new Position(substr($vdt, $i, length: 3), row: $row, col: $col), 2];
+        return new Position(substr($vdt, $i, length: 3), row: $row, col: $col);
     }
 
     private function csiLength(string $vdt, int $start): int

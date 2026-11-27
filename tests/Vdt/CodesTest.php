@@ -295,4 +295,18 @@ final class CodesTest extends TestCase
             self::assertSame(MiniPaviCli::repeatChar('-', $count), Vdt::repeat('-', $count)->toString());
         }
     }
+
+    /**
+     * The sequences Vdt and the Writer write, POSITION and REPEAT with their bytes, are
+     * MiniPaviCli's
+     */
+    public function testVideotexEncodesPositionAndRepeatAsMiniPaviCli(): void
+    {
+        foreach ([[0, 1], [1, 1], [24, 40], [12, 7]] as [$row, $col]) {
+            self::assertSame(MiniPaviCli::setPos($col, $row), Videotex::position($row, $col));
+        }
+        foreach ([1, 2, 39, Videotex::MAX_REPEAT] as $count) {
+            self::assertSame(MiniPaviCli::repeatChar('-', $count + 1), '-' . Videotex::repeat($count));
+        }
+    }
 }

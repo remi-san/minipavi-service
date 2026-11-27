@@ -4,12 +4,13 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Vdt\Playing;
 
+use MiniPaviService\Minitel\Position;
 use MiniPaviService\Vdt\Screen\Attributes;
 use MiniPaviService\Vdt\Screen\Zone;
 use MiniPaviService\Vdt\Screen\Zones;
 
 /**
- * The space that stands in, at a row and column, for the character printed before the
+ * The space that stands in, at a position, for the character printed before the
  * content, which a REP before any character repeats and which can't be known
  * (ScreenListener::priorCharacter()): a space with its attributes, a delimiter while a zone
  * attribute waits, as a space drawn there would be. Immutable.
@@ -22,9 +23,7 @@ final readonly class StandInSpace
      * @param ?Zone $delimiter the zone it starts as a delimiter; null if it isn't one
      */
     public function __construct(
-        private int $row,
-        private int $col,
-        private int $width,
+        private Position $position,
         private Attributes $attributes,
         private ?Zone $delimiter,
     ) {}
@@ -36,10 +35,10 @@ final readonly class StandInSpace
     public function tellTo(ScreenListener $listener): void
     {
         if ($this->delimiter !== null) {
-            $listener->delimiter($this->row, $this->col, $this->width, $this->attributes, $this->delimiter);
+            $listener->delimiter($this->position, $this->attributes, $this->delimiter);
             return;
         }
-        $listener->glyph($this->row, $this->col, ' ', $this->width, $this->attributes);
+        $listener->glyph($this->position, ' ', $this->attributes);
     }
 
     /**
@@ -49,9 +48,9 @@ final readonly class StandInSpace
     public function drawIn(Zones $zones): void
     {
         if ($this->delimiter !== null) {
-            $zones->delimiter($this->row, $this->col, $this->width, $this->attributes->height(), $this->delimiter);
+            $zones->delimiter($this->position, $this->attributes, $this->delimiter);
             return;
         }
-        $zones->draw($this->row, $this->col, $this->width, $this->attributes);
+        $zones->draw($this->position, $this->attributes);
     }
 }
