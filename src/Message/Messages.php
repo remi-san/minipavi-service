@@ -30,7 +30,7 @@ final readonly class Messages
             try {
                 Placeholders::check($text);
             } catch (InvalidValueException $e) {
-                throw new MessagesException("Message \"{$name}\": " . $e->getMessage(), previous: $e);
+                throw new MessagesException(self::errorOf($name, $e), previous: $e);
             }
         }
     }
@@ -72,7 +72,7 @@ final readonly class Messages
         try {
             return (new Placeholders($variables))->substitute($text);
         } catch (InvalidValueException $e) {
-            throw new \LogicException("Message \"{$name}\": " . $e->getMessage(), previous: $e);
+            throw new \LogicException(self::errorOf($name, $e), previous: $e);
         }
     }
 
@@ -97,5 +97,14 @@ final readonly class Messages
         }
 
         return $this;
+    }
+
+    /**
+     * Error of a message's text, naming the message (its name, a Message's value): when the
+     * messages are built, or when it is shown
+     */
+    private static function errorOf(int|string $name, InvalidValueException $error): string
+    {
+        return "Message \"{$name}\": " . $error->getMessage();
     }
 }
