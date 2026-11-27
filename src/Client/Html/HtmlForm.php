@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace MiniPaviService\Client\Html;
 
 use MiniPaviService\Gateway\Command\InputCommand;
-use MiniPaviService\Html\Html;
 use MiniPaviService\Message\FrameworkMessage;
 use MiniPaviService\Message\Messages;
 use MiniPaviService\Minitel\FunctionKey;

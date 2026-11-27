@@ -65,7 +65,6 @@ helpers = [
     "MiniPaviService\\Text\\**",
     "MiniPaviService\\Io\\**",
     "MiniPaviService\\Xml\\**",
-    "MiniPaviService\\Html\\**",
 ]
 minitel = ["MiniPaviService\\Minitel\\**"]
 vdt = ["MiniPaviService\\Vdt\\**"]
@@ -116,10 +115,6 @@ permit = ["@native", "MiniPaviService\\InvalidValueException", "MiniPaviService\
 [[guard.perimeter.rules]]
 namespace = "MiniPaviService\\Xml\\"
 permit = ["@native", "MiniPaviService\\InvalidValueException", "MiniPaviService\\Xml\\**"]
-
-[[guard.perimeter.rules]]
-namespace = "MiniPaviService\\Html\\"
-permit = ["@native", "MiniPaviService\\InvalidValueException", "MiniPaviService\\Html\\**"]
 
 [[guard.perimeter.rules]]
 namespace = "MiniPaviService\\Minitel\\"

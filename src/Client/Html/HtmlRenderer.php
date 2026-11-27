@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Client\Html;
 
-use MiniPaviService\Html\Html;
 use MiniPaviService\Io\FileReader;
 use MiniPaviService\Io\Files;
 use MiniPaviService\Minitel\Color;

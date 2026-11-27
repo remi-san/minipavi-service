@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace MiniPaviService\Tests\Html;
+namespace MiniPaviService\Tests\Client\Html;
 
-use MiniPaviService\Html\Html;
+use MiniPaviService\Client\Html\Html;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
