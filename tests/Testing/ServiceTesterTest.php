@@ -78,8 +78,8 @@ final class ServiceTesterTest extends TestCase
             ->assertScreenNotContains('MENU')
             ->assertLineContains(2, text: 'Annuaire');
 
-        self::assertSame(['2'], $this->requests[1]->content());
-        self::assertEquals(new Terminal('192.0.2.1', 'websocket', 'Cv5'), $this->requests[1]->terminal());
+        self::assertSame(['2'], $this->requests[1]->content);
+        self::assertEquals(new Terminal('192.0.2.1', 'websocket', 'Cv5'), $this->requests[1]->terminal);
     }
 
     public function testScreenKeepsWhatResponsesDontClear(): void
@@ -98,15 +98,15 @@ final class ServiceTesterTest extends TestCase
     {
         $this->tester->connect()->type(...['a', 'b'])->press(FunctionKey::Send)->press(FunctionKey::Send);
 
-        self::assertSame(['a', 'b'], $this->requests[1]->content());
-        self::assertSame([], $this->requests[2]->content());
+        self::assertSame(['a', 'b'], $this->requests[1]->content);
+        self::assertSame([], $this->requests[2]->content);
     }
 
     public function testTypedLinesAreAListWhateverTheirKeys(): void
     {
         $this->tester->connect()->type(...['first' => 'a', 'second' => 'b'])->press(FunctionKey::Send);
 
-        self::assertSame(['a', 'b'], $this->requests[1]->content());
+        self::assertSame(['a', 'b'], $this->requests[1]->content);
     }
 
     public function testFailsWhenTheScreenShowsWhatItShouldnt(): void

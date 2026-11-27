@@ -32,7 +32,7 @@ final class SearchController implements Controller
     public function run(Request $request): Response
     {
         return new DisplayPage(
-            Vdt::text($request->state()->value . ' ' . $request->parameters()->page),
+            Vdt::text($request->state->value . ' ' . $request->parameters->page),
             SearchState::ReadQuery,
         );
     }

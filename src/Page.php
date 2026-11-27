@@ -16,7 +16,7 @@ use MiniPaviService\Vdt\Vdt;
 interface Page
 {
     /**
-     * Videotex content of the page, for the user's terminal (Request::terminal()), which some
+     * Videotex content of the page, for the user's terminal (Request::$terminal), which some
      * elements depend on (e.g. <endkey>)
      *
      * @param array<string, mixed> $data variables of a template

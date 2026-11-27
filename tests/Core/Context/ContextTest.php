@@ -42,15 +42,15 @@ final class ContextTest extends TestCase
                 /** @param Request<ControllerState, PageParameters> $request */
                 static fn(Request $request) => new DisplayPage(Vdt::text(
                     'home '
-                        . $request->state()->value
+                        . $request->state->value
                         . ' '
-                        . $request->parameters()->page
+                        . $request->parameters->page
                         . ' '
-                        . (string) $request->key()?->value
+                        . (string) $request->key?->value
                         . ' '
                         . $request->contentAsString()
                         . ' '
-                        . $request->terminal()->remoteAddr(),
+                        . $request->terminal->remoteAddr(),
                 )),
             ),
         );
@@ -67,7 +67,7 @@ final class ContextTest extends TestCase
             new CallbackController(
                 FromParameters::class,
                 /** @param Request<ControllerState, FromParameters> $request */
-                static fn(Request $request) => new DisplayPage(Vdt::text('from ' . $request->parameters()->from)),
+                static fn(Request $request) => new DisplayPage(Vdt::text('from ' . $request->parameters->from)),
             ),
         );
         $this->router = $routes->build();

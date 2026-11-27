@@ -259,7 +259,7 @@ KernelBuilder::for($router, $messages)
   send it can't be loaded. Both are plain values, so a
   service can be tested, or run elsewhere than PHP's web server, without `MiniPaviCli`.
 - **Pages** are displayed for the user's terminal, which `<endkey>` depends on:
-  `$page->display($request->terminal(), $data)`; display elements get it too
+  `$page->display($request->terminal, $data)`; display elements get it too
   (`Element::toVdt(Terminal $terminal): Vdt`).
 - **Logging:** `Service`, `ServiceRunner`, `Dispatcher` and `EmulatorRedirect` take an optional PSR-3 logger (`KernelBuilder::withLogger()` gives it to all of them; e.g.
   Monolog, with its `ErrorLogHandler` for PHP's error log, as [the skeleton](https://github.com/remi-san/minipavi-service-skeleton) does) and log
@@ -270,8 +270,8 @@ KernelBuilder::for($router, $messages)
   `new Service($sessions, $messages, $logger)`, `new ServiceRunner($service, $client, $logger)`,
   `new Dispatcher($handlers, $fallback, $logger)`, `new EmulatorRedirect($emulator, $logger)`.
   Without one, nothing is logged.
-- **A `Controller`** runs on a `Request` and returns a `Response`. The request gives:
-  - `state()` and `parameters()`: what the controller's previous response asked to keep,
+- **A `Controller`** runs on a `Request` and returns a `Response`. The request carries (as public readonly properties) and derives (as methods):
+  - `$state` and `$parameters`: what the controller's previous response asked to keep,
     from one request of the gateway to the next, typed as the controller declares them (see
     [Typed state and parameters](#typed-state)): a case of its `State` enum
     (`ControllerState`: `Init`, `Display`, `InitInput`, `ReadInput`, or its own), and an
@@ -279,14 +279,14 @@ KernelBuilder::for($router, $messages)
   - `functionKey()`: the function key the user pressed, a `FunctionKey` (`Send`, `Next`,
     `Previous`, `Refresh`, `Summary`, `Guide`, `Cancel`, `Correction`), or null for a
     connection code; `connectionCode()` the `Minitel\ConnectionCode` (`Connect`,
-    `DirectConnect`, `Disconnect`, `BackgroundCall`), or null for a function key; `key()` gives
-    either, as a `Minitel\Key` (`key()?->value` is the name the gateway sent: `ENVOI`…, or
+    `DirectConnect`, `Disconnect`, `BackgroundCall`), or null for a function key; `$key` holds
+    either, as a `Minitel\Key` (`$key?->value` is the name the gateway sent: `ENVOI`…, or
     `CNX`, `FIN`…), null when there is none: after a `ChangePage`, at the default route
     started again because the context's route is unknown, and for what the gateway sends that
     isn't a known key (e.g. `DIRECT`, after a `CallMode::Direct` call);
-  - `content()`: the text typed, one string per line of the input field, and
+  - `$content`: the text typed, one string per line of the input field, and
     `contentAsString()`;
-  - `terminal()`: where the user connects from (`remoteAddr()`), and how: `isAdapter()` (an
+  - `$terminal`: where the user connects from (`remoteAddr()`), and how: `isAdapter()` (an
     ESP32 or Minimit adapter, whose function keys need Shift) and `isTelnetOrPhone()`.
 
   Each response is built from its own class, in `Controller\Response\`:
@@ -352,7 +352,7 @@ KernelBuilder::for($router, $messages)
       // Shows the screen (onInit() and onInitInput() do the same, unless overridden)
       protected function onDisplay(Request $request): Response
       {
-          return RunCommand::readInput($this->page->display($request->terminal()), $this->page->inputCommand());
+          return RunCommand::readInput($this->page->display($request->terminal), $this->page->inputCommand());
       }
 
       // Handles the key pressed and what was typed
@@ -441,8 +441,8 @@ KernelBuilder::for($router, $messages)
     for none). The class is immutable (readonly): the context keeps the object the controller
     is given, so changing it would change what the route keeps;
 
-  and gets them typed: `Request<TState, TParameters>`, `$request->state()` and
-  `$request->parameters()`. Its responses keep a case of its enum and an object of its class
+  and gets them typed: `Request<TState, TParameters>`, `$request->state` and
+  `$request->parameters`. Its responses keep a case of its enum and an object of its class
   (null: the initial state, the default parameters); another type is an error. The state
   `new DisplayPage($vdt)` and `RunCommand::readInput()` keep by default is
   `ControllerState::ReadInput`: a controller with its own enum gives them one of its states,
@@ -497,8 +497,8 @@ KernelBuilder::for($router, $messages)
 
       public function run(Request $request): Response
       {
-          $page = $request->parameters()->page;          // DirectoryParameters
-          if ($request->state() === SearchState::ReadQuery) {
+          $page = $request->parameters->page;            // DirectoryParameters
+          if ($request->state === SearchState::ReadQuery) {
               // ...
           }
 
@@ -521,7 +521,7 @@ KernelBuilder::for($router, $messages)
   routes that don't run: they must not use the controller's properties, so that lazy
   controllers stay unbuilt.
 
-- `Minitel\ConnectionCode` names the connection codes of `Request::key()` (`CNX`,
+- `Minitel\ConnectionCode` names the connection codes of `Request::$key` (`CNX`,
   `DIRECTCNX`, `FIN`, and the start of background calls, `BGCALL-WM-`): `ConnectionCode::of($key)`,
   `Request::connectionCode()`, or `GatewayRequest::$key`.
 - A `Minitel\Key` tells a `Minitel\KeyHandler` what happened, through the handler's method for

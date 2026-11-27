@@ -38,7 +38,7 @@ final readonly class ShownPage
     {
         $data = $this->paginator->toArray() + $this->list->pageData($this->paginator);
 
-        return $this->stay($this->page->display($this->request->terminal(), $data));
+        return $this->stay($this->page->display($this->request->terminal, $data));
     }
 
     /**

@@ -181,8 +181,8 @@ final class ServiceTest extends TestCase
             $this->contentOf($this->handle(new GatewayRequest($code, ['typed before'], 'not a context'))),
         );
         // A new session: at init, and without what was typed before
-        self::assertSame(ControllerState::Init, $this->lastRequest('menu')->state());
-        self::assertSame([$code, []], [$this->lastRequest('menu')->key(), $this->lastRequest('menu')->content()]);
+        self::assertSame(ControllerState::Init, $this->lastRequest('menu')->state);
+        self::assertSame([$code, []], [$this->lastRequest('menu')->key, $this->lastRequest('menu')->content]);
         self::assertSame([[LogLevel::INFO, 'Connection', ['fctn' => $code->value]]], $this->logger->records);
     }
 
@@ -196,8 +196,8 @@ final class ServiceTest extends TestCase
             $this->contentOf($this->handle(new GatewayRequest(null, ['36'], $directory->context, $this->terminal))),
         );
         self::assertSame([null, ['36']], [
-            $this->lastRequest('directory')->key(),
-            $this->lastRequest('directory')->content(),
+            $this->lastRequest('directory')->key,
+            $this->lastRequest('directory')->content,
         ]);
     }
 
@@ -228,8 +228,8 @@ final class ServiceTest extends TestCase
         $error = $this->goTo('broken');
 
         self::assertSame('menu', $this->contentOf($this->press($error, key: FunctionKey::Summary)));
-        self::assertSame(ControllerState::Init, $this->lastRequest('menu')->state());
-        self::assertSame(FunctionKey::Summary, $this->lastRequest('menu')->key());
+        self::assertSame(ControllerState::Init, $this->lastRequest('menu')->state);
+        self::assertSame(FunctionKey::Summary, $this->lastRequest('menu')->key);
     }
 
     public function testInvalidContextIsAnError(): void
@@ -330,11 +330,11 @@ final class ServiceTest extends TestCase
 
         // The directory must not read the menu's "1" as a code
         $directory = $this->lastRequest('directory');
-        self::assertSame(ControllerState::Init, $directory->state());
-        self::assertEquals(new PageParameters(1), $directory->parameters());
-        self::assertNull($directory->key());
-        self::assertSame([], $directory->content());
-        self::assertSame(self::TERMINAL_ADDRESS, $directory->terminal()->remoteAddr());
+        self::assertSame(ControllerState::Init, $directory->state);
+        self::assertEquals(new PageParameters(1), $directory->parameters);
+        self::assertNull($directory->key);
+        self::assertSame([], $directory->content);
+        self::assertSame(self::TERMINAL_ADDRESS, $directory->terminal->remoteAddr());
     }
 
     public function testChangePageResetsTheControllerLeft(): void
@@ -343,7 +343,7 @@ final class ServiceTest extends TestCase
         $directory = $this->press($this->connect(), key: FunctionKey::Send);
         $this->press($directory, key: FunctionKey::Summary);
 
-        self::assertSame(ControllerState::Init, $this->lastRequest('menu')->state());
+        self::assertSame(ControllerState::Init, $this->lastRequest('menu')->state);
     }
 
     public function testUnknownRouteStartsAgainAtTheDefaultRoute(): void
@@ -367,8 +367,8 @@ final class ServiceTest extends TestCase
         self::assertSame('menu', $this->contentOf($response));
         // As a new connection: the input was for a screen that doesn't exist any more
         $menu = $this->lastRequest('menu');
-        self::assertSame(ControllerState::Init, $menu->state());
-        self::assertSame([null, []], [$menu->key(), $menu->content()]);
+        self::assertSame(ControllerState::Init, $menu->state);
+        self::assertSame([null, []], [$menu->key, $menu->content]);
         self::assertSame(
             [[
                 LogLevel::WARNING,
@@ -389,23 +389,23 @@ final class ServiceTest extends TestCase
         // To this service, waiting for the user
         self::assertEquals(new WaitForKeyCommand(), $response->command);
         $next = $this->nextRequest($response);
-        self::assertSame(ControllerState::Display, $next->state());
-        self::assertEquals(new PageParameters(2), $next->parameters());
+        self::assertSame(ControllerState::Display, $next->state);
+        self::assertEquals(new PageParameters(2), $next->parameters);
     }
 
     public function testDisplayReadsTheNextKeyWithTheDefaultParameters(): void
     {
         $next = $this->nextRequest($this->responseTo(new DisplayPage(new Vdt('Hello'))));
 
-        self::assertSame(ControllerState::ReadInput, $next->state());
-        self::assertEquals(new PageParameters(), $next->parameters());
+        self::assertSame(ControllerState::ReadInput, $next->state);
+        self::assertEquals(new PageParameters(), $next->parameters);
     }
 
     public function testDisplayCanKeepTheInitialState(): void
     {
         $next = $this->nextRequest($this->responseTo(new DisplayPage(new Vdt('Hello'), state: null)));
 
-        self::assertSame(ControllerState::Init, $next->state());
+        self::assertSame(ControllerState::Init, $next->state);
     }
 
     public function testReadInputRespondsWithTheCommand(): void
@@ -418,8 +418,8 @@ final class ServiceTest extends TestCase
         self::assertSame($command, $response->command);
         // What is typed comes back to the controller, reading it
         $next = $this->nextRequest($response);
-        self::assertSame(ControllerState::ReadInput, $next->state());
-        self::assertEquals(new PageParameters(), $next->parameters());
+        self::assertSame(ControllerState::ReadInput, $next->state);
+        self::assertEquals(new PageParameters(), $next->parameters);
     }
 
     public function testReadInputKeepsItsParameters(): void
@@ -430,8 +430,8 @@ final class ServiceTest extends TestCase
             parameters: new PageParameters(2),
         )));
 
-        self::assertSame(ControllerState::ReadInput, $next->state());
-        self::assertEquals(new PageParameters(2), $next->parameters());
+        self::assertSame(ControllerState::ReadInput, $next->state);
+        self::assertEquals(new PageParameters(2), $next->parameters);
     }
 
     /**
@@ -456,8 +456,8 @@ final class ServiceTest extends TestCase
 
         // Not dropped: the controller reads it, rather than starting again (onInit())
         $next = $this->lastRequest('respond');
-        self::assertSame(ControllerState::ReadInput, $next->state());
-        self::assertSame([FunctionKey::Send, ['3615']], [$next->key(), $next->content()]);
+        self::assertSame(ControllerState::ReadInput, $next->state);
+        self::assertSame([FunctionKey::Send, ['3615']], [$next->key, $next->content]);
     }
 
     public function testReadInputWithoutCommandOnlySendsTheContent(): void
@@ -506,8 +506,8 @@ final class ServiceTest extends TestCase
         );
         // For when the user comes back
         $next = $this->nextRequest($response);
-        self::assertSame($nextState, $next->state());
-        self::assertEquals($nextParameters, $next->parameters());
+        self::assertSame($nextState, $next->state);
+        self::assertEquals($nextParameters, $next->parameters);
     }
 
     public function testRunCommandSendsAnyCommand(): void
@@ -521,7 +521,7 @@ final class ServiceTest extends TestCase
         // Without content: none sent
         self::assertSame('', $response->vdt->toString());
         self::assertSame($command, $response->command);
-        self::assertSame(ControllerState::Init, $this->nextRequest($response)->state());
+        self::assertSame(ControllerState::Init, $this->nextRequest($response)->state);
     }
 
     public function testAResponseOfItsOwnNeedsNoChangeToTheService(): void
@@ -531,8 +531,8 @@ final class ServiceTest extends TestCase
         self::assertStringStartsWith('Hello', Screen::of($response->vdt)->line(1));
         // Its state and parameters are kept, as for any response
         $next = $this->nextRequest($response);
-        self::assertSame(ControllerState::Display, $next->state());
-        self::assertEquals(new PageParameters(1), $next->parameters());
+        self::assertSame(ControllerState::Display, $next->state);
+        self::assertEquals(new PageParameters(1), $next->parameters);
     }
 
     public function testKeepingParametersOfAnotherClassIsAnError(): void
@@ -568,7 +568,7 @@ final class ServiceTest extends TestCase
             PageParameters::class,
             static fn(Request $request) => match (true) {
                 $request->functionKey() === FunctionKey::Summary => new ChangePage('menu'),
-                $request->state() === ControllerState::ReadInput => new DisplayPage(Vdt::text(
+                $request->state === ControllerState::ReadInput => new DisplayPage(Vdt::text(
                     'code ' . $request->contentAsString(),
                 )),
                 default => new DisplayPage(new Vdt('directory'), parameters: new PageParameters(2)),

@@ -45,22 +45,22 @@ final class PaginatedController extends AbstractController
 
     protected function onInit(Request $request): Response
     {
-        return $this->shown($request, $this->opening->index($request->parameters()))->display();
+        return $this->shown($request, $this->opening->index($request->parameters))->display();
     }
 
     protected function onDisplay(Request $request): Response
     {
-        return $this->shown($request, $request->parameters()->page)->display();
+        return $this->shown($request, $request->parameters->page)->display();
     }
 
     protected function onInitInput(Request $request): Response
     {
-        return $this->shown($request, $request->parameters()->page)->stay();
+        return $this->shown($request, $request->parameters->page)->stay();
     }
 
     protected function onReadInput(Request $request): Response
     {
-        $page = $this->shown($request, $request->parameters()->page);
+        $page = $this->shown($request, $request->parameters->page);
 
         return match ($request->functionKey()) {
             FunctionKey::Next => $page->next(),

@@ -41,7 +41,7 @@ abstract class AbstractController implements Controller
 
     public function run(Request $request): Response
     {
-        return match ($request->state()) {
+        return match ($request->state) {
             ControllerState::Init => $this->onInit($request),
             ControllerState::Display => $this->onDisplay($request),
             ControllerState::InitInput => $this->onInitInput($request),
@@ -83,7 +83,7 @@ abstract class AbstractController implements Controller
     }
 
     /**
-     * Handles the key pressed (Request::key()) and the text typed (Request::content())
+     * Handles the key pressed (Request::$key) and the text typed (Request::$content)
      *
      * @param Request<ControllerState, TParameters> $request
      *

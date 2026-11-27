@@ -32,6 +32,6 @@ final class StepController implements Controller
 
     public function run(Request $request): Response
     {
-        return new DisplayPage(Vdt::text('step ' . $request->state()->value), StepState::Second);
+        return new DisplayPage(Vdt::text('step ' . $request->state->value), StepState::Second);
     }
 }

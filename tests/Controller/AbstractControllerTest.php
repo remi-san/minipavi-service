@@ -87,7 +87,7 @@ final class AbstractControllerTest extends TestCase
 
             protected function onDisplay(Request $request): Response
             {
-                return new DisplayPage(Vdt::text('page ' . $request->parameters()->page));
+                return new DisplayPage(Vdt::text('page ' . $request->parameters->page));
             }
 
             protected function onReadInput(Request $request): Response

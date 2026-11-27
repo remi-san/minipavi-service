@@ -29,7 +29,7 @@ final class RouterTest extends TestCase
                 new CallbackController(
                     PageParameters::class,
                     /** @param Request<ControllerState, PageParameters> $request */
-                    static fn(Request $request) => new DisplayPage(Vdt::text('home ' . $request->parameters()->page)),
+                    static fn(Request $request) => new DisplayPage(Vdt::text('home ' . $request->parameters->page)),
                 ),
             )
             ->build();

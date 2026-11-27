@@ -28,12 +28,12 @@ final class RequestTest extends TestCase
             $terminal,
         );
 
-        self::assertSame(ControllerState::ReadInput, $request->state());
-        self::assertEquals(new PageParameters(2), $request->parameters());
-        self::assertSame(FunctionKey::Send, $request->key());
-        self::assertSame(['Hello ', 'world'], $request->content());
+        self::assertSame(ControllerState::ReadInput, $request->state);
+        self::assertEquals(new PageParameters(2), $request->parameters);
+        self::assertSame(FunctionKey::Send, $request->key);
+        self::assertSame(['Hello ', 'world'], $request->content);
         self::assertSame('Hello world', $request->contentAsString());
-        self::assertSame($terminal, $request->terminal());
+        self::assertSame($terminal, $request->terminal);
     }
 
     /**
@@ -65,12 +65,12 @@ final class RequestTest extends TestCase
     {
         $request = new Request(ControllerState::Init);
 
-        self::assertSame(ControllerState::Init, $request->state());
-        self::assertEquals(new NoParameters(), $request->parameters());
-        self::assertNull($request->key());
-        self::assertSame([], $request->content());
+        self::assertSame(ControllerState::Init, $request->state);
+        self::assertEquals(new NoParameters(), $request->parameters);
+        self::assertNull($request->key);
+        self::assertSame([], $request->content);
         self::assertSame('', $request->contentAsString());
-        self::assertEquals(new Terminal(), $request->terminal());
+        self::assertEquals(new Terminal(), $request->terminal);
     }
 
     public function testTerminalTellsWhereTheUserIs(): void
