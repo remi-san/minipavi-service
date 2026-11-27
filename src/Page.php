@@ -6,6 +6,7 @@ namespace MiniPaviService;
 
 use MiniPaviService\Gateway\Command\InputCommand;
 use MiniPaviService\Message\Message;
+use MiniPaviService\Message\MessagesException;
 use MiniPaviService\Minitel\Terminal;
 use MiniPaviService\Vdt\Vdt;
 
@@ -35,8 +36,8 @@ interface Page
      *
      * @param array<string, mixed> $variables values of its {{placeholders}} (Messages::get())
      *
-     * @throws \LogicException for a message without text, a placeholder without variable or
-     *                         whose value isn't text, or a {{...}} that isn't a placeholder
+     * @throws MessagesException for a message without text, or a placeholder without variable
+     *                           or whose value isn't text
      */
     public function message(Message $message, array $variables = []): string;
 }

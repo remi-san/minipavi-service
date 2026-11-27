@@ -131,7 +131,7 @@ final class MessagesTest extends TestCase
     #[DataProvider('placeholderErrors')]
     public function testPlaceholderErrorsNameTheMessage(string $text, array $variables, string $error): void
     {
-        $this->expectException(\LogicException::class);
+        $this->expectException(MessagesException::class);
         $this->expectExceptionMessage($error);
 
         (new Messages(['welcome' => $text]))->get(TestMessage::Welcome, $variables);
@@ -141,7 +141,7 @@ final class MessagesTest extends TestCase
     {
         try {
             (new Messages(['welcome' => 'Bonjour {{name}}']))->get(TestMessage::Welcome);
-        } catch (\LogicException $e) {
+        } catch (MessagesException $e) {
             self::assertSame('Message "welcome": unknown variable {{name}}', $e->getMessage());
             // For the log: where the variable was read
             self::assertInstanceOf(InvalidValueException::class, $e->getPrevious());
@@ -153,7 +153,7 @@ final class MessagesTest extends TestCase
 
     public function testPrivatePropertyIsAnUnknownVariableOfTheMessage(): void
     {
-        $this->expectException(\LogicException::class);
+        $this->expectException(MessagesException::class);
         $this->expectExceptionMessage('Message "welcome": unknown variable {{user.city}}: no "city" in '
         . PrivateProperties::class);
 
@@ -164,7 +164,7 @@ final class MessagesTest extends TestCase
 
     public function testBugOfAVariableGoesThroughAsItIs(): void
     {
-        // Not a LogicException naming the message: the variable's own code failed
+        // Not a MessagesException naming the message: the variable's own code failed
         $this->expectExceptionObject(new \InvalidArgumentException('a bug reading name'));
 
         (new Messages(['welcome' => 'Bonjour {{user.name}}']))->get(TestMessage::Welcome, [
@@ -174,7 +174,7 @@ final class MessagesTest extends TestCase
 
     public function testMessageWithoutTextIsAnError(): void
     {
-        $this->expectException(\LogicException::class);
+        $this->expectException(MessagesException::class);
         $this->expectExceptionMessage('No text for the message "code.unknown"');
 
         (new Messages())->get(TestMessage::UnknownCode);

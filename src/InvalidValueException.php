@@ -11,4 +11,4 @@ namespace MiniPaviService;
  * TemplateException) or the message's name; any other exception, e.g. of a service's own
  * ElementBuilder or of a variable's code, goes through as it is.
  */
-final class InvalidValueException extends \InvalidArgumentException {}
+final class InvalidValueException extends \InvalidArgumentException implements MiniPaviServiceException {}

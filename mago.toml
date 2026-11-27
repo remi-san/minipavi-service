@@ -60,7 +60,10 @@ no-ini-set = { exclude = ["tests/Support/ExhaustedBacktrackLimit.php"] }
 mode = "perimeter"
 
 [guard.perimeter.layers]
+# The interface every exception of the framework implements, InvalidValueException, and the
+# helpers
 helpers = [
+    "MiniPaviService\\MiniPaviServiceException",
     "MiniPaviService\\InvalidValueException",
     "MiniPaviService\\Text\\**",
     "MiniPaviService\\Io\\**",
@@ -114,7 +117,12 @@ permit = ["@native", "MiniPaviService\\InvalidValueException", "MiniPaviService\
 
 [[guard.perimeter.rules]]
 namespace = "MiniPaviService\\Xml\\"
-permit = ["@native", "MiniPaviService\\InvalidValueException", "MiniPaviService\\Xml\\**"]
+permit = [
+    "@native",
+    "MiniPaviService\\MiniPaviServiceException",
+    "MiniPaviService\\InvalidValueException",
+    "MiniPaviService\\Xml\\**",
+]
 
 [[guard.perimeter.rules]]
 namespace = "MiniPaviService\\Minitel\\"
@@ -173,7 +181,8 @@ permit = [
     "@layer:controller",
 ]
 
-# The root types: the Page and Controller interfaces (each of its layer), InvalidValueException
+# The root types: the Page and Controller interfaces (each of its layer), MiniPaviServiceException
+# and InvalidValueException
 [[guard.perimeter.rules]]
 namespace = "MiniPaviService\\"
 permit = [

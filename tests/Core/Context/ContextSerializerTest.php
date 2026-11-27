@@ -15,9 +15,11 @@ use MiniPaviService\Core\Context\ContextSerializer;
 use MiniPaviService\Core\Context\KeptRoute;
 use MiniPaviService\Core\Context\Signing\ForgedContextException;
 use MiniPaviService\Core\Context\Signing\HmacContextSigner;
+use MiniPaviService\Core\Context\UnreadableContextException;
 use MiniPaviService\Core\Routing\Router;
 use MiniPaviService\Core\Routing\RouterBuilder;
 use MiniPaviService\Core\Routing\UnknownRouteException;
+use MiniPaviService\InvalidValueException;
 use MiniPaviService\Tests\Support\CallbackController;
 use MiniPaviService\Tests\Support\FromParameters;
 use MiniPaviService\Tests\Support\QueryParameters;
@@ -145,7 +147,7 @@ final class ContextSerializerTest extends TestCase
 
         try {
             $this->serializer()->serialize($context);
-        } catch (\RuntimeException $e) {
+        } catch (InvalidValueException $e) {
             self::assertSame(
                 'Cannot serialize context: Malformed UTF-8 characters, possibly incorrectly encoded',
                 $e->getMessage(),
@@ -277,11 +279,11 @@ final class ContextSerializerTest extends TestCase
     /**
      * Error unserializing what isn't a context
      */
-    private function unserializeError(string $serialized): \RuntimeException
+    private function unserializeError(string $serialized): UnreadableContextException
     {
         try {
             $this->serializer()->unserialize($serialized);
-        } catch (\RuntimeException $e) {
+        } catch (UnreadableContextException $e) {
             return $e;
         }
 

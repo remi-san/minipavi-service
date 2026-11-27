@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Core\Context\Signing;
 
+use MiniPaviService\InvalidValueException;
+
 /**
  * Signs the context with an HMAC-SHA256 of a secret key: "<signature>.<context>", the
  * signature in unpadded base64url (43 characters). Only who has the key can sign a context:
@@ -19,14 +21,14 @@ final readonly class HmacContextSigner implements ContextSigner
     /**
      * @param string $key secret key, e.g. 32 random bytes (`openssl rand -base64 32`)
      *
-     * @throws \InvalidArgumentException for an empty key
+     * @throws InvalidValueException for an empty key
      */
     public function __construct(
         #[\SensitiveParameter]
         private string $key,
     ) {
         if ($key === '') {
-            throw new \InvalidArgumentException('The key signing the context is empty');
+            throw new InvalidValueException('The key signing the context is empty');
         }
     }
 

@@ -10,6 +10,7 @@ use MiniPaviService\Core\Context\Signing\ForgedContextException;
 use MiniPaviService\Core\Context\Signing\UnsignedContext;
 use MiniPaviService\Core\Routing\Router;
 use MiniPaviService\Core\Routing\UnknownRouteException;
+use MiniPaviService\InvalidValueException;
 
 /**
  * The context as it goes to the gateway and comes back, JSON: {"route": ..., "states": {route:
@@ -30,7 +31,7 @@ final readonly class ContextSerializer
     ) {}
 
     /**
-     * @throws \RuntimeException if a parameter can't be JSON (e.g. text that isn't UTF-8)
+     * @throws InvalidValueException if a parameter can't be JSON (e.g. text that isn't UTF-8)
      */
     public function serialize(Context $context): string
     {
@@ -52,7 +53,7 @@ final readonly class ContextSerializer
                 JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES,
             ));
         } catch (\JsonException $e) {
-            throw new \RuntimeException('Cannot serialize context: ' . $e->getMessage(), previous: $e);
+            throw new InvalidValueException('Cannot serialize context: ' . $e->getMessage(), previous: $e);
         }
     }
 
@@ -64,7 +65,7 @@ final readonly class ContextSerializer
      *
      * @throws UnknownRouteException for a context at a route the router doesn't have
      * @throws ForgedContextException if the signer didn't sign it
-     * @throws \RuntimeException if it isn't a JSON object
+     * @throws UnreadableContextException if it isn't a JSON object
      */
     public function unserialize(string $serialized): Context
     {
@@ -118,10 +119,10 @@ final readonly class ContextSerializer
         try {
             $context = json_decode($serialized, associative: true, flags: JSON_THROW_ON_ERROR);
         } catch (\JsonException $e) {
-            throw new \RuntimeException('Cannot unserialize context: ' . $e->getMessage(), previous: $e);
+            throw new UnreadableContextException('Cannot unserialize context: ' . $e->getMessage(), previous: $e);
         }
         if (!\is_array($context)) {
-            throw new \RuntimeException('Cannot unserialize context: not a JSON object');
+            throw new UnreadableContextException('Cannot unserialize context: not a JSON object');
         }
 
         return $context;
