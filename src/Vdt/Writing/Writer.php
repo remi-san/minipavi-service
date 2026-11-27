@@ -214,7 +214,7 @@ final class Writer
         if ($this->row === $row && $this->col === $col) {
             return;
         }
-        $this->send(Videotex::POSITION . chr(0x40 + $row) . chr(0x40 + $col));
+        $this->send(Videotex::position($row, $col));
         $this->row = $row;
         $this->col = $col;
         $this->cursor->reset($row, $col);
@@ -246,11 +246,11 @@ final class Writer
     private function flush(): void
     {
         $repeated = str_repeat($this->pending ?? '', $this->repeat);
-        $this->vdt .= \strlen($repeated) <= 2 ? $repeated : Videotex::REPEAT . chr(0x40 + $this->repeat);
+        $this->vdt .= \strlen($repeated) <= 2 ? $repeated : Videotex::repeat($this->repeat);
         $this->pending = null;
         $this->repeat = 0;
         if ($this->priors > 0) {
-            $this->vdt .= Videotex::REPEAT . chr(0x40 + $this->priors);
+            $this->vdt .= Videotex::repeat($this->priors);
             $this->priors = 0;
         }
     }

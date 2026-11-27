@@ -17,8 +17,9 @@ use MiniPaviService\Vdt\Screen\Attribute\Underlining;
  * Videotex codes, by name: control codes, attributes (ESC and the byte of a
  * Screen\Attribute\Attribute) and sequences. Most are MiniPaviCli's VDT_* constants (CodesTest
  * checks them); HOME, ESC, SEP, SS3 and the mask codes have none. Some are sent as they are;
- * ESC, POSITION, REPEAT, G2, G2_SYN, SEP and SS3 start a sequence, with more bytes after them.
- * MAX_REPEAT is not a code: the most repetitions one REP gives.
+ * ESC, POSITION, REPEAT, G2, G2_SYN, SEP and SS3 start a sequence, with more bytes after them:
+ * position() and repeat() write POSITION's and REPEAT's. MAX_REPEAT is not a code: the most
+ * repetitions one REP gives.
  */
 final class Videotex
 {
@@ -71,6 +72,23 @@ final class Videotex
     public const SIZE_DOUBLE = self::ESC . CharacterSize::Double->value;
     // Back to the standard character sets G0 and G1, after redefined characters (DRCS)
     public const RESET_CHARSETS = "\x1B\x28\x40\x1B\x29\x63";
+
+    /**
+     * Positions the cursor at row, col: POSITION, then the row and the column, 0x40 + n each
+     */
+    public static function position(int $row, int $col): string
+    {
+        return self::POSITION . \chr(0x40 + $row) . \chr(0x40 + $col);
+    }
+
+    /**
+     * Repeats the last character printed count more times (0 to MAX_REPEAT): REPEAT, then the
+     * count, 0x40 + n
+     */
+    public static function repeat(int $count): string
+    {
+        return self::REPEAT . \chr(0x40 + $count);
+    }
 
     /**
      * Sets the text (foreground) color: ESC and the byte of its Screen\Attribute\TextColor

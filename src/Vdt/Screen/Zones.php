@@ -92,12 +92,7 @@ final class Zones
      */
     public function before(int $row, int $col): Zone
     {
-        $zone = Zone::none();
-        for ($before = 1; $before < $col; $before++) {
-            $zone = $this->after($zone, $row, $before);
-        }
-
-        return $zone;
+        return $this->beforeFrom(Zone::none(), $row, from: 1, col: $col);
     }
 
     /**

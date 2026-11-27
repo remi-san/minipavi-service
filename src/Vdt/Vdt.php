@@ -41,7 +41,7 @@ final readonly class Vdt
      */
     public static function position(Position $position): self
     {
-        return new self(Videotex::POSITION . \chr(0x40 + $position->row) . \chr(0x40 + $position->col));
+        return new self(Videotex::position($position->row, $position->col));
     }
 
     /**
@@ -89,11 +89,11 @@ final readonly class Vdt
         $bytes = $char;
         $more = $count - 1;
         while ($more > Videotex::MAX_REPEAT) {
-            $bytes .= Videotex::REPEAT . \chr(0x40 + Videotex::MAX_REPEAT);
+            $bytes .= Videotex::repeat(Videotex::MAX_REPEAT);
             $more -= Videotex::MAX_REPEAT;
         }
 
-        return new self($bytes . Videotex::REPEAT . \chr(0x40 + $more));
+        return new self($bytes . Videotex::repeat($more));
     }
 
     /**
