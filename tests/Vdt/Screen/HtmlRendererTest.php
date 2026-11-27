@@ -87,8 +87,8 @@ final class HtmlRendererTest extends TestCase
 
     public function testDrawsAG2CharacterTheMinitelDoesntHaveAsItDoes(): void
     {
-        // ü is sent as a diaeresis and u (#137), which the Minitel shows as _ (#90)
-        $html = $this->render(Vdt::join(Vdt::position(new Position(row: 1)), Vdt::text('ü')));
+        // A diaeresis and u, which the Minitel shows as _ (#90)
+        $html = $this->render(Vdt::join(Vdt::position(new Position(row: 1)), new Vdt("\x19\x48u")));
 
         self::assertStringContainsString('style="color:#ffffff;background:#000000">_</span>', $html);
     }

@@ -169,7 +169,7 @@ final class CodesTest extends TestCase
     {
         // Except the deviations (below)
         yield 'every character it encodes' => [
-            'éèàçêÉÈÀÊβßœŒüûúùöôóòïîíìëäâá£°±↑→↓¼½¾ÂÎá’ ňćřýšíą',
+            'éèàçêÉÈÀÊœŒûùôïîëâ£°±↑→↓¼½¾ÂÎ’ ňćřýšą',
         ];
         yield 'control characters' => ["a\x00b\x0Ac\x1Fd\x7Fe"];
         yield 'plain text' => ['Hello, world! 0123456789 {}~'];
@@ -200,6 +200,19 @@ final class CodesTest extends TestCase
         yield '←' => ['←', '? ', '←'];
         yield 'ō' => ['ō', '? ', 'o'];
         yield 'ā' => ['ā', '? ', 'a'];
+        // MiniPaviCli sends G2 codes the Minitel doesn't have, shown as _ (#137): the letter
+        // without its accent, ß as ss, β as b
+        yield 'ü' => ['ü', '_', 'u'];
+        yield 'ä' => ['ä', '_', 'a'];
+        yield 'ö' => ['ö', '_', 'o'];
+        yield 'ú' => ['ú', '_', 'u'];
+        yield 'ó' => ['ó', '_', 'o'];
+        yield 'í' => ['í', '_', 'i'];
+        yield 'á' => ['á', '_', 'a'];
+        yield 'ò' => ['ò', '_', 'o'];
+        yield 'ì' => ['ì', '_', 'i'];
+        yield 'ß' => ['ß', '_', 'ss'];
+        yield 'β' => ['β', '_', 'b'];
     }
 
     /**
