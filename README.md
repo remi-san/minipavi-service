@@ -308,8 +308,9 @@ KernelBuilder::for($router, $messages)
   given, which it requires (`null`: the initial state).
   `Response` doesn't know these classes: a response of your own (see below) is built the
   same way.
-  They are readonly, and don't change the context. `Service` calls the response's
-  `continueWith(Flow $flow): GatewayResponse`, where it says what comes next:
+  They are readonly, and don't change the context. `Response` is an interface: `Service`
+  calls the response's `continueWith(Flow $flow): GatewayResponse`, where it says what
+  comes next:
   `$flow->keep($state, $parameters)` keeps them for this controller,
   `$flow->respond($vdt, $command)` ends the request with that response to
   the gateway, and `$flow->goTo($route, $parameters)` resets this controller and runs
@@ -331,6 +332,10 @@ KernelBuilder::for($router, $messages)
       }
   }
   ```
+
+  A response keeping nothing (the controller keeps what it had) implements `Response`
+  directly, with `@implements Response<ControllerState>` (or the controller's enum), as
+  `ChangePage` does.
 
 - **`AbstractController`** runs the method of the request's state, so a controller only
   writes what each state does:
