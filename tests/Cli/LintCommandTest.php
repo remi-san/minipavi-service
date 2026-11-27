@@ -8,73 +8,54 @@ use MiniPaviService\Cli\LintCommand;
 use MiniPaviService\Message\MessagesXmlParser;
 use MiniPaviService\Page\Building\PageXmlException;
 use MiniPaviService\Page\Parser\PageXmlParser;
+use MiniPaviService\Tests\Support\MemoryFiles;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Exception\RuntimeException;
 use Symfony\Component\Console\Tester\CommandTester;
 
+/**
+ * With the files in memory: how the files of a folder are found on disk is FilesTest's
+ */
 final class LintCommandTest extends TestCase
 {
-    private string $dir;
-
     private CommandTester $tester;
-
-    protected function setUp(): void
-    {
-        $this->dir = sys_get_temp_dir() . '/minipavi-lint-' . bin2hex(random_bytes(4));
-        mkdir($this->dir . '/pages/sub', permissions: 0o777, recursive: true);
-        $this->tester = new CommandTester(new LintCommand());
-    }
-
-    protected function tearDown(): void
-    {
-        $files = new \RecursiveIteratorIterator(
-            new \RecursiveDirectoryIterator($this->dir, \FilesystemIterator::SKIP_DOTS),
-            \RecursiveIteratorIterator::CHILD_FIRST,
-        );
-        foreach ($files as $file) {
-            if (!$file instanceof \SplFileInfo) {
-                continue;
-            }
-
-            $file->isDir() && !$file->isLink() ? rmdir($file->getPathname()) : unlink($file->getPathname());
-        }
-        rmdir($this->dir);
-    }
 
     public function testChecksThePagesOfAFolderAndItsSubfolders(): void
     {
-        $this->write('pages/home.xml', content: '<page type="static"><text>Home</text></page>');
-        $this->write('pages/sub/list.xml', content: '<page type="template"><text>{{title}}</text></page>');
-        $this->write('pages/sub/MENU.XML', content: '<page type="static"><text>Menu</text></page>');
-        // Not pages: skipped
-        $this->write('pages/messages.xml', content: '<messages><message name="x">X</message></messages>');
-        $this->write('pages/notes.txt', content: 'not XML');
-
-        self::assertSame(Command::SUCCESS, $this->lint([$this->dir . '/pages']));
+        self::assertSame(Command::SUCCESS, $this->lint(
+            [
+                'pages/home.xml' => '<page type="static"><text>Home</text></page>',
+                'pages/sub/list.xml' => '<page type="template"><text>{{title}}</text></page>',
+                'pages/sub/MENU.XML' => '<page type="static"><text>Menu</text></page>',
+                // Not pages: skipped
+                'pages/messages.xml' => '<messages><message name="x">X</message></messages>',
+                'pages/notes.txt' => 'not XML',
+            ],
+            ['pages'],
+        ));
         self::assertSame("3 pages checked, 0 errors\n", $this->tester->getDisplay());
         self::assertSame('', $this->tester->getErrorOutput());
     }
 
-    public function testSkipsALinkToAFolder(): void
+    public function testChecksAFileGivenWhateverItsExtension(): void
     {
-        $this->write('pages/home.xml', content: '<page type="static"><text>Home</text></page>');
-        symlink($this->dir . '/pages/sub', $this->dir . '/pages/archive.xml');
-
-        self::assertSame(Command::SUCCESS, $this->lint([$this->dir . '/pages']));
+        self::assertSame(Command::SUCCESS, $this->lint([
+            'pages/home.page' => '<page type="static"><text>Home</text></page>',
+        ], ['pages/home.page']));
         self::assertSame("1 page checked, 0 errors\n", $this->tester->getDisplay());
-        self::assertSame('', $this->tester->getErrorOutput());
     }
 
     public function testGivesTheErrorsInTheOrderOfTheFiles(): void
     {
-        // Written out of order: a folder lists its files in no particular order
+        $files = [];
+        // Out of order: the finder gives them in order
         foreach (['d', 'b', 'f', 'a', 'e', 'c'] as $name) {
-            $this->write("pages/{$name}.xml", content: "<page type=\"static\">\n<text>");
+            $files["pages/{$name}.xml"] = "<page type=\"static\">\n<text>";
         }
 
-        self::assertSame(Command::FAILURE, $this->lint([$this->dir . '/pages']));
+        self::assertSame(Command::FAILURE, $this->lint($files, ['pages']));
         self::assertSame("6 pages checked, 6 errors\n", $this->tester->getDisplay());
         self::assertSame(
             ['a.xml', 'b.xml', 'c.xml', 'd.xml', 'e.xml', 'f.xml'],
@@ -87,49 +68,49 @@ final class LintCommandTest extends TestCase
 
     public function testFailsWithTheErrorsOfThePages(): void
     {
-        $this->write('pages/home.xml', content: '<page type="static"><text>Home</text></page>');
-        $this->write('pages/image.xml', content: "<page type=\"template\">\n<image>missing.vdt</image></page>");
-        $this->write('pages/broken.xml', content: "<page type=\"static\">\n<text>");
-
-        self::assertSame(Command::FAILURE, $this->lint([$this->dir . '/pages']));
+        self::assertSame(Command::FAILURE, $this->lint([
+            'pages/home.xml' => '<page type="static"><text>Home</text></page>',
+            'pages/image.xml' => "<page type=\"template\">\n<image>missing.vdt</image></page>",
+            'pages/broken.xml' => "<page type=\"static\">\n<text>",
+        ], ['pages']));
         self::assertSame("3 pages checked, 2 errors\n", $this->tester->getDisplay());
         $errors = explode("\n", trim($this->tester->getErrorOutput()));
         self::assertCount(2, $errors);
         self::assertStringStartsWith('broken.xml line 2: ', $errors[0]);
-        self::assertSame(
-            "image.xml line 2: <image>: Videotex file not found: {$this->dir}/pages/missing.vdt",
-            $errors[1],
-        );
+        self::assertSame('image.xml line 2: <image>: Videotex file not found: pages/missing.vdt', $errors[1]);
+    }
+
+    public function testReadsTheVideotexFilesOfThePagesWithItsReader(): void
+    {
+        self::assertSame(Command::SUCCESS, $this->lint([
+            'pages/image.xml' => '<page type="template"><image>logo.vdt</image></page>',
+            'pages/logo.vdt' => "\x0C",
+        ], ['pages']));
+        self::assertSame("1 page checked, 0 errors\n", $this->tester->getDisplay());
     }
 
     public function testReadsThePagesWithTheMessagesOfTheService(): void
     {
-        $this->write('messages.xml', content: '<messages><message name="greeting">Hello</message></messages>');
-        $this->write('pages/home.xml', content: '<page type="static"><message name="greeting">Hi</message></page>');
+        $files = [
+            'messages.xml' => '<messages><message name="greeting">Hello</message></messages>',
+            'pages/home.xml' => '<page type="static"><message name="greeting">Hi</message></page>',
+        ];
 
-        self::assertSame(Command::FAILURE, $this->lint([$this->dir . '/pages']));
+        self::assertSame(Command::FAILURE, $this->lint($files, ['pages']));
         self::assertStringContainsString(
             'name="greeting" is not a message of the service',
             $this->tester->getErrorOutput(),
         );
 
-        $this->tester = new CommandTester(new LintCommand());
-        self::assertSame(Command::SUCCESS, $this->lint([
-            '--messages',
-            $this->dir . '/messages.xml',
-            $this->dir . '/pages/home.xml',
-        ]));
+        self::assertSame(Command::SUCCESS, $this->lint($files, ['--messages', 'messages.xml', 'pages/home.xml']));
         self::assertSame("1 page checked, 0 errors\n", $this->tester->getDisplay());
     }
 
     public function testFailsOnAMalformedPlaceholderInAMessageOfAPage(): void
     {
-        $this->write(
-            'pages/home.xml',
-            content: "<page type=\"static\">\n<message name=\"error\">Oops {{ not-a-name }}</message>\n<text>Hello</text></page>",
-        );
-
-        self::assertSame(Command::FAILURE, $this->lint([$this->dir . '/pages']));
+        self::assertSame(Command::FAILURE, $this->lint([
+            'pages/home.xml' => "<page type=\"static\">\n<message name=\"error\">Oops {{ not-a-name }}</message>\n<text>Hello</text></page>",
+        ], ['pages']));
         self::assertSame("1 page checked, 1 error\n", $this->tester->getDisplay());
         self::assertSame(
             "home.xml line 2: <message>: {{ not-a-name }} is not a placeholder\n",
@@ -139,32 +120,23 @@ final class LintCommandTest extends TestCase
 
     public function testFailsOnAMalformedPlaceholderInTheMessagesFile(): void
     {
-        $this->write(
-            'messages.xml',
-            content: "<messages>\n<message name=\"error\">Broken {{ 1bad }}</message></messages>",
-        );
-        $this->write('pages/home.xml', content: '<page type="static"><text>Hello</text></page>');
-
         self::assertSame(Command::FAILURE, $this->lint([
-            '--messages',
-            $this->dir . '/messages.xml',
-            $this->dir . '/pages/home.xml',
-        ]));
+            'messages.xml' => "<messages>\n<message name=\"error\">Broken {{ 1bad }}</message></messages>",
+            'pages/home.xml' => '<page type="static"><text>Hello</text></page>',
+        ], ['--messages', 'messages.xml', 'pages/home.xml']));
         self::assertSame(
-            "{$this->dir}/messages.xml line 2: <message>: {{ 1bad }} is not a placeholder\n",
+            "messages.xml line 2: <message>: {{ 1bad }} is not a placeholder\n",
             $this->tester->getErrorOutput(),
         );
     }
 
     public function testChecksAnXmlFileWithoutElementAsAPage(): void
     {
-        $this->write('pages/empty.xml', content: '');
-
-        self::assertSame(Command::FAILURE, $this->lint([$this->dir . '/pages']));
+        self::assertSame(Command::FAILURE, $this->lint(['pages/empty.xml' => ''], ['pages']));
         self::assertSame("1 page checked, 1 error\n", $this->tester->getDisplay());
         // The parser's error, whose words depend on libxml's version
         try {
-            (new PageXmlParser((new MessagesXmlParser())->defaults()))->parseFile($this->dir . '/pages/empty.xml');
+            (new PageXmlParser((new MessagesXmlParser())->defaults()))->parse('', baseDir: 'pages', name: 'empty.xml');
             self::fail('An empty file was parsed');
         } catch (PageXmlException $e) {
             self::assertStringStartsWith('empty.xml', $e->getMessage());
@@ -172,33 +144,34 @@ final class LintCommandTest extends TestCase
         }
     }
 
+    public function testChecksAFileWhoseRootElementIsNotClosedAsAPage(): void
+    {
+        self::assertSame(Command::FAILURE, $this->lint(['pages/broken.xml' => '<?xml version="1.0"?><'], ['pages']));
+        self::assertSame("1 page checked, 1 error\n", $this->tester->getDisplay());
+        self::assertStringStartsWith('broken.xml line 1: ', $this->tester->getErrorOutput());
+    }
+
     public function testFailsOnAPageItCannotRead(): void
     {
-        $this->write('pages/home.xml', content: '<page type="static"/>');
-        chmod($this->dir . '/pages/home.xml', permissions: 0o000);
-        if (is_readable($this->dir . '/pages/home.xml')) {
-            self::markTestSkipped('Run as a user who can read any file (root)');
-        }
-
-        // The parser's error, without PHP's warnings
-        self::assertSame(Command::FAILURE, $this->lint([$this->dir . '/pages']));
+        self::assertSame(Command::FAILURE, $this->lint(['pages/home.xml' => null], ['pages']));
         self::assertSame("1 page checked, 1 error\n", $this->tester->getDisplay());
-        self::assertSame("{$this->dir}/pages/home.xml: file not found\n", $this->tester->getErrorOutput());
+        self::assertSame("pages/home.xml: file not found\n", $this->tester->getErrorOutput());
     }
 
     public function testFailsWithoutPage(): void
     {
-        self::assertSame(Command::FAILURE, $this->lint([$this->dir . '/pages']));
+        self::assertSame(Command::FAILURE, $this->lint(['pages/notes.txt' => 'not XML'], ['pages']));
         self::assertSame("No page found\n", $this->tester->getErrorOutput());
     }
 
     public function testFailsOnAPathNotFound(): void
     {
-        $this->write('pages/home.xml', content: '<page type="static"/>');
-
-        self::assertSame(Command::FAILURE, $this->lint([$this->dir . '/nope', $this->dir . '/pages']));
+        self::assertSame(Command::FAILURE, $this->lint(['pages/home.xml' => '<page type="static"/>'], [
+            'nope',
+            'pages',
+        ]));
         self::assertSame("1 page checked, 1 error\n", $this->tester->getDisplay());
-        self::assertSame("{$this->dir}/nope: not found\n", $this->tester->getErrorOutput());
+        self::assertSame("nope: not found\n", $this->tester->getErrorOutput());
     }
 
     /**
@@ -213,14 +186,17 @@ final class LintCommandTest extends TestCase
     #[DataProvider('libxmlErrorModes')]
     public function testLeavesLibxmlAsItFoundIt(bool $internalErrors): void
     {
-        $this->write('pages/home.xml', content: '<page type="static"><text>Home</text></page>');
-        // Not a page, with an error libxml finds reading its root element (an unknown prefix),
-        // read last
-        $this->write('pages/sub/feed.xml', content: '<atom:feed/>');
-
         $previous = libxml_use_internal_errors($internalErrors);
         try {
-            self::assertSame(Command::SUCCESS, $this->lint([$this->dir . '/pages']));
+            self::assertSame(Command::SUCCESS, $this->lint(
+                [
+                    'pages/home.xml' => '<page type="static"><text>Home</text></page>',
+                    // Not a page, with an error libxml finds reading its root element (an unknown
+                    // prefix), read last
+                    'pages/sub/feed.xml' => '<atom:feed/>',
+                ],
+                ['pages'],
+            ));
             self::assertSame($internalErrors, libxml_use_internal_errors($internalErrors));
             self::assertSame([], libxml_get_errors());
         } finally {
@@ -230,22 +206,25 @@ final class LintCommandTest extends TestCase
 
     public function testFailsOnAMessagesFileItCannotRead(): void
     {
-        self::assertSame(Command::FAILURE, $this->lint(['--messages', $this->dir . '/nope.xml', $this->dir]));
-        self::assertSame("{$this->dir}/nope.xml: file not found\n", $this->tester->getErrorOutput());
+        self::assertSame(Command::FAILURE, $this->lint([], ['--messages', 'nope.xml', 'pages']));
+        self::assertSame("nope.xml: file not found\n", $this->tester->getErrorOutput());
     }
 
     public function testNeedsAPath(): void
     {
         $this->expectException(RuntimeException::class);
 
-        $this->lint([]);
+        $this->lint([], []);
     }
 
     /**
-     * @param list<string> $arguments the command line
+     * @param array<string, ?string> $files    content by path, null for a file that can't be read
+     * @param list<string>           $arguments the command line
      */
-    private function lint(array $arguments): int
+    private function lint(array $files, array $arguments): int
     {
+        $memory = new MemoryFiles($files);
+        $this->tester = new CommandTester(new LintCommand($memory, $memory));
         $input = [];
         $paths = [];
         for ($i = 0; $i < \count($arguments); $i++) {
@@ -261,10 +240,5 @@ final class LintCommandTest extends TestCase
         }
 
         return $this->tester->execute($input, ['capture_stderr_separately' => true]);
-    }
-
-    private function write(string $file, string $content): void
-    {
-        file_put_contents("{$this->dir}/{$file}", $content);
     }
 }
