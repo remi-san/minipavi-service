@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Vdt\Screen;
 
+use MiniPaviService\Minitel\Position;
 use MiniPaviService\Minitel\ScreenSize;
 
 /**
@@ -36,14 +37,18 @@ final class ShownScreen
     }
 
     /**
-     * Whether a text space drawn at row, col on this screen, width cells wide and height cells
-     * high, shows in one of its cells (Zones::cells()) once drawn: otherwise, it is drawn over
+     * Whether a text space drawn at position on this screen with these attributes shows in one
+     * of its cells (Zones::cells()) once drawn: otherwise, it is drawn over
      */
-    public function shows(int $row, int $col, int $width, int $height): bool
+    public function shows(Position $position, Attributes $attributes): bool
     {
-        foreach (Zones::cells($row, $col, $width, $height) as [$cellRow, $cellCol]) {
+        $row = $position->row;
+        foreach (Zones::cells($row, $position->col, $attributes->width(), $attributes->height()) as [
+            $cellRow,
+            $cellCol,
+        ]) {
             $text = $this->text[$cellRow][$cellCol] ?? null;
-            if ($text !== null && $text->isSpace() && $text->row === $row) {
+            if ($text !== null && $text->isSpace() && $text->position->row === $row) {
                 return true;
             }
         }
@@ -72,10 +77,10 @@ final class ShownScreen
             $text = $this->text[$row][$col] ?? null;
             if (
                 $text !== null
-                && ($text->isSpace() || $text->col < $first || $text->row > $last)
+                && ($text->isSpace() || $text->position->col < $first || $text->position->row > $last)
                 && !$zone->showsAs($alone)
             ) {
-                return new ZoneRestart($text->row, $text->col, $zone);
+                return new ZoneRestart($text->position, $zone);
             }
         }
 
@@ -83,55 +88,58 @@ final class ShownScreen
     }
 
     /**
-     * Draws a character at row, col, width cells wide, with these attributes (Zones::draw()):
-     * a tall one on the row above too (Zones::cells())
+     * Draws a character at position, with these attributes (Zones::draw()): a tall one on the
+     * row above too (Zones::cells())
      */
-    public function glyph(int $row, int $col, string $bytes, int $width, Attributes $attributes): void
+    public function glyph(Position $position, string $bytes, Attributes $attributes): void
     {
-        $this->zones->draw($row, $col, $width, $attributes);
-        $this->cover($row, $col, $bytes, $width, $attributes);
+        $this->zones->draw($position, $attributes);
+        $this->cover($position, $bytes, $attributes);
     }
 
     /**
-     * Draws a delimiter starting zone at row, col, width cells wide (Zones::delimiter())
+     * Draws a delimiter starting zone at position (Zones::delimiter())
      */
-    public function delimiter(int $row, int $col, int $width, Attributes $attributes, Zone $zone): void
+    public function delimiter(Position $position, Attributes $attributes, Zone $zone): void
     {
-        $this->glyph($row, $col, ' ', $width, $attributes);
-        $this->zones->delimiter($row, $col, $width, $attributes->height(), $zone);
+        $this->glyph($position, ' ', $attributes);
+        $this->zones->delimiter($position, $attributes, $zone);
     }
 
     /**
-     * CAN at row, col (Zones::clearLine()): spaces with these attributes up to the last
+     * CAN at position (Zones::clearLine()): spaces with these attributes up to the last
      * column, on the row above too in double height
      */
-    public function clearLine(int $row, int $col, Attributes $attributes, ?Zone $delimiter): void
+    public function clearLine(Position $position, Attributes $attributes, ?Zone $delimiter): void
     {
-        $this->zones->clearLine($row, $col, $attributes, $delimiter);
-        for ($cleared = $col; $cleared <= ScreenSize::COLS; $cleared++) {
-            $this->cover($row, $cleared, ' ', width: $attributes->width(), attributes: $attributes);
+        $this->zones->clearLine($position, $attributes, $delimiter);
+        for ($cleared = $position->col; $cleared <= ScreenSize::COLS; $cleared++) {
+            $this->cover(new Position($position->row, $cleared), ' ', $attributes);
         }
     }
 
     /**
-     * Remembers, in each cell a character drawn at row, col covers (Zones::cells()), whether it
-     * shows a text character, drawn where, and whether it is a space
+     * Remembers, in each cell a character drawn at position covers (Zones::cells()), whether
+     * it shows a text character, drawn where, and whether it is a space
      */
-    private function cover(int $row, int $col, string $bytes, int $width, Attributes $attributes): void
+    private function cover(Position $position, string $bytes, Attributes $attributes): void
     {
-        $text = $attributes->isMosaic() ? null : new ShownText($row, $col, space: $bytes === ' ');
-        foreach (Zones::cells($row, $col, $width, $attributes->height()) as [$cellRow, $cellCol]) {
+        $text = $attributes->isMosaic() ? null : new ShownText($position, space: $bytes === ' ');
+        $cells = Zones::cells($position->row, $position->col, $attributes->width(), $attributes->height());
+        foreach ($cells as [$cellRow, $cellCol]) {
             $this->text[$cellRow][$cellCol] = $text;
         }
     }
 
     /**
-     * Whether the top half of the tall text character drawn at row, col (a space, or one whose
+     * Whether the top half of the tall text character drawn at position (a space, or one whose
      * right half only stays, written as a space), on the row above, still shows, in zone: a
      * tall delimiter starting zone there shows what it does
      */
-    public function showsOnTop(int $row, int $col, Zone $zone): bool
+    public function showsOnTop(Position $position, Zone $zone): bool
     {
+        $row = $position->row;
+        $col = $position->col;
         $above = $row - 1;
 
         return (

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Tests\Vdt\Screen;
 
+use MiniPaviService\Minitel\Position;
 use MiniPaviService\Vdt\Screen\Attribute\CharacterSize;
 use MiniPaviService\Vdt\Screen\Attributes;
 use MiniPaviService\Vdt\Screen\ShownScreen;
@@ -21,64 +22,78 @@ final class ShownScreenTest extends TestCase
     public function testTheTopHalfOfATallSpaceShows(): void
     {
         $screen = new ShownScreen();
-        $screen->glyph(5, 3, ' ', 1, self::tall());
+        $screen->glyph(new Position(5, 3), ' ', self::tall());
 
-        self::assertTrue($screen->showsOnTop(5, 3, Zone::none()));
+        self::assertTrue($screen->showsOnTop(new Position(5, 3), Zone::none()));
     }
 
     public function testTheTopHalfShowsUnderAnotherSpaceDrawnOverItsBottomHalf(): void
     {
         $screen = new ShownScreen();
-        $screen->glyph(5, 3, ' ', 1, self::tall());
-        $screen->glyph(5, 3, ' ', 1, Attributes::defaults());
+        $screen->glyph(new Position(5, 3), ' ', self::tall());
+        $screen->glyph(new Position(5, 3), ' ', Attributes::defaults());
 
-        self::assertTrue($screen->showsOnTop(5, 3, Zone::none()));
+        self::assertTrue($screen->showsOnTop(new Position(5, 3), Zone::none()));
     }
 
     public function testTheTopHalfOfALetterIsntTheSpaceDrawnOverItsBottomHalf(): void
     {
         $screen = new ShownScreen();
-        $screen->glyph(5, 3, 'A', 1, self::tall());
-        $screen->glyph(5, 3, ' ', 1, Attributes::defaults());
+        $screen->glyph(new Position(5, 3), 'A', self::tall());
+        $screen->glyph(new Position(5, 3), ' ', Attributes::defaults());
 
-        self::assertFalse($screen->showsOnTop(5, 3, Zone::none()));
+        self::assertFalse($screen->showsOnTop(new Position(5, 3), Zone::none()));
     }
 
     public function testTheTopHalfOfACharacterDrawnInTheColumnBeforeIsntIt(): void
     {
         $screen = new ShownScreen();
         $wide = self::tall()->withSize(CharacterSize::Double);
-        $screen->glyph(5, 2, ' ', 2, $wide);
-        $screen->glyph(5, 3, ' ', 1, Attributes::defaults());
+        $screen->glyph(new Position(5, 2), ' ', $wide);
+        $screen->glyph(new Position(5, 3), ' ', Attributes::defaults());
 
-        self::assertFalse($screen->showsOnTop(5, 3, Zone::none()));
+        self::assertFalse($screen->showsOnTop(new Position(5, 3), Zone::none()));
     }
 
     public function testASpaceDrawnOnTheRowAboveIsntTheTopHalf(): void
     {
         $screen = new ShownScreen();
-        $screen->glyph(5, 3, ' ', 1, self::tall());
-        $screen->glyph(4, 3, ' ', 1, Attributes::defaults());
+        $screen->glyph(new Position(5, 3), ' ', self::tall());
+        $screen->glyph(new Position(4, 3), ' ', Attributes::defaults());
 
-        self::assertFalse($screen->showsOnTop(5, 3, Zone::none()));
+        self::assertFalse($screen->showsOnTop(new Position(5, 3), Zone::none()));
     }
 
     public function testAMosaicCharacterOnTheRowAboveIsntTheTopHalf(): void
     {
         $screen = new ShownScreen();
-        $screen->glyph(5, 3, ' ', 1, self::tall());
-        $screen->glyph(4, 3, ' ', 1, self::mosaic());
+        $screen->glyph(new Position(5, 3), ' ', self::tall());
+        $screen->glyph(new Position(4, 3), ' ', self::mosaic());
 
-        self::assertFalse($screen->showsOnTop(5, 3, Zone::none()));
+        self::assertFalse($screen->showsOnTop(new Position(5, 3), Zone::none()));
     }
 
     public function testATopHalfOverAMosaicCharacterIsntTheCharacterDrawnBelow(): void
     {
         $screen = new ShownScreen();
-        $screen->glyph(5, 3, ' ', 1, self::tall());
-        $screen->glyph(5, 3, ' ', 1, self::mosaic());
+        $screen->glyph(new Position(5, 3), ' ', self::tall());
+        $screen->glyph(new Position(5, 3), ' ', self::mosaic());
 
-        self::assertFalse($screen->showsOnTop(5, 3, Zone::none()));
+        self::assertFalse($screen->showsOnTop(new Position(5, 3), Zone::none()));
+    }
+
+    /**
+     * Two mosaic cells, one above the other, show no tall text character: unlike the arrays
+     * ShownScreen kept before #185, which compared them as both null
+     */
+    public function testTwoMosaicCellsArentATopHalf(): void
+    {
+        $screen = new ShownScreen();
+        $screen->glyph(new Position(5, 3), ' ', self::tall()->withSize(CharacterSize::Double));
+        $screen->glyph(new Position(5, 3), ' ', self::mosaic());
+        $screen->glyph(new Position(4, 3), ' ', self::mosaic());
+
+        self::assertFalse($screen->showsOnTop(new Position(5, 3), Zone::none()));
     }
 
     private static function tall(): Attributes

@@ -47,12 +47,12 @@ final class ShownScreens implements ScreenListener
 
     public function glyph(Position $position, string $bytes, Attributes $attributes): void
     {
-        $this->screen->glyph($position->row, $position->col, $bytes, $attributes->width(), $attributes);
+        $this->screen->glyph($position, $bytes, $attributes);
     }
 
     public function delimiter(Position $position, Attributes $attributes, Zone $zone): void
     {
-        $this->screen->delimiter($position->row, $position->col, $attributes->width(), $attributes, $zone);
+        $this->screen->delimiter($position, $attributes, $zone);
     }
 
     public function priorCharacter(Position $position, Attributes $attributes, ?Zone $delimiter): void
@@ -63,7 +63,7 @@ final class ShownScreens implements ScreenListener
 
     public function clearLine(Position $position, Attributes $attributes, ?Zone $delimiter): void
     {
-        $this->screen->clearLine($position->row, $position->col, $attributes, $delimiter);
+        $this->screen->clearLine($position, $attributes, $delimiter);
     }
 
     public function clear(): void

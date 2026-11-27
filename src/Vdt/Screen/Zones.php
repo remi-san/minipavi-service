@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MiniPaviService\Vdt\Screen;
 
 use MiniPaviService\Minitel\Color;
+use MiniPaviService\Minitel\Position;
 use MiniPaviService\Minitel\ScreenSize;
 
 /**
@@ -17,6 +18,10 @@ use MiniPaviService\Minitel\ScreenSize;
  * delimiter starts its zone on both rows, and tall text is text on both. It knows which
  * cells are text, which are delimiters, and the background of the mosaic ones, not what
  * they show.
+ *
+ * A character is drawn at a position, with attributes giving how many columns and rows it
+ * takes; the cells it covers, and those read along a row, are rows and columns, as they may
+ * be off the screen (cells(): the right half of a double-width character in the last column).
  *
  * It changes as cells are drawn (so it isn't readonly).
  *
@@ -38,41 +43,39 @@ final class Zones
     private array $mosaic = [];
 
     /**
-     * Draws a delimiter starting zone at row, col, width cells wide and height cells high
-     * (cells()): on the row above too, when it is tall
+     * Draws a delimiter starting zone at position, as wide and as high as these attributes
+     * make it (cells()): on the row above too, when it is tall
      */
-    public function delimiter(int $row, int $col, int $width, int $height, Zone $zone): void
+    public function delimiter(Position $position, Attributes $attributes, Zone $zone): void
     {
-        foreach (self::cells($row, $col, $width, $height) as [$cellRow, $cellCol]) {
+        $cells = self::cells($position->row, $position->col, $attributes->width(), $attributes->height());
+        foreach ($cells as [$cellRow, $cellCol]) {
             $this->text[$cellRow][$cellCol] = $zone;
         }
     }
 
     /**
-     * Draws a character at row, col, width cells wide, with these attributes: a text one, or
-     * a mosaic one, on its background; a tall one (Attributes::height()) on the row above too
-     * (cells())
+     * Draws a character at position, with these attributes: a text one, or a mosaic one, on
+     * its background; a tall one (Attributes::height()) on the row above too (cells())
      */
-    public function draw(int $row, int $col, int $width, Attributes $attributes): void
+    public function draw(Position $position, Attributes $attributes): void
     {
-        foreach (self::cells($row, $col, $width, $attributes->height()) as [$cellRow, $cellCol]) {
-            $this->drawCell($cellRow, $cellCol, $attributes);
-        }
+        $this->drawAt($position->row, $position->col, $attributes);
     }
 
     /**
-     * CAN at row, col: spaces with these attributes up to the last column (draw()), the first
+     * CAN at position: spaces with these attributes up to the last column (draw()), the first
      * one a delimiter starting zone delimiter, if not null (delimiter()): in double height, on
      * the row above too, as the emulator prints them (decoder.js, clear("eol"); a CAN in
      * double width is told as its spaces, Pen::clearLine())
      */
-    public function clearLine(int $row, int $col, Attributes $attributes, ?Zone $delimiter): void
+    public function clearLine(Position $position, Attributes $attributes, ?Zone $delimiter): void
     {
-        for ($cleared = $col; $cleared <= ScreenSize::COLS; $cleared++) {
-            $this->draw($row, $cleared, width: $attributes->width(), attributes: $attributes);
+        for ($cleared = $position->col; $cleared <= ScreenSize::COLS; $cleared++) {
+            $this->drawAt($position->row, $cleared, $attributes);
         }
         if ($delimiter !== null) {
-            $this->delimiter($row, $col, width: $attributes->width(), height: $attributes->height(), zone: $delimiter);
+            $this->delimiter($position, $attributes, $delimiter);
         }
     }
 
@@ -142,6 +145,16 @@ final class Zones
         }
 
         return $cells;
+    }
+
+    /**
+     * Draws a character at row, col, with these attributes, in each cell it covers (cells())
+     */
+    private function drawAt(int $row, int $col, Attributes $attributes): void
+    {
+        foreach (self::cells($row, $col, $attributes->width(), $attributes->height()) as [$cellRow, $cellCol]) {
+            $this->drawCell($cellRow, $cellCol, $attributes);
+        }
     }
 
     /**

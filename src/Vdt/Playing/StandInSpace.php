@@ -47,13 +47,10 @@ final readonly class StandInSpace
      */
     public function drawIn(Zones $zones): void
     {
-        $row = $this->position->row;
-        $col = $this->position->col;
-        $width = $this->attributes->width();
         if ($this->delimiter !== null) {
-            $zones->delimiter($row, $col, $width, $this->attributes->height(), $this->delimiter);
+            $zones->delimiter($this->position, $this->attributes, $this->delimiter);
             return;
         }
-        $zones->draw($row, $col, $width, $this->attributes);
+        $zones->draw($this->position, $this->attributes);
     }
 }

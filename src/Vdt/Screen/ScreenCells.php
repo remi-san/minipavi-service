@@ -55,14 +55,14 @@ final class ScreenCells implements ScreenListener
      */
     public function glyph(Position $position, string $bytes, Attributes $attributes): void
     {
-        $this->fill($position->row, $position->col, $bytes, $attributes->width(), $attributes);
-        $this->zones->draw($position->row, $position->col, $attributes->width(), $attributes);
+        $this->fill($position->row, $position->col, $bytes, $attributes);
+        $this->zones->draw($position, $attributes);
     }
 
     public function delimiter(Position $position, Attributes $attributes, Zone $zone): void
     {
         $this->glyph($position, bytes: ' ', attributes: $attributes);
-        $this->zones->delimiter($position->row, $position->col, $attributes->width(), $attributes->height(), $zone);
+        $this->zones->delimiter($position, $attributes, $zone);
     }
 
     /**
@@ -83,9 +83,9 @@ final class ScreenCells implements ScreenListener
     public function clearLine(Position $position, Attributes $attributes, ?Zone $delimiter): void
     {
         for ($space = $position->col; $space <= ScreenSize::COLS; $space++) {
-            $this->fill($position->row, $space, bytes: ' ', width: $attributes->width(), attributes: $attributes);
+            $this->fill($position->row, $space, bytes: ' ', attributes: $attributes);
         }
-        $this->zones->clearLine($position->row, $position->col, $attributes, $delimiter);
+        $this->zones->clearLine($position, $attributes, $delimiter);
     }
 
     public function clear(): void
@@ -125,9 +125,9 @@ final class ScreenCells implements ScreenListener
      * Puts a character drawn at row, col in each cell it covers (Zones::cells()), the part of
      * it the cell shows (Part): see glyph()
      */
-    private function fill(int $row, int $col, string $bytes, int $width, Attributes $attributes): void
+    private function fill(int $row, int $col, string $bytes, Attributes $attributes): void
     {
-        foreach (Zones::cells($row, $col, $width, $attributes->height()) as [$cellRow, $cellCol]) {
+        foreach (Zones::cells($row, $col, $attributes->width(), $attributes->height()) as [$cellRow, $cellCol]) {
             if ($cellCol > ScreenSize::COLS) {
                 continue;
             }
