@@ -5,27 +5,25 @@ declare(strict_types=1);
 namespace MiniPaviService\Vdt\Playing\Token;
 
 use MiniPaviService\Vdt\Playing\Pen;
+use MiniPaviService\Vdt\Screen\Attribute\Charset as ScreenCharset;
 use MiniPaviService\Vdt\Screen\Cursor;
 
 /**
- * SO (mosaic, G1) or SI (text, G0): the character set of what the cursor draws next
- * (Cursor::switchCharset())
+ * SO (mosaic, G1) or SI (text, G0), the code of a Screen\Attribute\Charset: the character set
+ * of what the cursor draws next (Cursor::switchCharset())
  *
  * @internal
  */
 final readonly class Charset extends ErasingNothing
 {
-    /**
-     * @param string $byte SO or SI
-     */
     public function __construct(
-        private string $byte,
+        private ScreenCharset $charset,
     ) {
-        parent::__construct($byte);
+        parent::__construct($charset->code());
     }
 
     public function playOn(Cursor $cursor, Pen $pen): void
     {
-        $cursor->switchCharset($this->byte);
+        $cursor->switchCharset($this->charset);
     }
 }

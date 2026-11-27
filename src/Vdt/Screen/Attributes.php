@@ -9,11 +9,11 @@ use MiniPaviService\Vdt\Screen\Attribute\Attribute;
 use MiniPaviService\Vdt\Screen\Attribute\BackgroundColor;
 use MiniPaviService\Vdt\Screen\Attribute\Blinking;
 use MiniPaviService\Vdt\Screen\Attribute\CharacterSize;
+use MiniPaviService\Vdt\Screen\Attribute\Charset;
 use MiniPaviService\Vdt\Screen\Attribute\Inversion;
 use MiniPaviService\Vdt\Screen\Attribute\Masking;
 use MiniPaviService\Vdt\Screen\Attribute\TextColor;
 use MiniPaviService\Vdt\Screen\Attribute\Underlining;
-use MiniPaviService\Vdt\Videotex;
 
 /**
  * Character attributes of a cell, as Videotex content sets them: the charset (text or mosaic),
@@ -28,11 +28,8 @@ use MiniPaviService\Vdt\Videotex;
  */
 final readonly class Attributes
 {
-    /**
-     * @param string $charset SI (text) or SO (mosaic)
-     */
     private function __construct(
-        private string $charset,
+        private Charset $charset,
         private Color $foreground,
         private Color $background,
         private CharacterSize $size,
@@ -49,7 +46,7 @@ final readonly class Attributes
     public static function defaults(): self
     {
         return new self(
-            Videotex::TEXT_SET,
+            Charset::Text,
             Color::White,
             Color::Black,
             CharacterSize::Normal,
@@ -113,15 +110,15 @@ final readonly class Attributes
     }
 
     /**
-     * These attributes, in the charset SO (mosaic) or SI (text) selects, as the Minitel sets
+     * These attributes, in this charset, SO (mosaic) or SI (text), as the Minitel sets
      * them on every SO and SI, even one that doesn't change the charset (MiniPavi's emulator,
      * setCharType(), #26): normal size, no inverse video, and no separated mosaic. Underline in
      * text is a zone's (Zone), never a character attribute, so neither SO nor SI keeps one
      */
-    public function withCharset(string $byte): self
+    public function withCharset(Charset $charset): self
     {
         return $this->copy(
-            charset: $byte === Videotex::MOSAIC_SET ? Videotex::MOSAIC_SET : Videotex::TEXT_SET,
+            charset: $charset,
             size: CharacterSize::Normal,
             underlining: Underlining::NoUnderline,
             inversion: Inversion::NoInverse,
@@ -130,7 +127,7 @@ final readonly class Attributes
 
     public function isMosaic(): bool
     {
-        return $this->charset === Videotex::MOSAIC_SET;
+        return $this->charset === Charset::Mosaic;
     }
 
     public function foreground(): Color
@@ -243,9 +240,9 @@ final readonly class Attributes
     }
 
     /**
-     * The charset: SI (text) or SO (mosaic)
+     * The charset: text (SI) or mosaic (SO)
      */
-    public function charset(): string
+    public function charset(): Charset
     {
         return $this->charset;
     }
@@ -293,7 +290,7 @@ final readonly class Attributes
     }
 
     private function copy(
-        ?string $charset = null,
+        ?Charset $charset = null,
         ?Color $foreground = null,
         ?Color $background = null,
         ?CharacterSize $size = null,

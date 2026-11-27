@@ -233,7 +233,7 @@ final class Writer
         }
         if ($attributes->charset() !== $current->charset()) {
             $this->cursor->switchCharset($attributes->charset());
-            $this->send($attributes->charset());
+            $this->send($attributes->charset()->code());
         }
         $this->sendAttributes($attributes->changesFrom($current));
     }
