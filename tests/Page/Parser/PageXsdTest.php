@@ -41,6 +41,7 @@ final class PageXsdTest extends TestCase
         'input past the last row',
         'image on line 0',
         'message of no service',
+        'message with a malformed placeholder',
     ];
 
     private const SHOULD_BE_REFUSED = 'the schema should refuse it';

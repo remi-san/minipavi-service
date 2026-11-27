@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Message;
 
+use MiniPaviService\InvalidValueException;
+use MiniPaviService\Text\Placeholders;
 use MiniPaviService\Xml\XmlException;
 
 /**
@@ -26,7 +28,9 @@ final readonly class MessageElement
      *
      * @param string $file name of the file, in errors
      *
-     * @throws XmlException for one without name
+     * @throws XmlException for one without name, or whose text has a {{...}} that isn't a
+     *                      placeholder (Placeholders::check()): found when the file is read,
+     *                      not when the message is shown
      */
     public static function of(\SimpleXMLElement $element, string $file): self
     {
@@ -34,6 +38,11 @@ final readonly class MessageElement
         $message = new self($name, trim((string) $element), $element, $file);
         if ($name === '') {
             throw $message->error('name is missing');
+        }
+        try {
+            Placeholders::check($message->text);
+        } catch (InvalidValueException $e) {
+            throw $message->error($e->getMessage());
         }
 
         return $message;

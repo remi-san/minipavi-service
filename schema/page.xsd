@@ -18,6 +18,7 @@ rejects:
   - positions past the screen once added up (col + length past column 40, a row
     relative to a <foreach> item, an input's lines past row 24);
   - an <image> on row 0 (the status line) outside a <foreach>;
+  - a {{...}} that isn't a placeholder (e.g. {{1}}) in a <message>;
   - values a placeholder is replaced with, only known when the page is displayed.
 
 Unknown elements and attributes are rejected, which the parser does for elements only.

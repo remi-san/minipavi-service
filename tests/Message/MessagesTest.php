@@ -215,6 +215,11 @@ final class MessagesTest extends TestCase
             "<messages><message name=\"a\">x</message>\n<message name=\"a\">y</message></messages>",
             'm.xml line 2: <message>: name="a" is already in the file',
         ];
+        // Shown as it is otherwise: a mistake in the file
+        yield 'malformed placeholder' => [
+            "<messages>\n<message name=\"error\">Broken {{ 1bad }}</message></messages>",
+            'm.xml line 2: <message>: {{ 1bad }} is not a placeholder',
+        ];
         // The first error in the file: the name missing, before the unknown element
         yield 'first error in the file' => [
             "<messages>\n<message>x</message>\n<text/></messages>",
