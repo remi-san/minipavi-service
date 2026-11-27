@@ -43,15 +43,15 @@ final class ContextSerializerTest extends TestCase
                 /** @param Request<ControllerState, PageParameters> $request */
                 static fn(Request $request) => new DisplayPage(Vdt::text(
                     'home '
-                        . $request->state->value
-                        . ' '
-                        . $request->parameters->page
-                        . ' '
-                        . (string) $request->key?->value
-                        . ' '
-                        . $request->contentAsString()
-                        . ' '
-                        . $request->terminal->remoteAddr(),
+                    . $request->state->value
+                    . ' '
+                    . $request->parameters->page
+                    . ' '
+                    . (string) $request->key?->value
+                    . ' '
+                    . $request->contentAsString()
+                    . ' '
+                    . $request->terminal->remoteAddr,
                 )),
             ),
         );

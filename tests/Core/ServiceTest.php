@@ -334,7 +334,7 @@ final class ServiceTest extends TestCase
         self::assertEquals(new PageParameters(1), $directory->parameters);
         self::assertNull($directory->key);
         self::assertSame([], $directory->content);
-        self::assertSame(self::TERMINAL_ADDRESS, $directory->terminal->remoteAddr());
+        self::assertSame(self::TERMINAL_ADDRESS, $directory->terminal->remoteAddr);
     }
 
     public function testChangePageResetsTheControllerLeft(): void
