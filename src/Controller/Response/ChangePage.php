@@ -16,9 +16,9 @@ use MiniPaviService\Gateway\GatewayResponse;
  * Unlike a KeepingResponse's, its parameters are the target controller's, not this one's.
  * Keeping no state, it is a response of any controller.
  *
- * @extends Response<never>
+ * @implements Response<never>
  */
-final readonly class ChangePage extends Response
+final readonly class ChangePage implements Response
 {
     /**
      * @param string $route route of the target controller

@@ -39,6 +39,7 @@ use MiniPaviService\Tests\Support\CallbackController;
 use MiniPaviService\Tests\Support\ClearAndShow;
 use MiniPaviService\Tests\Support\FailingSigner;
 use MiniPaviService\Tests\Support\MemoryLogger;
+use MiniPaviService\Tests\Support\ShowOnly;
 use MiniPaviService\Vdt\Screen\Screen;
 use MiniPaviService\Vdt\Vdt;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -533,6 +534,17 @@ final class ServiceTest extends TestCase
         $next = $this->nextRequest($response);
         self::assertSame(ControllerState::Display, $next->state);
         self::assertEquals(new PageParameters(1), $next->parameters);
+    }
+
+    public function testAResponseOfItsOwnCanImplementResponse(): void
+    {
+        $response = $this->responseTo(new ShowOnly('Hello'));
+
+        self::assertStringStartsWith('Hello', Screen::of($response->vdt)->line(1));
+        // Keeping nothing, the controller keeps what it had: its initial state and parameters
+        $next = $this->nextRequest($response);
+        self::assertSame(ControllerState::Init, $next->state);
+        self::assertEquals(new PageParameters(), $next->parameters);
     }
 
     public function testKeepingParametersOfAnotherClassIsAnError(): void

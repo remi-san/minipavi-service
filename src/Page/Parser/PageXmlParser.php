@@ -6,25 +6,17 @@ namespace MiniPaviService\Page\Parser;
 
 use MiniPaviService\Io\FileReader;
 use MiniPaviService\Io\Files;
-use MiniPaviService\Message\MessageElement;
 use MiniPaviService\Message\Messages;
-use MiniPaviService\Message\MessagesXmlParser;
-use MiniPaviService\Message\MessageTexts;
-use MiniPaviService\Minitel\Keyboard;
-use MiniPaviService\Minitel\LocalEcho;
-use MiniPaviService\Minitel\Scroll;
 use MiniPaviService\Page;
 use MiniPaviService\Page\Building\PageXmlException;
 use MiniPaviService\Page\MinitelPage;
 use MiniPaviService\Page\Parser\Tag\NodesParser;
 use MiniPaviService\Page\Parser\Tag\TagPosition;
-use MiniPaviService\Page\Setup;
 use MiniPaviService\Page\StaticContent;
 use MiniPaviService\Page\Template\Nodes;
 use MiniPaviService\Page\Template\TemplateException;
 use MiniPaviService\Page\TemplateContent;
 use MiniPaviService\Xml\XmlDocument;
-use MiniPaviService\Xml\XmlElements;
 use MiniPaviService\Xml\XmlException;
 
 /**
@@ -34,8 +26,10 @@ use MiniPaviService\Xml\XmlException;
  * (<foreach>, <if>), for type="template". Anything unknown or invalid throws a
  * PageXmlException giving the file and line.
  */
-final class PageXmlParser
+final readonly class PageXmlParser
 {
+    private PageMessages $messages;
+
     /**
      * @param Messages $messages the service's messages (e.g. MessagesXmlParser::defaults() for the
      *                           framework's only), which a page's <message> redefine
@@ -48,10 +42,11 @@ final class PageXmlParser
      *                         is first parsed
      */
     public function __construct(
-        private Messages $messages,
+        Messages $messages,
         private PageElements $elements = new NoElements(),
         private FileReader $files = new Files(),
     ) {
+        $this->messages = new PageMessages($messages);
         NodesParser::check($this->elementsOf(new PageFiles('.', $this->files), $messages), file: 'PageXmlParser');
     }
 
@@ -80,34 +75,20 @@ final class PageXmlParser
         } catch (XmlException $e) {
             throw new PageXmlException($e->getMessage(), previous: $e);
         }
-        $type = self::setting(
-            $root,
-            attribute: 'type',
-            cases: PageType::cases(),
-            name: $name,
-        ) ?? throw new PageXmlException(
-            self::at($root, $name) . ': <page>: type is missing (' . self::choices('type', PageType::cases()) . ')',
-        );
-
-        $setup = new Setup(
-            self::setting($root, attribute: 'keyboard', cases: Keyboard::cases(), name: $name),
-            self::setting($root, attribute: 'echo', cases: LocalEcho::cases(), name: $name),
-            self::setting($root, attribute: 'scroll', cases: Scroll::cases(), name: $name),
-        );
-
-        $messages = $this->messages->with($this->messageTexts($root, $name));
+        $settings = PageSettings::of($root, $name);
+        $messages = $this->messages->of($root, $name);
         $parsed = NodesParser::standard(
             $this->elementsOf(new PageFiles($baseDir, $this->files), $messages),
             $name,
-        )->parse($root, TagPosition::page(template: $type->isTemplate()));
+        )->parse($root, TagPosition::page(template: $settings->type->isTemplate()));
 
         $template = new TemplateContent(new Nodes($parsed->nodes));
 
         return new MinitelPage(
-            $type->isTemplate() ? $template : self::staticContent($template),
+            $settings->type->isTemplate() ? $template : self::staticContent($template),
             $messages,
             $parsed->input,
-            $setup,
+            $settings->setup,
         );
     }
 
@@ -117,60 +98,6 @@ final class PageXmlParser
     private function elementsOf(PageFiles $files, Messages $messages): ElementFactory
     {
         return ElementFactory::of($files, $messages, new StandardElements(), $this->elements);
-    }
-
-    /**
-     * Setting of the Minitel given by an attribute of <page>, the one of the cases of its
-     * string-backed enum whose value is the attribute's; null if the attribute is missing
-     *
-     * @template T of \BackedEnum
-     *
-     * @param list<T> $cases
-     *
-     * @return ?T
-     *
-     * @throws PageXmlException for a value none of the cases has
-     */
-    private static function setting(
-        \SimpleXMLElement $root,
-        string $attribute,
-        array $cases,
-        string $name,
-    ): ?\BackedEnum {
-        $value = XmlElements::attributes($root)[$attribute] ?? null;
-        if ($value === null) {
-            return null;
-        }
-        foreach ($cases as $case) {
-            if ($case->value === $value) {
-                return $case;
-            }
-        }
-
-        throw new PageXmlException(
-            self::at($root, $name)
-            . ": <page>: {$attribute}=\"{$value}\" is unknown ("
-            . self::choices($attribute, $cases)
-            . ')',
-        );
-    }
-
-    /**
-     * The values an attribute of <page> can have, for its errors: attribute="a" or attribute="b"
-     *
-     * @param list<\BackedEnum> $cases
-     */
-    private static function choices(string $attribute, array $cases): string
-    {
-        return implode(' or ', array_map(static fn(\BackedEnum $case) => "{$attribute}=\"{$case->value}\"", $cases));
-    }
-
-    /**
-     * Where <page> is, in its errors: "file line n"
-     */
-    private static function at(\SimpleXMLElement $root, string $name): string
-    {
-        return $name . ' line ' . dom_import_simplexml($root)->getLineNo();
     }
 
     /**
@@ -186,35 +113,5 @@ final class PageXmlParser
         } catch (TemplateException $e) {
             throw new PageXmlException($e->getMessage(), previous: $e);
         }
-    }
-
-    /**
-     * Texts of the messages the page redefines (<message name> at its top level), by name:
-     * messages of the service only
-     *
-     * @return array<string, string>
-     *
-     * @throws PageXmlException
-     */
-    private function messageTexts(\SimpleXMLElement $root, string $name): array
-    {
-        // One pass, in document order: the first error in the file is the one reported
-        $texts = new MessageTexts(in: 'the page');
-        try {
-            foreach (XmlElements::children($root) as $tag => $element) {
-                if ($tag !== 'message') {
-                    continue;
-                }
-                $message = MessageElement::of($element, $name);
-                if (!$this->messages->has($message->name)) {
-                    throw $message->error("name=\"{$message->name}\" is not a message of the service");
-                }
-                $texts->add($message);
-            }
-        } catch (XmlException $e) {
-            throw new PageXmlException($e->getMessage(), previous: $e);
-        }
-
-        return $texts->texts();
     }
 }

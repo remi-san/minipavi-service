@@ -16,9 +16,9 @@ use MiniPaviService\Gateway\GatewayResponse;
  *
  * @template-covariant TState of State
  *
- * @extends Response<TState>
+ * @implements Response<TState>
  */
-abstract readonly class KeepingResponse extends Response
+abstract readonly class KeepingResponse implements Response
 {
     /**
      * @param ?TState $state state this controller keeps; null: its initial state
