@@ -96,6 +96,20 @@ final class PageSettingsTest extends TestCase
         self::assertStringNotContainsString('Connexion/fin', $page->display(new Terminal())->toString());
     }
 
+    public function testMessagesAfterTheElementsAreRedefinedToo(): void
+    {
+        $page = (new PageXmlParser((new MessagesXmlParser())
+            ->defaults()
+            ->with(['welcome' => 'Bonjour'])))->parse(<<<'XML'
+            <page type="static">
+              <text row="1">x</text>
+              <message name="welcome">Salut</message>
+            </page>
+            XML, ParsedPages::FOLDER);
+
+        self::assertSame('Salut', $page->message(TestMessage::Welcome));
+    }
+
     public function testPageWithoutMessagesHasTheServices(): void
     {
         $page = (new PageXmlParser((new MessagesXmlParser())
