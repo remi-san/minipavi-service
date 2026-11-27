@@ -575,8 +575,10 @@ the same tag, or of a tag of the page format (`PageXmlParser`), and a default ro
 a route (`RouterBuilder::build()`); and when run for a controller keeping a state or
 parameters of another type than it declares, too many page changes in one request, a request
 that didn't go through `WithUrls`, a response sent once output has started
-(`ResponseEmitter`), or a `ServiceTester` without PHPUnit. An exception of the service's own
-code (a controller, an `ElementBuilder`, a variable's `__toString()`) goes through as it is.
+(`ResponseEmitter`), or a `ServiceTester` without PHPUnit, or asked for a response there
+isn't (before `connect()`, or to a request the service doesn't respond to). An exception of
+the service's own code (a controller, an `ElementBuilder`, a variable's `__toString()`) goes
+through as it is.
 Serving a request, `Service` catches them all, logs them and responds with an error (see
 `Service` above); the errors of the [command line](#command-line) are shown by Symfony
 Console.
