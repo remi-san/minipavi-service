@@ -28,6 +28,15 @@ final class FilesTest extends TestCase
         self::assertNull((new Files())->read(sys_get_temp_dir() . '/missing-' . bin2hex(random_bytes(4)) . '.vdt'));
     }
 
+    public function testReadsAMissingFileWithoutPhpsWarning(): void
+    {
+        // PHP's own handler, which the tests' failure on warnings doesn't see, would keep it
+        error_clear_last();
+
+        self::assertNull((new Files())->read(sys_get_temp_dir() . '/missing-' . bin2hex(random_bytes(4)) . '.vdt'));
+        self::assertNull(error_get_last());
+    }
+
     public function testWritesNothingInAMissingFolder(): void
     {
         self::assertFalse((new Files())->write(
