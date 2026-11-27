@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Tests;
 
+use MiniPaviService\Core\Context\ContextSerializer;
 use MiniPaviService\Core\Context\Signing\ForgedContextException;
 use MiniPaviService\Core\Context\Signing\HmacContextSigner;
+use MiniPaviService\Core\Context\UnreadableContextException;
 use MiniPaviService\Core\Routing\RouterBuilder;
 use MiniPaviService\Core\Routing\UnknownRouteException;
 use MiniPaviService\InvalidValueException;
@@ -72,6 +74,15 @@ final class MiniPaviServiceExceptionTest extends TestCase
         yield 'a forged context' => [
             static fn() => (new HmacContextSigner('secret'))->verify('{"route":"home"}'),
             ForgedContextException::class,
+            \RuntimeException::class,
+        ];
+        yield 'a context that can\'t be read' => [
+            static fn() => (new ContextSerializer(
+                (new RouterBuilder('home'))
+                    ->addRoute('home', new StepController())
+                    ->build(),
+            ))->unserialize('not a context'),
+            UnreadableContextException::class,
             \RuntimeException::class,
         ];
     }

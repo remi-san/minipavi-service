@@ -15,6 +15,7 @@ use MiniPaviService\Core\Context\ContextSerializer;
 use MiniPaviService\Core\Context\KeptRoute;
 use MiniPaviService\Core\Context\Signing\ForgedContextException;
 use MiniPaviService\Core\Context\Signing\HmacContextSigner;
+use MiniPaviService\Core\Context\UnreadableContextException;
 use MiniPaviService\Core\Routing\Router;
 use MiniPaviService\Core\Routing\RouterBuilder;
 use MiniPaviService\Core\Routing\UnknownRouteException;
@@ -175,8 +176,8 @@ final class ContextSerializerTest extends TestCase
             self::fail('A context at an unknown route was read');
         } catch (UnknownRouteException $e) {
             self::assertSame('removed', $e->route);
-            // Not taken for a context that can't be read (\RuntimeException)
-            self::assertNotInstanceOf(\RuntimeException::class, $e);
+            // Not taken for a context that can't be read
+            self::assertNotInstanceOf(UnreadableContextException::class, $e);
         }
     }
 
@@ -278,11 +279,11 @@ final class ContextSerializerTest extends TestCase
     /**
      * Error unserializing what isn't a context
      */
-    private function unserializeError(string $serialized): \RuntimeException
+    private function unserializeError(string $serialized): UnreadableContextException
     {
         try {
             $this->serializer()->unserialize($serialized);
-        } catch (\RuntimeException $e) {
+        } catch (UnreadableContextException $e) {
             return $e;
         }
 
