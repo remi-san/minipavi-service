@@ -815,8 +815,8 @@ it sends `Ç` as `ç`, `Vdt::text()` as `Ç`; it never encodes `←`, `ō` and `
 which `Vdt::text()` sends as the Minitel's; and the letters a Minitel doesn't have, shown as
 `_` or `?`, `Vdt::text()` sends as their plain letter, in the same case: `ü` as `u`, `Ù` as
 `U`, `ñ` as `n`, `ß` as `ss`, `β` as `b`, `Æ` as `AE`, `Þ` as `TH`; `§`, which it has nothing
-like, as `?`. Every Latin-1 letter is sent as something a Minitel shows; other symbols it
-doesn't have, such as `€` or `«`, are sent as they are, and shown as `?`),
+like, as `?`. Every Latin-1 letter from `À` to `ÿ` is sent as something a Minitel shows;
+other symbols it doesn't have, such as `€` or `«`, are sent as they are, and shown as `?`),
 `Vdt::position($position)` (a `Minitel\Position`,
 `setPos()`), `Vdt::line0()` (`writeLine0()`), `Vdt::clearScreen()` and
 `Vdt::repeat($char, $count)` (`repeatChar()`, up to 64; beyond, as one REP can't count more,
