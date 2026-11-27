@@ -8,7 +8,9 @@ use MiniPaviService\InvalidValueException;
 use MiniPaviService\Minitel\Color;
 use MiniPaviService\Minitel\Position;
 use MiniPaviService\Minitel\ScreenSize;
-use MiniPaviService\Tests\Vdt\Screen\ScreenTest;
+use MiniPaviService\Tests\Vdt\Screen\CursorTest;
+use MiniPaviService\Tests\Vdt\Screen\SequencesTest;
+use MiniPaviService\Tests\Vdt\Screen\ZonesTest;
 use MiniPaviService\Vdt\Offset;
 use MiniPaviService\Vdt\Screen\Attribute\CharacterSize;
 use MiniPaviService\Vdt\Screen\Attribute\Masking;
@@ -201,10 +203,10 @@ final class VdtTest extends TestCase
      * A zone (#28, #30) is kept moved, its delimiter written again, and its background,
      * masking and underline sent only before it, as on the Minitel they wait for one
      */
-    #[DataProviderExternal(ScreenTest::class, 'backgroundZones')]
-    #[DataProviderExternal(ScreenTest::class, 'maskZones')]
-    #[DataProviderExternal(ScreenTest::class, 'underlineZones')]
-    #[DataProviderExternal(ScreenTest::class, 'zonesOnTheRowAbove')]
+    #[DataProviderExternal(ZonesTest::class, 'backgroundZones')]
+    #[DataProviderExternal(ZonesTest::class, 'maskZones')]
+    #[DataProviderExternal(ZonesTest::class, 'underlineZones')]
+    #[DataProviderExternal(ZonesTest::class, 'zonesOnTheRowAbove')]
     public function testOffsetKeepsTheZones(string $sent): void
     {
         $original = Vdt::join(Vdt::position(new Position(row: 10)), new Vdt($sent));
@@ -1106,7 +1108,7 @@ final class VdtTest extends TestCase
         self::assertSame('', trim(Screen::of((new Offset(x: 0, y: -1))->apply(new Vdt("\x1F\x41\x41ABC")))->text()));
     }
 
-    #[DataProviderExternal(ScreenTest::class, 'sequencesDrawingNothing')]
+    #[DataProviderExternal(SequencesTest::class, 'sequencesDrawingNothing')]
     public function testOffsetKeepsTheSequencesThatDrawNothing(string $sequence): void
     {
         $moved = (new Offset(x: 1, y: 1))
@@ -1120,7 +1122,7 @@ final class VdtTest extends TestCase
         self::assertStringStartsWith(' A ', $screen->line(2));
     }
 
-    #[DataProviderExternal(ScreenTest::class, 'positionsOutsideTheScreen')]
+    #[DataProviderExternal(CursorTest::class, 'positionsOutsideTheScreen')]
     public function testOffsetDropsAPositioningTheMinitelIgnores(string $position): void
     {
         // Row 5: red A, B, the positioning, then C, drawn after B, still red
