@@ -49,6 +49,15 @@ final class VdtTest extends TestCase
         self::assertStringStartsWith('ÇA ç ILE île ', Screen::of(Vdt::line0('ÇA ç ÎLE île'))->line(0));
     }
 
+    /**
+     * The Minitel has no §, which MiniPaviCli::send() sends as ? (#137): the screen shows the ?
+     * the Minitel shows, not §
+     */
+    public function testTextShowsACharacterTheMinitelDoesntHaveAsTheMinitelDoes(): void
+    {
+        self::assertStringStartsWith('? 1 ', Screen::of(Vdt::text('§ 1'))->line(1));
+    }
+
     public function testJoinsContents(): void
     {
         $a = new Vdt("\x0C");

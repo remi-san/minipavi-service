@@ -169,11 +169,12 @@ final class CodesTest extends TestCase
     {
         // Except the deviations (below)
         yield 'every character it encodes' => [
-            'éèàçêÉÈÀÊβßœŒüûúùöôóòïîíìëäâá£°±←↑→↓¼½¾ÂÎōá’ ňćřýšíąā',
+            'éèàçêÉÈÀÊœŒûùôïîëâ£°±↑→↓¼½¾ÂÎ’ ňćřýšą',
         ];
         yield 'control characters' => ["a\x00b\x0Ac\x1Fd\x7Fe"];
         yield 'plain text' => ['Hello, world! 0123456789 {}~'];
-        yield 'bytes MiniPaviCli takes as undefined (in UTF-8 letters, e.g. Á, Í, Ý)' => ['ÁÍÏÐÝ'];
+        // 0x8D, 0x81, 0x9D, 0x8F and 0x90, each in a letter
+        yield 'bytes MiniPaviCli takes as undefined (in UTF-8 letters it doesn\'t encode)' => ['čŁŝďĐ'];
     }
 
     /**
@@ -187,28 +188,101 @@ final class CodesTest extends TestCase
     }
 
     /**
-     * @return iterable<string, array{string, string}>
+     * The text, what the Minitel shows with MiniPaviCli, and what it shows with Vdt
+     *
+     * @return iterable<string, array{string, string, string}>
      */
     public static function deviations(): iterable
     {
         // MiniPaviCli sends the cedilla with a lowercase c (#58)
-        yield 'Ç' => ['Ç', 'ç'];
+        yield 'Ç' => ['Ç', 'ç', 'Ç'];
+        // MiniPaviCli replaces the bytes it takes as undefined before encoding the characters
+        // holding them (#137): ← (e2 86 90) is sent as e2 86 20, shown as ? then a space
+        yield '←' => ['←', '? ', '←'];
+        yield 'ō' => ['ō', '? ', 'o'];
+        yield 'ā' => ['ā', '? ', 'a'];
+        // MiniPaviCli sends G2 codes the Minitel doesn't have, shown as _ (#137): the letter
+        // without its accent, ß as ss, β as b
+        yield 'ü' => ['ü', '_', 'u'];
+        yield 'ä' => ['ä', '_', 'a'];
+        yield 'ö' => ['ö', '_', 'o'];
+        yield 'ú' => ['ú', '_', 'u'];
+        yield 'ó' => ['ó', '_', 'o'];
+        yield 'í' => ['í', '_', 'i'];
+        yield 'á' => ['á', '_', 'a'];
+        yield 'ò' => ['ò', '_', 'o'];
+        yield 'ì' => ['ì', '_', 'i'];
+        yield 'ß' => ['ß', '_', 'ss'];
+        yield 'β' => ['β', '_', 'b'];
+        // MiniPaviCli doesn't encode characters the Minitel has, sent as ? (#137)
+        yield '÷' => ['÷', '?', '÷'];
+        yield 'Ë' => ['Ë', '?', 'Ë'];
+        // MiniPaviCli doesn't encode the Latin-1 letters the Minitel doesn't have, sent as ?, or
+        // as ? and a space for those holding a byte it takes as undefined (#137): the letter
+        // without its accent, in the same case, Æ æ as AE ae, Ð ð as D d, Þ þ as TH th
+        foreach (['Á' => 'A', 'Í' => 'I', 'Ï' => 'I', 'Ð' => 'D', 'Ý' => 'Y'] as $letter => $shown) {
+            yield $letter => [$letter, '? ', $shown];
+        }
+        foreach ([
+            'Ã' => 'A',
+            'Ä' => 'A',
+            'Å' => 'A',
+            'Æ' => 'AE',
+            'Ì' => 'I',
+            'Ñ' => 'N',
+            'Ò' => 'O',
+            'Ó' => 'O',
+            'Ô' => 'O',
+            'Õ' => 'O',
+            'Ö' => 'O',
+            'Ø' => 'O',
+            'Ù' => 'U',
+            'Ú' => 'U',
+            'Û' => 'U',
+            'Ü' => 'U',
+            'Þ' => 'TH',
+            'ã' => 'a',
+            'å' => 'a',
+            'æ' => 'ae',
+            'ð' => 'd',
+            'ñ' => 'n',
+            'õ' => 'o',
+            'ø' => 'o',
+            'þ' => 'th',
+            'ÿ' => 'y',
+        ] as $letter => $shown) {
+            yield $letter => [$letter, '?', $shown];
+        }
+        // The Minitel has no §, nor anything like it: Vdt sends the ? the Minitel shows (#137).
+        // Sent in 7 bits, MiniPaviCli's § is ? too: VdtTest checks the screen shows ? for it
+        yield '§' => ['§', '?', '?'];
     }
 
     /**
      * Where MiniPavi's emulator shows MiniPaviCli's text is wrong, Vdt deviates from it on
-     * purpose: the Minitel shows what MiniPaviCli sends otherwise, and the text as Vdt sends it
+     * purpose: the Minitel shows one thing with what MiniPaviCli sends, another with what Vdt
+     * sends. Both are sent as MiniPaviCli::send() sends them, in 7 bits: each character left
+     * out of 7 bits is sent as ?
      */
     #[DataProvider('deviations')]
     public function testVdtDeviatesFromMiniPaviCliWhereTheMinitelShowsItIsWrong(
         string $text,
         string $shownWithMiniPaviCli,
+        string $shownWithVdt,
     ): void {
-        self::assertStringStartsWith(
-            $shownWithMiniPaviCli . ' ',
-            Screen::of(new Vdt(MiniPaviCli::toG2($text)))->line(1),
-        );
-        self::assertStringStartsWith($text . ' ', Screen::of(Vdt::text($text))->line(1));
+        self::assertStringStartsWith($shownWithMiniPaviCli . ' ', self::shown(MiniPaviCli::toG2($text)));
+        self::assertStringStartsWith($shownWithVdt . ' ', self::shown(Vdt::text($text)->toString()));
+    }
+
+    /**
+     * Row 1 of the screen, once bytes are sent as MiniPaviCli::send() sends them
+     */
+    private static function shown(string $bytes): string
+    {
+        $sent = mb_convert_encoding($bytes, to_encoding: '7bit');
+        self::assertIsString($sent);
+
+        return Screen::of(new Vdt($sent))->line(1);
     }
 
     public function testVdtEncodesSequencesAsMiniPaviCli(): void

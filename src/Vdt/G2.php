@@ -6,9 +6,12 @@ namespace MiniPaviService\Vdt;
 
 /**
  * Text (UTF-8) as Videotex: accented and special characters encoded in G2 (SS2, then their
- * code), a few others as the letter closest to them, as MiniPaviCli's toG2() does (CodesTest
- * checks they encode the same), except where MiniPavi's emulator shows toG2() is wrong: Ç,
- * which toG2() sends as ç (#58)
+ * code), others as the letter closest to them, as MiniPaviCli's toG2() does (CodesTest checks
+ * they encode the same), except where MiniPavi's emulator shows toG2() is wrong (CodesTest
+ * names each deviation): Ç, which toG2() sends as ç (#58); ←, ō and ā, which it never
+ * encodes; ÷ and Ë, which it doesn't encode; and the letters the Minitel shows as _ or ?
+ * (ü, ß, Ù, ñ, ...), sent as their plain letter (#137). Every Latin-1 letter from À to ÿ
+ * is sent as something a Minitel shows
  *
  * @internal
  */
@@ -26,29 +29,31 @@ final class G2
         'À' => Videotex::G2 . "\x41A",
         'Ç' => Videotex::G2 . "\x4BC",
         'Ê' => Videotex::G2 . "\x43E",
-        'β' => Videotex::G2 . "\x7B",
-        'ß' => Videotex::G2 . "\x7B",
+        'β' => 'b',
+        'ß' => 'ss',
         'œ' => Videotex::G2 . "\x7A",
         'Œ' => Videotex::G2 . "\x6A",
-        'ü' => Videotex::G2 . "\x48\x75",
+        'ü' => 'u',
         'û' => Videotex::G2 . "\x43\x75",
-        'ú' => Videotex::G2 . "\x42\x75",
+        'ú' => 'u',
         'ù' => Videotex::G2 . "\x41\x75",
-        'ö' => Videotex::G2 . "\x48\x6F",
+        'ö' => 'o',
         'ô' => Videotex::G2 . "\x43\x6F",
-        'ó' => Videotex::G2 . "\x42\x6F",
-        'ò' => Videotex::G2 . "\x41\x6F",
+        'ó' => 'o',
+        'ò' => 'o',
         'ï' => Videotex::G2 . "\x48\x69",
         'î' => Videotex::G2 . "\x43\x69",
-        'í' => Videotex::G2 . "\x42\x69",
-        'ì' => Videotex::G2 . "\x41\x69",
+        'í' => 'i',
+        'ì' => 'i',
         'ë' => Videotex::G2 . "\x48\x65",
-        'ä' => Videotex::G2 . "\x48\x61",
+        'Ë' => Videotex::G2 . "\x48E",
+        'ä' => 'a',
         'â' => Videotex::G2 . "\x43\x61",
-        'á' => Videotex::G2 . "\x42\x61",
+        'á' => 'a',
         '£' => Videotex::G2 . "\x23",
         '°' => Videotex::G2 . "\x30",
         '±' => Videotex::G2 . "\x31",
+        '÷' => Videotex::G2 . "\x38",
         '←' => Videotex::G2 . "\x2C",
         '↑' => Videotex::G2 . "\x2D",
         '→' => Videotex::G2 . "\x2E",
@@ -68,16 +73,54 @@ final class G2
         'š' => 's',
         'ą' => 'a',
         'ā' => 'a',
+        // The other Latin-1 letters, which the Minitel doesn't have (#137): the letter without
+        // its accent, in the same case
+        'Á' => 'A',
+        'Ã' => 'A',
+        'Ä' => 'A',
+        'Å' => 'A',
+        'Æ' => 'AE',
+        'Ì' => 'I',
+        'Í' => 'I',
+        'Ï' => 'I',
+        'Ð' => 'D',
+        'Ñ' => 'N',
+        'Ò' => 'O',
+        'Ó' => 'O',
+        'Ô' => 'O',
+        'Õ' => 'O',
+        'Ö' => 'O',
+        'Ø' => 'O',
+        'Ù' => 'U',
+        'Ú' => 'U',
+        'Û' => 'U',
+        'Ü' => 'U',
+        'Ý' => 'Y',
+        'Þ' => 'TH',
+        'ã' => 'a',
+        'å' => 'a',
+        'æ' => 'ae',
+        'ð' => 'd',
+        'ñ' => 'n',
+        'õ' => 'o',
+        'ø' => 'o',
+        'þ' => 'th',
+        'ÿ' => 'y',
+        // Nothing like it on the Minitel: the ? it shows for a character it doesn't have
+        '§' => '?',
     ];
 
     /**
-     * The text as Videotex: control characters, and the bytes MiniPaviCli takes as undefined
-     * (0x81, 0x8D, 0x8F, 0x90, 0x9D, even within a UTF-8 character), become spaces
+     * The text as Videotex: control characters become spaces, and so do the bytes MiniPaviCli
+     * takes as undefined (0x81, 0x8D, 0x8F, 0x90, 0x9D) left in a character it doesn't encode.
+     * MiniPaviCli replaces those before encoding the characters, so it never encodes the ones
+     * holding them (←, ō, ā): G2 encodes them first (#137)
      */
     public static function encode(string $text): string
     {
-        $text = preg_replace('/[\x00-\x1F\x81\x8D\x8F\x90\x9D]/', replacement: ' ', subject: $text) ?? $text;
+        $text = preg_replace('/[\x00-\x1F]/', replacement: ' ', subject: $text) ?? $text;
+        $text = strtr($text, self::CHARACTERS);
 
-        return strtr($text, self::CHARACTERS);
+        return preg_replace('/[\x81\x8D\x8F\x90\x9D]/', replacement: ' ', subject: $text) ?? $text;
     }
 }
