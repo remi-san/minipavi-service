@@ -333,9 +333,10 @@ KernelBuilder::for($router, $messages)
   }
   ```
 
-  A response keeping nothing (the controller keeps what it had) implements `Response`
-  directly, with `@implements Response<ControllerState>` (or the controller's enum), as
-  `ChangePage` does.
+  A response that keeps nothing (it doesn't call `$flow->keep()`, so the controller keeps
+  what it had) can implement `Response` directly, with `@implements Response<never>`, as
+  `ChangePage` does: that makes it a response of any controller. Give a controller's enum
+  (`Response<ControllerState>`, or its own) only to a response that calls `keep()` itself.
 
 - **`AbstractController`** runs the method of the request's state, so a controller only
   writes what each state does:
