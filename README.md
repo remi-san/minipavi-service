@@ -24,8 +24,8 @@ interfaces → `Html\` and `MiniPavi\`, which don't use each other).
 
 | Namespace | Holds |
 |---|---|
-| `MiniPaviService` | the `Controller` and `Page` interfaces, and the `InvalidValueException` of a value the framework can't take (e.g. a `Position` off the screen) |
-| `Core\` | the runtime: `Service` and its `Sessions`, `RequestFlow`, `RequestServer`; in `Routing\`, the `Router` (built by `RouterBuilder`), its `Route`s and the `RouteContext` each keeps, `UnknownRouteException`; in `Context\`, the user's `Context`, its `KeptRoute`s and its `ContextSerializer`, which signs it with a `Signing\ContextSigner` (`HmacContextSigner`, `UnsignedContext`) |
+| `MiniPaviService` | the `Controller` and `Page` interfaces, the `MiniPaviServiceException` every error of the framework implements (see [Errors](#errors)), and the `InvalidValueException` of a value the framework can't take (e.g. a `Position` off the screen) |
+| `Core\` | the runtime: `Service` and its `Sessions`, `RequestFlow`, `RequestServer`; in `Routing\`, the `Router` (built by `RouterBuilder`), its `Route`s and the `RouteContext` each keeps, `UnknownRouteException`; in `Context\`, the user's `Context`, its `KeptRoute`s and its `ContextSerializer`, which signs it with a `Signing\ContextSigner` (`HmacContextSigner`, `UnsignedContext`), and the `UnreadableContextException` and `Signing\ForgedContextException` of a context it can't restore |
 | `Controller\` | `AbstractController`, `Request`, `Response` and the response types, `Flow`, the states (`State`, `ControllerState`) |
 | `Controller\Parameters\` | what a controller keeps: `Parameters`, `NoParameters`, their `ParametersType` (what `Controller::parametersType()` returns), and the raw `Values` they are read from |
 | `Controller\Pagination\` | `PaginatedController`, the `PaginatedList` it shows and its `ShownPage`, `Paginator`, `PageParameters`, `OpeningPage` |
@@ -180,7 +180,8 @@ KernelBuilder::for($router, $messages)
   **`Core\Context\Signing\ContextSigner`** (that of a connection, a disconnection or a
   background call isn't read, so it isn't checked). **`HmacContextSigner`** signs it with an
   HMAC-SHA256 of a secret key (`<signature>.<context>`), **`UnsignedContext`** doesn't. A context
-  the signer didn't sign (`ForgedContextException`) is responded to as one that can't be read.
+  the signer didn't sign (`ForgedContextException`) is responded to as one that can't be read
+  (`UnreadableContextException`: not a JSON object).
   Keep the key out of the repository: the services read it from the environment,
   **`CONTEXT_SECRET`** (`openssl rand -base64 32`), and don't sign the context without it, with
   a warning. Changing the key makes the users of sessions in progress start again at the
@@ -552,6 +553,34 @@ KernelBuilder::for($router, $messages)
   code that does something different for each kind of key implements a `KeyHandler`, rather
   than asking the key which kind it is.
 
+### Errors
+
+Every error of the framework implements **`MiniPaviService\MiniPaviServiceException`** (a
+`\Throwable`): a service catches them in one place, or each by its type, which keeps its SPL
+parent.
+
+| Exception | Is a | For |
+|---|---|---|
+| `InvalidValueException` | `\InvalidArgumentException` | a value the framework can't take: a `Position` off the screen, a `Paginator` with a negative item count or no item per page, an empty `HmacContextSigner` key, a `SERVICE_URL` or `TRUSTED_PROXIES` that `RequestUrl` can't read, a font file that `KernelBuilder::withFont()` or `HtmlRenderer::style()` can't read, parameters the context can't write (text that isn't UTF-8)... |
+| `Page\Building\PageXmlException` | `\RuntimeException` | a page file missing, or invalid, with its file and line (see [Page XML format](#page-xml-format)) |
+| `Page\Template\TemplateException` | `\RuntimeException` | a template that can't be displayed with its data, with its file and line |
+| `Message\MessagesException` | `\RuntimeException` | a messages file that can't be read, messages without text, or a message that can't be shown with its variables, naming it (see [Messages](#messages)) |
+| `Core\Routing\UnknownRouteException` | `\Exception` | a route the router doesn't have: a context at a route removed, or a controller going to it |
+| `Core\Context\UnreadableContextException` | `\RuntimeException` | a context that isn't a JSON object |
+| `Core\Context\Signing\ForgedContextException` | `\RuntimeException` | a context the signer didn't sign |
+
+A mistake in the service's code that the framework finds is a `\LogicException`, not one of
+these: it is fixed in the code, not caught. It is found at boot for two display elements of
+the same tag, or of a tag of the page format (`PageXmlParser`), and a default route that isn't
+a route (`RouterBuilder::build()`); and when run for a controller keeping a state or
+parameters of another type than it declares, too many page changes in one request, a request
+that didn't go through `WithUrls`, a response sent once output has started
+(`ResponseEmitter`), or a `ServiceTester` without PHPUnit. An exception of the service's own
+code (a controller, an `ElementBuilder`, a variable's `__toString()`) goes through as it is.
+Serving a request, `Service` catches them all, logs them and responds with an error (see
+`Service` above); the errors of the [command line](#command-line) are shown by Symfony
+Console.
+
 ## Testing a service
 
 `Testing\ServiceTester` scripts a session of a user against a `Service`, without the gateway,
@@ -641,7 +670,7 @@ in a messages file or a page's `<message>`, an error of the file with its line
 (`MessagesException`, `PageXmlException`), which `minipavi lint` reports; in texts given in
 code (`new Messages([...])`, `with([...])`), a `MessagesException` naming the message, when
 they are built. A message without text, or a placeholder without its variable or whose value
-isn't text (an array, an object without `__toString()`), is a `LogicException` naming the
+isn't text (an array, an object without `__toString()`), is a `MessagesException` naming the
 message, when it is shown; a messages file that can't be read is a `MessagesException` with
 the file and line. `schema/messages.xsd` describes messages files.
 
