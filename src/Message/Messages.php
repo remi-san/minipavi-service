@@ -56,10 +56,7 @@ final readonly class Messages
 
         try {
             // Unlike in a page, it would be left in the text: a mistake in the message
-            $malformed = Placeholders::malformed($text);
-            if ($malformed !== null) {
-                throw new InvalidValueException("{$malformed} is not a placeholder");
-            }
+            Placeholders::check($text);
 
             return (new Placeholders($variables))->substitute($text);
         } catch (InvalidValueException $e) {

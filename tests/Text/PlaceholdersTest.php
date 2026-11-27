@@ -140,9 +140,16 @@ final class PlaceholdersTest extends TestCase
     }
 
     #[DataProvider('texts')]
-    public function testFindsTheFirstMalformedPlaceholder(string $text, ?string $malformed): void
+    public function testCheckNamesTheFirstMalformedPlaceholder(string $text, ?string $malformed): void
     {
-        self::assertSame($malformed, Placeholders::malformed($text));
+        try {
+            Placeholders::check($text);
+        } catch (InvalidValueException $e) {
+            self::assertSame("{$malformed} is not a placeholder", $e->getMessage());
+
+            return;
+        }
+        self::assertNull($malformed, 'A malformed placeholder was accepted');
     }
 
     public function testLeavesMalformedPlaceholdersAsTheyAre(): void
