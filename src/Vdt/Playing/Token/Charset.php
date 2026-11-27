@@ -9,7 +9,7 @@ use MiniPaviService\Vdt\Screen\Cursor;
 
 /**
  * SO (mosaic, G1) or SI (text, G0): the character set of what the cursor draws next
- * (Cursor::setCharset())
+ * (Cursor::switchCharset())
  *
  * @internal
  */
@@ -26,6 +26,6 @@ final readonly class Charset extends ErasingNothing
 
     public function playOn(Cursor $cursor, Pen $pen): void
     {
-        $cursor->setCharset($this->byte);
+        $cursor->switchCharset($this->byte);
     }
 }

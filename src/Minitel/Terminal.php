@@ -14,19 +14,18 @@ final readonly class Terminal
     private const OTHER = 'other';
     private const UNKNOWN_VERSION = '???';
 
+    /**
+     * @param string $remoteAddr IP of the user, or "CALLFROM xxxx" when calling by phone
+     * @param ?string $typeSocket how the user connects (typesocket), read by isAdapter() and
+     *                            isTelnetOrPhone()
+     * @param ?string $versionMinitel the Minitel's version (versionminitel), read by
+     *                                isAdapter()
+     */
     public function __construct(
-        private string $remoteAddr = '',
+        public string $remoteAddr = '',
         private ?string $typeSocket = null,
         private ?string $versionMinitel = null,
     ) {}
-
-    /**
-     * IP of the user, or "CALLFROM xxxx" when calling by phone
-     */
-    public function remoteAddr(): string
-    {
-        return $this->remoteAddr;
-    }
 
     /**
      * Whether the user connects through an ESP32 or Minimit adapter: a websocket with a known

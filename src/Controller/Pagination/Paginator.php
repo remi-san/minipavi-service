@@ -5,26 +5,30 @@ declare(strict_types=1);
 namespace MiniPaviService\Controller\Pagination;
 
 /**
- * A page of items shown limit() at a time: which items it holds (offset(), limit(), slice()),
+ * A page of items shown $perPage at a time: which items it holds (offset(), $perPage, slice()),
  * where it is among the pages (number(), pageCount(), isFirst(), isLast()), and the pages
  * around it (next(), previous()). There is always one page at least, empty if there are no
  * items. Immutable.
  */
 final readonly class Paginator
 {
-    private int $index;
+    /**
+     * Index of the page, from 0 (what PageParameters keeps), within the pages
+     */
+    public int $index;
 
     /**
-     * @param int $itemCount number of items, on all the pages
-     * @param int $perPage number of items per page
+     * @param int $itemCount number of items, on all the pages (also in toArray())
+     * @param int $perPage number of items per page: how many to retrieve for the page, from
+     *                     offset() (also in toArray())
      * @param int $index index of the page (from 0), kept within the pages (e.g. the items got
      *                   fewer since it was kept)
      *
      * @throws \InvalidArgumentException for a negative item count, or less than one item per page
      */
     public function __construct(
-        private int $itemCount,
-        private int $perPage,
+        public int $itemCount,
+        public int $perPage,
         int $index,
     ) {
         if ($itemCount < 0) {
@@ -37,27 +41,11 @@ final readonly class Paginator
     }
 
     /**
-     * Number of items, on all the pages (also in toArray())
-     */
-    public function itemCount(): int
-    {
-        return $this->itemCount;
-    }
-
-    /**
      * Number of pages: 1 at least
      */
     public function pageCount(): int
     {
         return max(1, intdiv($this->itemCount + $this->perPage - 1, $this->perPage));
-    }
-
-    /**
-     * Index of the page, from 0 (what PageParameters keeps)
-     */
-    public function index(): int
-    {
-        return $this->index;
     }
 
     /**
@@ -77,16 +65,7 @@ final readonly class Paginator
     }
 
     /**
-     * Number of items to retrieve for the page, from offset(): the number per page (also in
-     * toArray())
-     */
-    public function limit(): int
-    {
-        return $this->perPage;
-    }
-
-    /**
-     * Number of items on the page: limit(), fewer on the last one
+     * Number of items on the page: $perPage, fewer on the last one
      */
     public function itemCountOnPage(): int
     {
@@ -144,7 +123,7 @@ final readonly class Paginator
     }
 
     /**
-     * The items of the page, from all the items (a list of itemCount() items)
+     * The items of the page, from all the items (a list of $itemCount items)
      *
      * @template T
      *
@@ -154,7 +133,7 @@ final readonly class Paginator
      */
     public function slice(array $items): array
     {
-        return \array_slice($items, $this->offset(), $this->limit());
+        return \array_slice($items, $this->offset(), $this->perPage);
     }
 
     /**

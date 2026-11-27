@@ -13,7 +13,7 @@ use MiniPaviService\Vdt\Screen\Zone;
  * or inverse video (AttributeReader reads it from its byte). It knows what it does on the
  * screen: where the Minitel discards it (appliesOn(), appliesInMosaic()), whether it waits
  * for a delimiter (waitsIn(), waitingIn()), and how it changes the character attributes
- * (appliedTo()). Cursor::setAttribute() asks it each.
+ * (appliedTo()). Cursor::receive() asks it each.
  */
 interface Attribute
 {

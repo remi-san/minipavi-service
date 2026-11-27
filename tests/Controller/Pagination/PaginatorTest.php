@@ -33,11 +33,11 @@ final class PaginatorTest extends TestCase
     {
         $paginator = new Paginator(10, 4, 1);
 
-        self::assertSame(10, $paginator->itemCount());
-        self::assertSame(1, $paginator->index());
+        self::assertSame(10, $paginator->itemCount);
+        self::assertSame(1, $paginator->index);
         self::assertSame(2, $paginator->number());
         self::assertSame(4, $paginator->offset());
-        self::assertSame(4, $paginator->limit());
+        self::assertSame(4, $paginator->perPage);
         self::assertSame(4, $paginator->itemCountOnPage());
         self::assertSame([5, 8], [$paginator->firstItem(), $paginator->lastItem()]);
     }
@@ -66,9 +66,9 @@ final class PaginatorTest extends TestCase
     public function testIndexIsKeptWithinThePages(): void
     {
         // E.g. kept when there were more items
-        self::assertSame(2, (new Paginator(10, 4, 9))->index());
-        self::assertSame(0, (new Paginator(10, 4, -1))->index());
-        self::assertSame(0, (new Paginator(10, 4, 0))->at(-3)->index());
+        self::assertSame(2, (new Paginator(10, 4, 9))->index);
+        self::assertSame(0, (new Paginator(10, 4, -1))->index);
+        self::assertSame(0, (new Paginator(10, 4, 0))->at(-3)->index);
     }
 
     public function testMovesBetweenPages(): void
@@ -79,11 +79,11 @@ final class PaginatorTest extends TestCase
         self::assertFalse($first->isLast());
         self::assertNull($first->previous());
         $last = $first->next()?->next();
-        self::assertSame(2, $last?->index());
+        self::assertSame(2, $last?->index);
         self::assertTrue($last->isLast());
         self::assertNull($last->next());
-        self::assertSame(1, $last->previous()?->index());
-        self::assertSame(1, $first->at(1)->index());
+        self::assertSame(1, $last->previous()?->index);
+        self::assertSame(1, $first->at(1)->index);
     }
 
     public function testSlicesThePageOutOfTheItems(): void

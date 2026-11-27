@@ -26,7 +26,7 @@ final readonly class ShownPage
         private Page $page,
         private PaginatedList $list,
         private Request $request,
-        public Paginator $paginator,
+        private Paginator $paginator,
     ) {}
 
     /**
@@ -38,7 +38,7 @@ final readonly class ShownPage
     {
         $data = $this->paginator->toArray() + $this->list->pageData($this->paginator);
 
-        return $this->stay($this->page->display($this->request->terminal(), $data));
+        return $this->stay($this->page->display($this->request->terminal, $data));
     }
 
     /**
@@ -48,11 +48,16 @@ final readonly class ShownPage
      */
     public function stay(Vdt $vdt = new Vdt()): Response
     {
-        return RunCommand::readInput(
-            $vdt,
-            $this->page->inputCommand(),
-            parameters: new PageParameters($this->paginator->index()),
-        );
+        return RunCommand::readInput($vdt, $this->page->inputCommand(), parameters: $this->parameters());
+    }
+
+    /**
+     * Parameters keeping this page: for a response leaving the list (e.g.
+     * RunCommand::connectTo()) to come back to it at this page
+     */
+    public function parameters(): PageParameters
+    {
+        return new PageParameters($this->paginator->index);
     }
 
     /**

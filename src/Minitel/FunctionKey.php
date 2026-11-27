@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace MiniPaviService\Minitel;
 
 /**
- * Function keys of the Minitel, by the name the gateway sends (Request::key()), with their
+ * Function keys of the Minitel, by the name the gateway sends (Request::$key), with their
  * mask in input commands (MSK_* of MiniPaviCli) and their name in the page XML format
  * (validwith="envoi suite")
  */
