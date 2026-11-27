@@ -6,7 +6,7 @@ namespace MiniPaviService\Page\Parser\Tag;
 
 /**
  * <message name="...">: a message of the service the page redefines, only at its top level.
- * Its text is read with the page's messages (PageXmlParser), before the display: no node.
+ * Its text is read with the page's messages (PageMessages), before the display: no node.
  */
 final readonly class MessageTagParser implements TagParser
 {

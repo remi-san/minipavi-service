@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace MiniPaviService\Page\Parser;
 
 /**
- * The type attribute of <page> (read by PageXmlParser, as its other attributes): what the
+ * The type attribute of <page> (read by PageSettings, as its other attributes): what the
  * page may hold
  */
 enum PageType: string

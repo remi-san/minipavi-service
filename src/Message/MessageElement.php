@@ -10,7 +10,7 @@ use MiniPaviService\Xml\XmlException;
 
 /**
  * A <message name="...">text</message> of an XML file: of a messages file
- * (MessagesXmlParser), or of a page redefining a message for itself (PageXmlParser)
+ * (MessagesXmlParser), or of a page redefining a message for itself (PageMessages)
  *
  * @internal
  */
