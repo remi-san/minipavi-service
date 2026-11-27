@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace MiniPaviService\Tests\Vdt\Screen;
+namespace MiniPaviService\Tests\Client\Html;
 
+use MiniPaviService\Client\Html\HtmlRenderer;
 use MiniPaviService\Minitel\Color;
 use MiniPaviService\Minitel\Position;
 use MiniPaviService\Minitel\ScreenSize;
 use MiniPaviService\Minitel\Terminal;
 use MiniPaviService\Page\Display\Key;
 use MiniPaviService\Tests\Support\MemoryFiles;
-use MiniPaviService\Vdt\Screen\HtmlRenderer;
 use MiniPaviService\Vdt\Screen\Screen;
 use MiniPaviService\Vdt\Vdt;
 use PHPUnit\Framework\Attributes\DataProvider;

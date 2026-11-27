@@ -49,9 +49,10 @@ no-ini-set = { exclude = ["tests/Support/ExhaustedBacktrackLimit.php"] }
 
 # Layers of src/, each using only those below it (mago guard, in composer analyse). At the
 # bottom, the helpers; then Minitel (the terminal's facts) <- Vdt (Videotex, and the screen it
-# draws) <- Gateway (what MiniPavi sends and is sent); Message (texts) beside them; Page
-# (presentation) <- Controller <- Core (routing, context, service) <- Http; Client (how commands
-# reach the gateway) <- Http; Cli and Testing at the top. Page, Core, Gateway and Client are
+# draws, as a model: Client\Html draws it in HTML) <- Gateway (what MiniPavi sends and is
+# sent); Message (texts) beside them; Page (presentation) <- Controller <- Core (routing,
+# context, service) <- Http; Client (how commands reach the gateway) <- Http; Cli and Testing
+# at the top. Page, Core, Gateway and Client are
 # layered inside too, each sub-namespace with a layer and a rule of its own (Vdt isn't: its
 # Playing, Screen and root use each other). Each rule lists all the layers its namespace may
 # use (its own, those below it, and theirs), and the libraries it uses.
@@ -126,7 +127,7 @@ permit = ["@native", "@layer:helpers", "@layer:minitel"]
 
 [[guard.perimeter.rules]]
 namespace = "MiniPaviService\\Vdt\\"
-permit = ["@native", "@layer:helpers", "@layer:minitel", "@layer:vdt"]
+permit = ["@native", "MiniPaviService\\InvalidValueException", "@layer:minitel", "@layer:vdt"]
 
 [[guard.perimeter.rules]]
 namespace = "MiniPaviService\\Gateway\\Command\\"

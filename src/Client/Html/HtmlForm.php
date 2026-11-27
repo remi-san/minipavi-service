@@ -11,7 +11,6 @@ use MiniPaviService\Message\Messages;
 use MiniPaviService\Minitel\FunctionKey;
 use MiniPaviService\Minitel\Position;
 use MiniPaviService\Vdt\ClearScreens;
-use MiniPaviService\Vdt\Screen\HtmlRenderer;
 use MiniPaviService\Vdt\Screen\Screen;
 use MiniPaviService\Vdt\Vdt;
 use Psr\Http\Message\ServerRequestInterface;

@@ -6,6 +6,7 @@ namespace MiniPaviService\Http;
 
 use MiniPaviService\Client\Html\HtmlClient;
 use MiniPaviService\Client\Html\HtmlForm;
+use MiniPaviService\Client\Html\HtmlRenderer;
 use MiniPaviService\Client\MiniPavi\MiniPaviClient;
 use MiniPaviService\Client\MiniPavi\MiniPaviCliGateway;
 use MiniPaviService\Core\Context\ContextSerializer;
@@ -27,7 +28,6 @@ use MiniPaviService\InvalidValueException;
 use MiniPaviService\Message\Messages;
 use MiniPaviService\Message\MessagesException;
 use MiniPaviService\Message\MessagesXmlParser;
-use MiniPaviService\Vdt\Screen\HtmlRenderer;
 use Nyholm\Psr7\Factory\Psr17Factory;
 use Nyholm\Psr7Server\ServerRequestCreator;
 use Psr\Http\Server\RequestHandlerInterface;

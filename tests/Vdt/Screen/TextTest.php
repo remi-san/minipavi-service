@@ -254,7 +254,7 @@ final class TextTest extends TestCase
 
     /**
      * MiniPavi's emulator prints the error character (SUB) as 0x7F, as the preview draws it
-     * (HtmlRenderer): a full block in text, all six pixels in mosaic
+     * (Client\Html\HtmlRenderer): a full block in text, all six pixels in mosaic
      */
     public function testErrorCharacterIsAFullBlockInTheText(): void
     {

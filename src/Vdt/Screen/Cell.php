@@ -49,7 +49,7 @@ final readonly class Cell
     /**
      * The bytes of the character the Minitel shows: the cell's, but for the error character
      * (SUB), shown as 0x7F, as MiniPavi's emulator prints it (a full block in text, all six
-     * pixels in mosaic). text() reads them, and HtmlRenderer draws them
+     * pixels in mosaic). text() reads them, and Client\Html\HtmlRenderer draws them
      */
     public function shownBytes(): string
     {

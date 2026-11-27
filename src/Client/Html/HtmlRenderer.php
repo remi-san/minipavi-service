@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace MiniPaviService\Vdt\Screen;
+namespace MiniPaviService\Client\Html;
 
 use MiniPaviService\Html\Html;
 use MiniPaviService\Io\FileReader;
@@ -10,6 +10,10 @@ use MiniPaviService\Io\Files;
 use MiniPaviService\Minitel\Color;
 use MiniPaviService\Minitel\Position;
 use MiniPaviService\Minitel\ScreenSize;
+use MiniPaviService\Vdt\Screen\Attributes;
+use MiniPaviService\Vdt\Screen\Cell;
+use MiniPaviService\Vdt\Screen\G0Characters;
+use MiniPaviService\Vdt\Screen\Screen;
 
 /**
  * Draws a Screen in HTML, as the Minitel would show it (checked against MiniPavi's emulator):
@@ -29,7 +33,7 @@ use MiniPaviService\Minitel\ScreenSize;
  * it (Part), on that cell's background (e.g. a tall character's top half on the zone of the
  * row above), and a double-width one in the last column its left half only. No JavaScript.
  *
- * It draws the screen only: the page around it (e.g. Client\HtmlForm's) puts render() in its
+ * It draws the screen only: the page around it (e.g. HtmlForm's) puts render() in its
  * body, and style() in its <style>. style() sets, for the whole page, --w and --h, the size
  * of a cell, --pad, the screen's padding, and --font, the Minitel font at the cell's size
  * (e.g. for the page's other controls); place() gives all the geometry of an element over the
