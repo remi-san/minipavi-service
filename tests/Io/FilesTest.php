@@ -48,4 +48,85 @@ final class FilesTest extends TestCase
             restore_error_handler();
         }
     }
+
+    public function testFindsTheFilesWithTheExtensionOfAFolderAndItsSubfoldersInOrder(): void
+    {
+        $dir = self::folder();
+        try {
+            // Written out of order: a folder lists its files in no particular order
+            foreach (['sub/d.xml', 'b.xml', 'sub/MENU.XML', 'a.xml', 'notes.txt', 'c.xmlx'] as $file) {
+                file_put_contents("{$dir}/{$file}", data: 'x');
+            }
+
+            self::assertSame(
+                ["{$dir}/a.xml", "{$dir}/b.xml", "{$dir}/sub/MENU.XML", "{$dir}/sub/d.xml"],
+                (new Files())->find($dir, extension: 'xml'),
+            );
+        } finally {
+            self::remove($dir);
+        }
+    }
+
+    public function testFindsAFileWhateverItsExtension(): void
+    {
+        $dir = self::folder();
+        try {
+            file_put_contents("{$dir}/notes.txt", data: 'x');
+
+            self::assertSame(["{$dir}/notes.txt"], (new Files())->find("{$dir}/notes.txt", extension: 'xml'));
+        } finally {
+            self::remove($dir);
+        }
+    }
+
+    public function testSkipsALinkToAFolder(): void
+    {
+        $dir = self::folder();
+        try {
+            file_put_contents("{$dir}/sub/home.xml", data: 'x');
+            symlink("{$dir}/sub", "{$dir}/archive.xml");
+
+            self::assertSame(["{$dir}/sub/home.xml"], (new Files())->find($dir, extension: 'xml'));
+        } finally {
+            self::remove($dir);
+        }
+    }
+
+    public function testFindsNothingAtAMissingPath(): void
+    {
+        self::assertNull((new Files())->find(
+            sys_get_temp_dir() . '/missing-' . bin2hex(random_bytes(4)),
+            extension: 'xml',
+        ));
+    }
+
+    /**
+     * A new folder, with a subfolder "sub"
+     */
+    private static function folder(): string
+    {
+        $dir = sys_get_temp_dir() . '/files-' . bin2hex(random_bytes(4));
+        mkdir("{$dir}/sub", permissions: 0o777, recursive: true);
+
+        return $dir;
+    }
+
+    /**
+     * Removes the folder and what it holds, links without what they point to
+     */
+    private static function remove(string $dir): void
+    {
+        $files = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator($dir, \FilesystemIterator::SKIP_DOTS),
+            \RecursiveIteratorIterator::CHILD_FIRST,
+        );
+        foreach ($files as $file) {
+            if (!$file instanceof \SplFileInfo) {
+                continue;
+            }
+
+            $file->isDir() && !$file->isLink() ? rmdir($file->getPathname()) : unlink($file->getPathname());
+        }
+        rmdir($dir);
+    }
 }
