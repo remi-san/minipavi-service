@@ -15,6 +15,7 @@ use MiniPaviService\Page\Parser\ElementFactory;
 use MiniPaviService\Page\Parser\PageFiles;
 use MiniPaviService\Page\Parser\PageXmlParser;
 use MiniPaviService\Page\Parser\StandardElements;
+use MiniPaviService\Tests\Support\ParsedPages;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
@@ -26,8 +27,6 @@ use PHPUnit\Framework\TestCase;
 final class PageXsdTest extends TestCase
 {
     private const SCHEMA = __DIR__ . '/../../../schema/page.xsd';
-
-    private const FIXTURES = __DIR__ . '/../../fixtures/pages';
 
     // Invalid pages of InvalidPagesTest that XML Schema 1.0 can't tell from valid ones
     // (listed in the comment of page.xsd): only the parser refuses them
@@ -111,14 +110,14 @@ final class PageXsdTest extends TestCase
     #[DataProvider('validPages')]
     public function testPageReadByTheParserIsValid(string $xml): void
     {
-        (new PageXmlParser((new MessagesXmlParser())->defaults()))->parse($xml, self::FIXTURES);
+        (new PageXmlParser((new MessagesXmlParser())->defaults()))->parse($xml, ParsedPages::FOLDER);
 
         self::assertSame([], self::errors($xml));
     }
 
     public function testFixturePagesAreValid(): void
     {
-        $files = glob(self::FIXTURES . '/*.xml');
+        $files = glob(ParsedPages::FOLDER . '/*.xml');
         $files = $files === false ? [] : $files;
         self::assertNotEmpty($files);
         foreach ($files as $file) {
