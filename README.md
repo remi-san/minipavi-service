@@ -218,6 +218,21 @@ KernelBuilder::for($router, $messages)
     Minitel font of [Minitel-Canvas](https://github.com/Zigazou/Minitel-Canvas) (CC0, in
     `resources/fonts`), embedded in the page (`HtmlRenderer::MINITEL_FONT`, read for each
     page only: the gateway's requests don't need it).
+
+    **`HtmlRenderer`** draws the screen: `render($screen, $overlay)` is the screen in HTML (a
+    `<div class="minitel">`, with `$overlay` over it), `style()` its CSS (the cell size in
+    `--w`, `--h`, the Minitel font in `--font`) with the font embedded, and
+    `place($position, $length)` the style placing an element over a cell, with all of its geometry (position,
+    size, its border included, and stacking above the screen), so the element's own style only
+    says how it looks (it is inline, so it takes over the element's own `position`, `height`,
+    `box-sizing` and `z-index`); the page around it is `HtmlForm`'s. Each cell takes one column
+    and one row, as in MiniPavi's emulator: a character bigger than a cell (double width,
+    height or size) is drawn at its size in each cell it covers, which shows its part of it on
+    that cell's own background (a tall character's top half on the zone of the row above), and
+    a double-width character in column 40 shows its left half only. In text, the G0 characters
+    `0x60`, `0x7B`, `0x7D` and `0x7E`, which the Minitel font doesn't have, are drawn as the
+    emulator draws them: a line across the middle of the cell, down its left or right edge, or
+    across its top (#143).
 - **`EmulatorRedirect`** sends other browsers to an emulator that opens the service
   (`EmulatorConfig`): with an emulator configured (`EMULATOR_URL`, the local stack), that
   emulator and the gateway `GATEWAY_URL`, which reaches the service at
@@ -909,20 +924,6 @@ echo Screen::of($moved)->preview();              // the screen, as text
 - **`ClearScreens`**: `removed($vdt)` is the same content without its clear screens (FF), to
   draw it over other content, and `fromLast($vdt)` the content from its last one, what still
   shows.
-- **`Client\Html\HtmlRenderer::render($screen, $overlay)`**: the screen in HTML (a `<div class="minitel">`,
-  with `$overlay` over it), `style()` its CSS (the cell size in `--w`, `--h`, the Minitel font
-  in `--font`) with the font embedded, and `place($position, $length)` the style placing an
-  element over a cell, with all of its geometry (position, size, its border included, and
-  stacking above the screen), so the element's own style only says how it looks (it
-  is inline, so it takes over the element's own `position`, `height`, `box-sizing` and
-  `z-index`); the page around it is the HTML client's (`Client\Html\HtmlForm`, see
-  `HtmlClient` above). Each cell takes one column and one row, as in MiniPavi's emulator: a
-  character bigger than a cell (double width, height or size) is drawn at its size in each
-  cell it covers, which shows its part of it on that cell's own background (a tall
-  character's top half on the zone of the row above), and a double-width character in
-  column 40 shows its left half only. In text, the G0 characters `0x60`, `0x7B`, `0x7D` and
-  `0x7E`, which the Minitel font doesn't have, are drawn as the emulator draws them: a line
-  across the middle of the cell, down its left or right edge, or across its top (#143).
 - **`Screen::of($vdt)`**: the `Screen` drawn by the content: a `Cell` (character,
   attributes, and the `Part` of the character the cell shows) or `null` per row and column.
   `line($row)` and `text()` give the text of a row and of the screen, G2 characters decoded
