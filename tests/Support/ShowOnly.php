@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Tests\Support;
 
-use MiniPaviService\Controller\ControllerState;
 use MiniPaviService\Controller\Flow;
 use MiniPaviService\Controller\Response;
 use MiniPaviService\Gateway\GatewayResponse;
@@ -12,9 +11,10 @@ use MiniPaviService\Vdt\Vdt;
 
 /**
  * A response of a service's own, implementing Response rather than extending a framework
- * class: shows vdt, keeping nothing (the controller keeps what it had)
+ * class: shows vdt, keeping nothing (the controller keeps what it had), so a
+ * response of any controller
  *
- * @implements Response<ControllerState>
+ * @implements Response<never>
  */
 final readonly class ShowOnly implements Response
 {
