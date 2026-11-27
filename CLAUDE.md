@@ -171,7 +171,7 @@ Say in the PR which of these checks were run, and which weren't.
   through methods, as an interface does. A value a class only reads to derive others stays
   private (`Terminal`'s socket type, behind `isAdapter()`), as does a hidden representation:
   that of a class built only through its named constructors and withers (`Attributes`,
-  `Zone`, read through `is*()`), or of a value read only as a whole (`Vdt`, through
+  `Zone`, read through methods: `is*()`, `background()`...), or of a value read only as a whole (`Vdt`, through
   `toString()`). Two exceptions to "no method that only returns a property": a boolean flag
   may be shown as `is*()` (`Part::isRight()`), and a method an interface declares stays a
   method (`StaticContent::display()`, `ClientExchange::request()`).
