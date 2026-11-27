@@ -6,6 +6,8 @@
 			the texts shown on the Minitel, by name. They redefine the framework's
 			(config/messages.xml), and pages redefine them with their own message elements.
 			Duplicate names are refused by the parser, and by this schema.
+			A {{...}} that isn't a placeholder (e.g. {{1}}) in a text is refused by the parser only:
+			this schema can't express it.
 		</xs:documentation>
 	</xs:annotation>
 
