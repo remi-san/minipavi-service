@@ -7,9 +7,9 @@ namespace MiniPaviService\Vdt\Screen;
 use MiniPaviService\Minitel\Color;
 use MiniPaviService\Vdt\Screen\Attribute\Attribute;
 use MiniPaviService\Vdt\Screen\Attribute\BackgroundColor;
+use MiniPaviService\Vdt\Screen\Attribute\Charset;
 use MiniPaviService\Vdt\Screen\Attribute\Masking;
 use MiniPaviService\Vdt\Screen\Attribute\Underlining;
-use MiniPaviService\Vdt\Videotex;
 
 /**
  * The zone attributes, as the Minitel keeps them (MiniPavi's emulator, decoder.js, #28, #30):
@@ -81,12 +81,10 @@ final readonly class Zone
     /**
      * After SO (mosaic) or SI (text): SO ends the underlined zone, and applies the waiting
      * background colour (attributesAfter()); what else waits still does
-     *
-     * @param string $byte SI or SO
      */
-    public function withCharset(string $byte): self
+    public function withCharset(Charset $charset): self
     {
-        if ($byte !== Videotex::MOSAIC_SET) {
+        if ($charset !== Charset::Mosaic) {
             return $this;
         }
 
@@ -104,12 +102,11 @@ final readonly class Zone
      * The character attributes after SO or SI: SO applies the background colour waiting, if
      * one is (setCharType())
      *
-     * @param string     $byte       SI or SO
      * @param Attributes $attributes the attributes SO or SI sets (Attributes::withCharset())
      */
-    public function attributesAfter(string $byte, Attributes $attributes): Attributes
+    public function attributesAfter(Charset $charset, Attributes $attributes): Attributes
     {
-        if ($byte !== Videotex::MOSAIC_SET || $this->waitingBackground === null) {
+        if ($charset !== Charset::Mosaic || $this->waitingBackground === null) {
             return $attributes;
         }
 

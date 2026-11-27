@@ -9,6 +9,7 @@ use MiniPaviService\Vdt\Screen\Attribute\AttributeReader;
 use MiniPaviService\Vdt\Screen\Attribute\BackgroundColor;
 use MiniPaviService\Vdt\Screen\Attribute\Blinking;
 use MiniPaviService\Vdt\Screen\Attribute\CharacterSize;
+use MiniPaviService\Vdt\Screen\Attribute\Charset;
 use MiniPaviService\Vdt\Screen\Attribute\Inversion;
 use MiniPaviService\Vdt\Screen\Attribute\Masking;
 use MiniPaviService\Vdt\Screen\Attribute\TextColor;
@@ -140,5 +141,24 @@ final class AttributeTest extends TestCase
             ],
             $sizes,
         );
+    }
+
+    /**
+     * SI and SO are the codes of the text and mosaic character sets; the Minitel starts in
+     * text, and each sets the attributes in its own
+     */
+    public function testEachCharsetIsSetByItsCode(): void
+    {
+        $defaults = Attributes::defaults();
+        $mosaic = $defaults->withCharset(Charset::Mosaic);
+
+        self::assertSame("\x0F", Charset::Text->code());
+        self::assertSame("\x0E", Charset::Mosaic->code());
+        self::assertSame(Charset::Text, $defaults->charset());
+        self::assertFalse($defaults->isMosaic());
+        self::assertSame(Charset::Mosaic, $mosaic->charset());
+        self::assertTrue($mosaic->isMosaic());
+        self::assertSame(Charset::Text, $mosaic->withCharset(Charset::Text)->charset());
+        self::assertFalse($mosaic->withCharset(Charset::Text)->isMosaic());
     }
 }

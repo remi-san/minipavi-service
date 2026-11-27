@@ -8,6 +8,7 @@ use MiniPaviService\Minitel\Color;
 use MiniPaviService\Vdt\Screen\Attribute\BackgroundColor;
 use MiniPaviService\Vdt\Screen\Attribute\Blinking;
 use MiniPaviService\Vdt\Screen\Attribute\CharacterSize;
+use MiniPaviService\Vdt\Screen\Attribute\Charset;
 use MiniPaviService\Vdt\Screen\Attribute\Inversion;
 use MiniPaviService\Vdt\Screen\Attribute\Masking;
 use MiniPaviService\Vdt\Screen\Attribute\TextColor;
@@ -39,9 +40,9 @@ final class Videotex
     public const REPEAT = "\x12";
     // Most repetitions one REP gives: its count, 0x40 + n, stays a 7-bit byte (0x7F)
     public const MAX_REPEAT = 0x3F;
-    // SI and SO: the text (G0) and mosaic (G1) character sets
-    public const TEXT_SET = "\x0F";
-    public const MOSAIC_SET = "\x0E";
+    // SI and SO: the text (G0) and mosaic (G1) character sets (Screen\Attribute\Charset)
+    public const TEXT_SET = Charset::Text->value;
+    public const MOSAIC_SET = Charset::Mosaic->value;
     // ESC: starts an attribute (ESC <byte>) or a protocol sequence
     public const ESC = "\x1B";
     // SS2: starts a G2 character (e.g. £, or an accent and its letter)

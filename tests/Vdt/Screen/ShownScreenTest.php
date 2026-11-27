@@ -6,10 +6,10 @@ namespace MiniPaviService\Tests\Vdt\Screen;
 
 use MiniPaviService\Minitel\Position;
 use MiniPaviService\Vdt\Screen\Attribute\CharacterSize;
+use MiniPaviService\Vdt\Screen\Attribute\Charset;
 use MiniPaviService\Vdt\Screen\Attributes;
 use MiniPaviService\Vdt\Screen\ShownScreen;
 use MiniPaviService\Vdt\Screen\Zone;
-use MiniPaviService\Vdt\Videotex;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -103,6 +103,6 @@ final class ShownScreenTest extends TestCase
 
     private static function mosaic(): Attributes
     {
-        return Attributes::defaults()->withCharset(Videotex::MOSAIC_SET);
+        return Attributes::defaults()->withCharset(Charset::Mosaic);
     }
 }

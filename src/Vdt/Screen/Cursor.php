@@ -6,6 +6,7 @@ namespace MiniPaviService\Vdt\Screen;
 
 use MiniPaviService\Minitel\ScreenSize;
 use MiniPaviService\Vdt\Screen\Attribute\Attribute;
+use MiniPaviService\Vdt\Screen\Attribute\Charset;
 
 /**
  * Cursor and attributes of a Minitel screen in page mode, as Videotex content moves them: the
@@ -105,16 +106,14 @@ final class Cursor
     }
 
     /**
-     * Switches to the character set of SI or SO (Attributes::withCharset()), for what the
-     * cursor draws next and for the zone; SO applies the background colour waiting
-     * (Zone::attributesAfter())
-     *
-     * @param string $byte SI (text) or SO (mosaic)
+     * Switches to this character set, text (SI) or mosaic (SO) (Attributes::withCharset()),
+     * for what the cursor draws next and for the zone; SO applies the background colour
+     * waiting (Zone::attributesAfter())
      */
-    public function switchCharset(string $byte): void
+    public function switchCharset(Charset $charset): void
     {
-        $this->attributes = $this->zone->attributesAfter($byte, $this->attributes->withCharset($byte));
-        $this->zone = $this->zone->withCharset($byte);
+        $this->attributes = $this->zone->attributesAfter($charset, $this->attributes->withCharset($charset));
+        $this->zone = $this->zone->withCharset($charset);
     }
 
     /**

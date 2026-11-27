@@ -20,6 +20,7 @@ use MiniPaviService\Vdt\Playing\Token\Raw;
 use MiniPaviService\Vdt\Playing\Token\Repeat;
 use MiniPaviService\Vdt\Playing\Token\Token;
 use MiniPaviService\Vdt\Screen\Attribute\AttributeReader;
+use MiniPaviService\Vdt\Screen\Attribute\Charset as ScreenCharset;
 use MiniPaviService\Vdt\Screen\G2Characters;
 use MiniPaviService\Vdt\Videotex;
 
@@ -61,8 +62,10 @@ final class Parser
                     $i++;
                     break;
                 case Videotex::MOSAIC_SET:
+                    $tokens[] = new Charset(ScreenCharset::Mosaic);
+                    break;
                 case Videotex::TEXT_SET:
-                    $tokens[] = new Charset($byte);
+                    $tokens[] = new Charset(ScreenCharset::Text);
                     break;
                 case Videotex::POSITION: // row, column as 0x40+n, or a row as 2 digits
                     $tokens[] = self::position($vdt, $i);
