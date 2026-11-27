@@ -9,6 +9,7 @@ use MiniPaviService\Message\MessagesXmlParser;
 use MiniPaviService\Minitel\Terminal;
 use MiniPaviService\Page\Parser\PageXmlParser;
 use MiniPaviService\Tests\Support\MemoryFiles;
+use MiniPaviService\Tests\Support\ParsedPages;
 use MiniPaviService\Vdt\Screen\Screen;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
@@ -18,17 +19,16 @@ use Symfony\Component\Console\Tester\CommandTester;
 
 final class PreviewCommandTest extends TestCase
 {
-    private const FIXTURES = __DIR__ . '/../fixtures/pages';
-
     private CommandTester $tester;
 
     public function testPrintsTheScreenOfAPage(): void
     {
-        $page = (new PageXmlParser((new MessagesXmlParser())->defaults()))->parseFile(self::FIXTURES . '/logo.xml');
+        $page = (new PageXmlParser((new MessagesXmlParser())->defaults()))->parseFile(ParsedPages::FOLDER
+        . '/logo.xml');
 
         self::assertSame(Command::SUCCESS, $this->preview([
-            'pages/logo.xml' => (string) file_get_contents(self::FIXTURES . '/logo.xml'),
-            'pages/images/logo.vdt' => (string) file_get_contents(self::FIXTURES . '/images/logo.vdt'),
+            'pages/logo.xml' => (string) file_get_contents(ParsedPages::FOLDER . '/logo.xml'),
+            'pages/images/logo.vdt' => (string) file_get_contents(ParsedPages::FOLDER . '/images/logo.vdt'),
         ], ['pages/logo.xml']));
         self::assertSame(Screen::of($page->display(new Terminal()))->preview(), $this->tester->getDisplay());
     }

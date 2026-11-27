@@ -7,6 +7,7 @@ namespace MiniPaviService\Tests\Cli;
 use MiniPaviService\Cli\VdtOffsetCommand;
 use MiniPaviService\Io\FileWriter;
 use MiniPaviService\Tests\Support\MemoryFiles;
+use MiniPaviService\Tests\Support\VdtFixtures;
 use MiniPaviService\Vdt\Offset;
 use MiniPaviService\Vdt\Screen\Screen;
 use MiniPaviService\Vdt\Vdt;
@@ -19,8 +20,6 @@ use Symfony\Component\Console\Tester\CommandTester;
 
 final class VdtOffsetCommandTest extends TestCase
 {
-    private const FIXTURES = __DIR__ . '/../fixtures/vdt';
-
     private MemoryFiles $files;
 
     private CommandTester $tester;
@@ -28,7 +27,7 @@ final class VdtOffsetCommandTest extends TestCase
     protected function setUp(): void
     {
         $this->files = new MemoryFiles([
-            'background.vdt' => (string) file_get_contents(self::FIXTURES . '/background.vdt'),
+            'background.vdt' => (string) file_get_contents(VdtFixtures::FOLDER . '/background.vdt'),
         ]);
         $this->tester = new CommandTester(new VdtOffsetCommand($this->files, $this->files));
     }
@@ -41,7 +40,7 @@ final class VdtOffsetCommandTest extends TestCase
             'y' => '-2',
         ]));
         self::assertSame(
-            (string) file_get_contents(self::FIXTURES . '/background.offset_8_-2.vdt'),
+            (string) file_get_contents(VdtFixtures::FOLDER . '/background.offset_8_-2.vdt'),
             $this->tester->getDisplay(),
         );
         self::assertSame([], $this->files->written);
@@ -56,7 +55,7 @@ final class VdtOffsetCommandTest extends TestCase
             'output' => 'moved.vdt',
         ]));
         self::assertSame(
-            ['moved.vdt' => (string) file_get_contents(self::FIXTURES . '/background.offset_8_-2.vdt')],
+            ['moved.vdt' => (string) file_get_contents(VdtFixtures::FOLDER . '/background.offset_8_-2.vdt')],
             $this->files->written,
         );
         self::assertSame('', $this->tester->getDisplay());
@@ -79,7 +78,7 @@ final class VdtOffsetCommandTest extends TestCase
 
     public function testPreviewsTheScreenBeforeAndAfter(): void
     {
-        $vdt = new Vdt((string) file_get_contents(self::FIXTURES . '/background.vdt'));
+        $vdt = VdtFixtures::content('background');
 
         self::assertSame(Command::SUCCESS, $this->tester->execute([
             'input' => 'background.vdt',
