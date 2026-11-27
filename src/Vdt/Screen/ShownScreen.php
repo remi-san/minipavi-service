@@ -22,11 +22,8 @@ final class ShownScreen
     private Zones $zones;
 
     /**
-     * @var array<int, array<int, ?array{int, int, bool}>> by row, then column (from 1), the
-     *                                                     row and column the text character
-     *                                                     a cell shows is drawn at, and
-     *                                                     whether it is a space; null if it
-     *                                                     shows a mosaic one
+     * @var array<int, array<int, ?ShownText>> by row, then column (from 1), the text character
+     *                                         a cell shows; null if it shows a mosaic one
      */
     private array $text = [];
 
@@ -46,7 +43,7 @@ final class ShownScreen
     {
         foreach (Zones::cells($row, $col, $width, $height) as [$cellRow, $cellCol]) {
             $text = $this->text[$cellRow][$cellCol] ?? null;
-            if ($text !== null && $text[2] && $text[0] === $row) {
+            if ($text !== null && $text->isSpace() && $text->row === $row) {
                 return true;
             }
         }
@@ -64,10 +61,8 @@ final class ShownScreen
      * the row below when it is the top half of a tall one; the row and column it is drawn at
      * (the column before first for a double-width one whose right half only is from first).
      * Null if none is, nor is any needed
-     *
-     * @return ?array{int, int, Zone} the row and column (not moved), and the zone
      */
-    public function restart(int $row, int $first, int $last): ?array
+    public function restart(int $row, int $first, int $last): ?ZoneRestart
     {
         $zone = $this->zones->before($row, $first);
         $alone = Zone::none();
@@ -75,8 +70,12 @@ final class ShownScreen
             $zone = $this->zones->after($zone, $row, $col);
             $alone = $this->zones->after($alone, $row, $col);
             $text = $this->text[$row][$col] ?? null;
-            if ($text !== null && ($text[2] || $text[1] < $first || $text[0] > $last) && !$zone->showsAs($alone)) {
-                return [$text[0], $text[1], $zone];
+            if (
+                $text !== null
+                && ($text->isSpace() || $text->col < $first || $text->row > $last)
+                && !$zone->showsAs($alone)
+            ) {
+                return new ZoneRestart($text->row, $text->col, $zone);
             }
         }
 
@@ -120,7 +119,7 @@ final class ShownScreen
      */
     private function cover(int $row, int $col, string $bytes, int $width, Attributes $attributes): void
     {
-        $text = $attributes->isMosaic() ? null : [$row, $col, $bytes === ' '];
+        $text = $attributes->isMosaic() ? null : new ShownText($row, $col, space: $bytes === ' ');
         foreach (Zones::cells($row, $col, $width, $attributes->height()) as [$cellRow, $cellCol]) {
             $this->text[$cellRow][$cellCol] = $text;
         }
@@ -136,7 +135,7 @@ final class ShownScreen
         $above = $row - 1;
 
         return (
-            ($this->text[$above][$col] ?? null) === $this->text[$row][$col]
+            ($this->text[$above][$col] ?? null)?->isSameAs($this->text[$row][$col]) === true
             && $this->zones->before($above, $col)->showsAs($zone)
         );
     }
