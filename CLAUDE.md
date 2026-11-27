@@ -162,6 +162,16 @@ Say in the PR which of these checks were run, and which weren't.
 
 - PHP 8.2+, PSR-4 under `src/`. Prefer `final` and `readonly` classes, enums over string
   constants, and typed parameters and returns.
+- **Public properties or methods.** A readonly class that only carries data (built from
+  values, with no collaborator, its methods only deriving from them: `Position`,
+  `InputField`, `Request`, `GatewayRequest`, the commands) shows each value it is built from
+  as a public readonly property, and what it derives as a method; it doesn't add a method
+  that only returns a property. A class with collaborators or mutable state (a controller,
+  `ShownPage`, `Cursor`, `Context`) keeps its properties private, and shows what it offers
+  through methods, as an interface does. A value a class only reads to derive others stays
+  private (`Terminal`'s socket type, behind `isAdapter()`), as does the representation of a
+  class built only through its named constructors and withers (`Attributes`, `Zone`, read
+  through `is*()`).
 - The style is Mago's formatter (PER Coding Style), with `declare(strict_types=1)`. Run
   `composer install` once, then `composer cs` before committing (`composer cs-fix` formats).
   Don't mix reformatting into a fix.
