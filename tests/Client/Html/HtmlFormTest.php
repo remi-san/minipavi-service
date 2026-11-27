@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MiniPaviService\Tests\Client\Html;
 
 use MiniPaviService\Client\Html\HtmlForm;
+use MiniPaviService\Client\Html\HtmlRenderer;
 use MiniPaviService\Gateway\Command\InputCommand;
 use MiniPaviService\Message\MessagesXmlParser;
 use MiniPaviService\Minitel\FunctionKey;
@@ -13,7 +14,6 @@ use MiniPaviService\Minitel\Position;
 use MiniPaviService\Minitel\Span;
 use MiniPaviService\Tests\Support\HttpRequests;
 use MiniPaviService\Tests\Support\MemoryFiles;
-use MiniPaviService\Vdt\Screen\HtmlRenderer;
 use MiniPaviService\Vdt\Screen\Screen;
 use MiniPaviService\Vdt\Vdt;
 use PHPUnit\Framework\Attributes\DataProvider;

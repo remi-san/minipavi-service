@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace MiniPaviService\Html;
+namespace MiniPaviService\Client\Html;
 
 /**
- * HTML of the framework's pages (the screen, HtmlRenderer, and the web client's page,
+ * HTML of the browser client's page (its screen, HtmlRenderer, and the page around it,
  * HtmlForm), escaped the same way
  *
  * @internal
