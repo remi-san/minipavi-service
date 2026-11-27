@@ -71,13 +71,16 @@ final class G2
     ];
 
     /**
-     * The text as Videotex: control characters, and the bytes MiniPaviCli takes as undefined
-     * (0x81, 0x8D, 0x8F, 0x90, 0x9D, even within a UTF-8 character), become spaces
+     * The text as Videotex: control characters become spaces, and so do the bytes MiniPaviCli
+     * takes as undefined (0x81, 0x8D, 0x8F, 0x90, 0x9D) left in a character it doesn't encode.
+     * MiniPaviCli replaces those before encoding the characters, so it never encodes the ones
+     * holding them (←, ō, ā): G2 encodes them first (#137)
      */
     public static function encode(string $text): string
     {
-        $text = preg_replace('/[\x00-\x1F\x81\x8D\x8F\x90\x9D]/', replacement: ' ', subject: $text) ?? $text;
+        $text = preg_replace('/[\x00-\x1F]/', replacement: ' ', subject: $text) ?? $text;
+        $text = strtr($text, self::CHARACTERS);
 
-        return strtr($text, self::CHARACTERS);
+        return preg_replace('/[\x81\x8D\x8F\x90\x9D]/', replacement: ' ', subject: $text) ?? $text;
     }
 }

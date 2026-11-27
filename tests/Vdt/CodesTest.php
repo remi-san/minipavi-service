@@ -169,7 +169,7 @@ final class CodesTest extends TestCase
     {
         // Except the deviations (below)
         yield 'every character it encodes' => [
-            'éèàçêÉÈÀÊβßœŒüûúùöôóòïîíìëäâá£°±←↑→↓¼½¾ÂÎōá’ ňćřýšíąā',
+            'éèàçêÉÈÀÊβßœŒüûúùöôóòïîíìëäâá£°±↑→↓¼½¾ÂÎá’ ňćřýšíą',
         ];
         yield 'control characters' => ["a\x00b\x0Ac\x1Fd\x7Fe"];
         yield 'plain text' => ['Hello, world! 0123456789 {}~'];
@@ -195,6 +195,11 @@ final class CodesTest extends TestCase
     {
         // MiniPaviCli sends the cedilla with a lowercase c (#58)
         yield 'Ç' => ['Ç', 'ç', 'Ç'];
+        // MiniPaviCli replaces the bytes it takes as undefined before encoding the characters
+        // holding them (#137): ← (e2 86 90) is sent as e2 86 20, shown as ? then a space
+        yield '←' => ['←', '? ', '←'];
+        yield 'ō' => ['ō', '? ', 'o'];
+        yield 'ā' => ['ā', '? ', 'a'];
     }
 
     /**
