@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Vdt\Writing;
 
+use MiniPaviService\Minitel\Position;
 use MiniPaviService\Minitel\ScreenSize;
 use MiniPaviService\Vdt\Playing\ClearedSpaces;
 use MiniPaviService\Vdt\Playing\Player;
@@ -75,8 +76,11 @@ final class OffsetWriter implements ScreenListener
         return new Vdt($writer->out->vdt());
     }
 
-    public function glyph(int $row, int $col, string $bytes, int $width, Attributes $attributes): void
+    public function glyph(Position $position, string $bytes, Attributes $attributes): void
     {
+        $row = $position->row;
+        $col = $position->col;
+        $width = $attributes->width();
         $restart = $this->restartAt($row, $row, $col, $bytes, $attributes);
         $tall = $attributes->height() > 1;
         if ($restart !== null && (!$tall || $this->shown->showsOnTop($row, $col, $restart))) {
@@ -129,14 +133,15 @@ final class OffsetWriter implements ScreenListener
         }
     }
 
-    public function delimiter(int $row, int $col, int $width, Attributes $attributes, Zone $zone): void
+    public function delimiter(Position $position, Attributes $attributes, Zone $zone): void
     {
-        if (!$this->shown->shows($row, $col, $width, $attributes->height())) {
+        $width = $attributes->width();
+        if (!$this->shown->shows($position->row, $position->col, $width, $attributes->height())) {
             // Drawn over: its zone doesn't last
-            $this->glyph($row, $col, ' ', $width, $attributes);
+            $this->glyph($position, ' ', $attributes);
             return;
         }
-        $this->writeDelimiter($row, $col, $width, $attributes, $zone);
+        $this->writeDelimiter($position->row, $position->col, $width, $attributes, $zone);
     }
 
     /**
@@ -160,11 +165,11 @@ final class OffsetWriter implements ScreenListener
      * that zone: its attributes are written just before it, which wait, as in the content, if
      * that character isn't a space
      */
-    public function priorCharacter(int $row, int $col, int $width, Attributes $attributes, ?Zone $delimiter): void
+    public function priorCharacter(Position $position, Attributes $attributes, ?Zone $delimiter): void
     {
-        $delimiter ??= $this->restartAt($row, $row, $col, ' ', $attributes);
-        (new StandInSpace($row, $col, $width, $attributes, $delimiter))->drawIn($this->zones);
-        $moved = $this->moved($row, $col, ' ', $attributes);
+        $delimiter ??= $this->restartAt($position->row, $position->row, $position->col, ' ', $attributes);
+        (new StandInSpace($position, $attributes, $delimiter))->drawIn($this->zones);
+        $moved = $this->moved($position->row, $position->col, ' ', $attributes);
         if ($moved === null) {
             return;
         }
@@ -258,10 +263,12 @@ final class OffsetWriter implements ScreenListener
      * (glyph(): one where the zone of the columns gone off the screen starts again a
      * delimiter, a tall one's top half in the zone of the row above)
      */
-    public function clearLine(int $row, int $col, Attributes $attributes, ?Zone $delimiter): void
+    public function clearLine(Position $position, Attributes $attributes, ?Zone $delimiter): void
     {
+        $row = $position->row;
+        $col = $position->col;
         if ($row !== 0 && $this->x < 0) {
-            (new ClearedSpaces($row, $col, $attributes, $delimiter))->tellTo($this);
+            (new ClearedSpaces($position, $attributes, $delimiter))->tellTo($this);
             return;
         }
         // A delimiter drawn over, on its row and in double height the row above: its zone
