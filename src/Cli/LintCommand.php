@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace MiniPaviService\Cli;
 
+use MiniPaviService\Io\FileFinder;
+use MiniPaviService\Io\FileReader;
+use MiniPaviService\Io\Files;
 use MiniPaviService\Message\MessagesException;
 use MiniPaviService\Page\Building\PageXmlException;
 use MiniPaviService\Page\Parser\PageXmlParser;
@@ -23,6 +26,18 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 #[AsCommand(name: 'lint', description: 'Checks the pages of the files and folders given; fails on an error')]
 final class LintCommand extends Command
 {
+    /**
+     * @param FileFinder $finder finds the files of the paths given
+     * @param FileReader $files  reads the files of the command line: the pages and their
+     *                           Videotex files, the service's messages
+     */
+    public function __construct(
+        private readonly FileFinder $finder = new Files(),
+        private readonly FileReader $files = new Files(),
+    ) {
+        parent::__construct();
+    }
+
     protected function configure(): void
     {
         $this->addArgument(
@@ -37,7 +52,7 @@ final class LintCommand extends Command
     {
         $errorOutput = (new SymfonyStyle($input, $output))->getErrorStyle();
         try {
-            $parser = new PageXmlParser(MessagesOption::messages($input));
+            $parser = new PageXmlParser(MessagesOption::messages($input, $this->files), files: $this->files);
         } catch (MessagesException $e) {
             $errorOutput->writeln(Input::escape($e->getMessage()));
 
@@ -47,13 +62,14 @@ final class LintCommand extends Command
         $pages = 0;
         $errors = 0;
         foreach (Input::strings($input, argument: 'paths') as $path) {
-            if (!file_exists($path)) {
+            $files = $this->finder->find($path, extension: 'xml');
+            if ($files === null) {
                 $errorOutput->writeln(Input::escape("{$path}: not found"));
                 $errors++;
                 continue;
             }
-            foreach (self::xmlFiles($path) as $file) {
-                if (!self::isPage($file)) {
+            foreach ($files as $file) {
+                if (!self::isPage($this->files->read($file))) {
                     continue;
                 }
                 $pages++;
@@ -79,51 +95,17 @@ final class LintCommand extends Command
     }
 
     /**
-     * The file, or the .xml files of the folder and its subfolders, in order
-     *
-     * @return list<string>
+     * Whether the root element of the content is <page>; content that can't be read, or isn't
+     * valid XML, is taken as a page, so that the parser gives its error
      */
-    private static function xmlFiles(string $path): array
+    private static function isPage(?string $content): bool
     {
-        if (!is_dir($path)) {
-            return [$path];
-        }
-        $files = [];
-        $iterator = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator(
-            $path,
-            \FilesystemIterator::SKIP_DOTS,
-        ));
-        foreach ($iterator as $file) {
-            if (!($file instanceof \SplFileInfo && $file->isFile() && strtolower($file->getExtension()) === 'xml')) {
-                continue;
-            }
-
-            $files[] = $file->getPathname();
-        }
-        sort($files);
-
-        return $files;
-    }
-
-    /**
-     * Whether the root element of the file is <page>; a file that isn't valid XML is taken as
-     * one, so that the parser gives its error
-     */
-    private static function isPage(string $file): bool
-    {
-        // Read up to the root element only: the parser reads the whole file next
+        // Read up to the root element only: the parser reads the whole content next
         $previous = libxml_use_internal_errors(true);
         try {
             $reader = new \XMLReader();
-            // A file it can't open (e.g. unreadable) without PHP's warnings: the parser gives
-            // its error, as Io\Files does
-            set_error_handler(static fn(): bool => true);
-            try {
-                $opened = $reader->open($file);
-            } finally {
-                restore_error_handler();
-            }
-            if (!$opened) {
+            // Empty content can't be read, as XMLReader::XML() refuses it
+            if ($content === null || $content === '' || !$reader->XML($content)) {
                 return true;
             }
             while ($reader->read()) {
