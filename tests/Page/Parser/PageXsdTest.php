@@ -29,7 +29,7 @@ final class PageXsdTest extends TestCase
 
     private const FIXTURES = __DIR__ . '/../../fixtures/pages';
 
-    // Invalid pages of PageXmlParserTest that XML Schema 1.0 can't tell from valid ones
+    // Invalid pages of InvalidPagesTest that XML Schema 1.0 can't tell from valid ones
     // (listed in the comment of page.xsd): only the parser refuses them
     private const PARSER_ONLY = [
         'line too long',
@@ -156,7 +156,7 @@ final class PageXsdTest extends TestCase
      */
     public static function pagesRefusedBySchema(): iterable
     {
-        foreach (PageXmlParserTest::invalidPages() as $name => [$xml]) {
+        foreach (InvalidPagesTest::invalidPages() as $name => [$xml]) {
             if ($name === 'invalid XML' || \in_array($name, self::PARSER_ONLY, strict: true)) {
                 continue;
             }
@@ -184,7 +184,7 @@ final class PageXsdTest extends TestCase
     public function testPagesOnlyTheParserRefusesAreValid(): void
     {
         $refused = [];
-        foreach (PageXmlParserTest::invalidPages() as $name => [$xml]) {
+        foreach (InvalidPagesTest::invalidPages() as $name => [$xml]) {
             if (!\in_array($name, self::PARSER_ONLY, strict: true) || self::errors($xml) === []) {
                 continue;
             }
@@ -197,7 +197,7 @@ final class PageXsdTest extends TestCase
 
     public function testParserOnlyPagesAreInvalidPagesOfTheParser(): void
     {
-        $names = array_keys(iterator_to_array(PageXmlParserTest::invalidPages()));
+        $names = array_keys(iterator_to_array(InvalidPagesTest::invalidPages()));
 
         self::assertSame([], array_values(array_diff(self::PARSER_ONLY, $names)));
         // Not well-formed: the schema can't be checked against it

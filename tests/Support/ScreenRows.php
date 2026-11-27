@@ -7,6 +7,7 @@ namespace MiniPaviService\Tests\Support;
 use MiniPaviService\Minitel\Color;
 use MiniPaviService\Vdt\Screen\Attributes;
 use MiniPaviService\Vdt\Screen\Screen;
+use MiniPaviService\Vdt\Vdt;
 
 /**
  * The rows of a screen, as the screen tests compare them
@@ -45,5 +46,20 @@ final class ScreenRows
         }
 
         return $cells;
+    }
+
+    /**
+     * Rows of the screen drawn by Videotex content that are not empty, as in Screen::preview()
+     *
+     * @return list<string>
+     */
+    public static function drawn(Vdt $vdt): array
+    {
+        $rows = explode("\n", rtrim(Screen::of($vdt)->preview(), characters: "\n"));
+
+        return array_values(array_filter(
+            $rows,
+            static fn(string $row) => trim(substr($row, offset: 3), characters: ' |') !== '',
+        ));
     }
 }
