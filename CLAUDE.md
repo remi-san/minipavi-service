@@ -147,7 +147,7 @@ messages between them, and keeps the user informed. It does write the Claude fil
   --only-covering-test-cases --min-msi=0 --min-covered-msi=0` (`--only-covering-test-cases`
   runs, for each mutant, only the tests covering its line, whichever file they are in; don't
   add `--map-source-class-to-test`, which keeps only `<Class>Test` and misses, e.g.,
-  `PageXmlParserTest` for the page builders; the minimums apply to the whole project, so they
+  `ElementLayoutTest` for the page builders; the minimums apply to the whole project, so they
   are off here). Both need pcov or Xdebug.
 - **Videotex output**: `tests/Vdt` compares `offset()` with golden files. After an intended
   change to the bytes written, regenerate them with `UPDATE_GOLDEN=1 composer test`, and
