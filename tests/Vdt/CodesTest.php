@@ -187,28 +187,41 @@ final class CodesTest extends TestCase
     }
 
     /**
-     * @return iterable<string, array{string, string}>
+     * The text, what the Minitel shows with MiniPaviCli, and what it shows with Vdt
+     *
+     * @return iterable<string, array{string, string, string}>
      */
     public static function deviations(): iterable
     {
         // MiniPaviCli sends the cedilla with a lowercase c (#58)
-        yield 'Ç' => ['Ç', 'ç'];
+        yield 'Ç' => ['Ç', 'ç', 'Ç'];
     }
 
     /**
      * Where MiniPavi's emulator shows MiniPaviCli's text is wrong, Vdt deviates from it on
-     * purpose: the Minitel shows what MiniPaviCli sends otherwise, and the text as Vdt sends it
+     * purpose: the Minitel shows one thing with what MiniPaviCli sends, another with what Vdt
+     * sends. Both are sent as MiniPaviCli::send() sends them, in 7 bits: each character left
+     * out of 7 bits is sent as ?
      */
     #[DataProvider('deviations')]
     public function testVdtDeviatesFromMiniPaviCliWhereTheMinitelShowsItIsWrong(
         string $text,
         string $shownWithMiniPaviCli,
+        string $shownWithVdt,
     ): void {
-        self::assertStringStartsWith(
-            $shownWithMiniPaviCli . ' ',
-            Screen::of(new Vdt(MiniPaviCli::toG2($text)))->line(1),
-        );
-        self::assertStringStartsWith($text . ' ', Screen::of(Vdt::text($text))->line(1));
+        self::assertStringStartsWith($shownWithMiniPaviCli . ' ', self::shown(MiniPaviCli::toG2($text)));
+        self::assertStringStartsWith($shownWithVdt . ' ', self::shown(Vdt::text($text)->toString()));
+    }
+
+    /**
+     * Row 1 of the screen, once bytes are sent as MiniPaviCli::send() sends them
+     */
+    private static function shown(string $bytes): string
+    {
+        $sent = mb_convert_encoding($bytes, to_encoding: '7bit');
+        self::assertIsString($sent);
+
+        return Screen::of(new Vdt($sent))->line(1);
     }
 
     public function testVdtEncodesSequencesAsMiniPaviCli(): void
