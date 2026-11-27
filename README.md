@@ -570,6 +570,10 @@ Text shown on the Minitel is not written in the code: it is read from messages f
 - **Names** are enum cases implementing `Message\Message`, whose value is the name in the
   files: `FrameworkMessage` for the framework's (`error`, `page.first`, `page.last`,
   `endkey`, `endkey.shift`, and for the HTML view the key labels `key.*` and `web.leave`), and an enum of its own for a service's.
+  A text is by name, whatever the enum: a case of a service's enum named `error` would share
+  the text of `FrameworkMessage::Error`. To give a framework message another text, redefine
+  its name in the messages file; `check()` refuses two cases of different enums with the same
+  name (`MessagesException`, naming both).
 - **Texts** come from `config/messages.xml` in the framework (its defaults,
   `MessagesXmlParser::defaults()`, read where the service is built), then the service's
   messages file over them, then a page's
@@ -596,7 +600,8 @@ enum AccMessage: string implements Message
     case ConnectedFrom = 'connected.from';
 }
 
-// Composition root: read and checked at startup (every message of these enums has a text)
+// Composition root: read and checked at startup (every message of these enums has a text,
+// and no two of them have the same name)
 $parser = new MessagesXmlParser();
 $messages = $parser
     ->parseFile("$config/messages.xml", $parser->defaults())
