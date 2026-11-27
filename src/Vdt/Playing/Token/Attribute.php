@@ -9,8 +9,8 @@ use MiniPaviService\Vdt\Screen\Attribute\Attribute as ScreenAttribute;
 use MiniPaviService\Vdt\Screen\Cursor;
 
 /**
- * ESC and the byte of a Screen\Attribute\Attribute, which sets it on what the cursor draws
- * next (Cursor::setAttribute())
+ * ESC and the byte of a Screen\Attribute\Attribute, which the cursor receives: it sets it on
+ * what it draws next, keeps it waiting for a delimiter, or discards it (Cursor::receive())
  *
  * @internal
  */
@@ -24,6 +24,6 @@ final readonly class Attribute extends ErasingNothing
 
     public function playOn(Cursor $cursor, Pen $pen): void
     {
-        $cursor->setAttribute($this->attribute);
+        $cursor->receive($this->attribute);
     }
 }

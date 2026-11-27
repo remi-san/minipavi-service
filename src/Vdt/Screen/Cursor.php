@@ -81,14 +81,15 @@ final class Cursor
     }
 
     /**
-     * Sets attribute (Attributes::with()), as the Minitel does: one it discards on the
-     * cursor's row (Attribute::appliesOn(): a size on row 0, ESC M and ESC O on row 1) or in
-     * mosaic (Attribute::appliesInMosaic(): a size and inverse video) is discarded, what it
-     * would set staying as it was (MiniPavi's emulator, setSize() and setInvert()). A zone attribute
-     * (masking, and underline and background colour in text) waits for a delimiter instead
-     * (Attribute::waitsIn())
+     * Receives an attribute sent (ESC and its byte), and does with it what the Minitel does:
+     * discards one it discards on the cursor's row (Attribute::appliesOn(): a size on row 0,
+     * ESC M and ESC O on row 1) or in mosaic (Attribute::appliesInMosaic(): a size and
+     * inverse video), what it would set staying as it was (MiniPavi's emulator, setSize() and
+     * setInvert()); keeps a zone attribute (masking, and underline and background colour in
+     * text) waiting for a delimiter (Attribute::waitsIn()); and applies any other to what the
+     * cursor draws next (Attributes::with())
      */
-    public function setAttribute(Attribute $attribute): void
+    public function receive(Attribute $attribute): void
     {
         if (!$attribute->appliesOn($this->row)) {
             return;
@@ -104,12 +105,13 @@ final class Cursor
     }
 
     /**
-     * Sets the character set of SI or SO (Attributes::withCharset()); SO applies the
-     * background colour waiting (Zone::attributesAfter())
+     * Switches to the character set of SI or SO (Attributes::withCharset()), for what the
+     * cursor draws next and for the zone; SO applies the background colour waiting
+     * (Zone::attributesAfter())
      *
      * @param string $byte SI (text) or SO (mosaic)
      */
-    public function setCharset(string $byte): void
+    public function switchCharset(string $byte): void
     {
         $this->attributes = $this->zone->attributesAfter($byte, $this->attributes->withCharset($byte));
         $this->zone = $this->zone->withCharset($byte);

@@ -192,7 +192,7 @@ final class Writer
     private function sendAttributes(array $attributes): void
     {
         foreach ($attributes as $attribute) {
-            $this->cursor->setAttribute($attribute);
+            $this->cursor->receive($attribute);
             $this->send($attribute->code());
         }
     }
@@ -229,7 +229,7 @@ final class Writer
             $attributes = $attributes->withBackground($current->background());
         }
         if ($attributes->charset() !== $current->charset()) {
-            $this->cursor->setCharset($attributes->charset());
+            $this->cursor->switchCharset($attributes->charset());
             $this->send($attributes->charset());
         }
         $this->sendAttributes($attributes->changesFrom($current));
