@@ -380,7 +380,8 @@ KernelBuilder::for($router, $messages)
   of items and of items per page, the data of a page from its `Paginator`, and handles the
   other keys on the `ShownPage`, with `$page->display()`, `$page->stay($vdt)` (reads the next
   input on the page, after `$vdt`), `$page->next()` / `previous()` (the next or previous page,
-  or the end message) and `$page->message()` (a message of the page):
+  or the end message), `$page->message()` (a message of the page) and `$page->parameters()`
+  (the `PageParameters` keeping the page, for a response leaving the list to come back to it):
 
   ```php
   final readonly class DirectoryList implements PaginatedList

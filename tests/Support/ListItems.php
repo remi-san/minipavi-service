@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace MiniPaviService\Tests\Support;
 
 use MiniPaviService\Controller\ControllerState;
-use MiniPaviService\Controller\Pagination\PageParameters;
 use MiniPaviService\Controller\Pagination\PaginatedList;
 use MiniPaviService\Controller\Pagination\Paginator;
 use MiniPaviService\Controller\Pagination\ShownPage;
@@ -60,12 +59,12 @@ final readonly class ListItems implements PaginatedList
             FunctionKey::Correction => RunCommand::connectTo(
                 self::HELP,
                 state: ControllerState::Display,
-                parameters: new PageParameters($page->paginator->index()),
+                parameters: $page->parameters(),
             ),
             FunctionKey::Cancel => new DisplayPage(
                 Vdt::line0('Annulé'),
                 ControllerState::InitInput,
-                new PageParameters($page->paginator->index()),
+                $page->parameters(),
             ),
             default => $page->stay(),
         };
