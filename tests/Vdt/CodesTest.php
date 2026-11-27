@@ -173,7 +173,8 @@ final class CodesTest extends TestCase
         ];
         yield 'control characters' => ["a\x00b\x0Ac\x1Fd\x7Fe"];
         yield 'plain text' => ['Hello, world! 0123456789 {}~'];
-        yield 'bytes MiniPaviCli takes as undefined (in UTF-8 letters it doesn\'t encode, e.g. č, Ł, ŝ)' => ['čŁŝ'];
+        // 0x8D, 0x81, 0x9D, 0x8F and 0x90, each in a letter
+        yield 'bytes MiniPaviCli takes as undefined (in UTF-8 letters it doesn\'t encode)' => ['čŁŝďĐ'];
     }
 
     /**
@@ -252,7 +253,8 @@ final class CodesTest extends TestCase
         ] as $letter => $shown) {
             yield $letter => [$letter, '?', $shown];
         }
-        // The Minitel has no §, nor anything like it: Vdt sends the ? the Minitel shows (#137)
+        // The Minitel has no §, nor anything like it: Vdt sends the ? the Minitel shows (#137).
+        // Sent in 7 bits, MiniPaviCli's § is ? too: VdtTest checks the screen shows ? for it
         yield '§' => ['§', '?', '?'];
     }
 
