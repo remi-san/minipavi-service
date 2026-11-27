@@ -59,20 +59,20 @@ final readonly class Messages
      * @param array<string, mixed> $variables name => value: text, number, array or object with
      *                                    properties
      *
-     * @throws \LogicException naming the message, for a message without text, or a
-     *                         placeholder without variable or whose value isn't text. An
-     *                         exception of a variable's own code (e.g. its __toString(), or
-     *                         __get()) goes through as it is.
+     * @throws MessagesException naming the message, for a message without text, or a
+     *                           placeholder without variable or whose value isn't text. An
+     *                           exception of a variable's own code (e.g. its __toString(),
+     *                           or __get()) goes through as it is.
      */
     public function get(Message $message, array $variables = []): string
     {
         $name = $message->value;
-        $text = $this->texts[$name] ?? throw new \LogicException("No text for the message \"{$name}\"");
+        $text = $this->texts[$name] ?? throw new MessagesException("No text for the message \"{$name}\"");
 
         try {
             return (new Placeholders($variables))->substitute($text);
         } catch (InvalidValueException $e) {
-            throw new \LogicException(self::errorOf($name, $e), previous: $e);
+            throw new MessagesException(self::errorOf($name, $e), previous: $e);
         }
     }
 
