@@ -213,6 +213,9 @@ final class CodesTest extends TestCase
         yield 'ì' => ['ì', '_', 'i'];
         yield 'ß' => ['ß', '_', 'ss'];
         yield 'β' => ['β', '_', 'b'];
+        // MiniPaviCli doesn't encode characters the Minitel has, sent as ? (#137)
+        yield '÷' => ['÷', '?', '÷'];
+        yield 'Ë' => ['Ë', '?', 'Ë'];
     }
 
     /**
