@@ -553,7 +553,7 @@ $tester->connect()->assertRoute('home')->assertScreenContains('BIENVENUE')
   sends a key, and `disconnect()` checks a disconnection gets no response.
 - `assertScreenContains()`, `assertScreenNotContains()`, `assertLineContains($row, ...)` and
   `assertLine0()` check the screen as text, accented characters included, as a Minitel
-  shows them (`Screen::text()`: `_` for one it doesn't have, e.g. `ü`); `assertRoute()` the route the user's next key goes to, and
+  shows them (`Screen::text()`: `_` for a G2 character it doesn't have); `assertRoute()` the route the user's next key goes to, and
   `assertConnectsTo($url)` a connection to another service (`RunCommand::connectTo()`). A
   failed assertion shows the screen.
 - `screen()`, `response()` (the last `GatewayResponse`) and `context()` give the rest, for
@@ -810,8 +810,14 @@ Codes to send as they are have names: `Vdt\Videotex` for Videotex (`CLEAR_LINE`,
 They replace MiniPaviCli's global `VDT_*` and `PRO_*` constants, which are only defined once
 `MiniPaviCli` is loaded. `Vdt` holds Videotex content, its bytes, and joins it (`join()`,
 `append()`). Its constructors encode as MiniPaviCli's Videotex helpers do, without calling
-them: `Vdt::text()` (as `toG2()`, except where MiniPavi's emulator shows `toG2()` is wrong: it
-sends `Ç` as `ç`, `Vdt::text()` as `Ç`), `Vdt::position($position)` (a `Minitel\Position`,
+them: `Vdt::text()` (as `toG2()`, except where MiniPavi's emulator shows `toG2()` is wrong:
+it sends `Ç` as `ç`, `Vdt::text()` as `Ç`; it never encodes `←`, `ō` and `ā`, nor `÷` and `Ë`,
+which `Vdt::text()` sends as the Minitel's; and the letters a Minitel doesn't have, shown as
+`_` or `?`, `Vdt::text()` sends as their plain letter, in the same case: `ü` as `u`, `Ù` as
+`U`, `ñ` as `n`, `ß` as `ss`, `β` as `b`, `Æ` as `AE`, `Þ` as `TH`; `§`, which it has nothing
+like, as `?`. Every Latin-1 letter is sent as something a Minitel shows; other symbols it
+doesn't have, such as `€` or `«`, are sent as they are, and shown as `?`),
+`Vdt::position($position)` (a `Minitel\Position`,
 `setPos()`), `Vdt::line0()` (`writeLine0()`), `Vdt::clearScreen()` and
 `Vdt::repeat($char, $count)` (`repeatChar()`, up to 64; beyond, as one REP can't count more,
 more follow, as the MiniPavi emulator writes them; a count below 1 is an

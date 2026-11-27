@@ -6,9 +6,12 @@ namespace MiniPaviService\Vdt;
 
 /**
  * Text (UTF-8) as Videotex: accented and special characters encoded in G2 (SS2, then their
- * code), a few others as the letter closest to them, as MiniPaviCli's toG2() does (CodesTest
- * checks they encode the same), except where MiniPavi's emulator shows toG2() is wrong: Ç,
- * which toG2() sends as ç (#58)
+ * code), others as the letter closest to them, as MiniPaviCli's toG2() does (CodesTest checks
+ * they encode the same), except where MiniPavi's emulator shows toG2() is wrong (CodesTest
+ * names each deviation): Ç, which toG2() sends as ç (#58); ←, ō and ā, which it never
+ * encodes; ÷ and Ë, which it doesn't encode; and the letters the Minitel shows as _ or ?
+ * (ü, ß, Ù, ñ, ...), sent as their plain letter (#137). Every Latin-1 letter is sent as
+ * something a Minitel shows
  *
  * @internal
  */
