@@ -56,7 +56,7 @@ final class Writer
     public function glyph(int $row, int $col, string $bytes, int $width, Attributes $attributes, Zone $zone): void
     {
         $this->moveTo($row, $col);
-        $this->setAttributes($attributes);
+        $this->sendChangesTo($attributes);
         if ($bytes === ' ' && $this->losesZone($row, $col, $attributes, $zone)) {
             $this->delimit($row, $col, $width, $zone);
             return;
@@ -73,7 +73,7 @@ final class Writer
     public function delimiter(int $row, int $col, int $width, Attributes $attributes, Zone $zone): void
     {
         $this->moveTo($row, $col);
-        $this->setAttributes($attributes);
+        $this->sendChangesTo($attributes);
         $this->delimit($row, $col, $width, $zone);
     }
 
@@ -86,7 +86,7 @@ final class Writer
     public function priorCharacter(int $row, int $col, int $width, Attributes $attributes, ?Zone $delimiter): void
     {
         $this->moveTo($row, $col);
-        $this->setAttributes($attributes);
+        $this->sendChangesTo($attributes);
         if ($delimiter === null) {
             $this->putPrior();
             $this->zones->draw($row, $col, $width, $this->cursor->attributes());
@@ -109,7 +109,7 @@ final class Writer
     public function clearLine(int $row, int $col, Attributes $attributes, Zone $zone, ?Zone $delimiter): void
     {
         $this->moveTo($row, $col);
-        $this->setAttributes($attributes);
+        $this->sendChangesTo($attributes);
         $cleared = $delimiter ?? $zone;
         $delimits = $delimiter !== null || $this->losesZone($row, $col, $attributes, $cleared);
         if ($delimits) {
@@ -222,7 +222,7 @@ final class Writer
 
     // Sends the character attributes that differ from the current ones: in text, the
     // background isn't the character's, but its zone's, sent with its delimiter (delimit())
-    private function setAttributes(Attributes $attributes): void
+    private function sendChangesTo(Attributes $attributes): void
     {
         $current = $this->cursor->attributes();
         if (!$attributes->isMosaic()) {
