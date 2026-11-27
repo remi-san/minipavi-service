@@ -14,7 +14,7 @@ Requires PHP 8.2.
 
 The code (namespace `MiniPaviService`, in `src/`) is organized by layer, each using only those
 below it (`mago guard` checks it, with the rules in `mago.toml`). At the bottom, the helpers
-(`Text\`, `Io\`, `Xml\`, `Html\`, `InvalidValueException`), then `Minitel\` (the terminal),
+(`Text\`, `Io\`, `Xml\`, `InvalidValueException`), then `Minitel\` (the terminal),
 then `Vdt\` (Videotex), then `Gateway\` (the requests, responses and commands); `Message\`
 beside them. Above them, `Page\` → `Controller\` → `Core\` (the runtime) → `Http\` (the
 entry point), which also uses `Client\` (the clients, on `Gateway\`). `Cli\` (on `Page\`)
@@ -32,9 +32,9 @@ interfaces → `Html\` and `MiniPavi\`, which don't use each other).
 | `Page\` | static and template pages, their display elements, and the page XML parser; inside it, layered too: `Display\` (what is drawn) → `Building\` (what building one needs: the `ElementBuilder` of a display element, the `AttributeValues` it reads, the `Placement` it is told, the `PageXmlException` it throws) → `Template\` (a template's nodes) → `Parser\` (reading the XML files into them) |
 | `Message\` | the messages shown on screen: `Message`, `FrameworkMessage`, `Messages` and their XML parser |
 | `Minitel\` | the user's terminal: `Terminal`, the `Key` a request comes with (its `FunctionKey`s, or a `ConnectionCode`) and the `KeyHandler` it tells what happened, its settings (`Keyboard`, `LocalEcho`, `Scroll`), its `ScreenSize` and `Color`s, and the `InputField` where the user types |
-| `Vdt\` | Videotex: the content and its codes (`Vdt`, `Videotex`, `G2`), its clear screens (`ClearScreens`), and moving it (`Offset`); in `Playing\`, playing it on a simulated screen (`Parser` and its `Token`s in `Playing\Token\`, `Player`, `Pen`, `ScreenListener`); in `Writing\`, writing it again (`Writer`, `OffsetWriter`); in `Screen\`, the Minitel screen it draws (`Screen`, `Cell`) and its HTML rendering (`HtmlRenderer`) |
+| `Vdt\` | Videotex: the content and its codes (`Vdt`, `Videotex`, `G2`), its clear screens (`ClearScreens`), and moving it (`Offset`); in `Playing\`, playing it on a simulated screen (`Parser` and its `Token`s in `Playing\Token\`, `Player`, `Pen`, `ScreenListener`); in `Writing\`, writing it again (`Writer`, `OffsetWriter`); in `Screen\`, the Minitel screen it draws (`Screen`, `Cell`) |
 | `Gateway\` | the requests and responses the service handles (`GatewayRequest`, `GatewayResponse`), and, in `Command\`, the commands a response sends (`Command`: the `WaitForKeyCommand` waiting for a key, the `InputCommand` reading a field, the `ServiceCallCommand` calling a service, with its `CallMode`) and the `CommandSender` a client sends them with |
-| `Client\` | the clients, translating between HTTP and the service's values (`Client`, `ClientExchange`): in `MiniPavi\`, `MiniPaviClient` for the MiniPavi gateway (through `MiniPaviCliGateway`); in `Html\`, `HtmlClient` for a browser (`?web=true`, with its page, `HtmlForm`) |
+| `Client\` | the clients, translating between HTTP and the service's values (`Client`, `ClientExchange`): in `MiniPavi\`, `MiniPaviClient` for the MiniPavi gateway (through `MiniPaviCliGateway`); in `Html\`, `HtmlClient` for a browser (`?web=true`, with its page, `HtmlForm`, and the screen drawn in HTML, `HtmlRenderer`) |
 | `Http\` | the entry point for the web server, on PSR-7 / PSR-15: `Kernel`, `ResponseEmitter`, `ServiceRunner`; in `Dispatch\`, who handles the request (`Dispatcher`, `ConditionalRequestHandler`, `RequestMatcher`s); in `Url\`, the request's URLs (`RequestUrl`, `UrlAttribute`, `WithUrls`); in `Emulator\`, the emulator browsers are sent to (`EmulatorConfig`, `EmulatorRedirect`) |
 | `Testing\` | `ServiceTester`, functional tests of a service (needs PHPUnit) |
 
@@ -194,7 +194,7 @@ KernelBuilder::for($router, $messages)
     captured as the body of the HTTP response. It is the only class calling `MiniPaviCli`. A
     test can give the client a gateway of its own;
   - **`HtmlClient`** (in `Client\Html\`), for a browser: it shows the service's screen as an HTML page
-    (`Vdt\Screen\HtmlRenderer`), and lets the user navigate it as on a Minitel. The first request is a
+    (`HtmlRenderer`), and lets the user navigate it as on a Minitel. The first request is a
     connection, at the default route, as the gateway's. The page is a form posting back to its URL,
     which `HtmlForm` renders and reads back (`PostedForm`), `HtmlClient` turning it into
     a `GatewayRequest`, and a response into the page:
@@ -909,7 +909,7 @@ echo Screen::of($moved)->preview();              // the screen, as text
 - **`ClearScreens`**: `removed($vdt)` is the same content without its clear screens (FF), to
   draw it over other content, and `fromLast($vdt)` the content from its last one, what still
   shows.
-- **`HtmlRenderer::render($screen, $overlay)`**: the screen in HTML (a `<div class="minitel">`,
+- **`Client\Html\HtmlRenderer::render($screen, $overlay)`**: the screen in HTML (a `<div class="minitel">`,
   with `$overlay` over it), `style()` its CSS (the cell size in `--w`, `--h`, the Minitel font
   in `--font`) with the font embedded, and `place($position, $length)` the style placing an
   element over a cell, with all of its geometry (position, size, its border included, and
