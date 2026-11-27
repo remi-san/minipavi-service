@@ -122,6 +122,40 @@ final class LintCommandTest extends TestCase
         self::assertSame("1 page checked, 0 errors\n", $this->tester->getDisplay());
     }
 
+    public function testFailsOnAMalformedPlaceholderInAMessageOfAPage(): void
+    {
+        $this->write(
+            'pages/home.xml',
+            content: "<page type=\"static\">\n<message name=\"error\">Oops {{ not-a-name }}</message>\n<text>Hello</text></page>",
+        );
+
+        self::assertSame(Command::FAILURE, $this->lint([$this->dir . '/pages']));
+        self::assertSame("1 page checked, 1 error\n", $this->tester->getDisplay());
+        self::assertSame(
+            "home.xml line 2: <message>: {{ not-a-name }} is not a placeholder\n",
+            $this->tester->getErrorOutput(),
+        );
+    }
+
+    public function testFailsOnAMalformedPlaceholderInTheMessagesFile(): void
+    {
+        $this->write(
+            'messages.xml',
+            content: "<messages>\n<message name=\"error\">Broken {{ 1bad }}</message></messages>",
+        );
+        $this->write('pages/home.xml', content: '<page type="static"><text>Hello</text></page>');
+
+        self::assertSame(Command::FAILURE, $this->lint([
+            '--messages',
+            $this->dir . '/messages.xml',
+            $this->dir . '/pages/home.xml',
+        ]));
+        self::assertSame(
+            "{$this->dir}/messages.xml line 2: <message>: {{ 1bad }} is not a placeholder\n",
+            $this->tester->getErrorOutput(),
+        );
+    }
+
     public function testChecksAnXmlFileWithoutElementAsAPage(): void
     {
         $this->write('pages/empty.xml', content: '');

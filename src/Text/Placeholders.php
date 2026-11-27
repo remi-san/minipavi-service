@@ -25,21 +25,17 @@ final readonly class Placeholders
     ) {}
 
     /**
-     * The first {{...}} of a text that isn't a placeholder (e.g. {{1}}, {{user-name}}, or
-     * {{user.}}), which substitute() leaves as it is; null if there is none
+     * Checks every {{...}} of a text is a placeholder, for a text in which one that isn't
+     * would be a mistake (a message's: substitute() would leave it as it is)
+     *
+     * @throws InvalidValueException naming the first that isn't (malformed())
      */
-    public static function malformed(string $text): ?string
+    public static function check(string $text): void
     {
-        $candidates = [];
-        preg_match_all('/\{\{.*?\}\}/s', $text, $candidates);
-        foreach ($candidates[0] as $candidate) {
-            $match = [];
-            if (preg_match(self::PLACEHOLDER, $candidate, $match) !== 1 || $match[0] !== $candidate) {
-                return $candidate;
-            }
+        $malformed = self::malformed($text);
+        if ($malformed !== null) {
+            throw new InvalidValueException("{$malformed} is not a placeholder");
         }
-
-        return null;
     }
 
     /**
@@ -108,5 +104,23 @@ final readonly class Placeholders
             return $value->$name;
         }
         throw new InvalidValueException("unknown variable {{{$path}}}: no \"{$name}\" in " . get_debug_type($value));
+    }
+
+    /**
+     * The first {{...}} of a text that isn't a placeholder (e.g. {{1}}, {{user-name}}, or
+     * {{user.}}), which substitute() leaves as it is; null if there is none
+     */
+    private static function malformed(string $text): ?string
+    {
+        $candidates = [];
+        preg_match_all('/\{\{.*?\}\}/s', $text, $candidates);
+        foreach ($candidates[0] as $candidate) {
+            $match = [];
+            if (preg_match(self::PLACEHOLDER, $candidate, $match) !== 1 || $match[0] !== $candidate) {
+                return $candidate;
+            }
+        }
+
+        return null;
     }
 }

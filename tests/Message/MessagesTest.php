@@ -78,18 +78,50 @@ final class MessagesTest extends TestCase
             ['user' => ['name' => 'Léa']],
             'Message "welcome": {{user}} is not text (array)',
         ];
-        // Not placeholders, but not left in the text either: a mistake in the message
-        yield 'a number' => ['Code {{1}}', [], 'Message "welcome": {{1}} is not a placeholder'];
-        yield 'a dash' => [
-            'Bonjour {{user-name}}',
-            ['user' => 'x'],
-            'Message "welcome": {{user-name}} is not a placeholder',
-        ];
-        yield 'a dot at the end' => [
-            'Bonjour {{user.}}',
-            ['user' => 'x'],
-            'Message "welcome": {{user.}} is not a placeholder',
-        ];
+    }
+
+    /**
+     * @return iterable<string, array{string, string}>
+     */
+    public static function malformedTexts(): iterable
+    {
+        yield 'a number' => ['Code {{1}}', 'Message "welcome": {{1}} is not a placeholder'];
+        yield 'a dash' => ['Bonjour {{user-name}}', 'Message "welcome": {{user-name}} is not a placeholder'];
+        yield 'a dot at the end' => ['Bonjour {{user.}}', 'Message "welcome": {{user.}} is not a placeholder'];
+    }
+
+    /**
+     * Not placeholders, but not left in the text either: a mistake in the message, found when
+     * the messages are built (at startup), not when it is shown
+     */
+    #[DataProvider('malformedTexts')]
+    public function testMessagesWithAMalformedPlaceholderAreNotBuilt(string $text, string $error): void
+    {
+        $this->expectException(MessagesException::class);
+        $this->expectExceptionMessage($error);
+
+        new Messages(['bienvenue' => 'Bienvenue', 'welcome' => $text]);
+    }
+
+    #[DataProvider('malformedTexts')]
+    public function testAMalformedPlaceholderIsNotAdded(string $text, string $error): void
+    {
+        $this->expectException(MessagesException::class);
+        $this->expectExceptionMessage($error);
+
+        (new Messages(['bienvenue' => 'Bienvenue']))->with(['welcome' => $text]);
+    }
+
+    public function testMalformedPlaceholderErrorKeepsTheErrorOfThePlaceholders(): void
+    {
+        try {
+            new Messages(['welcome' => 'Code {{1}}']);
+        } catch (MessagesException $e) {
+            self::assertInstanceOf(InvalidValueException::class, $e->getPrevious());
+
+            return;
+        }
+        self::fail('Messages with a malformed placeholder were built');
     }
 
     /**
@@ -214,6 +246,11 @@ final class MessagesTest extends TestCase
         yield 'twice' => [
             "<messages><message name=\"a\">x</message>\n<message name=\"a\">y</message></messages>",
             'm.xml line 2: <message>: name="a" is already in the file',
+        ];
+        // Shown as it is otherwise: a mistake in the file
+        yield 'malformed placeholder' => [
+            "<messages>\n<message name=\"error\">Broken {{ 1bad }}</message></messages>",
+            'm.xml line 2: <message>: {{ 1bad }} is not a placeholder',
         ];
         // The first error in the file: the name missing, before the unknown element
         yield 'first error in the file' => [

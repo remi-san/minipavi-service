@@ -1132,6 +1132,10 @@ final class PageXmlParserTest extends TestCase
             '<page type="static"><message name="page.last">x</message><message name="page.last">y</message></page>',
             'f.xml line 1: <message>: name="page.last" is already in the page',
         ];
+        yield 'message with a malformed placeholder' => [
+            "<page type=\"static\">\n<message name=\"page.last\">Oops {{ not-a-name }}</message></page>",
+            'f.xml line 2: <message>: {{ not-a-name }} is not a placeholder',
+        ];
         // The first error in the file: the second "page.last", before the unknown message
         yield 'first message error in the file' => [
             "<page type=\"static\">\n<message name=\"page.last\">x</message>\n<message name=\"page.last\">y</message>\n<message name=\"zzz\">z</message></page>",

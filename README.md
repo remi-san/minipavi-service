@@ -608,11 +608,15 @@ $service = new Service(new Sessions(new ContextSerializer($router), $router), $m
 Vdt::line0($this->page->message(AccMessage::ConnectedFrom, ['remoteAddr' => $addr]));
 ```
 
-A message without text, a placeholder without its variable or whose value isn't text (an
-array, an object without `__toString()`), or a `{{...}}` that isn't a placeholder (`{{1}}`,
-`{{user-name}}`: a page template would leave it as it is) is a `LogicException` naming the
-message; a messages file that can't be read is a `MessagesException` with the file and line.
-`schema/messages.xsd` describes messages files.
+A `{{...}}` that isn't a placeholder (`{{1}}`, `{{user-name}}`: a page template would leave it
+as it is) is a mistake in the text, found when the messages are read, not when one is shown:
+in a messages file or a page's `<message>`, an error of the file with its line
+(`MessagesException`, `PageXmlException`), which `minipavi lint` reports; in texts given in
+code (`new Messages([...])`, `with([...])`), a `MessagesException` naming the message, when
+they are built. A message without text, or a placeholder without its variable or whose value
+isn't text (an array, an object without `__toString()`), is a `LogicException` naming the
+message, when it is shown; a messages file that can't be read is a `MessagesException` with
+the file and line. `schema/messages.xsd` describes messages files.
 
 ### Reading files
 
